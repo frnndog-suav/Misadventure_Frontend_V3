@@ -1,607 +1,1180 @@
-# Introdução
+# Misadventures
 
-Estou querendo criar um jogo TCG de card web com frontend e backend. Me ajude idealizar o jogo. O jogo TCG tem como ideia ser um jogo modular no aspecto de quantidade de jogadores, grind, RPG, TCG, jogos de tabuleiro e outras mecânicas que irei descrever mais pra frente. Falando sobre o aspecto de quantidade de jogadores, o jogo pode comportar 1 até infinitos jogadores (por mais que seja improvável). Mas, infinitos jogadores seria para considerar que podem ser um número muito elevado de jogadores.
+> *Working title.* Jogo de cartas colecionáveis (TCG) para web, com frontend e backend, que mistura **TCG**, **RPG**, **jogo de tabuleiro**, **grind** e **interatividade em tempo real**.
 
-Dando um contexto primeiramente sobre o jogo (sinopse) seria: um aventureiro ou vários chegam numa dimensão para pegar o prêmio máximo daquela dimensão (um artefato, prêmio em moedas de ouro, equipamentos muito fortes, etc) ou matar o chefe final daquele lugar. Dependendo do modo de jogo, os jogadores devem se ajudar ou derrotar os outros ou tentar ajudar temporariamente outros jogadores para conseguir algum benefício para conseguir desbravar essa dimensão. O jogo se baseia num sistema baseado em turnos misturado com outros conceitos de TCG, mecânicas de jogo de tabuleiro, interatividade em tempo real, etc. Os jogadores exploram o mapa tendo que resolver alguns encontros (eventos aleatórios) e confrontos (com outros jogadores, junto com outros jogadores ou contra inimigos propostos pelo próprio mundo) até um jogador conseguir obter o prêmio máximo daquela dimensão ou matar o chefe final daquela dimensão. Todas as coisas conquistadas por um jogador (poção, equipamentos, bugs, prêmios, dinheiro, etc) são levadas para a próxima dimensão. O jogo não tem uma dimensão final. Vai existir um sistema de lançamento de coleção onde, a cada certo período de tempo (3 meses por exemplo), uma nova dimensão com novos itens, cartas, prêmios, etc são adicionados e os jogadores vão desbravando infinitas dimensões atrás de ter os melhores itens, equipamentos, buffs, mais dinheiro, etc. O jogo tem 4 modos: campanha (modo cooperativo onde suas coisas são levadas para outras dimensões e todos trabalham juntos para "zerar" aquela dimensão), desbravadores (cada um por si e quem completar os objetivos sorteados no começo da partida primeiro ganha), o modo batalha x1 (apenas combate para testar sua build que não influencia nos outros modos) e o modo clássico (seria o modo desbravadores no modo cooperativo onde todos os jogadores precisam concluir todos os seus respectivos objetivos para ganhar aquela dimensão) No modo campanha, os jogadores não podem retornar para uma dimensão ja concluída por padrão. No modo desbravadores, como é um modo considerado competitivo e no formato de "runs", os jogadores podem jogar várias vezes a mesma dimensão apenas por diversão.
+> **Atenção**: muitos conceitos estão sujeitos a mudar com o tempo devido a novas ideias ou à descoberta de problemas. Este documento apresenta as ideias básicas.
 
-Vamos falar primeiro do modo campanha porque, a partir dele, a explicação dos outros modos fica mais fácil. Com base no ![protótipo de mapa mundi](/docs/images/protótipo_mapa_mundi.JPG), vou explicar alguns conceitos do jogo. A dimensão tem cartas de zonas (podem ser umas 12 cartas, 16 cartas, 20 cartas, etc). Ao iniciar o jogo, as cartas das zonas da dimensão são embaralhadas. As cartas de zonas podem possuir nenhuma, uma, duas, três ou quatro setas apontandas para as aresta da carta. Algum jogador pega o baralho embaralhado de zonas da dimensão e começa a montar o mapa. Obrigatóriamente, uma carta de zona urbana do tipo cidade deve ser selecionada de forma aleatória para ser a primeira carta posicionada na mesa (obrigatóriamente qualquer zona urbana tem as quatro setas apontando uma para cada aresta da carta). Após isso, alguém começa a comprar cartas do topo do deck de zonas da dimensão para montar o mapa. Cada nova carta de zona da dimensão deve ser posicionada para onde uma seta de uma carta já posicionada no mapa aponta. Dessa forma, toda vez que o a dimensão for jogada, uma nova versão daquele mapa é construído, permitindo um rejogabilidade e diferentes estratégias e planos. Uma vez montado o mapa, os jogadores escolhem onde começar no mapa (é obrigatório os jogadores iniciarem em uma zona urbana). Se essa é a primeira dimensão que os jogadores entram (nunca jogaram esse jogo antes, ou seja, é a primeira aventura), todos os jogadores começam sem equipamentos, armas e acessórios. 
-
-Os jogadores começam com 
-- 10 moedas de ouro.
-- 20 pontos de vida por padrão (não existe limite de pontos de vida).
-- Compram 7 cartas do deck de atributos para mão.
-- Escolhem uma classe para iniciar a aventura. 
-
-Cada jogador joga um vez e vão se revezando (é escolhido a ordem dos jogadores de forma aleatório ou por algum critério). Ao iniciar a vez de um jogador, a primeira coisa que ele tem que fazer é escolher ficar na mesma zona ou mudar para uma zona que tenha conexão com a zona atual em que ele esta (não é possível se movimentar em diagonal e é apenas uma ação de movimento por padrão). Uma vez escolhido se movimentar ou ficar, o jogador tem algumas escolhas a fazer. A zonas tem ações que podem ser executadas. O jogador tem 3 pontos de ação por padrão para gastar entre essas ações possíveis. O jogador não precisa usar todas elas. Ele pode simplesmente pular se não quiser usar todos os pontos de ação. Quando um jogador terminar de usar todas as suas ações ou pular a vez, segue para o próximo jogador. Sobre a dimensão, pode ser que tenha um efeito padrão, nenhum ou vários. Por exemplo, jogadores dentro dessa dimensão não podem usar efeitos do elmo. Outro exemplo seria, jogadores precisam pagar 1 moeda de ouro para usar uma ação e durante eventos do tipo combate não podem usar poções, etc. Isso são só exemplos. Pode ser que a dimensão não tenha nenhum efeito também (mas isso pode significar que a dimensão tenham eventos muitos difíceis). Turno é considerando quando todos os jogadores tiverem jogado uma vez (exemplo: tem três jogadores jogando; o jogador A faz as ações da sua vez; o jogador B faz as suas ações; o jogador C faz suas ações; turno encerrado e volta para a vez do jogador A)
-
-
-(verificar se é dito algo sobre a coleção vigente. Caso não, adicionar texto para falar que a dimensão escolhida para jogar só tem as cartas daquela dimensão) ==TODO==
-Sobre o modo desbravadores, esse modo é mais competitivo e cada um por si (mas os jogadores podem decidir entre eles se eles querem fazer alianças temporárias). Nesse modo, o jogador que coletar 10 pontos de objetivos primeiro ganha. No começo do jogo, cada jogador recebe objetivos para cumprir. Por exemplo, o jogador A recebe as missões "Ir para a zona X", "Ir para zona Y", "Coletar N itens de um tipo", "Nocautear duas vezes outros jogadores", "forjar um equipamento específico", etc. Existem diversos objetivos que podem ser sorteados. A cada objetivo cumprido, o jogador recebe uma quantidade de pontos de objetivo descrito na carta de objetivo. Objetivos mais difíceis dão mais pontos de objetivo. Por padrão todos os jogadores recebem 5 cartas de objetivos e, no mínimo, cada objetivo valem 2 pontos de objetivo por padrão. Cada jogador escolhe quais objetivos ele quer cumprir. O que muda no modo desbravadores seria "todos os jogadores jogam ao mesmo tempo". Todos os jogadores escolhem secretamente para qual zona querem se mover ou permancer caso não queiram se mexer. Após todos tiverem feitos suas escolhas, todos revelam ao mesmo tempo para onde se moveram ou permanceram. Caso só tenha um jogador numa zona, ele prossegue para o fluxo normal de executar 3 ações por padrão daquela zona. Caso 2 ou mais jogadores se encontrarem na mesma zona, todos os jogadores na mesma zona escolhem secretamente se querem lutar ou não. Depois, todos revelam suas escolhas ao mesmo. Se um jogador quiser lutar e os outros não, os jogadores que não quiseram lutar devem tentar fugir (teste de fuga: o jogador que quer lutar rola um D20. O jogador que quer fugir rola um D20 e se ele tirar um número menor que o número do jogador que quer lutar, eles são obrigados a lutar. Se for maior, o jogador foge com sucesso). Se mais de um jogador quiser lutar, os jogadores que quiserem fugir devem rolar um D20 para cada jogador que queira lutar seguindo o mesmo testes de fuga. Agora, se todos decidirem não lutar, nada acontece. Nesse aspecto, isso significa que podem haver lutas com 2, 3, 4, 5 jogadores ou mais dependendo da quantidade de jogadores na mesma zona. Só pode haver um ganhador no combate. O ganhador tem direito de fazer o saque no inventário dos perdedores e das pastas de TCG deles (enquanto o ganhador tiver espaço no inventário dele, ele podem pegar quantos itens quiser dos inventários dos perdedores). Os perdedores perdem seus itens que foram saqueados pelo ganhador, perdem 3 pontos de objetivo por padrão, vão para zona de spawn escolhida no começo do jogo (antes do jogo iniciar, cada jogador decide qual zona ele quer ser o seu ponto inicial de spawn) e recebem a benção do spawn (caso já tenha um outro jogador na zona de spawn do perdedor, o jogador ou jogadores que estiverem lá não podem ataca-lo como forma de ser justo). Seguindo o fluxo de caso nenhum jogador queira se enfrentar quando se encontrarem na mesma zona, cada jogador executa suas 3 ações por padrão (seguindo o mesmo fluxo do modo campanha).
-
-No modo Clássico, que seria o modo desbravadores só que cooperativo, para ganhar uma dimensão, todos os jogadores precisam cumprir seus respectivos objetivos para todos ganharem. Antes de começar a partida, os jogadores escolhem uma dimensão qualquer para se aventurar. Todas as recompensas conquistadas não são levadas para outra dimensão. É como se fosse apenas um run mais curta para ser jogada rapidamente com seus amigos ou solo para testar a dimensão. Nesse modo, é possível escolher qual coleção vai estar vigente nessa dimensão (é possível escolher manter apenas as cartas daquela dimensão ou escolher um ou mais coleções para estarem ativas nessa dimensão).
+Marcadores usados neste documento:
+- `==TODO==` → ponto ainda não definido.
+- `==REVISAR==` → ponto apontado para revisão do autor.
+- `==VALIDAR==` → interpretação feita na reorganização do documento que precisa de confirmação.
 
 ---
 
-# Levar em consideração (aspectos de gameplay e regras).
-
-**Atenção**: muitos conceitos estão sujeitos a mudar com tempo devido a novas ideias ou descobertas de problemas. Essa sessão apresenta as ideias básicas.
-
-- Organize as ideias como se fossem uma manual de regras da melhor forma possível (como um manual de jogo de tabuleiro) para seguir de guia para os jogadores conseguirem entender do que se trata o jogo.
-- O nome do jogo tem o "working title" como Misadventures.
-- Quando um jogador chega a zero pontos de vida, ele é nocauteado. Ele retorna para o ponto de spawn dele com a vida cheia e perde seu próximo turno por padrão (se estiver jogando sozinho, ele não perde um turno).
-
-### O que são Atributos? ![(referência de imagem protótipo)](images/exemplos_prototipo_de_atributos.JPG)
-Cada jogador tem um deck de atributos próprio contendo exatas 60 cartas. A mecânica de deck building desse jogo envolve construir um deck de atributos. 
-o sistema possui 9 atributos fundamentais, organizados em três categorias: físicos, mental social, e metafísicos. 
-- **Atributos físicos**:
-**Força**
-Representa a potência física e a capacidade do personagem de exercer força muscular. Está relacionada à capacidade de levantar, empurrar, carregar, quebrar objetos e causar impacto físico.
-**Destreza**
-Representa a agilidade, a coordenação motora e a precisão dos movimentos. Está relacionada à capacidade de realizar movimentos rápidos, esquivar-se, manter o equilíbrio, manipular objetos com precisão e utilizar armas que exigem técnica.
-**Resistência**  
- Representa a capacidade física de suportar esforços, danos e condições adversas. Está relacionada à vitalidade, tolerância à dor, fôlego e capacidade de continuar lutando mesmo sob desgaste físico. 
-
- - **Atributos mental social**  
-**Inteligência**  
- Representa a capacidade de raciocínio, aprendizado e compreensão lógica. Está relacionada ao conhecimento, memória, resolução de problemas, investigação, planejamento e domínio de assuntos complexos.
-**Sabedoria**
-Representa a percepção, a intuição e a capacidade de interpretar situações. Está relacionada ao discernimento, experiência, leitura do ambiente, reconhecimento de padrões e tomada de decisões sensatas.
-**Carisma**  
- Representa a personalidade e a capacidade de influenciar outras pessoas. Está relacionado à persuasão, liderança, negociação, intimidação, eloquência e capacidade de conquistar a confiança ou o respeito de alguém. 
-
-- **Atributos metafísicos**
-**Espírito**
-Representa a força interior, a determinação e a capacidade de exercer ou resistir a influências sobrenaturais. Está relacionado à força de vontade, concentração, energia espiritual, resistência a possessões e domínio de poderes místicos.  
- **Sanidade**
-Representa a estabilidade mental e a capacidade de preservar a lucidez diante de experiências psicologicamente perturbadoras. Está relacionada à resistência ao horror, ao desconhecido, a entidades incompreensíveis e a fenômenos que desafiam a percepção da realidade.  
- **Sorte**  
- Representa a influência do acaso sobre os acontecimentos que envolvem o personagem. Está relacionada à probabilidade de encontrar oportunidades, evitar situações desfavoráveis, obter resultados inesperados e se beneficiar de circunstâncias imprevisíveis.
-
-**Obs**: Distinções entre atributos: Alguns atributos possuem conceitos próximos, mas representam capacidades diferentes.
-**Força vs. Resistência**: - **Força:** capacidade de exercer potência física. - **Resistência:** capacidade de suportar esforço e danos.  
- **Inteligência vs. Sabedoria**: - **Inteligência:** capacidade de adquirir e processar conhecimento. - **Sabedoria:** capacidade de interpretar situações e aplicar discernimento.
-**Espírito vs. Sanidade**: - **Espírito:** força interior para resistir a influências externas e sobrenaturais. - **Sanidade:** capacidade de preservar a lucidez diante de experiências perturbadoras.
-**Carisma vs. Espírito**: - **Carisma:** capacidade de influenciar outras pessoas. - **Espírito:** capacidade de sustentar a própria vontade diante de influências externas.
-
-- Observações sobre o sistema de atributos: Espírito e Sanidade não precisam ser atributos exclusivos de personagens mágicos. Um guerreiro pode possuir Espírito elevado devido à sua determinação, enquanto um explorador pode apresentar Sanidade elevada por sua capacidade de lidar com situações extremas. Essa abordagem permite que todos os atributos sejam relevantes para diferentes classes, mesmo que algumas possuam maior afinidade com determinados atributos.
-- Atributos são sub-dividos em categorias "**Básico**", "**Sinérgico**" e "**Aprimorado**":
-  - **Atributo Básico** tem valor 1 para o atributo da carta (atributo Básico podem ter infinitas cópias no deck).
-  - **Atributo Sinérgico** são atributos que podem valer 2 ou até 4 atributos diferentes. Por exemplo, uma carta de atributo que vale por 1 de carisma e 1 de sabedoria; outro exemplo seria uma carta de atributo pode valer por 1 de resistência, 1 de destreza e 1 de sorte; assim por diante. Atributo Sinérgico só podem ter no máximo 4 cópias daquela mesma carta.
-  - **Atributo Aprimorado** são parecidos com o atributo Básico com a exceção que eles possuem um efeito. Atributo Aprimorado só podem ter no máximo 4 cópias daquela mesma carta.
-
-### O que são zonas?
-
-Zonas são cartas de lugares que compõe o mapa de uma dimensão. Zonas possuem um tipo que é o local. Aqui estão algumas categorias de zonas possíveis das dimensões e seus repectivos locais (lembrando que em outras dimensões podem ter zonas específicas e diferentes) ![(referência de imagem protótipo)](images/prototipo_de_zonas.JPG):
-  - Zona **montanhosa**. Possíveis locais: Montanhas, colinas, vales, picos, cordilheiras, etc.
-  - Zona **florestal**. Possíveis locais: Florestas, bosques, matas, selvas, etc.
-  - Zona **costeira**. Possíveis locais: Praias, falésias, enseadas, litoral, Portos, docas, ancoradouros, etc.
-  - Zona **lacustre**. Possíveis locais: Lagos, lagoas, margens, áreas alagadas, etc.
-  - Zona **pantanosa**. Possíveis locais: Pântanos, brejos, manguezais, charcos, etc.
-  - Zona **campestre**. Possíveis locais: Campos, pradarias, pastagens, planícies, etc.
-  - Zona **desértica**. Possíveis locais: Desertos, dunas, oásis, terrenos áridos, etc.
-  - Zona **vulcânica**. Possíveis locais: Vulcões, crateras, campos de lava, etc.
-  - Zona **fluvial**. Possíveis locais: Rios, riachos, cachoeiras, corredeiras, etc.
-  - Zona **subterrânea**. Possíveis locais: Cavernas, grutas, túneis, minas, abismos, etc.
-  - Zona **urbana**. Possíveis locais: Cidades, metrópoles, etc.
-  - Zona **rural**. Possíveis locais: Fazendas, plantações etc.
-  - Zona **habitada**. Possíveis locais: Vilas, aldeias, povoados, assentamentos, Acampamentos, etc.
-  - Zona **fortificada**. Possíveis locais: Castelos, fortalezas, cidadelas, muralhas, etc.
-  - Zona **religiosa**. Possíveis locais: Templos, santuários, monastérios, etc.
-  - Zona **industrial**. Possíveis locais: Fábricas, oficinas, complexos industriais.
-- As zonas da dimensão possuem ações dentro delas. Nem todas as ações estão presentes em todas as zonas. Por exemplo, uma zona da dimensão pode ter uma 5 ações possíveis que o jogador pode fazer dentro dela, outra zona pode ter apenas uma ação possível de ser executada nela. As ações das zonas consomem energia. Dependendo da ação, mais energia é necessária para executa-la. Algumas ações são exclusivas de certas zonas, mas existem ações que podem ser feitas em mais de uma zona diferente. Por exemplo, uma zona de cidade pode ter as ações de "iniciar evento", "ir no ferreiro", "ir no mercado" e "ir ao hotel". Cada ação interage diferente com o jogo. Porém, em um outra cidade, pode ser que tenha apenas as ações "iniciar evento" e "ir no mercado". Essas ações limitam o que o jogador pode fazer dentro daquela ação e faz com que o jogador tenha que pensar para onde ir na dimensão para conseguir cumprir objetivos pessoais seus ou conseguir algum item, serviço ou outra coisa. Segue uma lista de ações padrões possíveis de existirem na zona em que o jogador esta e pode ser executadas:
-    - **Iniciar evento**: enfrentando eventos podem te dar recompensas se conseguir resolver com sucesso ou te dar debuffs e penalidades se falhar ao resolve-lo. Mecâncias de TCG acontecem principalmente nesta ação.
-    - **Usar cofre**: qualquer tipo de recurso que o jogador não quiser usar durante a aventura podem ser guardados dentro dentro dele. Para facilitar a jogabilidade, os itens guardados em um cofre podem ser acessados de qualquer lugar desde que tenha um cofre na zona também (o cofre esta atrelado ao jogador e, inclusive, o jogador pode acessar os mesmos itens de diferentes dimensões).
-    - **Recuperar**: o jogador recebe 3 pontos de vida por padrão e escolhe entre:  
-      - Comprar cartas do deck de atributos até ter sete cartas na mão.
-      - Reembaralhar sua mão no deck de atributos. 
-      - Reembaralhar as cartas da pilha de descarte de atributos no deck de atributos.
-    - **Pegar/Continuar/Finalizar missão X**: Em algumas zonas, você pode aceitar fazer missões para conseguir recompensas. Algumas missões envolvem recolher itens, falar com algum NPC, etc. Um jogador só pode completar a mesma missão uma vez. Uma vez a missão completada, ela não pode ser repetida por aquele jogador. Caso você chegue em uma zona que tem uma parte da missão que você tem, você interage para continuar com a missão ou finalizá-la. Dessa forma, você ganha a recompensa daquela missão.
-    - **Preparar**: Mexer na build do seu deck de atributos (usando apenas as cartas presentes na pasta de TCG do jogador), trocar itens de equipamento com os que estão no inventário e usar recursos.
-    - **Pegar/Continuar/Finalizar objetivo X**: Somente presente no modo desbravadores. Seria uma missão. Ao cumpri-la, o jogador recebe pontos de objetivo de acordo com a carta de objetivo. Esta ação não consome pontos de ação.
-    - **Negociar**: Jogadores na mesma zona podem trocar itens que estão em seus respectivos inventários. Esta ação na gasta pontos de ação de nenhum dos jogadores envolvido na negociação.
-    - **Iniciar raide**: algumas zonas possuem uma ou mais raides (dungeons ou instâncias, use o termo que achar melhor). Ao iniciar uma raide, o jogador não pode executar mais nenhuma ação. As raides podem ser feitas em grupo ou solo. Para fazer uma raide em grupo, um jogador gasta seu ponto de ação para iniciar a raide e, se tiver mais jogadores naquela mesma zona, eles podem querer ou não se juntarem a raide.
-    - **Ir no Ferreiro**: refinar, encantar, criar e consertar equipamentos.
-    - **Ir ao Mercado**: compra e venda de itens, cartas e boosters.    
-    - **Salvar ponto de Respawn**: o jogador salva seu ponto de respawn na zona em que esta. Quando for nocauteado em combate, ele vai ser teletransportado para a zona em que salvou seu ponto de respawn.
-- As zonas podem possuir nenhum, um ou vários efeitos. Por exemplo, na zona X, a classe mago tem mais dano em combate; na zona Y, os jogadores que forem nocauteados em um evento ou combate, perdem todas suas moedas de ouro. Na zona Z, equipamentos do tipo armadura tem seu efeitos anulados, etc.
-- As zonas possuem seus repectivos decks separados por tipo da zona. Os decks são de eventos daquela zona, deck de recompensas daquela zona e deck de itens possíveis de encontrar naquela zona. Zonas diferentes podem possuir a mesma carta no deck de eventos, recompensas e itens.
-
-### Classes e especialização
-Existe uma trilha de progressão de classe no jogo. Existem a classe primária (classe que o jogador escolhe no começo do jogo), especialização (uma sub classe dentro das escolhas possíveis da classe primária) e multi-classe (ter mais de uma classe primária). Classes primárias travam seu deck de atributos com uma quantidade e/ou combinação de um ou mais atributos específicos para serem daquela classe. Especializações dão um ou mais efeitos e também você trava seu deck de atributos com uma quantidade e/ou combinação de um ou mais atributos específicos. Classes que existem no jogo (lembrando que em outras dimensões podem ter classes exclusivas):
-
-- Classe primária: **Guerreiro** - **Atributos essenciais:** Força, Resistência.
-  - **Cavaleiro** => Defesa, armaduras e disciplina.
-    - Atributos adicionais: Sabedoria (disciplina e percepção tática).
-    - Reforço: Resistência (capacidade defensiva e sobrevivência).
-  - **Bárbaro** => Força bruta e fúria.
-    - Atributos adicionais: Espírito (controle e manifestação da fúria).
-    - Reforço: Força e Resistência (potência física e durabilidade).
-  - **Espadachim** => Técnica e precisão com espadas.
-    - Atributos adicionais: Destreza (precisão, velocidade e coordenação).
-    - Reforço: Força (potência dos golpes).
-  - **Gladiador** => Combate agressivo e resistência.
-    - Atributos adicionais: Carisma (presença e intimidação).
-    - Reforço: Força e Resistência (agressividade e capacidade de suportar danos).
-- Classe primária: **Mago** - **Atributos essenciais:** Inteligência, Espírito.
-  - **Necromante** => Manipulação da morte e dos mortos-vivos.
-    - Atributos adicionais: Sanidade (contato com forças perturbadoras e conhecimento sobre a morte).
-    - Reforço: Inteligência e Espírito (domínio e manipulação de energias sobrenaturais).
-  - **Ilusionista** => Ilusões e manipulação da percepção.
-    - Atributos adicionais: Carisma (manipulação da percepção e influência sobre outras pessoas).
-    - Reforço: Inteligência (complexidade e precisão das ilusões).
-  - **Invocador** => Conjuração de criaturas e entidades.
-    - Atributos adicionais: Sabedoria (compreensão e percepção de entidades).
-    - Reforço: Inteligência e Espírito (complexidade das invocações e controle das entidades).
-  - **Elementalista** => Manipulação dos elementos.
-    - Atributos adicionais: Sabedoria (compreensão das forças naturais).
-    - Reforço: Inteligência e Espírito (controle e intensidade das manifestações elementais).
-- Classe primária: **Ladino** - **Atributos essenciais:** Destreza.
-  - **Ladrão** => Furtividade, furtos e arrombamentos.
-    - Atributos adicionais: Inteligência (mecanismos, fechaduras e armadilhas).
-    - Reforço: Destreza (agilidade e precisão).
-  - **Assassino** => Eliminação precisa de alvos.
-    - Atributos adicionais: Inteligência (planejamento e identificação de vulnerabilidades).
-    - Reforço: Destreza e Sorte (precisão, oportunidade e execução).
-  - **Espião** => Disfarces, espionagem e coleta de informações.
-    - Atributos adicionais: Carisma (persuasão, disfarces e interação social).
-    - Reforço: Destreza (furtividade e movimentação).
-  - **Trapaceiro** => Enganação e artimanhas.
-    - Atributos adicionais: Carisma (persuasão e manipulação).
-    - Reforço: Destreza e Sorte (improvisação e execução de artimanhas).
-- Classe primária: **Clérigo** - **Atributos essenciais:** Sabedoria, Espírito.
-  - **Sacerdote** => Cura, bênçãos e suporte divino.
-    - Atributos adicionais: Carisma (liderança espiritual e inspiração).
-    - Reforço: Sabedoria e Espírito (poderes divinos e capacidade de cura).
-  - **Exorcista** => Combate a espíritos e entidades malignas.
-    - Atributos adicionais: Sanidade (resistência psicológica diante de entidades perturbadoras).
-    - Reforço: Espírito (resistência e enfrentamento de forças sobrenaturais).
-  - **Inquisidor** => Investigação, julgamento e combate a hereges.
-    - Atributos adicionais: Inteligência (investigação e raciocínio).
-    - Reforço: Sabedoria e Espírito (discernimento e convicção).
-  - **Oráculo** => Profecias, visões e conhecimento divino.
-    - Atributos adicionais: Sanidade (capacidade de suportar visões perturbadoras).
-    - Reforço: Sabedoria e Espírito (intuição e conexão espiritual).
-- Classe primária: **Patrulheiro** - **Atributos essenciais:** Destreza, Sabedoria.
-  - **Caçador** => Rastreamento e caça de criaturas.
-    - Atributos adicionais: Resistência (perseguições prolongadas e sobrevivência).
-    - Reforço: Destreza e Sabedoria (precisão e identificação de alvos).
-  - **Arqueiro** => Maestria com arcos e armas de longo alcance.
-    - Atributos adicionais: Força (potência dos disparos).
-    - Reforço: Destreza (precisão e coordenação).
-  - **Explorador** => Sobrevivência e exploração de territórios.
-    - Atributos adicionais: Resistência (esforço físico e adaptação a ambientes hostis).
-    - Reforço: Sabedoria (percepção e orientação).
-  - **Rastreador** => Identificação e perseguição de rastros.
-    - Atributos adicionais: Inteligência (interpretação de evidências e identificação de padrões).
-    - Reforço: Sabedoria e Destreza (percepção e movimentação).
-- Classe primária: **Druida** - **Atributos essenciais:** Sabedoria, Espírito.
-  - **Metamorfo** => Transformação em animais e criaturas.
-    - Atributos adicionais: Resistência (adaptação física e capacidade de suportar transformações).
-    - Reforço: Espírito (controle das transformações).
-  - **Guardião Natural** => Proteção da natureza.
-    - Atributos adicionais: Resistência (proteção e preservação de ambientes naturais).
-    - Reforço: Sabedoria e Espírito (conexão e domínio das forças naturais).
-  - **Xamã** => Comunicação com espíritos e ancestrais.
-    - Atributos adicionais: Sanidade (capacidade de suportar contatos sobrenaturais).
-    - Reforço: Sabedoria e Espírito (percepção e conexão espiritual).
-  - **Naturalista** => Conhecimento da fauna, flora e ecossistemas.
-    - Atributos adicionais: Inteligência (conhecimento científico e identificação de espécies).
-    - Reforço: Sabedoria (percepção e compreensão da natureza).
-- Classe primária: **Monge** - **Atributos essenciais:** Destreza, Espírito.
-  - **Mestre Marcial** => Maestria em artes marciais. - Atributos adicionais: Força (potência dos golpes). - Reforço: Destreza e Espírito (precisão e controle corporal).
-    **Asceta** => Disciplina física e espiritual. - Atributos adicionais: Resistência (privação, esforço e tolerância física). - Reforço: Espírito (autocontrole e disciplina).
-    **Mestre das Sombras** => Técnicas furtivas e movimentos ocultos. - Atributos adicionais: Sorte (oportunidades e circunstâncias favoráveis). - Reforço: Destreza (agilidade e furtividade).
-    **Punho Elemental** => Artes marciais combinadas com energia elemental. - Atributos adicionais: Sabedoria (compreensão e percepção das forças elementais). - Reforço: Espírito e Destreza (canalização de energia e precisão dos movimentos).
-- Classe primária: **Bardo** - **Atributos essenciais:** Carisma.
-  - **Menestrel** => Música e entretenimento.
-    - Atributos adicionais: Destreza (execução e coordenação musical).
-    - Reforço: Carisma (expressividade e capacidade de entreter).
-  - **Trovador** => Narrativas, inspiração e tradição oral.
-    - Atributos adicionais: Inteligência (conhecimento histórico e cultural).
-    - Reforço: Carisma (comunicação e capacidade de inspirar).
-  - **Diplomata** => Persuasão, negociação e influência.
-    - Atributos adicionais: Inteligência (argumentação e estratégia).
-    - Reforço: Carisma (persuasão e influência social).
-  - **Artista** => Expressão artística e criatividade.
-    - Atributos adicionais: Inteligência (criatividade e elaboração artística).
-    - Reforço: Carisma (expressividade e impacto artístico).
-- Classe primária: **Alquimista** - **Atributos essenciais:** Inteligência.
-  - **Transmutador** => Transformação da matéria.
-    - Atributos adicionais: Espírito (manipulação de energias necessárias à transmutação).
-    - Reforço: Inteligência (conhecimento e precisão dos processos).
-  - **Toxicologista** => Venenos, toxinas e substâncias.
-    - Atributos adicionais: Destreza (manipulação precisa de substâncias).
-    - Reforço: Inteligência (conhecimento químico e preparação de compostos).
-  - **Bombardeiro** => Explosivos e dispositivos químicos.
-    - Atributos adicionais: Destreza (manuseio e precisão no lançamento).
-    - Reforço: Inteligência (preparação e conhecimento dos compostos).
-  - **Farmacêutico** => Poções, remédios e preparados.
-    - Atributos adicionais: Sabedoria (identificação de propriedades e aplicação adequada de preparados).
-    - Reforço: Inteligência (conhecimento e elaboração de fórmulas).
-- Classe primária: **Artífice** - **Atributos essenciais:** Inteligência.
-  - **Engenhoqueiro** => Mecanismos e dispositivos.
-    - Atributos adicionais: Destreza (montagem e manipulação de mecanismos).
-    - Reforço: Inteligência (compreensão e desenvolvimento de dispositivos).
-  - **Inventor** => Criação de ferramentas e máquinas.
-    - Atributos adicionais: Sorte (experimentação e resultados inesperados).
-    - Reforço: Inteligência (criatividade e desenvolvimento de invenções).
-  - **Construtor** => Construções e estruturas especiais.
-    - Atributos adicionais: Força (manipulação de materiais e trabalho físico).
-    - Reforço: Inteligência (planejamento e engenharia).
-  - **Ferreiro Arcano** => Criação e aprimoramento de equipamentos mágicos.
-    - Atributos adicionais: Espírito (manipulação e canalização de energias mágicas).
-    - Reforço: Inteligência (conhecimento técnico e mágico).
-- Classe primária: **Bruxo** - **Atributos essenciais:** Espírito, Inteligência.
-  - **Demonologista** => Pactos com demônios e entidades infernais.
-    - Atributos adicionais: Sanidade (exposição a entidades e forças infernais).
-    - Reforço: Espírito (controle e manutenção dos pactos).
-  - **Ocultista** => Conhecimentos proibidos e rituais.
-    - Atributos adicionais: Sanidade (contato com conhecimentos perturbadores).
-    - Reforço: Inteligência e Espírito (compreensão e execução de rituais).
-  - **Pactário** => Vínculos sobrenaturais e contratos.
-    - Atributos adicionais: Carisma (negociação e estabelecimento de contratos).
-    - Reforço: Espírito (manutenção e controle dos vínculos).
-  - **Maldito** => Maldições, corrupção e debilitamento.
-    - Atributos adicionais: Sanidade (contato com forças corruptoras).
-    - Reforço: Espírito (manipulação e imposição de maldições).
-  - **Abissalista** => Poderes de entidades cósmicas e abissais.
-    - Atributos adicionais: Sanidade (exposição a entidades incompreensíveis).
-    - Reforço: Espírito e Inteligência (canalização e compreensão de poderes abissais).
-- Classe primária: **Feiticeiro** - **Atributos essenciais:** Espírito, Carisma.
-  - **Dracônico** => Herança de dragões e poderes dracônicos.
-    - Atributos adicionais: Resistência (vigor e tolerância a poderes dracônicos).
-    - Reforço: Espírito (manifestação dos poderes herdados).
-  - **Elemental** => Afinidade natural com elementos.
-    - Atributos adicionais: Sabedoria (compreensão e percepção das forças elementais).
-    - Reforço: Espírito (manifestação e controle dos poderes elementais).
-  - **Celestial** => Poderes de origem divina ou celestial.
-    - Atributos adicionais: Sabedoria (discernimento e compreensão de forças divinas).
-    - Reforço: Espírito e Carisma (manifestação e expressão dos poderes celestiais).
-  - **Trevoso** => Poderes de origem demoníaca ou infernal.
-    - Atributos adicionais: Sanidade (exposição e adaptação a forças sombrias).
-    - Reforço: Espírito (controle e manifestação dos poderes infernais).
-
-- Os atributos essenciais representam a identidade mecânica da classe primária.
-- Os atributos adicionais complementam as especializações e podem introduzir novas possibilidades de habilidades, utilização de recursos, etc.
-- Os reforços representam uma concentração maior nos atributos essenciais da classe.
-- É necessário analisar e criar conceitos de quais classes e especializações são mais fáceis de fazer uma certa build específica. Pode ser que certas builds sejam exclusivas de certas classes e especializações.
-- É necessario analisar e pensar qual o principal conceito entre classes e especializações. Por exemplo: Um Feiticeiro Trevoso consegue recuperar cartas que estão no limbo; um Guerreiro Espadachim consegue comprar mais cartas do que outras classes e especializações; etc. Um conceito pode ou não ser exclusiva de uma classe ou especialização. Mais de uma classe e especialização podem compartilhar o mesmo conceito.
-- Uma especialização não precisa necessariamente possuir atributos adicionais.
-- Os atributos não devem funcionar como restrições absolutas. Personagens podem desenvolver capacidades fora de suas especialidades. 
-- Como conseguir a especialização da sua classe primária?:  Você não pode ter duas especializações iguais ??????????????? ==TODO==
-- Como ser multi-classe (pegar mais uma classe primária)?:  Você não pode ter duas vezes a mesma classe primária. ????????????? ==TODO==
-
-
-### O que são os eventos?
-
-Eventos precisam ser resolvidos pelos jogadores para conseguir recompensas. Existem alguns tipos de eventos:
-- **Aleatórios** ![(referência de imagem protótipo)](images/fluxo_de_eventos.JPG): quando o jogador escolhe a ação de "Iniciar evento", um carta de eventos é comprada do deck de eventos daquele tipo de zona específica e revelada para o jogador resolver. O evento possui um flavor text, título, requisitos de resolução, coisa boa (o que acontece se o jogador resolver o evento) e coisa ruim (o que acontece se o jogador não conseguir resolver o evento). O jogador não é obrigado a resolver o evento. Ele pode simplesmente aceitar a coisa ruim. Nem sempre o evento te da alguma coisa ao resolve-lo com sucesso. As vezes, resolver o evento com sucesso só previne o jogador de receber a coisa ruim. A coisa boa e a coisa ruim ativam efeitos e devem ser ativados por padrão. Para tentar resolver um evento, existe um sistema de resolução. Os requisitos para resolução de eventos envolvem: 
-  - Combinação de **atributos específicos** ou **apenas um atributo** específico ou um **atributo genérico**. 
-  - **Doar vida**.
-  - **Descarte de carta de atributo**.
-  - **Abdicar de equipamento**.
-  - **Pagar ouro**.
-  - **Oferecer recurso do inventário**.
-  - **Manipulação de cartas**.
-  - Uma combinação de dois ou mais requisitos listados acima.
-Ao resolver o evento com sucesso, as cartas requisitos de atributo usadas para resolver o evento vão para uma pilha de descarte de cartas de atributo do jogador. Cartas que não são de atributos usadas para resolver um evento vão para um lixo comum genérico usados por todos os jogadores (chamado de **limbo**). Após a carta de evento ser resolvida ou não pelo jogador, ela vai para a pilha de descarte de cartas de eventos daquela zona específica. 
-O evento é dividido em fases: 
-- antecipação (antes da carta de evento ser revelada), 
-- encontro (o jogador resolve o evento ou não),
-- êxito (após o evento ser resolvido com sucesso)
-- revés (após o evento não ser resolvido). 
-Caso o jogador tenha resolvido com sucesso o evento, ele entra na fase de êxito e recebe os benefícios, buff, itens e/ou recompensas descritas nas carta (ou não, pois resolver com sucesso alguns eventos só previnem o jogador de não receber a coisa ruim). Caso o jogador não tenha resolvido o evento, ele entra na fase de revés e sofre as penalidades descritas na carta. Ao finalizar o evento, após a fase de êxito e revés, imediatamente o jogador compra a mesma quantidade de cartas de atributos jogadas na fase resolução. Exemplo 1: o jogador gastou 4 cartas da mão para resolver um evento e consegue; as cartas 4 cartas de atributos jogadas vão para a pilha de descarte de atributos; a fase de êxito se encerra; o jogador compra 4 cartas do seu deck de atributos. Exemplo 2: o jogador tentou resolver um evento e gastou 2 cartas da mão para tentar resolver; percebe que não vai conseguir e tentar fugir; falha no teste de fuga, então vai ter que sofrer as penalidades; encerra fase de revés; compra 2 cartas do deck de atributos. Exemplo 3: o jogador não quer tentar resolver o evento (gastar cartas na mão por algum motivo); tenta fugir e falha; sofre as penalidades; encerra fase de revés; o jogador não compra cartas do deck de atributo porque nenhuma carta de atributo foi utilizada para resolver o evento. Exemplo 4: o jogador gasta 5 cartas da mão para tentar resolver o evento e percebe que não vai conseguir resolver o evento; faz o teste de fuga e consegue passar; não sofre as penalidades; a fase de encontro se encerra; o jogador não tem direito de comprar cartas de atributo porque ele fugiu com sucesso do evento.
-- **Combate**: o jogador enfrentará um inimigo. Ao derrota-lo, o jogador recebe as recompensas devidas descritas na carta do oponente, segue para executar sua próxima ação se tiver ainda pontos de ação. Se o jogador perder no combate (pontos de vida chega a 0), o jogador é nocauteado, toma as penalidades descritas na carta do inimigo (se tiver alguma), o jogador retorna para o ponto de spawn e perde um turno e as ações restantes se tivesse alguma (o jogador não perde um turno caso esteja jogando no modo campanha sozinho). Se um jogador inicia um evento de combate e naquela mesma zona tem outros jogadores, o jogador que iniciou o combate pode recrutar os outros jogadores para ajuda-lo (não há limite de companheiros que podem te ajudar num combate). Porém, caso o evento de combate seja resolvido com sucesso, apenas o jogador que iniciou o combate recebe as recompensas. Os outros jogadores que ajudaram no combate não perdem seus pontos de ação em seus respectivos turnos. No modo desbravadores, quando o jogador que iniciou um evento de combate quiser pedir ajuda para outros jogadores naquela mesma zona, os outros jogadores poderão negociar como dividir a recompensa antes de entrar no combate (os outros jogadores não são obrigados a pedir uma parte da recompensa se não quiserem).
-
-### O que são missões?
-
-Missões podem ser encontradas em zonas. Nem todas as zonas possuem missões. Um jogador não pode repetir a mesma missão (as missões são concluídas e não podem ser cumpridas novamente). Missões não tem obrigatoriedade de execução. Se um jogador pegar uma missão e decidir não cumpri-la para focar em outras coisas, nada acontece. A missão fica em aberto até que o jogador decida cumpri-la. Ao concluir uma missão, o jogador pode receber recompensas.
-
-### O que é uma raide?
-
-Raide seria uma "sequência determinada de eventos que acontecem uma após a outra" e acontecem somente na zona em que foi iniciada. Um jogador pode iniciar uma raide numa zona sozinho ou pode chamar jogadores que estiverem nessa mesma zona para participar junto com eles (os jogadores que resolveram participar junto não tem seus pontos de ação consumido nem turnos pulados). Quando um jogador iniciar uma raide (todos os pontos de ação do jogador que iniciou a raide são consumidos). Os eventos que acontecem dentro de uma raide são específicas e não se misturam com o deck de eventos da zona. Os eventos da raide contam uma história sobre aquela raide (por isso é uma sequência de eventos determinados e não se misturam com o deck de eventos daquela zona). Esses eventos que acontecem dentro da raide, como pertencem a uma história, é necessário pegar o manual (guia do jogo) para encontrar a história respectiva (vai existir um livro físico com todas as raides já que são muitas coisas que acontecem numa raide). Ao concluir uma raide, ela pode dar uma ou mais recompensas. Raides são eventos muito difíceis e extensos. Ou seja, a raide pode dar recompensas muito boas e fortes. Um aspecto importante de raides é que eles lembram um um jogo-livro: uma modalidade de livro interativo em que o leitor não apenas acompanha uma história, mas também participa ativamente dela, tomando decisões que influenciam o desenvolvimento da narrativa. A história não precisa ser linear. Dependendo das decisões do jogador, ele pode explorar caminhos diferentes, encontrar personagens distintos, enfrentar desafios, adquirir itens, desenvolver habilidades e até chegar a finais completamente diferentes. É possível repetir a mesma raide várias vezes para conseguir diferentes finais, explorar diversos caminhos diferentes dentro daquela raid para conseguir encontrar recompensas diferentes. Porém, para repetir a mesma raid de novo é preciso esperar o cooldown da raid descrito na carta dela (por exemplo, esperar 3 turnos; ter um recurso X no inventário; etc).
-
-### O que é o teste de fuga?
-
-O teste de fuga acontece durante um evento aleatório ou um evento de combate. O jogador que quer fugir lança um D20. Por padrão, para fugir de um evento, tem que tirar um número maior que 10. Alguns eventos e combates podem ter um valor mínimo de fuga específicos. Efeitos do jogo podem causar com que o dado lançado pelo jogador ganhe ou perca valor. O mesmo vale para o valor mínimo de fuga do evento. Não é possível fugir no modo X1 do jogo, mas, o jogador pode só desistir do combate.
-
-### O que são recursos?
-
-São equipamentos e itens (mais recursos podem ser adicionados em futuras atualizações). Eles possuem efeitos e podem ajudar o jogador.
-- **Equipamentos**: são recursos que o jogador usa a todo momento. As cartas de equipamento ficam posicionados na frente do jogador para mostrar que ele esta com eles equipados. Equipamentos não vão para a mão do jogador. Equipamentos podem ir no inventário. O jogador pode ter alguns equipamentos no inventário e trocar pelos o que ele esta usando por motivos de estratégia, efeitos, etc. Os equipamentos são divididos nas categorias cabeça, tronco, inferior, calçado, capa, arma e escudo. O jogador pode usar 1 equipamento de cada categoria. Alguns equipamentos de cada categoria são:
-    - **Cabeça** => Capacetes, tiaras mágicas, capuzes, coroas, etc.
-    - **Tronco** => Peitorais de metal, cotas de malha, túnicas de tecido, corpetes de couro, etc.
-    - **Inferior** => Calças, grevas de armadura, saias de combate, etc.
-    - **Calçado** => Botas de ferro, sapatos leves de couro, sandálias encantadas, cintos, pochetes, etc.
-    - **Capa** => Capa, Manto, etc.
-    - **Armas** (algumas armas não permitem o jogador usar escudo. Nessa cenário, o jogador fica com um slot a menos.) => Adagas, punhais, facas, Espadas curtas, espadas longas, sabres, cimitarras, katanas, Clavas, maças, martelos de guerra, manguais, porretes, Lanças, alabardas, tridentes, foices, espadas de duas mãos (montantes), machados de batalha grandes , martelos pesados, Manoplas reforçadas, garras, soco-inglês, Arcos, Bestas (Crossbows), Facas de arremesso, machadinhas, azagaias, shurikens, dardos, Pistolas, mosquetes, rifles, bacamartes, Cajados (Staves), Varinhas (Wands), Tomos, Grimórios, Cruzes, amuletos, talismãs, orbes mágicos, etc. 
-    - **Escudo** => Escudo Leve de Madeira ou Metal, Pequeno; Escudo Pesado; Escudos de Corpo / Pavês; Escudos Especiais (Ex: Escudo Ornamental, Escudo Concha ou Escudo Táurico); etc.
-- **Itens** (podem existir mais categorias em futuras atualizações e ter categorias de itens exclusivos por dimensão e/ou zona):
-    - **Consumíveis** (recuperar vida, remover status negativos, obter status positivos e ganhar efeitos) => Poções,Elixires, Alimentos, Bebidas, Pergaminhos, Bombas, Remédios, etc.
-    - Materiais (Materiais utilizados para fabricação, aprimoramento, ou outras atividades) => Minérios, Gemas, Ervas, Tecidos, Couros, Componentes, Peças, etc.
-    - **Relíquias** (Objetos especiais, geralmente raros, mágicos ou dotados de propriedades extraordinárias) => Artefatos, Amuletos, Talismãs, Objetos amaldiçoados, Objetos lendários, etc.
-    - **Ferramentas** (Objetos utilizados para executar atividades específicas, interagir com o ambiente ou superar obstáculos) => Ferramentas de mineração, Ferramentas de coleta, Instrumentos, Utensílios, Equipamentos de exploração, Dispositivos.
-    - **Tesouros** (Objetos cujo principal propósito é representar valor econômico ou servir como recompensa) => Moedas, Joias, Pedras preciosas, Objetos valiosos, Antiguidades, etc.
-    - **Documentos** (Objetos que carregam informações, registros ou conhecimentos) => Mapas, Livros, Cartas, Manuscritos, Registros, Contratos, etc.
-    - **Objetos especiais** (Itens cuja finalidade está relacionada a eventos, progressão ou situações específicas do jogo) => pode ser qualquer coisa.
-Sobre os equipamentos e armas, eles possuem habilidades. Habilidades podem causar dano no oponente ou ativar algum efeito. Diferentes armas de diferentes categorias podem ter mesmas habilidades. O mesmo vale para equipamentos. 
-
-Quebra de equipamentos: devido a efeitos, habilidades ou outros fatores, seus equipamentos podem quebrar. Você precisa levar ao ferreiro para reparar-la ou usar um efeito/habilidade/recurso para reparar-la. Classes e especializações possuem a capacidade de reparar equipamentos.
-
-### Mercado (compra de boosters, cartas, equipamentos, itens, etc)
-
-Durante uma aventura em uma dimensão, é possível encontrar mercados em certas zonas. O jogador pode vender e comprar recursos. Mercados em zonas diferentes podem oferecer recursos iguais e recursos exclusivos, ou seja, o jogador precisa "explorar" diferentes mercados em diferentes zona para conseguir encontrar recursos específicos para comprar. Caso o jogador queira vender um recurso, todos os mercados vão oferecer a mesma quantia de moedas de ouro (preço tabelado). Não existe um mercado que pague mais pelo mesmo recurso. Porém, existem efeitos, habilidades e até recursos que o jogador tiver podem fazer com que o mercado oferça mais moeda de ouro pelos recursos sendo vendidos. 
-
-Por padrão, cada dimensão representa uma coleção nova de cartas (atributos, recursos, zonas, etc). Todas as cartas presentes em uma coleção nova podem ser adquiridas dentro da dimensão em que ela foi lançada. Possívelmente, pode haver um reprint de uma coleção já lançada em uma dimensão anterior para uma nova dimensão completamente diferente. Por padrão, existe 1 coleção ativa por dimensão. Mas, pode ser que uma coleção extenda seu período ativo por até três dimensões seguintes por exemplo. 
-
-As coleções tem um comportamento parecido com o sistema de lançamento de coleções de TCG (Yugioh, MTG, Pokemon, etc). As cartas que vem dentro do booster (para o jogador) são cartas novas de recursos e atributos. Para o jogo (dimensão), novas zonas são liberadas, com possíveis ações exclusivas, eventos novos, raides novas, etc. O jogador pode comprar boosters das coleções vigentes dentro daquela dimensão. O preço de compra de booster é sempre tabelado independente do mercado dentro da dimensão. Mas, existem efeitos, buffs, habilidades, etc que podem fazer com que o mercado ofereça um desconto para o jogador. É possível comprar cartas "single" (uma cópia de uma carta específica). "Singles" são cartas de recurso, itens, equipamentos, etc que o jogador leva no seu inventário, pode equipar (singles de equipamento), deck de atributos (singles de atributo), etc. Singles são negociados no mercado. Porém, é aleatório em qual mercado ele vai estar disponível. Exemplo: um single da carta X tem 4 cópias disponíveis em um mercado numa zona A; caso todas as cópias dessa carta sejam vendidas nesse mercado, ele não vai estar mais disponível ali; em um outro mercado em uma zona B, "surgem" mais 2 cópias da carta X para serem vendidas; quando todas os mercados em todas as zonas daquela dimensão já tiverem vendido no mínimo 1 single da carta X, nenhum mercado mais pode vender esse single. Isso faz com que o jogadores explorem todos os mercado possíveis em toda a dimensão. Independente de quantos jogadores estejam jogando a partida (solo ou 2 jogadores ou mais), o sistema de mercado é "vivo". Óbviamente, nem todas as cartas das coleções vigentes vão estar disponível como singles devido a quantidade de cartas que podem circular e, provavelmente, nem daria tempo de jogo para circular todas as cartas. No mercado, sempre estará disponível ilimitadas cópias de boosters das coleções vigentes. Nem todo mercado vende single. Os singles ficam em uma vitrine dentro da loja de 4 slots por padrão. Quando uma carta sai da vitrine, outra carta aleatória das coleções vigentes entra no lugar. Mais de um mercado pode vender a mesma single de outros mercados. O mercado de single tem uma "lógica" própria de preços. Um single em um mercado pode estar mais caro ou mais barato em outros mercados. Cartas que oferecem mais vantagens, benefícios, efeitos, buffs, dano, defesa são mais caras. É necessário implementar uma lógica para calcular os preços de single. Em um cenário que todos as cartas de todas as coleções vigentes circularam, os singles começam a se repetir novamente. Independente da quantidade de jogadores jogando, é necessário implementar uma lógica de sistema de decaimento de singles nos mercados (como se houvessem NPCs comprando os singles). Dessa forma, o jogador ou jogadores precisam ficar atento aos mercados para não perder uma carta que precisam para seus decks. Além de venda de coisas e compra de cartas, os mercados vendem itens, recursos, equipamentos, etc para os jogadores. Não existe um limite de venda de um item, recurso, equipamento, etc específico. Algumas coisas como munição, poções, etc são comuns em todos os mercados pois são coisas essenciais.
-
-### Ferreiro (mecânica de refino, reparação de armas quebradas e criação de equipamentos)
-
-
-??? ==TODO==
-
-
-### Deck building
-Dentro do cofre, o jogador pode fazer todo o manuseio de deck building dele e de todas as cartas que ele já conseguiu de recursos e atributos. A ação de preparar que o jogador usa dentro de uma zona atua apenas sobre os itens que o jogador tem no seu inventário. O cofre guarda todas as coisas do jogador (recursos, itens, cartas de atributos, boosters, etc). No cofre, o jogador pode gerenciar seus decks, montar builds diferentes, colocar itens, cartas e recursos do inventário para dentro do cofre e vice-versa. O jogador tem um limite padrão de 10 slots de decks dentro do cofre (o jogador pode ter diversas deck builds diferentes). Cartas, itens, recursos, etc repetidos (mais de uma cópia/unidade) se empilham dentro do cofre e não tem limite por cada um. Porém, dentro do cofre cada carta, item, recursos, etc diferentes ocupam slots diferentes dentro do cofre. O jogador tem, por padrão, 30 slots dentro do cofre. Decks ocupam slots exclusivos dentro do cofre. Slots de decks são diferentes de slots de cartas, boosters, recursos, itens, etc.
-
-Lembrando que o deck de atributos deve conter exatas 60 cartas.
-
-Em zonas que não é possível usar a ação de cofre, o jogador sempre poderá usar a ação de **Preparar** descrita em uma sessão anterior. Todo jogador leva consigo uma pasta de TCG onde pode guardar até 20 unidades de cartas no total usadas para mexer na build do deck sem precisar mexer no cofre. A pasta de TCG não ocupa slot do inventário do jogador (o slot da pasta de TCG é exclusiva).
-
-
-### Como funciona o inventário?
-
-O inventário do jogador é como se fosse uma "segunda mão". Dependendo da classe que o jogador escolhe, a quantidade de slots disponíveis dentro do inventário muda. Classes que possuem mais força, por exemplo, vão ter mais slots de inventário do que classes que usam menos força. Por padrão, a maioria das classes possuem 10 slots no inventário. Durante eventos, raides, etc, o jogador pode usar coisas do inventário para ajuda-lo, desde que a coisa comportada no slot permita isso. Existem buffs, efeitos, itens, equipamentos, etc que permitem o jogador ter mais slots de inventário. Da mesma forma que, podem existir coisas que diminua o tamanho do inventário.
-
-
-### Como funciona a negociação?
-
-A negociação acontece entre dois jogadores numa mesma zona e não consome ponto de ação de nenhum jogador. Não há limite de coisas sendo negociadas entre os lados. Algumas zonas possuem efeito de não permitir negociação. Os jogadores envolvidos na negociação tem que concordar em iniciar uma negociação.
-
-
-### O que é o sistema de modificadores?
-
-Modificadores são os pontos que o jogador tem que afetam cálculos durante toda a partida e interações. Alguns modificadores são (podem haver mais modificadores no futuro):
-
-- **Ataque**: Usado principalmente em combates, porém, em alguns eventos aleatórios pode ser usado como requisito e em outros ocasiões também. Um cálculo é feito com esse modificador junto com: a força dos equipamentos que o jogador estiver usando, efeitos que ele possa estar sob efeito, outros fatores como cartas de atributo específicas na mão, etc, e principalmente o modificador de vigor. É necessário implementar uma lógica para o cálculo. O resultado do cálculo é o ataque que será desferido no oponente.
-- **Defesa**: Usado principalmente em combates, porém, em alguns eventos aleatórios pode ser usado como requisito e em outros ocasiões também. Um cálculo é feito com esse modificador junto com: a defesa dos equipamentos que o jogador estiver usando, efeitos que ele possa estar sob efeito, outros fatores como cartas de atributo específicas na mão, etc, e principalmente o modificador de vigor. É necessário implementar uma lógica para o cálculo. O resultado do cálculo é a defesa que o jogador tem para resistir ao ataque do inimigo. Lembrando que se o valor de ataque do oponente for maior que a defesa do jogador, o jogador toma o dano excedente do ataque. Ataque do inimigo igual a defesa do jogador significa que o jogador não leva nenhum dano.
-- **Precisão**: Usado principalmente em combates, porém, em alguns eventos aleatórios pode ser usado como requisito e em outros ocasiões também. Um cálculo é feito com esse modificador junto com: equipamentos que estiver usando que aumentam a precisão do jogador, efeitos que ele possa estar sob efeito, outros fatores como cartas de atributo específicas na mão, etc, e principalmente o modificador de vigor. É necessário implementar uma lógica para o cálculo. O resultado do cálculo diz se o jogador ou o inimigo acertaram o ataque (caso sim, o valor do modificador de ataque pode ser usado).
-- **Esquiva**: Usado principalmente em combates, porém, em alguns eventos aleatórios pode ser usado como requisito e em outros ocasiões também. Um cálculo é feito com esse modificador junto com: equipamentos que estiver usando que aumentam a esquiva do jogador, efeitos que ele possa estar sob efeito, outros fatores como cartas de atributo específicas na mão, etc, e principalmente o modificador de vigor. É necessário implementar uma lógica para o cálculo. O resultado do cálculo diz se o jogador ou o inimigo conseguiu escapar, desviar do ataque do adversário (caso sim, o jogador ou inimigo não sofre qualquer dano).
-- **Celeridade**: Usado principalmente em combates, porém, em alguns eventos aleatórios pode ser usado como requisito e em outros ocasiões também. Esse atributo define a ordem do jogador dentro de um combate. Quanto mais alto a celeridade, mais chances de ser um dos primeiros atacar. Equipamentos, efeitos, outros fatores como cartas específicas na mão, etc, e principalmente o modificador de vigor, impactam no cálculo de celeridade. É necessário implementar uma lógica para o cálculo. 
-- **Perfuração**: Usado principalmente em combates, porém, em alguns eventos aleatórios pode ser usado como requisito e em outros ocasiões também. Um cálculo é feito com esse modificador junto com: equipamentos que estiver usando que aumentam a perfuração, efeitos que ele possa estar sob efeito, outros fatores como cartas de atributo específicas na mão, etc, e principalmente o modificador de vigor. É necessário implementar uma lógica para o cálculo. O resultado do cálculo diz o quanto da defesa do oponente/jogador é ignorado na hora de saber o quanto de dano ele vai receber.
-- **Reflexão**: Usado principalmente em combates, porém, em alguns eventos aleatórios pode ser usado como requisito e em outros ocasiões também. Um cálculo é feito com esse modificador junto com: equipamentos que estiver usando que aumentam a reflexão, efeitos que ele possa estar sob efeito, outros fatores como cartas de atributo específicas na mão, etc, e principalmente o modificador de vigor. É necessário implementar uma lógica para o cálculo. O resultado do cálculo de reflexão diz o quanto do valor de ataque do atacante a um defensor é devolvido para o atacante (o valor do dano devolvido do ataque é subtraído do dano ao defensor).
-- **Vigor** (O MAIS IMPORTANTE): Usado em vários momentos do jogo. Este modificador impacta em vários cálculos do jogo. Praticamente tudo no jogo concede um pouco de vigor para o jogador. Esse modificador é altamente dinâmico. Da mesma forma que muitas coisas concedem pontos de vigor, muitas coisas também removem pontos de vigor. Este modificador impacta TODOS os outros modificadores como maior influenciador do resultado final dos cálculos em que os modificadores estão envolvidos.
-
-Obs: Recursos, efeitos, habilidades, etc podem tanto aumentar quanto abaixar um ou mais modificadores.
-
-
-### Sistema de combate (raide ou evento de combate): 
-
-Cenário em que 1 jogador enfrenta um inimigo. A ordem de quem vai atacar primeiro é definido pelo modificador de celeridade e é decrescente (a ordem vai de quem tem mais celeridade até que tem menos). No empate de celeridade, o inimigo tem prioridade de ataque por padrão (efeitos, habilidade, itens, etc podem alterar isso). O combate funciona em turnos onde as partes se revezam um por vez para atacar. A última coisa que é feita no turno das partes é atacar. O jogador pode ativar vários efeitos, habilidades, etc antes de atacar. Ao atacar, os cálculos de dano devidos são feitos e a vez passa para o oponente. O ataque do jogador vai na defesa do oponente. Ataque do jogador igual a defesa do oponente significa que o oponente não toma dano. Ataque do jogador maior que a defesa do oponente significa que o oponente tem sua vida reduzida igual a diferença entre ataque do jogador e defesa do oponente. Existem efeitos, habilidades, itens, etc que permitem o jogador ataque mais de uma vez desde que as condições dos itens, equipamentos, habilidades, etc sejam cumpridas e não exista restrições de efeitos soberanos sobre o combate. Efeitos soberanos seriam efeitos passivos que regem em cima daquele evento, zona, dimensão, etc. Por exemplo, um zona pode ter o efeito de "jogadores não podem atacar mais de três vezes seguidas". Se o jogador entrar em combate nessa zona, não poderá atacar quatro vezes ou mais. Olhando para a vez do oponente, ele também vai seguir a mesma lógica de poder ativar alguns efeitos e habilidades até atacar. Quem tiver a vida reduzida a zero primeiro perde. No caso do jogador, ao morrer em combate (nocauteado), ele é teletransportado para o ponto de respawn dele e tomas as penalidades descritas na carta do oponente. No caso de vitória do jogador, ele recebe as recompensas descritas na carta do oponente. Não é permitido trocar equipamentos durante a batalha com equipamentos do seu inventário por padrão, mas efeitos, habilidades ou outros fatores podem alterar essa regra. Caso o jogador perceber que não vai conseguir ganhar o combate, ele pode tentar fugir executando o teste de fuga. Ao conseguir fugir com sucesso, a batalha se encerra imediatamente. Caso falhe na fuga, a batalha se encerra imediatamente o jogador toma as penalidades descritas na carta do oponente. Importante dizer que se o jogador ou inimigo esquivar de um ataque, aquilo conta como "miss" (não conseguiu acertar o adversário) e o turno passa pro próximo atacante.
-
-Cenário em que 1 jogador enfrenta 2 ou mais inimigos: A lógica segue igual ao do combate 1 jogador contra 1 inimigo descrito anteriormente com a diferença que, na vez do jogador, ele escolhe qual inimigo atacar. As recompensas descritas nas cartas dos inimigos só são entregues ao jogador depois que ele derrotar todos os inimigos. 
-
-Cenário 2 ou mais jogadores enfrentando um ou mais inimigos: A lógica segue igual ao do combate 1 jogador contra 1 inimigo descrito anteriormente. Porém, há alguns pontos a se levar em consideração. Caso um dos jogadores for nocauteado em combate, ele não é teletransportado para seu ponto de respawn pois outros jogadores podem usar itens, efeitos, habilidades, etc para ressucitá-lo. Um jogador nocauteado em combate, fica sem jogar no turno que seria sua vez (ele fica apenas assistindo). Se ao final da batalha tiver algum jogador nocauteado, aí sim ele é teletransportado para seu devido ponto de respawn, mas não toma as penalidades dos inimigos porque eles foram derrotados. Não é permitido negociar coisas entre jogadores durante um combate e nada pode alterar essa regra. No modo campanha, para fugir de um combate, um por vez, cada jogador tenta fazer o teste de fuga. Simulando um exemplo:
-  1 - O combate envolve jogador A, jogador B, jogador C, oponente A, oponente B, oponente C e oponente D.
-  2 - Por ordem de celeridade, a ordem ficou jogador A, oponente C, oponente A, jogador C, jogador B, oponente D e oponente B.
-  3 - Os jogadores percebem que não vão conseguir derrotar os oponentes e então vão tentar fugir.
-  4 - O jogador A tenta fugir mas falha no processo e então é nocauteado. Oponente C ataca um dos jogadores. Oponente A ataca um dos jogadores. Jogador C tenta fugir mas falha e então é nocauteado. Jogador B tenta fazer o teste de fuga e consegue (não joga mais e não esta mais envolvido com este combate). 
-  5 - Jogador A e C foram nocauteados ao tentar fugir. Logo, sofrem as penalidades dos inimigos. Jogador B conseguiu fugir com sucesso e não sofre as penalidades dos oponentes (mas pode sofrer penalidades devidos a outros fatores como efeitos, etc).
-Ao final do combate, os jogadores que foram nocauteados ao final de uma batalha derrotada sofrem todas as penalidades dos oponentes. Se todos os jogadores conseguirem fugir, ninguém sofre penalidades do oponentes. Se alguns jogadores foram nocauteados e outros jogadores conseguirem fugir, isso conta como uma batalha perdida e os jogadores nocauteados sofrem as penalidades dos oponentes. Só conta como fuga com sucesso se todos os jogadores conseguiram fugir vivos (ninguém sofre penalidades dos oponentes). Lembrando que apenas o jogador que iniciou o evento de combate tem o ponto de ação consumido. O jogador que iniciou o evento de combate é o único que recebe as recompensas. Se o jogador que iniciou o combate fugir ou for nocauteado e não for ressuscitado até o final de um combate, se os outros jogadores conseguiram derrotar os oponentes, toda a recompensa daquele combate é compartilhado entre os jogadores sobreviventes (em ordem de maior celeridade até menor celeridade, eles escolhem as recompensas que querem receber). É possível notar que existe um dinâmica dentro do evento de combate: alguns jogadores podem fugir por conta própria, mas, outros podem querer ficar e ganhar o combate para ficar com as recompensas.
-
-Cenário PVP: Além dos modos de jogo campanha e desbravadores, existe um modo que é simplesmente um X1 entre dois jogadores ou mais. Podem ser configurados em diversas combinações possíveis (1 jogador contra 3 jogadores, 4 jogadores contra 3 jogadores, etc). Esse modo não impacta na progressão dos modos campanha e desbravadores. O modo PVP é um modo sem compromissos e para se divertir, onde todos os jogadores usam ele para testar seus decks de forma descompromissada. No modo X1, não se ganha recompensas ou vantagens que são portadas para os outros modos. No modo X1, os jogadores tem 10 slots de decks diferentes para montar builds e testar combos. Nesse modo X1, todos os jogadores tem acesso a todas as cartas já lançadas dentro do jogo (cartas de coleções que estão vigente no modo campanha/desbravador e cartas de coleções que não estão mais disponíveis no modo campanha/desbravador). 
-
-Cenário Raide: Em raides, os jogadores podem encontrar batalhas. Não é possível fugir de batalhas dentro de uma raide. Entende-se que, o confronto com os oponentes fazem parte da história daquela raide. Ao ser nocauteado ou quando todos os jogadores forem nocauteados, a raide é encerrada e todos os jogadores tomam as penalidades descritas naquela etapa da raide. 
-
-É necessário implementar uma IA para controlar as ações dos inimigos dentro do combate (perceber que o usuário não tem uma defesa/ataque bom, melhores estratégias, ajudar/ressucitar um aliado, etc).
-
-### O que são os efeitos?
-
-Efeitos é uma das partes mais dinâmicas do jogo. Eles podem afetar tudo positivamente ou negativamente. Praticamente tudo pode ter um efeito dentro do jogo. O efeito é estruturada em Gatilho, Custo, Ativação e Duração:
-
-- **Gatilho** (opcional): A condição de ativação (condições apropriadas para o efeito ativar). Nem todos os efeitos possuem gatilho. Os gatilhos podem ser dividos em algumas categorias (podem haver mais no futuro):
-  - **De zona**. Exemplos. Ao entrar nessa zona; Ao entrar em um zona montanhosa; Ao entrar em uma zona campestre, fluvial ou religiosa; Ao entrar em qualquer zona que não seja vulcânica ou subterrânea; Ao entrar em uma zona pantanosa, locais de vila, local de castelos ou locais de pradarias; Ao entrar em uma zona desértica que não seja um local de oasis; etc. É necessário implementar uma vasta variações do efeitos possíveis para permitir uma estratégia infinita e fazer com que o jogador pense.
-  - **De ação de zona**: Exemplos: Ao não realizar nenhuma ação de evento em uma zona; Ao passar por mais de duas zonas diferentes sem realizar nenhuma ação de evento; Ao realizar Ao descansar três vezes seguidas; Ao não descansar nenhuma vez ao chegar a uma zona; Enquanto você não descansar mais que 1 vez; Ao ficar sem descansar depois de passar por mais de quatro zonas diferentes; Ao finalizar uma missão em uma zona; Ao finalizar todas as missões de uma zona; Ao finalizar mais de três missões em uma zona; Ao finalizar uma missão em três zonas diferentes; Ao finalizar uma raide em uma zona; Ao finalizar uma raide; Ao finalizar 5 raides diferentes;  Ao finalizar a mesma raide 5 vezes; etc. É necessário implementar uma vasta variações do efeitos possíveis para permitir uma estratégia infinita e fazer com que o jogador pense.
-  - **De evento aleatório**. Exemplos: Na fase de encontro; Na fase de êxito ou revés; Em qualquer fase que não seja de antecipação; etc. É necessário implementar uma vasta variações do efeitos possíveis para permitir uma estratégia infinita e fazer com que o jogador pense.
-  - **De evento de combate**. Exemplos: Ao derrotar um oponente; Ao derrotar três oponentes diferentes; Ao tenta fugir; etc. É necessário implementar uma vasta variações do efeitos possíveis para permitir uma estratégia infinita e fazer com que o jogador pense.
-  - **De habilidade**. Exemplo: Ao usar uma habilidade de um equipamento calçado; Ao usar a habilidade de um equipamento de cabeça ou inferior; Ao usar a habilidade de um equipamento que não seja de tronco; Ao usar uma habilidade qualquer do equipamento específico "NOME DO EQUIPAMENTO"; Ao usar uma habilidade qualquer de uma arma do tipo shuriken, espada de duas mãos ou adaga; Ao usar uma habilidade de capa ou manopla; etc. É necessário implementar uma vasta variações do efeitos possíveis para permitir uma estratégia infinita e fazer com que o jogador pense.
-  - **De recurso**. Exemplo: Ao ativar um efeito de um recurso; Ao ativar quatro efeitos de recursos diferentes; Enquanto não ativar mais de dois efeitos de recursos diferentes; etc. É necessário implementar uma vasta variações do efeitos possíveis para permitir uma estratégia infinita e fazer com que o jogador pense.
-  - **De classe/especialização**. Exemplo: Enquanto você for uma especialização da classe primária Bruxo; Enquanto você tiver apenas uma classe primária; Se você tiver duas classes primárias; Se você tiver mais de três classes primárias; Se você tiver duas especializações; Se você forExemplo: Ao ativar um efeito de um recurso no inventário; Ao ativar mais de três efeitos diferentes de recursos no seu inventário; Se você for um guerreiro; Se você for um Ladino ou Clérigo; Se você for um Feiticeiro Druida; Se você tiver mais de três classes primárias; etc. É necessário implementar uma vasta variações do efeitos possíveis para permitir uma estratégia infinita e fazer com que o jogador pense.
-  - **De modificador**. Exemplo: Se o seu maior modificador for Reflexão; Se o seu maior modificador for Vigor ou Precisão; Se o seu menor modificador for Ataque; Se o seu menor modificador for Esquiva ou Celeridade; Se você tiver mais modificador de Precisão do que Defesa; Se a soma dos modificadores Ataque e Reflexão for maior que N; etc. É necessário implementar uma vasta variações do efeitos possíveis para permitir uma estratégia infinita e fazer com que o jogador pense.
-  - **De atributo**. Exemplo: Se você tiver uma carta de Atributo Sanidade em sua mão; Se você tiver duas cartas de Atributo Sorte em sua mão; Se você tiver mais do que três cartas de Atributo Destreza em sua mão; Se você tiver três ou menos cartas de Atributo Força em sua mão; Se você tiver uma carta de Atributo Resistência e uma de Atributo Carisma em sua mão; Se você tiver uma carta de Atributo Espírito ou Atributo de Inteligência em sua mão; Se você tiver três ou mais Atributos diferentes em sua mão; Se você tiver apenas um tipo de Atributo em sua mão; Se você tiver quatro ou menos Atributos diferentes em sua mão; etc. É necessário implementar uma vasta variações do efeitos possíveis para permitir uma estratégia infinita e fazer com que o jogador pense.
-    - **De inventário**. Exemplo: Ao ativar um efeito de um recurso no inventário; Ao ativar dois ou mais efeitos de recursos diferentes no seu inventário; Ao ativar um efeito de um Item no seu inventário; Ao ativar um efeito de um equipamento em seu inventário; Ao ter 4 ou menos recursos diferentes no seu inventário; Se você não tiver nenhum recurso no seu inventário; etc. É necessário implementar uma vasta variações do efeitos possíveis para permitir uma estratégia infinita e fazer com que o jogador pense.
-  - **De efeito**. Exemplo: Ao usar um efeito de um equipamento; Ao usar dois ou mais efeitos de equipamentos diferentes; Ao usar três ou menos efeitos de recursos diferentes no seu inventário; Se você usou um ou mais efeitos de um item e um ou mais efeitos de um equipamento; Se você usou um ou mais efeitos de um equipamento para cabeça; Se você não usou um efeito de equipamento para tronco ou capa; Se você usou três ou mais efeitos de itens diferentes no seu inventário; etc. É necessário implementar uma vasta variações do efeitos possíveis para permitir uma estratégia infinita e fazer com que o jogador pense.
-  - **De jogador**: Exemplo: Se você tiver sem cartas na mão; Se você tiver três ou menos cartas na mão; Se você não tiver cartas na sua pilha de descarte de Atributos; Se você tiver 10 ou mais pontos de vida; Se você não tiver mais cartas no seu deck de Atributos; Se você tiver 30 ou mais moedas de ouro; Se você tiver 3 ou menos pontos de vida; etc. É necessário implementar uma vasta variações do efeitos possíveis para permitir uma estratégia infinita e fazer com que o jogador pense.
-- **Custo** (opcional): Esse é o custo para pode ativar o efeito. Nem todos os efeitos possuem custos. A ideia geral é que efeitos muito fortes tem um custo muito difícil de ser cumprido e mais específico. O custo seria uma ou uma combinação de múltiplos requisitos para poder ativar. O efeito não podem ser ativados se o custo não for pago. Um custo pode ter um ou infinitos requisitos e eles podem se misturar entre todas as categorias. Alguns requisitos de custos são (podem haver mais no futuro): 
-  - Um **atributo específico** ou uma **combinação de atributos específicos** ou **qualquer atributo**. Exemplo: Um Atributo força; Um Atributo Carisma, três Atributos de Destreza e dois Atributo Sanidade; dois Atributos Espírito e 2 Atributos quaisquer; etc. É necessário implementar uma vasta variações do efeitos possíveis para permitir uma estratégia infinita e fazer com que o jogador pense.
-  - **Doar vida**. Exemplo: Doe sete de vida; Doe uma quantidade de vida igual a quantidade de equipamentos que você esta usando (no mínimo 2); Doe uma quantidade de vida igual a quantidade de equipamentos no seu inventário (no mínimo 3); Doe uma quantidade de vida igual a quantidade de recursos no seu inventário (no mínimo 4); Doe uma quantidade de vida igual a quantidade de Relíquias e Documentos no seu inventário (no mínimo 2 no total); Doe uma quantidade de vida igual a quantidade de cartas na pilha de descarte de atributos (no mínimo 5); Doe metade da sua vida (arredonde para cima); Doe uma quantidade de vida igual a seu modificador mais alto (no mínimo 200); Doe uma quantidade; Doe uma quantidade de vida igual ao seu modificador mais baixo (no mínimo 100); etc. É necessário implementar uma vasta variações do efeitos possíveis para permitir uma estratégia infinita e fazer com que o jogador pense.
-  - **Pagar ouro**. Exemplo: Pague 15 moedas de ouro; Pague uma quantidade de ouro igual a quantidade de equipamentos que você esta usando (no mínimo 2); Pague uma quantidade de ouro igual a quantidade de equipamentos no seu inventário (no mínimo 6); Pague uma quantidade de ouro igual a quantidade de recursos no seu inventário (no mínimo 4); Pague uma quantidade de ouro igual a quantidade de Relíquias e Documentos no seu inventário (no mínimo 2 no total); Pague uma quantidade de ouro igual a quantidade de cartas na pilha de descarte de atributos (no mínimo 5); Pague metade da seu ouro total (arredonde para cima); Pague uma quantidade de ouro igual a seu modificador mais alto (no mínimo 50); Pague uma quantidade de ouro igual ao seu modificador mais baixo (no mínimo 90); etc. É necessário implementar uma vasta variações do efeitos possíveis para permitir uma estratégia infinita e fazer com que o jogador pense.
-  - **Abdicar de equipamento**. Só pode abdicar de equipamentos que você esteja usando no momento do gatilho do efeito (o equipamento precisa estar no slot de uso do jogador para ser abdicado). Equipamentos abdicados vão para a pilha comum de descarte do jogo (chamado de **limbo**). Exemplos: Abdique do seu equipamento de cabeça; Abdique do seu equipamento de capa e tronco; Abdique de qualquer equipamento que não seja um calçado; Abdique aleatóriamento um equipamento; Abdique aleatóriamente um equipamento que não seja inferior; Abdique de três equipamentos; etc. É necessário implementar uma vasta variações do efeitos possíveis para permitir uma estratégia infinita e fazer com que o jogador pense.
-  - **Descartar de carta de atributo**. Cartas descartas vão para a pilha comum de descarte do jogo (chamado de **limbo**). Exemplos: Descarte uma carta da sua mão; Descarte aleatóriamente uma carta da sua mão; Descarte uma carta de Atributo Carisma; Descarte uma carta de Atributo que não seja de Força ou Sabedoria; Descarte 3 cartas da sua mão; Descarte 4 cartas da sua mão que não sejam de Atributo Destreza ou Atributo Espírito; Descarte cartas até ter duas cartas na sua mão (no mínimo uma carta precisa ser descartada); Descarte toda a sua mão (no mínimo 3 cartas); Descarte uma carta de Atributo Sanidade, Atributo Resistência e Atributo Sorte; Descarte três cartas diferentes; Descarte duas cartas iguais; etc. É necessário implementar uma vasta variações do efeitos possíveis para permitir uma estratégia infinita e fazer com que o jogador pense.
-  - **Oferecer recurso do inventário**. Recursos oferecidos vão para a pilha comum de descarte do jogo (chamado de **limbo**). Exemplos: Ofereça um recurso do tipo Item; Ofereça dois recursos do tipo Item diferentes; Ofereça um recurso do tipo equipamento e um recurso do tipo Relíquia; Ofereça três recursos iguais; Ofereça um recurso do tipo Ferramenta, um do tipo Tesouro e um do tipo Documento; Ofereça cinco recursos diferentes; Ofereça dois recursos de equipamentos e dois recursos de itens; Ofereça um item que não seja de equipamento; Ofereça dois recursos que não sejam de itens; Ofereça 4 recursos diferentes que não sejam Relíquias, Tesouros ou Calçado; etc. É necessário implementar uma vasta variações do efeitos possíveis para permitir uma estratégia infinita e fazer com que o jogador pense.
-  - **Manipulação de cartas**: Exemplo: Enviar N cartas do topo do deck de Atributos para a pilha de descarte de Atributos; Enviar N cartas do fundo do deck de Atributos para o Limbo (pilha de descarte global); Reembaralhar N cartas da pilha de descarte de Atributos no seu deck de Atributos; Reembaralhar no mínimo três cartas de Atributo da sua mão de volta no deck de Atributos; Colocar no mínimo uma carta de Atributo da sua mão no topo do deck de Atributos; Colocar no mínimo três carta de Atributo da sua mão no fundo do deck de Atributos; etc. É necessário implementar uma vasta variações do efeitos possíveis para permitir uma estratégia infinita e fazer com que o jogador pense.
-- **Ativação**: a consequência, a ação, o ato. As ativações podem ser divididas em algumas categorias (podem haver mais no futuro): 
-  - **Interação matemática**: Envolve cálculos matemáticos. Exemplo: Perca X moedas de ouro; Ganhar X moedas de ouro; Perca X pontos de vida; Ganha X pontos de vida; Aumente seu modificador de Vigor em X pontos; Aumente seu modificador de Ataque e Esquiva em X pontos; Reduza seus modificadores de Defesa, Perfuração e Reflexão em X pontos; Zere seus modificadores de Celeridade e Defesa; Zere seu modificador X; Uma carta do Atributo X tem o valor dois; Uma carta do Atributo X tem seu valor multiplicado por dois; Reduza seus pontos de vida pela metade (arredonde para cima); Cause X pontos de dano no oponente; Reduza o ataque do oponente em X pontos; etc. É necessário implementar uma vasta variações do efeitos possíveis para permitir uma estratégia infinita e fazer com que o jogador pense.
-  - **Interação de cartas**: interação com qualquer tipo de carta. IMPORTANTE: se a carta não diz explicitamente para embaralhar o deck, então o deck não deve ser embaralhado. Exemplo: Compre X cartas do seu deck de Atributos; Descarte X cartas da sua mão; Descarte uma carta específica da sua mão; Escolha uma carta da sua pilha de descarte de atributo e coloque-a no topo do seu deck de Atributos; Colocar X cartas do topo do seu deck de atributos na pilha de descarte de atributos; Procure por um Atributo X na sua pilha de descarte de atributos; Procure por um Atributo X no seu deck de Atributos e coloque-a na sua mão; Procure por duas cartas de Atributo X no seu deck e coloque-as na sua mão e depois embaralhe seu deck de Atributos; Coloque X cartas da sua mão no topo do seu deck de Atributos; Envie X cartas do topo/fundo do deck para o limbo (pilha de descarte global); etc. É necessário implementar uma vasta variações do efeitos possíveis para permitir uma estratégia infinita e fazer com que o jogador pense.
-  - **Interação de efeito**. Exemplo: Anule todos os efeitos de um equipamento (o efeito é negado, ou seja, quando uma habilidade for ativada, não acontecerá nada. É como se a habilidade tivesse o efeito de "não faz nada"); Anule todos os efeitos dos itens; Anule todos os efeitos de equipamento da categoria X; Anule todos os efeitos de itens da categoria X; Anule todos os efeitos de Atributos Aprimorados; etc. É necessário implementar uma vasta variações do efeitos possíveis para permitir uma estratégia infinita e fazer com que o jogador pense.
-  - **Interação de habilidade**. Exemplo: Anule todas as habilidades de um equipamento (a habilidade não podem nem ser ativada e o efeito desencadeado da habilidade não ativa); Anule todas as habilidades de equipamentos de capa e calçados; Anule todas as habilidades de armas; Anule todas as habilidades de cimitarras, katanas, adagas e facas; etc. É necessário implementar uma vasta variações do efeitos possíveis para permitir uma estratégia infinita e fazer com que o jogador pense.
-  - **Interação de regra**. Altera uma regra padrão do jogo. Exemplo: o jogador iniciar com 40 pontos de vida ao invés de 20; O jogador pode ser mover em diagonal entre zonas; O jogador tem 4 ações por zona ao invés de 3; O jogador ganhar X ações extras por zona; O jogador pode andar até 2 zonas de distância; O jogador pode andar até X zonas de distância; O jogador começar com 50 moedas de ouro ao invés de 10; Ao usar a ação de recuperar, ganha 5 pontos de vida ao invés de 3; Não ative o efeito de coisa ruim de um evento caso entre na fase de revés; O jogador pode ter no máximo X cartas na mão; Altere o valor de sucesso de fuga para 5; Diminua o valor padrão do valor de sucesso de fuga em uma quantidade igual a cartas na sua mão; Aumente o valor padrão de sucesso de fuga em 4; A vitrine de mercados mostram mais 2 cartas para você; A vitrine mostra apenas 1 carta para você; Sua pasta de TCG tem um limite máximo de 50 unidades de cartas; Sua pasta diminui de tamanho e cabe apenas 5 unidade de cartas; etc. É necessário implementar uma vasta variações do efeitos possíveis para permitir uma estratégia infinita e fazer com que o jogador pense.
-  - **Interação de dados**. Exemplo: Ao rolar um dado, escolha qual número cair; Ao rolar um dado, some 3 ao resultado; Ao rolar um dado, diminua X pontos do resultado igual a quantidade de cartas na sua mão; etc. É necessário implementar uma vasta variações do efeitos possíveis para permitir uma estratégia infinita e fazer com que o jogador pense.
-  - **Interação de recursos**. Exemplo: Quebre um equipamento do inimigo; Quebre um equipamento de tronco do inimigo; Quebre um equipamento aleatório seu; Abdique de um equipamento seu a sua escolha; Abdique de um equipamento seu aleatóriamente; Abdique de um equipamento seu de calçado ou cabeça; Repare um equipamento quebrado seu; Repare um equipamento quebrado de um jogador na mesma zona que você; Ofereça um recurso do tipo X ou Y do seu inventário; Ofereça X recursos do seu inventário a sua escolha; etc. É necessário implementar uma vasta variações do efeitos possíveis para permitir uma estratégia infinita e fazer com que o jogador pense.
-  - **Interação de elemento**. "  
-  - **Interação de combate**. Exemplo: Derrote o inimigo de forma automática sem precisar causar dano nele; etc. É necessário implementar uma vasta variações do efeitos possíveis para permitir uma estratégia infinita e fazer com que o jogador pense.
-- **Duração**: Por quanto tempo o efeito vai valer. A duração podem ser divididas em algumas categorias. Alguns exemplos são (podem haver mais no futuro):
-  - Imediata: o efeito acontece imediatamente e não é prolongado para nenhum outro cenário ou ocasião. 
-  - Infinita: o efeito sempre estará em vigor até que uma carta, efeito, habilidade, recurso, etc consiga desabilitá-la.
-  - De turno: ==TODO==
-  - De zona: ==TODO==
-  - De evento aleatório: ==TODO==
-  - De evento de combate:  ==TODO==
-  - De fase de evento: ==TODO==
-  - De ação de zona: ==TODO==
-  - De combate: ==TODO==
-  - De habilidade: ==TODO==
-  - De efeito: ==TODO==
-  - De atributo: ==TODO==
-  - De jogador: ==TODO==
-  - De inventário: ==TODO==
-  - De modificador: ==TODO==
-  - De classe/especialização: ==TODO==
-  - De carta. Exemplo: até que essa carta seja descartada para a pilha de descarte de Atributos; até que a carta X seja descartada para a pilha de descarte; até que você tenha três ou menos cartas na mão; até que no mínimo quatro cartas tenham sido descartadas na pilha de descarte global (limbo); etc. É necessário implementar uma vasta variações do efeitos possíveis para permitir uma estratégia infinita e fazer com que o jogador pense.
-
-Para a implementação da sessão de efeitos, você deve analisar todo o texto dessa sessão e criar a mais ampla possibilidade de variações e misturas possíveis. Quanto mais variedade de Gatilho, Custo, Ativação e Duração, mais desafiador fica o jogo e mais estratégia precisa ser pensada pelos jogadores. Porém, você deve pedir minha validação para a lista de variações possíveis de efeitos. Crie a maior quantidade possível de efeitos diferentes, mas eu vou validar quais vão entrar no jogo e quais vão ser removidos.
-
-### Os elementos do jogo
-
-Os elementos possuem vantagens, desvantagens e neutralidade sobre outros. Elementos impactam nos cálculos de dano, defesa e em diversos outros cenários do jogo.
-- **Vantagem**: +25% de efetividade contra o elemento por padrão.
-- **Desvantagem**: -25% de efetividade contra o elemento por padrão.
-- **Neutro**: quando dois elementos não possuem uma relação de vantagem ou desvantagem entre si, a habilidade funciona normalmente.
-- **Sem Elemento**: a habilidade não possui afinidade elemental. Não recebe vantagens nem sofre desvantagens contra nenhum elemento.
-
-Por exemplo:
-- Uma habilidade de Fogo contra Água possui desvantagem.
-- Uma habilidade de Fogo contra Ar possui resultado neutro.
-- Uma habilidade sem elemento contra Água possui resultado neutro.
-- Uma habilidade sem elemento contra Fogo também possui resultado neutro.
-
-Alguns exemplos de elementos são (podem surgir novos elementos no futuro):
-- **Elementos**:  
-  - **Terra**: Rochas, minerais, areia, cristais e manifestações geológicas. Representa resistência, estabilidade e força.
-    - Vantagem: Elétrico, Sônico.
-    - Desvantagem: Orgânico, Água.
-  - **Água**: Água, líquidos, correntes, pressão e manipulação de fluidos.
-    - Vantagem: Fogo, Tóxico.
-    - Desvantagem: Elétrico, Gélido, Orgânico.
-  - **Fogo**:  Chamas, calor, combustão, explosões e energia térmica.
-    - Vantagem: Gélido, Orgânico.
-    - Desvantagem: Água, Cósmico
-  - **Elétrico**: Eletricidade, raios, magnetismo e descargas energéticas.
-    - Vantagem: Água.
-    - Desvantagem: Terra, Cósmico.
-  - **Ar**: Ventos, pressão atmosférica, tempestades e manipulação de gases.
-    - Vantagem: Tóxico, Sanguíneo.
-    - Desvantagem: Terra, Elétrico.
-  - **Gélido**: Gelo, congelamento, baixas temperaturas e cristalização.
-    - Vantagem: Água, Orgânico.
-    - Desvantagem: Fogo, Sônico.
-  - **Orgânico**: Vegetação, raízes, fungos, flores e manifestações biológicas da natureza. 
-    - Vantagem: Terra, Água.
-    - Desvantagem: Fogo, Gélido, Tóxico, Dracônico.
-  - **Tóxico**: Venenos, toxinas, ácidos, contaminação e substâncias nocivas. 
-    - Vantagem: Orgânico, Sanguíneo.
-    - Desvantagem: Água, Ar, Celestial.
-  - **Arcano**: Energia mágica, feitiços, runas, encantamentos e manipulação de forças sobrenaturais.
-    - Vantagem: Dracônico, Espiritual.
-    - Desvantagem: Obscuro, Psíquico.
-  - **Obscuro**: Sombras, maldições, corrupção, trevas e manifestações negativas de energia.
-    - Vantagem: Psíquico, Espiritual.
-    - Desvantagem: Celestial.
-  - **Celestial**: Luz divina, bênçãos, energia sagrada, purificação e manifestações celestiais.
-    - Vantagem: Obscuro, Tóxico.
-    - Desvantagem: Sanguíneo, Cósmico.
-  - **Dracônico**: Poderes associados a dragões, sangue dracônico, sopros e energia ancestral.
-    - Vantagem: Orgânico.
-    - Desvantagem: Arcano, Sanguíneo.
-  - **Cósmico**: Estrelas, gravidade, energia astral, dimensões, espaço e fenômenos cósmicos.
-    - Vantagem: Elétrico.
-    - Desvantagem: Fogo, Celestial.
-  - **Sônico**: Vibrações, frequências, ondas sonoras e ressonância.
-    - Vantagem: Psíquico, Gélido.
-    - Desvantagem: Terra.
-  - **Psíquico**: Telepatia, telecinese, ilusões e manipulação mental.
-    - Vantagem: Sanguíneo, Espiritual.
-    - Desvantagem: Obscuro, Sônico.
-  - **Sanguíneo**: Sangue, vitalidade, sacrifícios e manipulação biológica.
-    - Vantagem: Celestial, Dracônico.
-    - Desvantagem: Ar, Tóxico, Psíquico, Espiritual.
-  - **Espiritual**: Espíritos, almas, aparições e manifestações espectrais.
-    - Vantagem: Sanguíneo. 
-    - Desvantagem: Arcano, Obscuro, Psíquico.
-
-
-conectar classes e especializações a certos elementos (algumas classes e especializações tem mais afinidade com certos elementos)????? ==TODO==
-
-### O que são habilidades?
-Vínculadas a equipamentos de todas as categorias. Estruturada em nome da habilidade e efeito (ou efeitos). Ao usar uma habilidade, você consome pontos de Vigor (modificador) por padrão. Mas, existem recursos, efeitos e outras habilidades que podem reduzir a quantidade de pontos de vigor para usar uma habilidade. Algumas habilidades não consomem pontos de vigor. Entende-se que, quanto mais forte uma habilidade, mais pontos de vigor é necessário para usá-la. Habilidades possuem um ou mais elementos e uma forma:
-- **Formas**:  
-  - **Direcionada**: Atinge um alvo específico.
-  - **Projétil**:	Dispara algo em direção a um alvo.
-  - **Área**:	Afeta uma região e mais de um inimigo ao mesmo tempo.
-  - **Contínua**:	Permanece ativa por determinado período (exige ativação).
-  - **Canalizada**	Exige concentração ou preparação (exige usar algumas vezes a habilidade até ela poder ser usada de fato).
-  - **Passiva**:	Funciona sem ativação manual (não precisa ser ativada).
-
-
-
-?????? continuar a descrever ==TODO==
-
-### Sistema de leveling e XP (Vigor): 
-Não existe level dentro do jogo, mas existe um sistema de vigor. Vigor é o modificador mais importante do jogador e é vital ter bastante desse modificador pois ele impacta diretamente em todos os cálculos do jogo. 
-- Algumas coisas que concedem pontos de vigor:
-  - Cumprir missões.
-  - Usar itens pontuais.
-  - Habilidades de equipamentos.
-  - Resolver eventos com sucesso.
-  - Ganhar combates.
-  - Derrotar inimigos.
-  - Efeitos positivos (buffs).
-  - Etc.
-
-- Algumas coisas que removem pontos de vigor:
-  - Fugir de combates.
-  - Usar algumas habilidades de equipamentos.
-  - Não conseguir resolver eventos.
-  - Perder combates.
-  - Ser nocauteado.
-  - Perder uma raide.
-  - Efeitos negativos (debuffs).
-  - Etc.
-
-# Montaria
-
-movimentação de zona e outros benefícios ???
-
-# Tipos de Inimigo
-
-- raça ??? ==TODO==
-
-# Levar em consideração (aspectos técnicos)
-
-**Atenção**: muitos conceitos estão sujeitos a mudar com tempo devido a novas ideias ou descobertas de problemas. Essa sessão apresenta as ideias básicas.
-
-- Tudo o que esta descrito neste documento inteiro, esta descrito de maneira como se o jogo fosse um jogo de verdade. Porém, esse projeto seria uma versão digital do jogo onde muitas coisas do gameplay vão poder ser automatizadas para facilitar a implementação e deixar o jogo mais fluido.
-- Crie agentes e skills necessárias para conseguir desenvolver o projeto. Importantes instruções que devem conter nos agentes de desenvolvimento são: "Não disfarce suas dúvidas. Explicite as vantagens e desvantagens de cada escolha.", "Implemente apenas o necessário para resolver o problema. Não acrescente nada baseado em suposições.", "Modifique apenas o que for indispensável. Corrija ou limpe tudo aquilo que suas próprias alterações deixarem para trás."e "Estabeleça critérios claros para considerar a tarefa concluída. Continue iterando até confirmar que eles foram atendidos.". O ![arquivo de referência](PROMPT-AGENTES-E-SKILLS.md) tem uma ideia de como você pode criar os agentes e skills.
-- Frontend deve ser feito em Typescript, Vite, React-query (Tanstack), React Router Dom e React (fora outras bibliotecas externas que serão decididas quais usar durante o desenvolvimento). O backend deve ser feito com typescript, NestJS, ORM Drizzle, arquitetura hexagonal, domain driven design e outras tecnologias e arquiteturas para ajudar a desenvolver o backend como WebSockets, Socket.IO, Aggregate Root (Entidade Raiz), Domain Events & State Machine, Portas (Interfaces) e Adaptadores (Implementações) e mais outras que podem surgir durante o desenvolvimento conforme necessidade.
-- O jogo é em tempo-real com interações acontecendo ao mesmo tempo entre os jogadores e o jogo em si.
-- Testes no frontend devem usar a lib vitest para testes unitários e playwright para testes end-to-end. Para testes de integração, eu aceito sugestões.
-- Teste no backend devem usar o vitest também e algum lib para fazer testes de requests para o endpoint e mais testes que você julgar importante.
-- Como o projeto tem frontend e backend, gostaria de ter alguma estratégia de desenvolvimento por feature (todas as implementações para de frontend e backend são feitas para resolver um bug específico ou implementar um feature específica). Ou seja, eu ia criar dois projetos em paralelo (um frontend e um backend) onde cada um teria seus agentes e skills específicos para implementarem seus devidos códigos. Uma feature só é considerada completa quando uma feature ou bug foi resolvido dos dois lados (ou quando apenas um lados tem seus código escritos ou corrigidos). Eu estarei fazendo o controle e passando a informação de um projeto para o outro para pode validar. Para isso, você terá que criar as skills e agentes com instruções claras de quando ele precisa de uma validação do outro lado do projeto (estarei ajudando nas confirmações). Para isso, você terá que analisar todos os requisitos do projeto e criar os agentes e skills para o projeto frontend e os agentes e skills para o projeto backend. Crie a lista de passos, etapas, fases de desenvolvimento para o frontend e backend. 
-- Para a implementação do backend, estava pensando em usar docker compose para o banco de dados e backend para ajudar a implementar primeiramente localmente antes de fazer o deploy já que é necessário pagar as plataformas para deixar o projeto no ar.
-- O jogo funcionará principalmente em PC (monitores). Distâncias entre elementos da tela, tamanhos, margens, espaços, etc, devem ser ajustados conforme o monitor do usuário para que ele tenha a melhor experiência de jogo possível.
-- Inimigos em eventos de combates não usam "cartas na mão". É tudo feito de forma automática pelo sistema.
-- Você não deve instalar libs terceiras sem minha permissão.
-- Quero que o jogo tenha animações e transições bonitas e simples.
-- O estilo gráfico do jogo é 2.5D com estilo de PSX (Geometry and models: Extremely low-poly 3D models, low polygon counts, angular silhouettes, visibly faceted surfaces, simple geometric shapes, coarse environmental geometry, primitive character models and rigid-looking structures.
-Textures and materials: Very low-resolution textures, visibly pixelated texture maps, blurry and muddy surfaces, crude hand-painted textures, limited texture detail, affine texture mapping artifacts, perspective distortion, warped textures, and subtle polygon vertex jitter reminiscent of original PS1 hardware.
-Rendering and lighting: Original PlayStation-era rendering aesthetics, simple vertex lighting, minimal dynamic lighting, limited shading, basic diffuse materials, hard-edged shadows where appropriate, low color depth appearance, restrained visual effects, and authentic late-1990s 3D game rendering.
-Image quality: Low internal rendering resolution, visible pixelation, jagged polygon edges, aliasing, subtle dithering, limited draw distance, atmospheric distance fog when appropriate, and the characteristic imperfections of early real-time 3D graphics. Preserve the raw, imperfect appearance of vintage console footage rather than modernizing the image.
-Art direction: Nostalgic, atmospheric, imperfect, surreal when appropriate, visually distinctive and unmistakably from the original PlayStation era. The final image should look like an authentic screenshot captured directly from a real 1990s PS1 game running on original hardware.
-Strict restrictions: No modern photorealism, no high-poly models, no physically based rendering (PBR), no ray tracing, no modern cinematic CGI, no ultra-high-resolution textures, no Unreal Engine 5 aesthetic and no excessive post-processing)
-- Termos podem ser alterados da forma que você achar melhor (mas você precisa da minha aprovação).
-- Imagens e ícones vão estar presentes na aplicação. Irei providenciar elas. Você pode criar imagens e ícones svg apenas para seus testes.
-- Termos dentro do jogo devem ter um "highlight" ou uma cor para representar aquele termo para o jogador saber que, quando ele passar o mouse por cima, um tooltip explicando o que é aquele termo aparece. Variações dos termos também devem conter essa funcionalidade. Alguns termos do jogo são: Atributos, cada um dos atributos, Zonas, Classes, cada uma das classes, modificadores, cada uma das ações de zona, cada um dos tipos de eventos, etc.
-- Cada jogador inicia a partida com 20 pontos de vida. Mas, esse não é o limite. O jogador pode acumular infinitos pontos de vida se ele conseguir. Não limite máximo de pontos de vida por padrão.
-- Caso o deck de atributos do jogador se esgotar (ter zero cartas), ele não perde o jogo. É considerado que o jogador fez uma péssima admnistração de atributos. O jogo segue normalmente, mas será bem difícil o jogador conseguir continuar jogando sem um deck de recursos. Mas, tem efeitos, recursos e outros fatores que podem ajudar o jogador a ter um "comeback" (voltar a partida de forma incrível) e conseguir restaurar seu deck de atributos. 
-- Todos os cálculos do jogo devem ter um resultado de número inteiro. O jogo não trabalha com números quebrados, mas, as lógicas e cálculos podem fazer arredondamentos (o arredondamento para cima ou para baixo vai depender da finalidade do cálculo).
-Quando um evento de combate é revelado, um novo sistema de combate começa.
-- O jogador não tem limite de cartas na mão por padrão. Alguns efeitos podem causar o limite de cartas na mão do jogador. Cartas em excesso vão para a pilha de descarte do deck de atributos daquele jogador.
-- O deck de atributos do jogador deve conter exatas 60 cartas (esse número é especulativo e é necessário uma analise sua para saber qual a melhor quantidade).
-- Quando um deck de eventos de uma zona se esgota, todo a pilha de descarte de eventos daquela zona em específico é reembaralhada. Uma zona tem pode ter por volta de 30 cartas de eventos aleatórios (esse número é especulativo e é necessário uma analise sua para saber qual a melhor quantidade).
-
-# Objetivos em etapas (a ordem que eu pensei, mas você pode fazer alterações se identificar uma sequência melhor)
-
-1 - Analisar todo esse documento e ver pontos que ficaram em abertos, problemas de conceito, ideais que se contradizem, pontos que precisam de mais esclarecimentos, dúvidas que você tem sobre o projeto como um todo (aspectos técnicos e de ideia do jogo). Certifique-se de tirar todas suas dúvidas e apontar problemas antes de passar para a próxima etapa. Você deve me entrevistar para tirar todas suas dúvidas antes de seguir para o próximo passo. O planejamento deve ser feito com base na estratégia do spec-driven design Use o conceito de spec-drive development (para mais contextos sobre "spec-driven development" tem as urls de contexto "[https://martinfowler.com/articles/exploring-gen-ai/sdd-3-tools.html](https://martinfowler.com/articles/exploring-gen-ai/sdd-3-tools.html)", "[https://blog.dsacademy.com.br/spec-driven-development-a-nova-arquitetura-de-engenharia-de-software-na-era-dos-agentes-de-ia-parte-3/]", "[https://www.ibm.com/br-pt/think/topics/spec-driven-development](https://www.ibm.com/br-pt/think/topics/spec-driven-development)" e "[https://thoughtworks.medium.com/spec-driven-development-d85995a81387](https://thoughtworks.medium.com/spec-driven-development-d85995a81387)"). As etapas em si devem ser pensadas, organizadas e dividas em primeiramente para ter um jogo funcional (frontend e backend) funcionando totalmente para apenas um jogador. Em segundo momento, as etapas devem ser pensadas para introduzir mais jogadores com IA (será possível eu testar o jogo junto a outros três jogadores todos eles sendo IAs). Em um terceiro momento, deve ser pensando nas etapas necessárias para desenvolver todas as funcionalidades relacionadas para ter um jogo online web com interatividade em tempo real, web sockets, etc. Separe em dois arquivos diferentes: um arquivo contem todo o contexto, regras, aspectos, etapas de frontend e o outro arquivo é a mesma coisa para o backend. O frontend será implementado primeiramente para rodar localmente via web. Mas, em um segundo momento, o projeto frontend será portado para um executável de PC usando Tauri https://v2.tauri.app/start/.
-2 - Criar um arquivo .md organizado e estruturado de regras (manual de regras). Estruturar da melhor forma para que a ordem das regras tenham uma sequência de entendimento para facilitar a próxima regra. Explicar de forma detalhada. Usar infográficos e imagens para ajudar a explicar conceitos mais complexos. 
+## Sumário
 
+**Parte I — Manual de regras**
+1. [Visão geral](#1-visão-geral)
+2. [Glossário de tempo: rodada, vez e turno de combate](#2-glossário-de-tempo-rodada-vez-e-turno-de-combate)
+3. [O jogador](#3-o-jogador)
+4. [Atributos e o deck de atributos](#4-atributos-e-o-deck-de-atributos)
+5. [Classes e especializações](#5-classes-e-especializações)
+6. [Recursos: equipamentos e itens](#6-recursos-equipamentos-e-itens)
+7. [Inventário, pasta de TCG e cofre](#7-inventário-pasta-de-tcg-e-cofre)
+8. [Dimensões e zonas](#8-dimensões-e-zonas)
+9. [Montagem do mapa e preparação da partida](#9-montagem-do-mapa-e-preparação-da-partida)
+10. [A vez do jogador](#10-a-vez-do-jogador)
+11. [Ações de zona](#11-ações-de-zona)
+12. [Pilhas de descarte e limbo](#12-pilhas-de-descarte-e-limbo)
+13. [Eventos](#13-eventos)
+14. [Teste de fuga](#14-teste-de-fuga)
+15. [Nocaute, spawn e respawn](#15-nocaute-spawn-e-respawn)
+16. [Modificadores e Vigor](#16-modificadores-e-vigor)
+17. [Sistema de combate](#17-sistema-de-combate)
+18. [Elementos](#18-elementos)
+19. [Habilidades](#19-habilidades)
+20. [Efeitos](#20-efeitos)
+21. [Missões](#21-missões)
+22. [Raides](#22-raides)
+23. [Negociação](#23-negociação)
+24. [Mercado](#24-mercado)
+25. [Coleções](#25-coleções)
+26. [Ferreiro](#26-ferreiro)
+27. [Modos de jogo](#27-modos-de-jogo)
+28. [Pendências do manual](#28-pendências-do-manual)
+
+**Parte II — Requisitos técnicos**
+
+**Parte III — Etapas de desenvolvimento**
+
+---
+
+# Parte I — Manual de regras
+
+## 1. Visão geral
+
+### 1.1 Sinopse
+
+Um ou mais aventureiros chegam a uma **dimensão** para conquistar o **prêmio máximo** daquele lugar (um artefato, um prêmio em moedas de ouro, equipamentos muito fortes, etc.) ou para **derrotar o chefe final** dela.
+
+Dependendo do modo de jogo, os jogadores devem:
+- se ajudar,
+- derrotar os outros, ou
+- se ajudar temporariamente para obter algum benefício e conseguir desbravar a dimensão.
+
+### 1.2 Como se joga, em resumo
+
+- O jogo é **baseado em turnos** e combina conceitos de TCG, mecânicas de jogo de tabuleiro e interatividade em tempo real.
+- Os jogadores **exploram o mapa** e resolvem **encontros** (eventos aleatórios) e **confrontos** (contra outros jogadores, junto com outros jogadores ou contra inimigos do próprio mundo).
+- A partida termina quando um jogador obtém o prêmio máximo ou derrota o chefe final da dimensão (ou quando a condição de vitória do modo é cumprida, veja [Modos de jogo](#27-modos-de-jogo)).
+
+### 1.3 Número de jogadores
+
+O jogo é **modular** na quantidade de jogadores: comporta de **1 até "infinitos" jogadores**. "Infinitos" significa que o jogo deve suportar um número muito elevado de jogadores, por mais improvável que isso seja.
+
+### 1.4 Progressão infinita de dimensões
+
+- **Tudo o que um jogador conquista** (poções, equipamentos, bugs, prêmios, dinheiro, etc.) **é levado para a próxima dimensão** (modo campanha).
+- **Não existe dimensão final.**
+- Periodicamente (por exemplo, a cada 3 meses), uma **nova dimensão** é lançada com novos itens, cartas, prêmios, etc. (veja [Coleções](#25-coleções)).
+- Os jogadores desbravam infinitas dimensões em busca dos melhores itens, equipamentos, buffs, mais dinheiro, etc.
+
+### 1.5 Modos de jogo (resumo)
+
+| Modo | Tipo | Progresso levado para outras dimensões? |
+|---|---|---|
+| **Campanha** | Cooperativo | Sim |
+| **Desbravadores** | Competitivo (cada um por si), em formato de *runs* |Não. Progressão acontece apenas dentro da dimensão. |
+| **Clássico** | Desbravadores cooperativo, run curta | Não |
+| **Enfrentamento (PVP)** | Apenas combate com outros jogadores, para testar builds | Não |
+
+Detalhes de cada modo em [Modos de jogo](#27-modos-de-jogo). As regras dos capítulos 2 a 26 são descritas a partir do **modo campanha**; as diferenças dos outros modos estão no capítulo 27.
+
+---
+
+## 2. Glossário de tempo: rodada, vez e turno de combate
+
+| Termo | Significado |
+|---|---|
+| **Vez** | O momento em que **um** jogador joga (move-se, executa ações, etc.). |
+| **Rodada** | Termina quando **todos** os jogadores jogaram sua vez uma vez. |
+| **Turno de combate** | Dentro de um combate, o momento em que uma das partes (jogador ou inimigo) age e ataca. |
+
+**Exemplo de rodada:** três jogadores (A, B e C). O jogador A joga sua vez, depois o B, depois o C. A rodada termina e volta para a vez do jogador A.
+
+A ordem dos jogadores é definida de forma aleatória ou por algum critério (quem tirar o maior número no dado, etc).
+
+---
+
+## 3. O jogador
+
+### 3.1 Valores iniciais
+
+Cada jogador começa a aventura com:
+- **10 moedas de ouro**;
+- **20 pontos de vida**. **Não existe limite máximo de pontos de vida** por padrão: o jogador pode acumular quanta vida conseguir;
+- **7 cartas** compradas do seu [deck de atributos](#4-atributos-e-o-deck-de-atributos) para a mão;
+- **1 classe primária**, escolhida para iniciar a aventura (veja [Classes](#5-classes-e-especializações)).
+
+Se essa é a **primeira dimensão** do jogador (é a primeira aventura dele), ele começa **sem equipamentos, armas, recursos, etc**.
+
+### 3.2 Regras gerais do jogador
+
+- **Mão de cartas:** não há limite de cartas na mão por padrão. Alguns efeitos podem impor um limite; as cartas em excesso vão para a **pilha de descarte de atributos** do jogador por padrão, a não ser que algum efeito altere essa regra.
+- **Deck de atributos esgotado:** se o deck de atributos chegar a zero cartas, o jogador **não perde o jogo**. Considera-se que ele administrou mal seus atributos. O jogo segue normalmente, mas será bem difícil continuar sem deck. Existem efeitos, recursos e outros fatores que permitem um *comeback* e a restauração do deck.
+- **Números inteiros:** todos os cálculos do jogo resultam em **números inteiros**. As lógicas podem arredondar para cima ou para baixo, conforme a finalidade de cada cálculo.
+
+---
+
+## 4. Atributos e o deck de atributos
+
+![Referência de imagem protótipo de atributos](images/exemplos_prototipo_de_atributos.JPG)
+
+### 4.1 O deck de atributos
+
+- Cada jogador tem o **seu próprio deck de atributos** com **exatas 60 cartas** (número especulativo, sujeito a análise).
+- O **deck building** deste jogo consiste em construir o deck de atributos.
+- As cartas de atributo são usadas principalmente para **resolver eventos**, **ativar efeitos/habilidades/recursos** e **pagar custos** de efeitos.
+
+### 4.2 Os 9 atributos
+
+Os atributos se organizam em três categorias.
+
+#### Atributos físicos
+
+| Atributo | Representa | Relacionado a |
+|---|---|---|
+| **Força** | Potência física e capacidade de exercer força muscular. | Levantar, empurrar, carregar, quebrar objetos e causar impacto físico. |
+| **Destreza** | Agilidade, coordenação motora e precisão dos movimentos. | Movimentos rápidos, esquiva, equilíbrio, manipular objetos com precisão e usar armas que exigem técnica. |
+| **Resistência** | Capacidade física de suportar esforços, danos e condições adversas. | Vitalidade, tolerância à dor, fôlego e continuar lutando sob desgaste físico. |
+
+#### Atributos mentais/sociais
+
+| Atributo | Representa | Relacionado a |
+|---|---|---|
+| **Inteligência** | Raciocínio, aprendizado e compreensão lógica. | Conhecimento, memória, resolução de problemas, investigação, planejamento e domínio de assuntos complexos. |
+| **Sabedoria** | Percepção, intuição e capacidade de interpretar situações. | Discernimento, experiência, leitura do ambiente, reconhecimento de padrões e decisões sensatas. |
+| **Carisma** | Personalidade e capacidade de influenciar outras pessoas. | Persuasão, liderança, negociação, intimidação, eloquência e conquistar confiança ou respeito. |
+
+#### Atributos metafísicos
+
+| Atributo | Representa | Relacionado a |
+|---|---|---|
+| **Espírito** | Força interior, determinação e capacidade de exercer ou resistir a influências sobrenaturais. | Força de vontade, concentração, energia espiritual, resistência a possessões e domínio de poderes místicos. |
+| **Sanidade** | Estabilidade mental e capacidade de preservar a lucidez diante de experiências psicologicamente perturbadoras. | Resistência ao horror, ao desconhecido, a entidades incompreensíveis e a fenômenos que desafiam a percepção da realidade. |
+| **Sorte** | Influência do acaso sobre o que envolve o personagem. | Encontrar oportunidades, evitar situações desfavoráveis, obter resultados inesperados e se beneficiar de circunstâncias imprevisíveis. |
+
+### 4.3 Distinções entre atributos parecidos
+
+| Par | Diferença |
+|---|---|
+| **Força × Resistência** | Força: exercer potência física. Resistência: suportar esforço e danos. |
+| **Inteligência × Sabedoria** | Inteligência: adquirir e processar conhecimento. Sabedoria: interpretar situações e aplicar discernimento. |
+| **Espírito × Sanidade** | Espírito: força interior para resistir a influências externas e sobrenaturais. Sanidade: preservar a lucidez diante de experiências perturbadoras. |
+| **Carisma × Espírito** | Carisma: influenciar outras pessoas. Espírito: sustentar a própria vontade diante de influências externas. |
+
+Espírito e Sanidade **não são exclusivos de personagens mágicos**. Um guerreiro pode ter Espírito elevado pela determinação; um explorador pode ter Sanidade elevada por lidar com situações extremas. Assim, todos os atributos são relevantes para diferentes classes, mesmo que algumas tenham mais afinidade com certos atributos.
+
+### 4.4 Tipos de carta de atributo
+
+| Tipo | Descrição | Cópias permitidas no deck |
+|---|---|---|
+| **Básico** | Vale **1** do atributo da carta. | Ilimitadas |
+| **Sinérgico** | Vale por **2 a 4 atributos diferentes**. Ex.: 1 Carisma + 1 Sabedoria; ou 1 Resistência + 1 Destreza + 1 Sorte. | Máximo 4 da mesma carta (número especulativo, sujeito a análise) |
+| **Aprimorado** | Igual ao Básico, mas possui um **efeito**. | Máximo 4 da mesma carta (número especulativo, sujeito a análise) |
+
+---
+
+## 5. Classes e especializações
+
+### 5.1 Trilha de progressão
+
+| Etapa | Descrição |
+|---|---|
+| **Classe primária** | Escolhida no início do jogo. **Trava** o deck de atributos com uma quantidade e/ou combinação de um ou mais atributos específicos. |
+| **Especialização** | Uma subclasse dentro das opções da classe primária. Concede um ou mais **efeitos** e também **trava** o deck com uma quantidade e/ou combinação de atributos. |
+| **Multiclasse** | Ter mais de uma classe primária e, consequentemente, ter mais de uma especialização. |
+
+Regras:
+- Não é possível ter **duas especializações iguais**.
+- Não é possível ter **a mesma classe primária duas vezes**.
+- Como obter uma especialização: ==TODO==
+- Como se tornar multiclasse: ==TODO==
+
+### 5.2 Como ler a tabela de classes
+
+- **Atributos essenciais** representam a identidade mecânica da classe primária.
+- **Atributos adicionais** complementam a especialização e podem introduzir novas possibilidades (habilidades, uso de recursos, etc.). Uma especialização **não necessariamente precisa** ter atributos adicionais.
+- **Reforço** representa uma concentração maior nos atributos essenciais da classe.
+- Os atributos **não são restrições absolutas**: personagens podem desenvolver capacidades fora de suas especialidades, porém, talvez tenham menos afinidade, menos consistência no deck e talvez não se beneficiem tanto assim.
+- Outras dimensões podem ter classes e especializações exclusivas.
+
+### 5.3 Lista de classes
+
+#### Guerreiro — essenciais: Força, Resistência
+
+| Especialização | Foco | Adicional | Reforço |
+|---|---|---|---|
+| **Cavaleiro** | Defesa, armaduras e disciplina | Sabedoria (disciplina e percepção tática) | Resistência (capacidade defensiva e sobrevivência) |
+| **Bárbaro** | Força bruta e fúria | Espírito (controle e manifestação da fúria) | Força e Resistência (potência física e durabilidade) |
+| **Espadachim** | Técnica e precisão com espadas | Destreza (precisão, velocidade e coordenação) | Força (potência dos golpes) |
+| **Gladiador** | Combate agressivo e resistência | Carisma (presença e intimidação) | Força e Resistência (agressividade e capacidade de suportar danos) |
+
+#### Mago — essenciais: Inteligência, Espírito
+
+| Especialização | Foco | Adicional | Reforço |
+|---|---|---|---|
+| **Necromante** | Manipulação da morte e dos mortos-vivos | Sanidade (contato com forças perturbadoras e conhecimento sobre a morte) | Inteligência e Espírito (domínio e manipulação de energias sobrenaturais) |
+| **Ilusionista** | Ilusões e manipulação da percepção | Carisma (manipulação da percepção e influência sobre outras pessoas) | Inteligência (complexidade e precisão das ilusões) |
+| **Invocador** | Conjuração de criaturas e entidades | Sabedoria (compreensão e percepção de entidades) | Inteligência e Espírito (complexidade das invocações e controle das entidades) |
+| **Elementalista** | Manipulação dos elementos | Sabedoria (compreensão das forças naturais) | Inteligência e Espírito (controle e intensidade das manifestações elementais) |
+
+#### Ladino — essencial: Destreza
+
+| Especialização | Foco | Adicional | Reforço |
+|---|---|---|---|
+| **Ladrão** | Furtividade, furtos e arrombamentos | Inteligência (mecanismos, fechaduras e armadilhas) | Destreza (agilidade e precisão) |
+| **Assassino** | Eliminação precisa de alvos | Inteligência (planejamento e identificação de vulnerabilidades) | Destreza e Sorte (precisão, oportunidade e execução) |
+| **Espião** | Disfarces, espionagem e coleta de informações | Carisma (persuasão, disfarces e interação social) | Destreza (furtividade e movimentação) |
+| **Trapaceiro** | Enganação e artimanhas | Carisma (persuasão e manipulação) | Destreza e Sorte (improvisação e execução de artimanhas) |
+
+#### Clérigo — essenciais: Sabedoria, Espírito
+
+| Especialização | Foco | Adicional | Reforço |
+|---|---|---|---|
+| **Sacerdote** | Cura, bênçãos e suporte divino | Carisma (liderança espiritual e inspiração) | Sabedoria e Espírito (poderes divinos e capacidade de cura) |
+| **Exorcista** | Combate a espíritos e entidades malignas | Sanidade (resistência psicológica diante de entidades perturbadoras) | Espírito (resistência e enfrentamento de forças sobrenaturais) |
+| **Inquisidor** | Investigação, julgamento e combate a hereges | Inteligência (investigação e raciocínio) | Sabedoria e Espírito (discernimento e convicção) |
+| **Oráculo** | Profecias, visões e conhecimento divino | Sanidade (capacidade de suportar visões perturbadoras) | Sabedoria e Espírito (intuição e conexão espiritual) |
+
+#### Patrulheiro — essenciais: Destreza, Sabedoria
+
+| Especialização | Foco | Adicional | Reforço |
+|---|---|---|---|
+| **Caçador** | Rastreamento e caça de criaturas | Resistência (perseguições prolongadas e sobrevivência) | Destreza e Sabedoria (precisão e identificação de alvos) |
+| **Arqueiro** | Maestria com arcos e armas de longo alcance | Força (potência dos disparos) | Destreza (precisão e coordenação) |
+| **Explorador** | Sobrevivência e exploração de territórios | Resistência (esforço físico e adaptação a ambientes hostis) | Sabedoria (percepção e orientação) |
+| **Rastreador** | Identificação e perseguição de rastros | Inteligência (interpretação de evidências e identificação de padrões) | Sabedoria e Destreza (percepção e movimentação) |
+
+#### Druida — essenciais: Sabedoria, Espírito
+
+| Especialização | Foco | Adicional | Reforço |
+|---|---|---|---|
+| **Metamorfo** | Transformação em animais e criaturas | Resistência (adaptação física e capacidade de suportar transformações) | Espírito (controle das transformações) |
+| **Guardião** | Proteção da natureza | Resistência (proteção e preservação de ambientes naturais) | Sabedoria e Espírito (conexão e domínio das forças naturais) |
+| **Xamã** | Comunicação com espíritos e ancestrais | Sanidade (capacidade de suportar contatos sobrenaturais) | Sabedoria e Espírito (percepção e conexão espiritual) |
+| **Naturalista** | Conhecimento da fauna, flora e ecossistemas | Inteligência (conhecimento científico e identificação de espécies) | Sabedoria (percepção e compreensão da natureza) |
+
+#### Monge — essenciais: Destreza, Espírito
+
+| Especialização | Foco | Adicional | Reforço |
+|---|---|---|---|
+| **Mestre Marcial** | Maestria em artes marciais | Força (potência dos golpes) | Destreza e Espírito (precisão e controle corporal) |
+| **Asceta** | Disciplina física e espiritual | Resistência (privação, esforço e tolerância física) | Espírito (autocontrole e disciplina) |
+| **Mestre das Sombras** | Técnicas furtivas e movimentos ocultos | Sorte (oportunidades e circunstâncias favoráveis) | Destreza (agilidade e furtividade) |
+| **Punho Elemental** | Artes marciais combinadas com energia elemental | Sabedoria (compreensão e percepção das forças elementais) | Espírito e Destreza (canalização de energia e precisão dos movimentos) |
+
+#### Bardo — essencial: Carisma
+
+| Especialização | Foco | Adicional | Reforço |
+|---|---|---|---|
+| **Menestrel** | Música e entretenimento | Destreza (execução e coordenação musical) | Carisma (expressividade e capacidade de entreter) |
+| **Trovador** | Narrativas, inspiração e tradição oral | Inteligência (conhecimento histórico e cultural) | Carisma (comunicação e capacidade de inspirar) |
+| **Diplomata** | Persuasão, negociação e influência | Inteligência (argumentação e estratégia) | Carisma (persuasão e influência social) |
+| **Artista** | Expressão artística e criatividade | Inteligência (criatividade e elaboração artística) | Carisma (expressividade e impacto artístico) |
+
+#### Alquimista — essencial: Inteligência
+
+| Especialização | Foco | Adicional | Reforço |
+|---|---|---|---|
+| **Transmutador** | Transformação da matéria | Espírito (manipulação de energias necessárias à transmutação) | Inteligência (conhecimento e precisão dos processos) |
+| **Toxicologista** | Venenos, toxinas e substâncias | Destreza (manipulação precisa de substâncias) | Inteligência (conhecimento químico e preparação de compostos) |
+| **Bombardeiro** | Explosivos e dispositivos químicos | Destreza (manuseio e precisão no lançamento) | Inteligência (preparação e conhecimento dos compostos) |
+| **Farmacêutico** | Poções, remédios e preparados | Sabedoria (identificação de propriedades e aplicação adequada de preparados) | Inteligência (conhecimento e elaboração de fórmulas) |
+
+#### Artífice — essencial: Inteligência
+
+| Especialização | Foco | Adicional | Reforço |
+|---|---|---|---|
+| **Engenhoqueiro** | Mecanismos e dispositivos | Destreza (montagem e manipulação de mecanismos) | Inteligência (compreensão e desenvolvimento de dispositivos) |
+| **Inventor** | Criação de ferramentas e máquinas | Sorte (experimentação e resultados inesperados) | Inteligência (criatividade e desenvolvimento de invenções) |
+| **Construtor** | Construções e estruturas especiais | Força (manipulação de materiais e trabalho físico) | Inteligência (planejamento e engenharia) |
+| **Ferreiro Arcano** | Criação e aprimoramento de equipamentos mágicos | Espírito (manipulação e canalização de energias mágicas) | Inteligência (conhecimento técnico e mágico) |
+
+#### Bruxo — essenciais: Espírito, Inteligência
+
+| Especialização | Foco | Adicional | Reforço |
+|---|---|---|---|
+| **Demonologista** | Pactos com demônios e entidades infernais | Sanidade (exposição a entidades e forças infernais) | Espírito (controle e manutenção dos pactos) |
+| **Ocultista** | Conhecimentos proibidos e rituais | Sanidade (contato com conhecimentos perturbadores) | Inteligência e Espírito (compreensão e execução de rituais) |
+| **Pactário** | Vínculos sobrenaturais e contratos | Carisma (negociação e estabelecimento de contratos) | Espírito (manutenção e controle dos vínculos) |
+| **Maldito** | Maldições, corrupção e debilitamento | Sanidade (contato com forças corruptoras) | Espírito (manipulação e imposição de maldições) |
+| **Abissalista** | Poderes de entidades cósmicas e abissais | Sanidade (exposição a entidades incompreensíveis) | Espírito e Inteligência (canalização e compreensão de poderes abissais) |
+
+#### Feiticeiro — essenciais: Espírito, Carisma
+
+| Especialização | Foco | Adicional | Reforço |
+|---|---|---|---|
+| **Dracônico** | Herança de dragões e poderes dracônicos | Resistência (vigor e tolerância a poderes dracônicos) | Espírito (manifestação dos poderes herdados) |
+| **Elemental** | Afinidade natural com elementos | Sabedoria (compreensão e percepção das forças elementais) | Espírito (manifestação e controle dos poderes elementais) |
+| **Celestial** | Poderes de origem divina ou celestial | Sabedoria (discernimento e compreensão de forças divinas) | Espírito e Carisma (manifestação e expressão dos poderes celestiais) |
+| **Trevoso** | Poderes de origem demoníaca ou infernal | Sanidade (exposição e adaptação a forças sombrias) | Espírito (controle e manifestação dos poderes infernais) |
+
+### 5.4 Conceitos de classe a desenvolver
+
+- É necessário analisar quais classes e especializações facilitam certas builds. Algumas builds podem ser exclusivas de certas classes e especializações.
+- É necessário definir o **conceito principal** de cada classe e especialização. Exemplos: um Feiticeiro Trevoso consegue recuperar cartas do limbo; um Guerreiro Espadachim consegue comprar mais cartas do que outras classes. Um conceito pode ou não ser exclusivo, e mais de uma classe/especialização pode compartilhar o mesmo conceito.
+- A classe influencia a quantidade de slots do [inventário](#71-inventário).
+- Classes e especializações podem ter a capacidade de reparar equipamentos.
+- Analisar e planejar como conectar classes e especializações a certos elementos (algumas têm mais afinidade com certos elementos).
+---
+
+## 6. Recursos: equipamentos e itens
+
+**Recursos** são equipamentos e itens (mais tipos podem ser adicionados no futuro). Eles possuem efeitos e ajudam o jogador.
+
+### 6.1 Equipamentos
+
+- São recursos que o jogador usa **o tempo todo**. As cartas ficam posicionadas **na frente do jogador**, mostrando que estão equipadas.
+- Equipamentos **não vão para a mão**. Podem ser guardados no **inventário** e trocados pelos que estão em uso, por estratégia (veja a ação [Preparar](#11-ações-de-zona)).
+- O jogador pode usar **1 equipamento de cada categoria**:
+
+| Categoria | Exemplos |
+|---|---|
+| **Cabeça** | Capacetes, tiaras mágicas, capuzes, coroas, etc. |
+| **Tronco** | Peitorais de metal, cotas de malha, túnicas de tecido, corpetes de couro, etc. |
+| **Inferior** | Calças, grevas de armadura, saias de combate, etc. |
+| **Calçado** | Botas de ferro, sapatos leves de couro, sandálias encantadas, cintos, pochetes, etc. |
+| **Capa** | Capa, manto, etc. |
+| **Arma** | Adagas, punhais, facas, espadas curtas, espadas longas, sabres, cimitarras, katanas, clavas, maças, martelos de guerra, manguais, porretes, lanças, alabardas, tridentes, foices, espadas de duas mãos (montantes), machados de batalha grandes, martelos pesados, manoplas reforçadas, garras, soco-inglês, arcos, bestas, facas de arremesso, machadinhas, azagaias, shurikens, dardos, pistolas, mosquetes, rifles, bacamartes, cajados, varinhas, tomos, grimórios, cruzes, amuletos, talismãs, orbes mágicos, etc. |
+| **Escudo** | Escudo leve de madeira ou metal (pequeno), escudo pesado, escudo de corpo/pavês, escudos especiais (ornamental, concha, táurico), etc. |
+
+> Algumas armas **não permitem usar escudo**. Nesse caso, o jogador fica com um slot a menos.
+
+- Equipamentos e armas possuem **[habilidades](#19-habilidades)**, que podem causar dano ao oponente ou ativar efeitos. Armas e equipamentos de categorias diferentes podem ter as mesmas habilidades.
+- **Quebra de equipamentos:** efeitos, habilidades e outros fatores podem quebrar equipamentos. Para repará-los, é preciso levá-los ao [ferreiro](#26-ferreiro) ou usar um efeito/habilidade/recurso de reparo.
+
+### 6.2 Itens
+
+Podem existir mais categorias no futuro, inclusive categorias exclusivas de uma dimensão.
+
+| Categoria | Finalidade | Exemplos |
+|---|---|---|
+| **Consumíveis** | Recuperar vida, remover status negativos, obter status positivos e ganhar efeitos. | Poções, elixires, alimentos, bebidas, pergaminhos, bombas, remédios, etc. |
+| **Materiais** | Fabricação, aprimoramento ou outras atividades. | Minérios, gemas, ervas, tecidos, couros, componentes, peças, etc. |
+| **Relíquias** | Objetos especiais, geralmente raros, mágicos ou com propriedades extraordinárias. | Artefatos, amuletos, talismãs, objetos amaldiçoados, objetos lendários, etc. |
+| **Ferramentas** | Executar atividades específicas, interagir com o ambiente ou superar obstáculos. | Ferramentas de mineração e de coleta, instrumentos, utensílios, equipamentos de exploração, dispositivos. |
+| **Tesouros** | Representar valor econômico ou servir de recompensa. | Moedas, joias, pedras preciosas, objetos valiosos, antiguidades, etc. |
+| **Documentos** | Carregar informações, registros ou conhecimentos. | Mapas, livros, cartas, manuscritos, registros, contratos, etc. |
+| **Objetos especiais** | Relacionados a eventos, progressão ou situações específicas do jogo. | Qualquer coisa, inclusive itens das outras categorias. |
+
+---
+
+## 7. Inventário, pasta de TCG e cofre
+
+O jogador guarda suas coisas em três lugares diferentes:
+
+| Onde | O que guarda | Capacidade padrão | Onde acessa |
+|---|---|---|---|
+| **Inventário** | Recursos que o jogador carrega | 10 slots (varia por classe) | Sempre |
+| **Pasta de TCG** | Cartas para ajustar o deck | 20 unidades de cartas no total | Ação **Preparar** |
+| **Cofre** | Tudo do jogador | 30 slots + 10 slots de decks | Ação **Usar cofre** |
+
+### 7.1 Inventário
+
+- Funciona como uma **"segunda mão"**.
+- A quantidade de slots depende da **classe**: classes com mais força, por exemplo, têm mais slots. **Por padrão, a maioria das classes tem 10 slots.**
+- Durante eventos, raides, etc., o jogador pode usar o que está no inventário, desde que o conteúdo do slot permita.
+- Buffs, efeitos, itens e equipamentos podem **aumentar** ou **diminuir** o tamanho do inventário. No caso de recursos no inventário que estejam em excesso (estejam a mais no inventário), o jogador escolhe quais recursos devem ser jogados no **limbo** imediatamente.
+
+### 7.2 Pasta de TCG
+
+- Todo jogador carrega uma pasta de TCG com até **20 unidades de cartas** no total.
+- Ela permite mexer na build do deck **sem precisar do cofre**, por meio da ação **Preparar**.
+- A pasta **não ocupa slot do inventário**: ela tem um slot exclusivo.
+
+### 7.3 Cofre
+
+- Guarda **todas as coisas** do jogador: recursos, itens, cartas de atributo, boosters, etc.
+- O cofre está **atrelado ao jogador**: os mesmos itens podem ser acessados de qualquer zona que tenha cofre, inclusive em **dimensões diferentes**.
+- No cofre, o jogador faz **todo o deck building**: gerencia decks, monta builds diferentes e move cartas, itens e recursos entre o inventário e o cofre.
+- **Slots do cofre:**
+  - **10 slots de decks** por padrão (builds diferentes). Slots de decks são exclusivos e separados dos demais.
+  - **30 slots** por padrão para cartas, boosters, recursos, itens, etc.
+  - Cópias repetidas **se empilham** sem limite; cada carta/item/recurso **diferente** ocupa um slot diferente.
+
+---
+
+## 8. Dimensões e zonas
+
+### 8.1 Dimensões
+
+- Uma **dimensão** é o mundo onde a partida acontece. Ela é composta por um conjunto de **cartas de zona** (por exemplo, 12, 16 ou 20 cartas). Esses valores são especulativos. Quantidades sujeitas a análise.
+- A dimensão pode ter **nenhum, um ou vários efeitos** padrão. Exemplos:
+  - jogadores dentro dela não podem usar efeitos do elmo;
+  - jogadores precisam pagar 1 moeda de ouro para usar uma ação;
+  - durante eventos de combate, não é possível usar poções.
+- Uma dimensão sem efeitos pode significar que seus eventos são muito difíceis.
+
+### 8.2 Zonas
+
+![Referência de imagem protótipo de zonas](images/prototipo_de_zonas.JPG)
+
+**Zonas** são cartas de lugares que compõem o mapa de uma dimensão. Cada zona tem um **tipo** e um **local**. Outras dimensões podem ter zonas específicas e diferentes.
+
+| Tipo de zona | Possíveis locais |
+|---|---|
+| **Montanhosa** | Montanhas, colinas, vales, picos, cordilheiras, etc. |
+| **Florestal** | Florestas, bosques, matas, selvas, etc. |
+| **Costeira** | Praias, falésias, enseadas, litoral, portos, docas, ancoradouros, etc. |
+| **Lacustre** | Lagos, lagoas, margens, áreas alagadas, etc. |
+| **Pantanosa** | Pântanos, brejos, manguezais, charcos, etc. |
+| **Campestre** | Campos, pradarias, pastagens, planícies, etc. |
+| **Desértica** | Desertos, dunas, oásis, terrenos áridos, etc. |
+| **Vulcânica** | Vulcões, crateras, campos de lava, etc. |
+| **Fluvial** | Rios, riachos, cachoeiras, corredeiras, etc. |
+| **Subterrânea** | Cavernas, grutas, túneis, minas, abismos, etc. |
+| **Urbana** | Cidades, metrópoles, etc. |
+| **Rural** | Fazendas, plantações, etc. |
+| **Habitada** | Vilas, aldeias, povoados, assentamentos, acampamentos, etc. |
+| **Fortificada** | Castelos, fortalezas, cidadelas, muralhas, etc. |
+| **Religiosa** | Templos, santuários, monastérios, etc. |
+| **Industrial** | Fábricas, oficinas, complexos industriais. |
+
+### 8.3 O que uma carta de zona contém
+
+- **Setas de conexão:** de nenhuma a quatro setas, cada uma apontando para uma aresta da carta. **Toda zona urbana tem obrigatoriamente as quatro setas.**
+- **Ações:** cada zona tem as suas próprias [ações de zona](#11-ações-de-zona). Uma zona pode ter 5 ações e outra apenas 1. Algumas ações são exclusivas de certas zonas; outras aparecem em várias. Exemplo: uma cidade pode ter "Iniciar evento", "Ir ao Ferreiro", "Ir ao Mercado" e "Ir ao hotel"; outra cidade pode ter só "Iniciar evento" e "Ir ao Mercado". Isso obriga o jogador a pensar para onde ir para cumprir seus objetivos ou conseguir algum item ou serviço.
+- **Efeitos:** nenhum, um ou vários. Exemplos: na zona X, a classe Mago causa mais dano em combate; na zona Y, quem for nocauteado em evento ou combate perde todas as moedas de ouro; na zona Z, equipamentos do tipo armadura têm seus efeitos anulados.
+- **Decks próprios**, separados pelo tipo da zona:
+  - **deck de eventos** (cerca de 30 cartas de eventos aleatórios por zona; número especulativo, sujeito a análise);
+  - **deck de recompensas**;
+  - **deck de recursos** que podem ser encontrados na zona.
+  
+  Zonas diferentes podem ter a mesma carta nesses decks.
+
+---
+
+## 9. Montagem do mapa e preparação da partida
+
+![Protótipo de mapa-múndi](images/protótipo_mapa_mundi.JPG)
+
+### 9.1 Montagem do mapa
+
+1. **Embaralhe** as cartas de zona da dimensão.
+2. Selecione **aleatoriamente uma zona urbana do tipo cidade** e posicione-a na mesa como **primeira carta**.
+3. Compre cartas do **topo** do deck de zonas.
+4. Posicione cada nova carta **onde uma seta de uma carta já posicionada aponta**.
+5. Repita até montar o mapa.
+
+Assim, **cada vez que a dimensão é jogada, um mapa diferente é construído**, o que dá rejogabilidade e permite estratégias e planos diferentes.
+
+### 9.2 Preparação dos jogadores
+
+1. Cada jogador escolhe uma **classe primária**.
+2. Cada jogador recebe os [valores iniciais](#31-valores-iniciais) e compra **7 cartas** do deck de atributos.
+3. Cada jogador escolhe a **zona inicial** (seu ponto de **spawn**). Na campanha, ela deve ser **obrigatoriamente uma zona urbana**.
+4. Define-se a **ordem dos jogadores** (aleatória ou por algum critério).
+
+---
+
+## 10. A vez do jogador
+
+1. O jogador tem **3 pontos de ação** por padrão.
+2. Cada [ação de zona](#11-ações-de-zona) gasta pontos de ação (exceto as indicadas como gratuitas), inclusive a ação **Movimentar**.
+3. As ações podem ser feitas **em qualquer ordem**. Exemplo: Iniciar evento → Movimentar → Ir ao Mercado.
+4. O jogador **não precisa usar todos os pontos**: ele pode encerrar a vez quando quiser.
+5. Quando os pontos acabam ou o jogador encerra a vez, a vez passa para o próximo jogador.
+
+---
+
+## 11. Ações de zona
+
+Cada zona oferece apenas algumas das ações abaixo. Estas são as **ações padrão** que podem existir.
+
+| Ação | Custo | Descrição |
+|---|---|---|
+| **Movimentar** | 1 ponto de ação | O jogador se move para uma zona **conectada** à zona atual. Por padrão, só nas direções **cima, baixo, esquerda e direita** (sem diagonal). Efeitos podem permitir diagonal. Pode ser usada **mais de uma vez** na mesma vez. |
+| **Iniciar evento** | 1 ponto de ação | Revela um [evento](#13-eventos). Resolver dá recompensas; falhar dá debuffs e penalidades. As mecânicas de TCG acontecem principalmente aqui. Pode ser usada **mais de uma vez** na mesma vez. |
+| **Usar cofre** | 1 ponto de ação | Acessa o [cofre](#73-cofre). Pode ser usada **mais de uma vez** na mesma vez. |
+| **Recuperar** | 1 ponto de ação | O jogador recebe **3 pontos de vida** por padrão e escolhe uma opção: (a) comprar cartas até ter 7 na mão; (b) reembaralhar a mão no deck de atributos; (c) reembaralhar a pilha de descarte de atributos no deck de atributos. Pode ser usada **mais de uma vez** na mesma vez. |
+| **Enfrentar jogador ou jogadores** | 1 ponto de ação  | Entre em combate com um ou mais jogadores. |
+| **Preparar** | **Gratuita**  | Pode ser usada **mais de uma vez** na mesma vez. Faz tudo isto na mesma ação: (a) mexer na build do deck usando as cartas da **pasta de TCG**; (b) **trocar equipamentos** em uso por outros do inventário; (c) **usar recursos** do inventário (ativar efeitos e habilidades). |
+| **Pegar / Continuar / Finalizar missão X** | 1 ponto de ação | Interage com uma [missão](#21-missões) disponível na zona. |
+| **Pegar / Continuar / Finalizar objetivo X** | 1 ponto de ação | Somente nos modos **Desbravadores** e **Clássico**. Cumprir um objetivo dá pontos de objetivo, conforme a carta. |
+| **Negociar** | **Gratuita** | Troca de itens entre jogadores na mesma zona (veja [Negociação](#23-negociação)). Não gasta ponto de ação de nenhum envolvido. |
+| **Iniciar raide** | Todos os pontos de ação restantes (no mínimo 1 ponto de ação) | Inicia uma [raide](#22-raides). Depois disso, o jogador não pode executar mais nenhuma ação na vez. |
+| **Ir ao Ferreiro** | Todos os pontos de ação restantes (no mínimo 1 ponto de ação) | Refinar, encantar, criar e consertar equipamentos (veja [Ferreiro](#26-ferreiro)). |
+| **Ir ao Mercado** | Todos os pontos de ação restantes (no mínimo 1 ponto de ação) | Comprar e vender itens, cartas e boosters (veja [Mercado](#24-mercado)). |
+| **Salvar ponto de respawn** | Todos os pontos de ação restantes (no mínimo 1 ponto de ação) | Define a zona atual como o ponto de [respawn](#15-nocaute-spawn-e-respawn). |
+
+---
+
+## 12. Pilhas de descarte e limbo
+
+Antes de falar de eventos e efeitos, é importante saber para onde vão as cartas.
+
+| Origem | Destino padrão |
+|---|---|
+| **Cartas de atributo** usadas como requisito, pagas como custo, descartadas por efeito/habilidade ou em qualquer outra situação, inclusive o excesso de cartas na mão | **Pilha de descarte de atributos** do próprio jogador |
+| **Equipamento abdicado** | **Limbo** |
+| **Recurso oferecido** | **Limbo** |
+| **Cartas que não são de atributo** usadas para resolver um evento | **Limbo** |
+| **Carta de evento**, resolvida ou não | **Pilha de descarte de eventos** daquela zona |
+
+- O **limbo** é uma **pilha de descarte comum a todos os jogadores**.
+- Alguns efeitos e habilidades podem mandar cartas de atributo para o **limbo** em vez da pilha de descarte do jogador.
+- Quando o deck de eventos de uma zona acaba, a pilha de descarte de eventos **daquela zona** é reembaralhada para formar um novo deck.
+- **IMPORTANTE:** se uma carta não diz explicitamente para embaralhar um deck, o deck **NÃO** deve ser embaralhado.
+
+---
+
+## 13. Eventos
+
+![Fluxo de eventos](images/fluxo_de_eventos.JPG)
+
+Eventos precisam ser resolvidos pelos jogadores para conseguir recompensas. Alguns tipos de eventos são (podem existir mais no futuro):
+- **Evento aleatório**: um desafio com requisitos a cumprir;
+- **Evento de combate**: um combate contra um ou mais inimigos (veja [Sistema de combate](#17-sistema-de-combate)).
+
+### 13.1 A carta de evento
+
+Ao usar **Iniciar evento**, compra-se uma carta do **deck de eventos da zona**, que é revelada ao jogador. A carta contém:
+- **Título**;
+- **Flavor text**;
+- **Requisitos de resolução**;
+- **Coisa boa**: o que acontece se o jogador resolver o evento;
+- **Coisa ruim**: o que acontece se o jogador não resolver.
+
+Observações:
+- O jogador **não é obrigado** a resolver o evento. Ele pode simplesmente aceitar a coisa ruim.
+- Nem sempre resolver dá algo ao jogador: às vezes, resolver apenas **evita a coisa ruim**.
+- A coisa boa e a coisa ruim ativam efeitos e **devem ser ativadas** por padrão.
+
+### 13.2 Requisitos de resolução
+
+Um evento pode exigir um ou uma combinação de dois ou mais dos requisitos abaixo:
+- **Atributos**: uma combinação de atributos específicos, um único atributo específico ou um atributo genérico;
+- **Doar vida**;
+- **Descartar carta de atributo**;
+- **Abdicar de equipamento**;
+- **Pagar ouro**;
+- **Oferecer recurso do inventário**;
+- **Manipulação de cartas**. ==TODO==
+
+### 13.3 Fases do evento
+
+| Fase | Quando acontece |
+|---|---|
+| **Antecipação** | Antes de a carta de evento ser revelada. |
+| **Encontro** | O jogador tenta (ou não) resolver o evento. |
+| **Êxito** | Depois de o evento ser resolvido com sucesso: o jogador recebe benefícios, buffs, itens e/ou recompensas (ou apenas evita a coisa ruim). |
+| **Revés** | Depois de o evento não ser resolvido: o jogador sofre as penalidades da carta. |
+
+Durante o encontro, o jogador pode tentar **fugir** com o [teste de fuga](#14-teste-de-fuga).
+
+### 13.4 Reposição de cartas
+
+Ao terminar o evento (depois do êxito ou do revés), o jogador **compra imediatamente** do deck de atributos **a mesma quantidade de cartas de atributo** que jogou para tentar resolver o evento.
+
+| Exemplo | O que aconteceu | Compra cartas? |
+|---|---|---|
+| 1 | Gastou 4 cartas e resolveu o evento → as 4 cartas vão para a pilha de descarte de atributos → êxito encerrado. | **Sim, 4** |
+| 2 | Gastou 2 cartas, percebeu que não ia conseguir, tentou fugir e falhou → sofre as penalidades → revés encerrado. | **Sim, 2** |
+| 3 | Não quis gastar cartas, tentou fugir e falhou → sofre as penalidades → revés encerrado. | **Não** (nenhuma carta usada) |
+| 4 | Gastou 5 cartas, percebeu que não ia conseguir, tentou fugir e **conseguiu** → não sofre penalidades → o encontro se encerra. | **Não** (fugiu com sucesso) |
+
+---
+
+## 14. Teste de fuga
+
+- O teste de fuga pode acontecer durante um **evento** ou **uma outra situação**.
+- O jogador que quer fugir rola um **D20**.
+- Por padrão, para fugir é preciso tirar **um número maior que 10**.
+- Alguns eventos e combates têm um **valor mínimo de fuga** próprio.
+- Efeitos/Habilidades podem aumentar ou diminuir tanto o valor do dado quanto o valor mínimo de fuga.
+- **Falhar na fuga de um combate** deixa o jogador **nocauteado** (veja [Sistema de combate](#17-sistema-de-combate)).
+- **Não é possível fugir:**
+  - no modo **Enfrentamento (PVP)**, onde o jogador pode apenas **desistir** do combate;
+  - em batalhas **dentro de raides**.
+
+> O teste de fuga entre **jogadores** no modo Desbravadores tem uma regra própria (veja [Desbravadores](#272-desbravadores)).
+
+---
+
+## 15. Nocaute, spawn e respawn
+
+### 15.1 Spawn e respawn
+
+- **Spawn** e **respawn** são o mesmo ponto do mapa:
+  - **spawn** é onde o jogador aparece no mundo **pela primeira vez**;
+  - **respawn** é onde o jogador **reaparece depois de ser nocauteado**.
+- A ação **Salvar ponto de respawn** muda esse ponto para a zona atual.
+
+### 15.2 Nocaute
+
+Quando o jogador chega a **0 pontos de vida**, ele é **nocauteado**:
+1. Volta para o seu **ponto de respawn** com a **vida inicial** que começou a partida.
+2. Perde as **ações restantes** da vez e a sua **próxima vez**.
+   - **Exceção:** jogando **sozinho** nos modos Campanha, Desbravadores e Clássico, o jogador **não** perde a vez.
+3. Sofre as penalidades da coisa que o nocauteou, se houver (por exemplo, as penalidades da carta do inimigo).
+
+> Em combates com vários jogadores, o nocauteado só é teletransportado ao fim do combate (veja [Sistema de combate](#17-sistema-de-combate)).
+
+---
+
+## 16. Modificadores e Vigor
+
+**Modificadores** são pontos do jogador que afetam cálculos e interações durante toda a partida. Recursos, efeitos e habilidades podem **aumentar ou diminuir** um ou mais modificadores. Mais modificadores podem surgir no futuro.
+
+Todos os modificadores são usados **principalmente em combate**, mas também podem aparecer como requisito em eventos aleatórios e em outras ocasiões. O cálculo de cada um combina o próprio modificador com equipamentos, efeitos ativos, outros fatores (como cartas de atributo específicas na mão) e, **principalmente, o Vigor**. A lógica de cada cálculo ainda precisa ser definida.
+
+| Modificador | O que o resultado do cálculo define |
+|---|---|
+| **Ataque** | O valor do ataque desferido no oponente (usa a força dos equipamentos). |
+| **Defesa** | Quanto o jogador resiste ao ataque inimigo (usa a defesa dos equipamentos). Se o ataque for **maior** que a defesa, o defensor toma a diferença como dano; se for **igual**, não toma dano. |
+| **Precisão** | Se o ataque **acerta**. Se acertar, o valor de ataque é usado. |
+| **Esquiva** | Se o alvo **escapa** do ataque. Se escapar, não sofre dano. |
+| **Celeridade** | A **ordem de ação** no combate: quanto maior, mais cedo a parte ataca. |
+| **Perfuração** | Quanto da **defesa** do oponente é ignorado no cálculo de dano. |
+| **Reflexão** | Quanto do ataque recebido é **devolvido** ao atacante. O valor devolvido é subtraído do dano ao defensor. |
+| **Vigor** | O **modificador mais importante**. Influencia **todos** os outros modificadores e é o que mais pesa no resultado final dos cálculos. |
+
+### 16.1 Vigor (o sistema de "nível")
+
+**Não existe nível no jogo.** No lugar dele existe o **Vigor**, que é altamente dinâmico: quase tudo no jogo concede ou remove um pouco de Vigor.
+
+| Concedem Vigor | Removem Vigor |
+|---|---|
+| Cumprir missões | Fugir de combates |
+| Usar itens pontuais | Usar algumas habilidades de equipamentos |
+| Habilidades de equipamentos | Não conseguir resolver eventos |
+| Resolver eventos com sucesso | Perder combates |
+| Ganhar combates | Ser nocauteado |
+| Derrotar inimigos | Perder uma raide |
+| Efeitos positivos (buffs) | Efeitos negativos (debuffs) |
+| Etc. | Etc. |
+
+O Vigor também é o **custo padrão** para usar [habilidades](#19-habilidades).
+
+---
+
+## 17. Sistema de combate
+
+Quando um **evento de combate** é revelado (ou acontece uma batalha numa raide), começa um combate.
+
+### 17.1 Combate 1 jogador × 1 inimigo (regra base)
+
+1. **Ordem de ataque:** pela **celeridade**, da maior para a menor. Em caso de empate, o **inimigo tem prioridade** por padrão (efeitos, habilidades e itens podem mudar isso).
+2. **Turnos de combate:** as partes se revezam, uma por vez.
+3. **No seu turno de combate**, a parte pode ativar vários efeitos, habilidades, etc. **A última coisa do turno é sempre atacar.**
+4. **Cálculo do dano:** o ataque vai contra a defesa do oponente.
+   - Ataque **igual** à defesa → o oponente não toma dano.
+   - Ataque **maior** que a defesa → o oponente perde vida igual à diferença.
+   - Se o alvo **esquivar**, o ataque é um **"miss"** e o turno passa para o próximo atacante.
+5. **Ataques múltiplos:** efeitos, habilidades e itens podem permitir atacar mais de uma vez, desde que suas condições sejam cumpridas e nenhum **efeito** ou **habilidade** impeça.
+6. O inimigo segue a mesma lógica: ativa efeitos e habilidades e por fim ataca.
+7. **Quem chegar a 0 de vida primeiro é nocauteado.**
+   - **Vitória do jogador:** recebe as recompensas descritas na carta do inimigo e segue para a próxima ação, se ainda tiver pontos de ação.
+   - **Derrota do jogador:** é [nocauteado](#15-nocaute-spawn-e-respawn) e sofre as penalidades descritas na carta do inimigo, se houver.
+8. **Troca de equipamentos:** não é permitida durante o combate por padrão; efeitos, habilidades ou outros fatores podem mudar isso.
+9. **Fuga:** o jogador pode tentar o [teste de fuga](#14-teste-de-fuga).
+   - **Sucesso:** o combate termina imediatamente.
+   - **Falha:** o jogador é **nocauteado**. Como ninguém derrotou o inimigo nem fugiu com sucesso, o combate é considerado **derrotado** e o jogador sofre as penalidades descritas na carta do inimigo.
+
+Inimigos **não usam "cartas na mão"**: tudo é feito automaticamente pelo sistema.
+
+### 17.2 Combate 1 jogador × 2 ou mais inimigos
+
+Segue a regra base, com duas diferenças:
+- No seu turno de combate, o jogador **escolhe qual inimigo atacar**.
+- As recompensas só são entregues depois de **todos os inimigos** serem derrotados.
+
+### 17.3 Combate com 2 ou mais jogadores × 1 ou mais inimigos
+
+**Quem pode entrar:** se um jogador inicia um evento de combate e há outros jogadores na mesma zona, ele pode **recrutá-los** para ajudar. Não há limite de ajudantes.
+
+**Custo e recompensas:**
+- Só o **jogador que iniciou o combate** gasta ponto de ação. Os ajudantes não perdem pontos de ação.
+- Só o **jogador que iniciou** recebe as recompensas.
+- **Exceção:** se quem iniciou fugir, ou for nocauteado e não for ressuscitado até o fim, e os outros vencerem, as recompensas são **divididas entre os sobreviventes**. Eles escolhem as recompensas em ordem de celeridade, da maior para a menor.
+- Isso cria uma dinâmica no combate: alguns jogadores podem fugir por conta própria, enquanto outros podem querer ficar e vencer para levar as recompensas.
+
+**Nocaute durante o combate:**
+- O jogador nocauteado **não é teletransportado** imediatamente, porque outros jogadores podem **ressuscitá-lo** com itens, efeitos, habilidades, etc.
+- Enquanto está nocauteado, ele **não joga** seu turno de combate (apenas assiste).
+- Se o combate terminar **com vitória** e algum jogador ainda estiver nocauteado, ele vai para o respawn, mas **não sofre** as penalidades dos inimigos.
+
+**Fuga em grupo** (vale nos modos Campanha, Desbravadores e Clássico):
+- Cada jogador tenta o teste de fuga **um por vez**, no seu turno de combate.
+- Falhar na fuga deixa o jogador **nocauteado**.
+- Quem foge com sucesso sai do combate e não joga mais nele.
+
+**Resultado do combate:**
+
+| Situação | Resultado | Penalidades dos inimigos |
+|---|---|---|
+| Os jogadores derrotam todos os inimigos | **Vitória** | Ninguém sofre |
+| **Todos** os jogadores fogem com sucesso | **Fuga com sucesso** | Ninguém sofre |
+| Alguns fogem e outros terminam nocauteados, sem vitória | **Derrota** | Só os **nocauteados** sofrem |
+| Ninguém derrota os inimigos nem foge com sucesso | **Derrota** | Os **nocauteados** sofrem |
+
+Quem fugiu com sucesso não sofre as penalidades dos inimigos, mas pode sofrer penalidades de outros fatores (efeitos, etc.).
+
+**Exemplo:**
+1. Participantes: jogadores A, B e C; inimigos A, B, C e D.
+2. Ordem por celeridade: jogador A → inimigo C → inimigo A → jogador C → jogador B → inimigo D → inimigo B.
+3. Os jogadores percebem que não vão vencer e decidem fugir.
+4. O jogador A tenta fugir, falha e é nocauteado. Os inimigos C e A atacam. O jogador C tenta fugir, falha e é nocauteado. O jogador B foge com sucesso e sai do combate.
+5. Resultado: **derrota**. Os jogadores A e C sofrem as penalidades dos inimigos; o jogador B não.
+
+**Outras regras:**
+- **Não é permitido negociar** entre jogadores durante um combate. **Nada** pode alterar essa regra.
+- No modo **Desbravadores**, antes do combate, os ajudantes podem **negociar a divisão da recompensa** com quem iniciou. Eles não são obrigados a pedir parte da recompensa.
+
+### 17.4 Combate em raides
+
+- **Não é possível fugir** de batalhas dentro de uma raide, porque o confronto faz parte da história.
+- Se um jogador for nocauteado, ou quando todos os jogadores forem nocauteados, a raide **termina** e todos sofrem as penalidades descritas naquela etapa da raide.
+
+### 17.5 IA dos inimigos
+
+É necessário implementar uma IA que controle as ações dos inimigos em combate: perceber quando o jogador tem defesa ou ataque fracos, escolher as melhores estratégias, ajudar ou ressuscitar um aliado, etc.
+
+---
+
+## 18. Elementos
+
+Elementos têm relações de vantagem, desvantagem e neutralidade entre si. Eles influenciam o cálculo de dano, a defesa e diversos outros cenários do jogo.
+
+| Relação | Efeito padrão |
+|---|---|
+| **Vantagem** | +25% de efetividade contra o elemento |
+| **Desvantagem** | −25% de efetividade contra o elemento |
+| **Neutro** | Os elementos não têm relação entre si; a habilidade funciona normalmente. |
+| **Sem elemento** | A habilidade não tem afinidade elemental; o resultado é sempre neutro. |
+
+Exemplos: Fogo contra Água tem desvantagem. Fogo contra Ar é neutro. Uma habilidade sem elemento contra Água ou contra Fogo é neutra.
+
+### 18.1 Tabela de elementos
+
+Novos elementos podem surgir no futuro.
+
+| Elemento | Descrição | Vantagem contra | Desvantagem contra |
+|---|---|---|---|
+| **Terra** | Rochas, minerais, areia, cristais e manifestações geológicas. Resistência, estabilidade e força. | Elétrico, Sônico, Ar | Orgânico, Água |
+| **Água** | Água, líquidos, correntes, pressão e manipulação de fluidos. | Fogo, Tóxico, Terra | Elétrico, Gélido, Orgânico |
+| **Fogo** | Chamas, calor, combustão, explosões e energia térmica. | Gélido, Orgânico, Cósmico | Água |
+| **Elétrico** | Eletricidade, raios, magnetismo e descargas energéticas. | Água, Ar | Terra, Cósmico |
+| **Ar** | Ventos, pressão atmosférica, tempestades e manipulação de gases. | Tóxico, Sanguíneo | Terra, Elétrico |
+| **Gélido** | Gelo, congelamento, baixas temperaturas e cristalização. | Água, Orgânico | Fogo, Sônico |
+| **Orgânico** | Vegetação, raízes, fungos, flores e manifestações biológicas da natureza. | Terra, Água | Fogo, Gélido, Tóxico, Dracônico |
+| **Tóxico** | Venenos, toxinas, ácidos, contaminação e substâncias nocivas. | Orgânico, Sanguíneo | Água, Ar, Celestial |
+| **Arcano** | Energia mágica, feitiços, runas, encantamentos e forças sobrenaturais. | Dracônico, Espiritual | Obscuro, Psíquico |
+| **Obscuro** | Sombras, maldições, corrupção, trevas e energia negativa. | Psíquico, Espiritual, Arcano | Celestial |
+| **Celestial** | Luz divina, bênçãos, energia sagrada, purificação e manifestações celestiais. | Obscuro, Tóxico | Sanguíneo, Cósmico |
+| **Dracônico** | Poderes de dragões, sangue dracônico, sopros e energia ancestral. | Orgânico | Arcano, Sanguíneo |
+| **Cósmico** | Estrelas, gravidade, energia astral, dimensões, espaço e fenômenos cósmicos. | Elétrico, Celestial | Fogo |
+| **Sônico** | Vibrações, frequências, ondas sonoras e ressonância. | Psíquico, Gélido | Terra |
+| **Psíquico** | Telepatia, telecinese, ilusões e manipulação mental. | Sanguíneo, Espiritual, Arcano | Obscuro, Sônico |
+| **Sanguíneo** | Sangue, vitalidade, sacrifícios e manipulação biológica. | Celestial, Dracônico | Ar, Tóxico, Psíquico, Espiritual |
+| **Espiritual** | Espíritos, almas, aparições e manifestações espectrais. | Sanguíneo | Arcano, Obscuro, Psíquico |
+
+---
+
+## 19. Habilidades
+
+- Habilidades estão **vinculadas a equipamentos** de todas as categorias.
+- Cada habilidade tem um **nome** e um ou mais **[efeitos](#20-efeitos)**.
+- **Custo:** usar uma habilidade consome pontos de **Vigor** por padrão. Quanto mais forte a habilidade, mais Vigor ela custa. Algumas habilidades não consomem Vigor, e recursos, efeitos e outras habilidades podem reduzir ou aumentar o custo.
+- Cada habilidade tem um ou mais **[elementos](#18-elementos)** e uma **forma**:
+
+| Forma | Descrição |
+|---|---|
+| **Direcionada** | Atinge um alvo específico. |
+| **Projétil** | Dispara algo em direção a um alvo. |
+| **Área** | Afeta uma região e mais de um inimigo ao mesmo tempo. |
+| **Contínua** | Permanece ativa por determinado período (exige ativação). |
+| **Canalizada** | Exige concentração ou preparação: é preciso usar a habilidade algumas vezes antes de ela poder ser usada de fato. |
+| **Passiva** | Funciona sem ativação manual. |
+
+Continuar a descrição das habilidades: ==TODO==
+
+---
+
+## 20. Efeitos
+
+Efeitos são uma das partes **mais dinâmicas** do jogo. Eles podem afetar qualquer coisa, positiva ou negativamente, e praticamente tudo no jogo pode ter um efeito.
+
+Todo efeito tem quatro partes:
+
+```
+[ Gatilho (opcional) ] → [ Custo (opcional) ] → [ Ativação ] → [ Duração ]
+     quando ativa            o que pagar          o que faz      por quanto tempo
+```
+
+Em todas as categorias abaixo, mais variações podem surgir no futuro (veja a [Parte III](#parte-iii--etapas-de-desenvolvimento)).
+
+### 20.1 Gatilho (opcional)
+
+O gatilho é a **condição de ativação**. Nem todo efeito tem gatilho.
+
+| Categoria | Exemplos |
+|---|---|
+| **De zona** | Ao entrar nesta zona; ao entrar numa zona montanhosa; ao entrar numa zona campestre, fluvial ou religiosa; ao entrar em qualquer zona que não seja vulcânica ou subterrânea; ao entrar numa zona pantanosa, num local de vila, de castelo ou de pradaria; ao entrar numa zona desértica que não seja um oásis. |
+| **De ação de zona** | Ao não realizar nenhuma ação de evento numa zona; ao passar por mais de duas zonas diferentes sem realizar ação de evento; ao descansar três vezes seguidas; ao não descansar nenhuma vez ao chegar a uma zona; enquanto não descansar mais de 1 vez; ao ficar sem descansar depois de passar por mais de quatro zonas; ao finalizar uma missão numa zona; ao finalizar todas as missões de uma zona; ao finalizar mais de três missões numa zona; ao finalizar uma missão em três zonas diferentes; ao finalizar uma raide numa zona; ao finalizar uma raide; ao finalizar 5 raides diferentes; ao finalizar a mesma raide 5 vezes. |
+| **De evento aleatório** | Na fase de encontro; na fase de êxito ou revés; em qualquer fase que não seja a de antecipação. |
+| **De evento de combate** | Ao derrotar um oponente; ao derrotar três oponentes diferentes; ao tentar fugir. |
+| **De habilidade** | Ao usar uma habilidade de calçado; ao usar a habilidade de um equipamento de cabeça ou inferior; ao usar a habilidade de um equipamento que não seja de tronco; ao usar qualquer habilidade do equipamento "NOME DO EQUIPAMENTO"; ao usar qualquer habilidade de uma shuriken, espada de duas mãos ou adaga; ao usar uma habilidade de capa ou manopla. |
+| **De recurso** | Ao ativar um efeito de um recurso; ao ativar quatro efeitos de recursos diferentes; enquanto não ativar mais de dois efeitos de recursos diferentes. |
+| **De classe/especialização** | Enquanto você for de uma especialização da classe Bruxo; enquanto tiver apenas uma classe primária; se tiver duas classes primárias; se tiver mais de três classes primárias; se tiver duas especializações; se for um Guerreiro; se for um Ladino ou Clérigo; se for um Feiticeiro Druida. |
+| **De modificador** | Se seu maior modificador for Reflexão; se seu maior modificador for Vigor ou Precisão; se seu menor modificador for Ataque; se seu menor modificador for Esquiva ou Celeridade; se tiver mais Precisão do que Defesa; se a soma de Ataque e Reflexão for maior que N. |
+| **De atributo** | Se tiver uma carta de Sanidade na mão; duas cartas de Sorte; mais de três cartas de Destreza; três ou menos cartas de Força; uma de Resistência e uma de Carisma; uma de Espírito ou de Inteligência; três ou mais atributos diferentes; apenas um tipo de atributo; quatro ou menos atributos diferentes na mão. |
+| **De inventário** | Ao ativar um efeito de um recurso do inventário; ao ativar dois ou mais efeitos de recursos diferentes do inventário; ao ativar um efeito de um item do inventário; ao ativar um efeito de um equipamento do inventário; ao ter 4 ou menos recursos diferentes no inventário; se não tiver nenhum recurso no inventário. |
+| **De efeito** | Ao usar um efeito de um equipamento; ao usar dois ou mais efeitos de equipamentos diferentes; ao usar três ou menos efeitos de recursos diferentes do inventário; se usou efeitos de um item e de um equipamento; se usou efeitos de um equipamento de cabeça; se não usou efeito de equipamento de tronco ou capa; se usou três ou mais efeitos de itens diferentes do inventário. |
+| **De jogador** | Se estiver sem cartas na mão; se tiver três ou menos cartas na mão; se não tiver cartas na pilha de descarte de atributos; se tiver 10 ou mais pontos de vida; se não tiver mais cartas no deck de atributos; se tiver 30 ou mais moedas de ouro; se tiver 3 ou menos pontos de vida. |
+
+### 20.2 Custo (opcional)
+
+O custo é o que é preciso pagar para ativar o efeito. Nem todo efeito tem custo.
+- **Efeitos muito fortes** têm custos **difíceis e mais específicos**.
+- Um custo pode ter **um ou infinitos requisitos**, misturando todas as categorias.
+- **O efeito não pode ser ativado se o custo não for pago.**
+
+| Requisito | Destino do que é pago | Exemplos |
+|---|---|---|
+| **Atributos** (um específico, uma combinação ou qualquer um) | Pilha de descarte de atributos | Um de Força; um de Carisma + três de Destreza + dois de Sanidade; dois de Espírito + 2 quaisquer. |
+| **Doar vida** | — | Doe 7 de vida; doe vida igual à quantidade de equipamentos em uso (mín. 2); igual à quantidade de equipamentos no inventário (mín. 3); igual à quantidade de recursos no inventário (mín. 4); igual à quantidade de relíquias e documentos no inventário (mín. 2 no total); igual às cartas da pilha de descarte de atributos (mín. 5); metade da sua vida (arredonde para cima); igual ao seu maior modificador (mín. 200); igual ao seu menor modificador (mín. 100). |
+| **Pagar ouro** | — | Pague 15 moedas; ouro igual à quantidade de equipamentos em uso (mín. 2); igual aos equipamentos no inventário (mín. 6); igual aos recursos no inventário (mín. 4); igual às relíquias e documentos no inventário (mín. 2 no total); igual às cartas da pilha de descarte de atributos (mín. 5); metade do seu ouro (arredonde para cima); igual ao seu maior modificador (mín. 50); igual ao seu menor modificador (mín. 90). |
+| **Abdicar de equipamento** | **Limbo** | Só equipamentos **em uso** (no slot do jogador) no momento do gatilho. Abdique do equipamento de cabeça; de capa e tronco; de qualquer um que não seja calçado; de um aleatório; de um aleatório que não seja inferior; de três equipamentos. |
+| **Descartar carta de atributo** | Pilha de descarte de atributos (por padrão) | Descarte 1 carta da mão; 1 aleatória; 1 de Carisma; 1 que não seja Força nem Sabedoria; 3 cartas; 4 que não sejam Destreza nem Espírito; até ficar com 2 na mão (mín. 1); toda a mão (mín. 3); 1 de Sanidade, 1 de Resistência e 1 de Sorte; 3 cartas diferentes; 2 cartas iguais. |
+| **Oferecer recurso do inventário** | **Limbo** | Ofereça 1 item; 2 itens diferentes; 1 equipamento e 1 relíquia; 3 recursos iguais; 1 ferramenta, 1 tesouro e 1 documento; 5 recursos diferentes; 2 equipamentos e 2 itens; 1 que não seja equipamento; 2 que não sejam itens; 4 diferentes que não sejam relíquias, tesouros ou calçados. |
+| **Manipulação de cartas** | Conforme a carta | Enviar N cartas do topo do deck de atributos para a pilha de descarte de atributos; enviar N cartas do fundo do deck para o limbo; reembaralhar N cartas da pilha de descarte no deck; reembaralhar no mínimo 3 cartas da mão no deck; colocar no mínimo 1 carta da mão no topo do deck; colocar no mínimo 3 cartas da mão no fundo do deck. |
+
+### 20.3 Ativação
+
+A ativação é a consequência do efeito: a ação, o ato.
+
+| Categoria | Exemplos |
+|---|---|
+| **Interação matemática** | Perca/ganhe X moedas de ouro; perca/ganhe X pontos de vida; aumente seu Vigor em X; aumente Ataque e Esquiva em X; reduza Defesa, Perfuração e Reflexão em X; zere Celeridade e Defesa; zere o modificador X; uma carta do atributo X vale 2; uma carta do atributo X tem o valor multiplicado por 2; reduza sua vida pela metade (arredonde para cima); cause X de dano no oponente; reduza o ataque do oponente em X. |
+| **Interação de cartas** | Compre X cartas do deck de atributos; descarte X cartas da mão; descarte uma carta específica; escolha uma carta da pilha de descarte de atributos e coloque-a no topo do deck; coloque X cartas do topo do deck na pilha de descarte; procure um atributo X na pilha de descarte; procure um atributo X no deck e coloque-o na mão; procure duas cartas do atributo X no deck, coloque-as na mão e embaralhe o deck; coloque X cartas da mão no topo do deck; envie X cartas do topo/fundo do deck para o limbo. |
+| **Interação de efeito** | Anule todos os efeitos de um equipamento (a habilidade ativa, mas o efeito "não faz nada"); anule todos os efeitos dos itens; de equipamentos da categoria X; de itens da categoria X; de atributos aprimorados. |
+| **Interação de habilidade** | Anule todas as habilidades de um equipamento (a habilidade **nem pode ser ativada**); de equipamentos de capa e calçado; de armas; de cimitarras, katanas, adagas e facas. |
+| **Interação de regra** | Altera uma regra padrão do jogo: começar com 40 de vida em vez de 20; mover-se em diagonal; ter 4 ações por zona em vez de 3; ganhar X ações extras por zona; andar até 2 (ou X) zonas de distância; começar com 50 moedas em vez de 10; Recuperar dá 5 de vida em vez de 3; não ativar a coisa ruim de um evento no revés; ter no máximo X cartas na mão; valor de sucesso de fuga passa a ser 5; diminuir o valor de fuga em uma quantidade igual às cartas na mão; aumentar o valor de fuga em 4; a vitrine do mercado mostra +2 cartas para você; a vitrine mostra apenas 1 carta para você; a pasta de TCG passa a caber 50 cartas; a pasta passa a caber apenas 5 cartas. |
+| **Interação de dados** | Ao rolar um dado, escolha o resultado; some 3 ao resultado; diminua do resultado uma quantidade igual às cartas na sua mão. |
+| **Interação de recursos** | Quebre um equipamento do inimigo; quebre o equipamento de tronco do inimigo; quebre um equipamento seu aleatório; abdique de um equipamento seu à escolha ou aleatório; abdique do seu calçado ou da cabeça; repare um equipamento seu; repare um equipamento de um jogador na mesma zona; ofereça um recurso do tipo X ou Y do inventário; ofereça X recursos do inventário. |
+| **Interação de elemento** | ==TODO== |
+| **Interação de combate** | Derrote o inimigo automaticamente, sem causar dano. |
+
+### 20.4 Duração
+
+A duração é por quanto tempo o efeito vale.
+
+| Categoria | Descrição |
+|---|---|
+| **Imediata** | O efeito acontece na hora e não se prolonga para nenhum outro cenário. |
+| **Infinita** | O efeito fica em vigor até que uma carta, efeito, habilidade, recurso, etc. o desabilite. |
+| **De carta** | Exemplos: até esta carta ir para a pilha de descarte de atributos; até a carta X ir para a pilha de descarte; até você ter três ou menos cartas na mão; até pelo menos quatro cartas irem para o limbo. |
+| **De rodada** (no original, "de turno") | ==TODO== |
+| **De zona** | ==TODO== |
+| **De evento aleatório** | ==TODO== |
+| **De evento de combate** | ==TODO== |
+| **De fase de evento** | ==TODO== |
+| **De ação de zona** | ==TODO== |
+| **De combate** | ==TODO== |
+| **De habilidade** | ==TODO== |
+| **De efeito** | ==TODO== |
+| **De atributo** | ==TODO== |
+| **De jogador** | ==TODO== |
+| **De inventário** | ==TODO== |
+| **De modificador** | ==TODO== |
+| **De classe/especialização** | ==TODO== |
+
+---
+
+## 21. Missões
+
+- Missões são encontradas em algumas zonas. Nem toda zona tem missões.
+- Algumas missões envolvem recolher itens, falar com um NPC, etc.
+- Ações relacionadas: **Pegar**, **Continuar** e **Finalizar missão**. Quando o jogador chega a uma zona que tem uma etapa de uma missão que ele já pegou, ele interage para continuar ou finalizar a missão.
+- **Não são obrigatórias:** se o jogador pegar uma missão e não cumpri-la, nada acontece. A missão fica em aberto até ele decidir cumpri-la.
+- **Não se repetem:** cada jogador só pode completar a mesma missão **uma vez**.
+- Ao concluir uma missão, o jogador pode receber recompensas.
+
+---
+
+## 22. Raides
+
+Uma **raide** (dungeon ou instância) é uma **sequência determinada de eventos**, um após o outro, que acontece **somente na zona onde foi iniciada**.
+
+### 22.1 Como iniciar
+
+- Um jogador pode iniciar a raide **sozinho** ou chamar os jogadores da **mesma zona**, que podem aceitar ou não.
+- Quem inicia a raide **gasta todos os pontos de ação** restantes.
+- Quem participa junto **não gasta pontos de ação** nem perde a vez.
+- Algumas raides necessitam de requisitos para poder ser iniciada. Quando o jogador tentar iniciar a raide, uma validação é feita dos requisitos necessários no inventário do jogador. Se os requisitos forem cumpridos, a raide pode ser iniciada.
+
+### 22.2 Como funciona
+
+- Os eventos da raide são **específicos** e **não se misturam** com o deck de eventos da zona.
+- Eles contam uma **história**, e por isso é preciso consultar o **manual (guia do jogo)**. Haverá um livro físico com todas as raides, porque muita coisa acontece nelas.
+- A raide funciona como um **jogo-livro**: o jogador participa ativamente da história e toma decisões que mudam a narrativa.
+- A história **não precisa ser linear**. Dependendo das decisões, o jogador pode seguir caminhos diferentes, encontrar personagens distintos, enfrentar desafios, adquirir itens, desenvolver habilidades e chegar a **finais completamente diferentes**.
+- Raides são **muito difíceis e extensas**, e por isso podem dar recompensas **muito boas e fortes** (uma ou mais).
+- Para as regras de combate dentro da raide, veja [Combate em raides](#174-combate-em-raides).
+
+### 22.3 Repetição
+
+- É possível repetir a mesma raide várias vezes para ver outros finais, explorar outros caminhos e conseguir recompensas diferentes.
+- Para repetir, é preciso esperar o **cooldown** descrito na carta da raide (por exemplo, esperar 3 rodadas, ou ter o recurso X no inventário, etc).
+
+---
+
+## 23. Negociação
+
+- Acontece entre **dois jogadores na mesma zona**.
+- **Não gasta ponto de ação** de nenhum dos jogadores.
+- Os dois jogadores precisam **concordar** em iniciar a negociação.
+- Não há limite de coisas negociadas de cada lado.
+- Algumas zonas têm efeitos que **proíbem** a negociação.
+- **Nunca** é permitido negociar durante um combate.
+
+---
+
+## 24. Mercado
+
+O mercado aparece em algumas zonas e permite **comprar e vender** recursos, cartas e boosters.
+
+### 24.1 Venda pelo jogador
+
+- **Preço tabelado:** todos os mercados pagam a **mesma quantia** pelo mesmo recurso. Nenhum mercado paga mais que outro por padrão.
+- Efeitos, habilidades e recursos do jogador podem fazer o mercado oferecer **mais ouro**.
+
+### 24.2 Compra de itens, recursos e equipamentos
+
+- Mercados de zonas diferentes podem oferecer recursos **iguais** e recursos **exclusivos**. O jogador precisa explorar vários mercados para encontrar o que procura.
+- Não há limite de venda de um item, recurso ou equipamento específico.
+- Coisas essenciais, como **munição e poções**, existem em todos os mercados.
+
+### 24.3 Boosters
+
+- Todos os mercados têm **boosters ilimitados** das [coleções](#25-coleções) vigentes.
+- O preço do booster é **sempre tabelado**, mas efeitos, buffs e habilidades podem dar desconto.
+- Um booster contém **cartas novas de recursos e de atributos**.
+
+### 24.4 Singles
+
+**Singles** são cópias avulsas de uma carta específica: recursos, itens e equipamentos que vão para o inventário ou são equipados, e atributos que vão para o deck.
+
+- **Nem todo mercado** vende singles.
+- **Vitrine:** os singles ficam numa vitrine de **4 slots** por padrão. Quando uma carta sai da vitrine, entra outra carta aleatória das coleções vigentes.
+- **Distribuição aleatória:** não se sabe em qual mercado um single vai aparecer. Mais de um mercado pode vender o mesmo single.
+- **Preços variáveis:** cada mercado tem sua própria lógica de preço para singles, e o mesmo single pode estar mais caro ou mais barato em mercados diferentes. Cartas com mais vantagens, benefícios, efeitos, buffs, dano ou defesa são mais caras. A lógica de cálculo ainda precisa ser definida.
+- **Esgotamento:**
+  1. Exemplo: o mercado da zona A tem 4 cópias da carta X. Quando elas acabam, a carta X deixa de estar disponível ali. Em outro mercado, na zona B, podem "surgir" mais 2 cópias.
+  2. Quando **todos os mercados** da dimensão tiverem vendido **pelo menos 1 cópia** da carta X, nenhum mercado vende mais essa carta.
+  3. A carta esgotada **não aparece na vitrine** até que **todas as outras cartas** das coleções vigentes tenham aparecido. Depois disso, os singles voltam a se repetir.
+- **Mercado "vivo":** independentemente do número de jogadores (solo, 2 ou mais), os mercados têm um **sistema de decaimento** de singles, como se houvesse NPCs comprando. Os jogadores precisam ficar atentos para não perder uma carta de que precisam.
+- Nem todas as cartas das coleções vigentes estarão disponíveis como singles, porque o volume de cartas é grande e provavelmente não haveria tempo de jogo para todas circularem.
+
+---
+
+## 25. Coleções
+
+- As coleções funcionam como os lançamentos de coleções de TCGs tradicionais.
+- **Por padrão, cada dimensão é uma coleção nova** de cartas (atributos, recursos, zonas, etc.).
+- **Por padrão, existe 1 coleção ativa por dimensão.** A dimensão escolhida para jogar tem, por padrão, **apenas as cartas da sua coleção**.
+- Todas as cartas de uma coleção podem ser obtidas dentro da dimensão em que ela foi lançada.
+- Uma coleção pode **estender seu período ativo**, por exemplo, por até três dimensões seguintes.
+- Pode haver **reprint** de uma coleção já lançada numa nova dimensão completamente diferente.
+- O que uma nova coleção traz:
+  - **Para o jogador** (dentro dos boosters): novas cartas de recursos e atributos.
+  - **Para o jogo** (a dimensão): novas zonas, possíveis ações exclusivas, novos eventos, novas raides, etc.
+- Novas dimensões e coleções são lançadas periodicamente (por exemplo, a cada 3 meses).
+- No modo **Clássico**, é possível escolher quais coleções ficam ativas (veja [Clássico](#273-clássico)).
+
+---
+
+## 26. Ferreiro
+
+Ação de zona **Ir ao Ferreiro**: refinar, encantar, criar e consertar equipamentos.
+
+Mecânicas de refino, reparação de armas quebradas e criação de equipamentos: ==TODO==
+
+---
+
+## 27. Modos de jogo
+
+### 27.1 Campanha
+
+- **Cooperativo:** todos trabalham juntos para "zerar" a dimensão.
+- Tudo o que os jogadores conquistam é **levado para as próximas dimensões**.
+- Por padrão, os jogadores **não podem voltar** a uma dimensão já concluída.
+- As regras dos capítulos 2 a 26 descrevem este modo.
+
+### 27.2 Desbravadores
+
+**Visão geral:**
+- **Competitivo, cada um por si.** Os jogadores podem formar **alianças temporárias** se quiserem.
+- Formato de **runs**: é possível jogar a mesma dimensão várias vezes, só por diversão.
+- As vezes são jogadas **uma de cada vez**, e a movimentação segue **as mesmas regras da campanha**.
+
+**Objetivos e vitória:**
+- No início, cada jogador recebe **5 cartas de objetivo** por padrão. Exemplos: "Ir para a zona X", "Ir para a zona Y", "Coletar N itens de um tipo", "Nocautear outros jogadores duas vezes", "Forjar um equipamento específico".
+- Cada jogador escolhe quais objetivos quer cumprir.
+- Cada objetivo dá a quantidade de **pontos de objetivo** escrita na carta. Objetivos mais difíceis dão mais pontos, e o mínimo por padrão é **2 pontos**.
+- **Vence quem somar 10 pontos de objetivo primeiro.**
+
+**Spawn:**
+- Antes da partida, cada jogador escolhe sua **zona de spawn**.
+- Neste modo, é possível **trocar** o ponto de spawn.
+
+**Benção do spawn** (exclusiva deste modo):
+- Quando reaparece depois de um nocaute, o jogador provavelmente acabou de sofrer penalidades. A benção existe para que ele não entre em combate contra outro jogador em desvantagem.
+- Enquanto tem a benção, ele **não pode ser atacado** por outros jogadores e **também não pode atacá-los**.
+- A benção acaba quando:
+  - o jogador **sai da zona de spawn**, ou
+  - **todos os outros jogadores** jogaram uma vez depois que ele reapareceu.
+
+**Encontro entre jogadores (PvP):**
+
+1. Quando um jogador entra em uma zona em que há um outro jogador, uma nova ação de zona é habilitada: ação de **enfrentar jogador ou jogadores**. Esta ação consome um ponto de ação.
+2. **Ninguém quer lutar:** não necessariamente um jogador precisa iniciar um conflito com outros jogadores. Cada jogador segue com suas ações normalmente.
+3. **Alguém quer lutar e outros não:** se alguém usa uma ação de enfrentamento, todos os jogadores daquela zona vão se enfrentar cada um por si. Quem não quer lutar deve fazer um **teste de fuga**:
+   - quem quer lutar rola um D20;
+   - quem quer fugir rola um D20;
+   - se o resultado de quem quer fugir for **menor**, os dois são obrigados a lutar; se for **maior**, a fuga dá certo;
+   - se **mais de um** jogador quiser lutar, quem quer fugir rola um D20 **contra cada um** deles. O jogador que quer fugir tem que conseguir passar no teste de fuga contra todos os outros jogadores. Falhar em um teste de fuga já é o suficiente para obrigar quem esta tentando fugir a lutar.
+4. Pode haver lutas com **2, 3, 4, 5 ou mais jogadores**, dependendo de quantos estão na mesma zona. **Só pode haver um vencedor.**
+5. **Vencedor:** pode **saquear** o inventário e a pasta de TCG dos perdedores, pegando quantos itens quiser **enquanto tiver espaço** no próprio inventário e pasta de TCG.
+6. **Perdedores:**
+   - perdem os itens saqueados;
+   - perdem **3 pontos de objetivo** por padrão;
+   - vão para o seu ponto de spawn;
+   - recebem a **benção do spawn**.
+
+**Combate contra inimigos com ajuda de outros jogadores:** os ajudantes podem negociar a divisão da recompensa antes de entrar no combate (veja [Sistema de combate](#173-combate-com-2-ou-mais-jogadores--1-ou-mais-inimigos)).
+
+### 27.3 Clássico
+
+- É o **Desbravadores em versão cooperativa**.
+- Antes da partida, os jogadores escolhem **qualquer dimensão**.
+- **Coleções:** é possível manter apenas as cartas daquela dimensão ou ativar uma ou mais outras coleções.
+- As vezes são jogadas **uma de cada vez**, como na campanha.
+- **Não existe combate entre jogadores.**
+- Usa **cartas de objetivo** e a ação de objetivo, como o Desbravadores.
+- **Vitória:** **todos** os jogadores precisam atingir ou ultrapassar **10 pontos de objetivo cada um**.
+- **Nenhuma recompensa** é levada para outras dimensões. É uma run curta, para jogar rápido com amigos ou sozinho e para testar a dimensão.
+
+### 27.4 Enfrentamento (PVP)
+
+- Modo **apenas de combate** entre jogadores, sem compromisso, para **testar decks e builds**.
+- Aceita várias combinações de times: 1 contra 1, 1 contra 3, 4 contra 3, etc.
+- **Não afeta** a progressão de nenhum outro modo: não dá recompensas nem vantagens que sejam levadas para outros modos.
+- Cada jogador tem **10 slots de decks** para montar builds e testar combos.
+- Todos os jogadores têm acesso a **todas as cartas já lançadas**, de coleções vigentes ou não.
+- **Não é possível fugir**, mas é possível **desistir** do combate.
+
+---
+
+## 28. Pendências do manual
+
+| Tema | Pendência |
+|---|---|
+| Classes | Como obter uma especialização; como se tornar multiclasse; afinidade de classes com elementos. |
+| Habilidades | Continuar a descrição. |
+| Efeitos | Interação de elemento; durações marcadas com ==TODO==. |
+| Ferreiro | Mecânicas de refino, reparo e criação. |
+| Desbravadores | Quando o encontro PvP é disparado; empate no teste de fuga contra jogador; se o progresso é levado para outras dimensões. |
+| Batalha (X1/PVP) | Nome definitivo. |
+| Ações de zona | Confirmar o custo de cada ação. |
+| **Montaria** | Movimentação entre zonas e outros benefícios? ==TODO== |
+| **Tipos de inimigo** | Raça? ==TODO== |
+
+---
+
+# Parte II — Requisitos técnicos
+
+> **Atenção**: muitos conceitos estão sujeitos a mudar com o tempo devido a novas ideias ou à descoberta de problemas. Esta seção apresenta as ideias básicas.
+
+### Natureza do projeto
+- Este documento descreve o jogo como se fosse um jogo físico de verdade. O projeto, porém, é uma **versão digital**, onde muitas partes do gameplay podem ser **automatizadas** para facilitar a implementação e deixar o jogo mais fluido.
+- O jogo é em **tempo real**, com interações acontecendo ao mesmo tempo entre os jogadores e o próprio jogo.
+- O jogo funcionará principalmente em **PC (monitores)**. Distâncias, tamanhos, margens e espaços devem se ajustar ao monitor do usuário para a melhor experiência possível.
+
+### Stack
+- **Frontend:** TypeScript, Vite, React, TanStack Query (React Query) e React Router DOM, além de outras bibliotecas a decidir durante o desenvolvimento.
+  - Primeiro roda localmente via web; depois será portado para executável de PC com **[Tauri](https://v2.tauri.app/start/)**.
+- **Backend:** TypeScript, NestJS, ORM Drizzle, arquitetura hexagonal e Domain-Driven Design, além de WebSockets, Socket.IO, Aggregate Root, Domain Events & State Machine, Portas (interfaces) e Adaptadores (implementações), e outras tecnologias e arquiteturas que surgirem conforme a necessidade.
+  - **Docker Compose** para o banco de dados e o backend, para implementar primeiro localmente antes do deploy (as plataformas de hospedagem são pagas).
+- **Não instalar bibliotecas de terceiros sem permissão.**
+
+### Testes
+- **Frontend:** Vitest (unitários) e Playwright (end-to-end). Sugestões são aceitas para testes de integração.
+- **Backend:** Vitest, uma biblioteca para testar requests aos endpoints e outros testes considerados importantes.
+
+### Interface e experiência
+- Animações e transições **bonitas e simples**.
+- **Termos do jogo com highlight:** termos (e suas variações) devem ter destaque ou cor própria e mostrar um **tooltip** explicativo ao passar o mouse. Exemplos: Atributos e cada atributo, Zonas, Classes e cada classe, modificadores, cada ação de zona, cada tipo de evento, etc.
+- **Imagens e ícones** serão fornecidos pelo autor. Imagens e ícones SVG podem ser criados apenas para testes.
+- Termos do jogo podem ser alterados, **com aprovação** do autor.
+
+### Estilo gráfico: 2.5D no estilo PSX
+
+- **Geometry and models:** Extremely low-poly 3D models, low polygon counts, angular silhouettes, visibly faceted surfaces, simple geometric shapes, coarse environmental geometry, primitive character models and rigid-looking structures.
+- **Textures and materials:** Very low-resolution textures, visibly pixelated texture maps, blurry and muddy surfaces, crude hand-painted textures, limited texture detail, affine texture mapping artifacts, perspective distortion, warped textures, and subtle polygon vertex jitter reminiscent of original PS1 hardware.
+- **Rendering and lighting:** Original PlayStation-era rendering aesthetics, simple vertex lighting, minimal dynamic lighting, limited shading, basic diffuse materials, hard-edged shadows where appropriate, low color depth appearance, restrained visual effects, and authentic late-1990s 3D game rendering.
+- **Image quality:** Low internal rendering resolution, visible pixelation, jagged polygon edges, aliasing, subtle dithering, limited draw distance, atmospheric distance fog when appropriate, and the characteristic imperfections of early real-time 3D graphics. Preserve the raw, imperfect appearance of vintage console footage rather than modernizing the image.
+- **Art direction:** Nostalgic, atmospheric, imperfect, surreal when appropriate, visually distinctive and unmistakably from the original PlayStation era. The final image should look like an authentic screenshot captured directly from a real 1990s PS1 game running on original hardware.
+- **Strict restrictions:** No modern photorealism, no high-poly models, no physically based rendering (PBR), no ray tracing, no modern cinematic CGI, no ultra-high-resolution textures, no Unreal Engine 5 aesthetic and no excessive post-processing.
+
+### Valores que precisam de análise
+- Tamanho do deck de atributos: **60 cartas** (especulativo).
+- Tamanho do deck de eventos por zona: **~30 cartas** (especulativo).
+
+---
+
+# Parte III — Etapas de desenvolvimento
+
+### Agentes e skills
+- Criar os agentes e skills necessários para desenvolver o projeto. O [arquivo de referência](PROMPT-AGENTES-E-SKILLS.md) dá uma ideia de como criá-los.
+- Instruções obrigatórias nos agentes de desenvolvimento:
+  - "Não disfarce suas dúvidas. Explicite as vantagens e desvantagens de cada escolha."
+  - "Implemente apenas o necessário para resolver o problema. Não acrescente nada baseado em suposições."
+  - "Modifique apenas o que for indispensável. Corrija ou limpe tudo aquilo que suas próprias alterações deixarem para trás."
+  - "Estabeleça critérios claros para considerar a tarefa concluída. Continue iterando até confirmar que eles foram atendidos."
+
+### Desenvolvimento por feature
+- Dois projetos em paralelo, **frontend** e **backend**, cada um com seus próprios agentes e skills.
+- Toda implementação resolve **uma feature ou um bug específico**.
+- Uma feature só está completa quando foi resolvida **nos dois lados** (ou no único lado que precisa de alteração).
+- O autor faz o controle e leva as informações de um projeto para o outro. As skills e os agentes devem ter instruções claras sobre **quando precisam de validação do outro lado**.
+- Analisar todos os requisitos e criar os agentes e skills do frontend e do backend.
+- Criar a lista de passos, etapas e fases de desenvolvimento do frontend e do backend.
+
+### Efeitos
+- Para cada categoria de gatilho, custo, ativação e duração, é preciso criar uma **vasta variedade** de possibilidades, para permitir estratégia "infinita" e fazer o jogador pensar.
+- Analisar todo o [capítulo de efeitos](#20-efeitos) e criar a maior variedade possível de combinações de gatilho, custo, ativação e duração. Quanto mais variedade, mais desafiador e estratégico fica o jogo.
+- A lista de variações deve ser **validada pelo autor**, que decide o que entra e o que sai.
+
+### Etapas (ordem sugerida pelo autor; pode ser alterada se houver uma sequência melhor)
+
+**Etapa 1 — Análise e planejamento**
+- Analisar o documento inteiro e apontar pontos em aberto, problemas de conceito, contradições, pontos que precisam de esclarecimento e dúvidas (técnicas e de ideia do jogo).
+- **Entrevistar o autor** para tirar todas as dúvidas antes de seguir.
+- Planejar com **spec-driven development**. Referências:
+  - https://martinfowler.com/articles/exploring-gen-ai/sdd-3-tools.html
+  - https://blog.dsacademy.com.br/spec-driven-development-a-nova-arquitetura-de-engenharia-de-software-na-era-dos-agentes-de-ia-parte-3/
+  - https://www.ibm.com/br-pt/think/topics/spec-driven-development
+  - https://thoughtworks.medium.com/spec-driven-development-d85995a81387
+- Organizar as etapas em três momentos:
+  1. Jogo funcional (frontend e backend) para **um jogador**.
+  2. **Mais jogadores controlados por IA** (testar com outros três jogadores, todos IAs).
+  3. Jogo **online web** com interatividade em tempo real, WebSockets, etc.
+- Separar em **dois arquivos**: um com todo o contexto, regras, aspectos e etapas do frontend, e outro com o mesmo para o backend.
+
+**Etapa 2 — Manual de regras**
+- Criar um arquivo `.md` de regras organizado e estruturado como um manual de jogo de tabuleiro, que sirva de guia para os jogadores.
+- Ordenar as regras de forma que cada uma facilite o entendimento da próxima.
+- Explicar em detalhe, com **infográficos e imagens** para os conceitos mais complexos.
