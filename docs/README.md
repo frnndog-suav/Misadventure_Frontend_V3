@@ -201,6 +201,7 @@ Antes de conhecer o personagem, é preciso conhecer o palco: **onde** a partida 
   - jogadores precisam pagar 1 moeda de ouro para usar uma ação;
   - durante eventos de combate, não é possível usar poções.
 - Uma dimensão sem efeitos pode significar que seus eventos são muito difíceis.
+- **Tema:** cada dimensão tem um **tema**, que define quais tipos de zona e quais locais aparecem nela, e em que proporção. Ex.: uma dimensão de velho oeste teria mais zonas Desérticas e locais como oásis e cidadezinhas. Por isso, **qualquer tipo de zona pode faltar** numa dimensão; o único tipo garantido é o **Urbano** (validação de [3.5](#35-montagem-do-mapa)). Regras e cartas que valem em **todas** as dimensões (como as missões de provação e do mentor, [8.3](#83-como-obter-uma-especialização)) **nunca** dependem de um tipo de zona específico, exceto o Urbano.
 
 ### 3.2 Conclusão de uma dimensão
 
@@ -464,7 +465,7 @@ Isso tudo faz parte da mesma ação; recolher não é uma ação separada. Se o 
 >
 > **Equipar arma que bloqueia escudo com escudo equipado:** o escudo precisa sair do slot e ir para o **inventário** ou para o **inventário extra da montaria**. A troca **só é permitida** se houver espaço livre para o escudo num deles (o espaço deixado pela arma que sai do inventário conta). Sem espaço, a troca não pode ser feita: o jogador precisa liberar espaço antes. Nenhum item é perdido nem vai para o limbo nessa troca.
 
-> **Sem arma:** o ataque básico de quem não tem arma equipada usa **só o modificador base de Ataque** (com o Pico e os percentuais do pipeline de [7.4](#74-escala-fórmulas-e-valores-iniciais)). Equipamentos, recursos e efeitos podem aumentar esse ataque (ex.: efeitos do Monge ou de manoplas).
+> **Sem arma** = slot de **Arma vazio**. Manoplas, garras e soco-inglês são **Arma**: quem os usa **não** está sem arma. O ataque básico de quem está sem arma usa **só o modificador base de Ataque** (com o Pico e os percentuais do pipeline de [7.4](#74-escala-fórmulas-e-valores-iniciais)). Equipamentos, recursos e efeitos podem aumentar esse ataque (ex.: efeitos do Monge ou acessórios).
 
 - **Amuletos e talismãs** podem ser **Arma** (foco mágico), **Acessório** (efeito passivo) ou **Relíquia** (item de inventário que não se equipa). A carta mostra a categoria com **ícone, imagem e label** próprios, para o jogador saber qual é qual.
 - Equipamentos **não têm elemento**, mas podem dar **bônus de elemento** (veja [Elementos](#16-elementos)).
@@ -843,20 +844,36 @@ Uma build com 60 cartas ou mais que não cumpre a trava **não** é irregular: e
 ### 8.3 Como obter uma especialização
 
 **Provação de especialização:**
-- Cada especialização tem uma **missão de provação**. A própria missão diz em quais zonas ela pode ser pega e continuada, indicando **2 ou 3 tipos de zona alternativos** por etapa, e o jogo só usa os tipos que **existem no mapa** ([21.1](#211-regras-gerais)). Essas zonas **não precisam** ter relação com o tema da especialização (ex.: um Cavaleiro não depende de existir uma zona Fortificada na dimensão).
-- A missão de provação **não fica no deck de missões** e **não é exclusiva**: ela está sempre disponível nas zonas indicadas por ela, para qualquer jogador (veja [21.2](#212-tipos-de-missão)).
-- Requisito para **pegar** a provação: ter a classe primária correspondente e **Pico mínimo 30** (ajustável no laboratório).
-- Ao **finalizar** a provação, o jogador ganha a especialização de forma permanente. Os benefícios dela só ficam ativos quando a build cumprir a trava da especialização.
+- Existe **uma única missão de provação, genérica**, igual para todas as especializações. Ela **não** tem relação com o tema da classe ou da especialização e **não** depende de tipo de zona (veja [Missões genéricas](#missões-genéricas-provação-e-mentor)).
+- **Pegar:** ação contextual **Pegar missão de provação** (1 ponto de ação), em **qualquer** zona **Urbana** ou **Habitada**. Ao pegar, o jogador **escolhe** qual especialização vai buscar, entre as 4 de uma classe primária sua que ainda não tem especialização.
+- A missão de provação **não fica no deck de missões** e **não é exclusiva**: qualquer jogador pode pegá-la (veja [21.2](#212-tipos-de-missão)).
+- Requisito para **pegar** a provação: ter uma classe primária **sem** especialização e **Pico mínimo 30** (ajustável no laboratório).
+- Ao **finalizar** a provação, o jogador ganha a especialização escolhida de forma permanente. Os benefícios dela só ficam ativos quando a build cumprir a trava da especialização.
 - O jogador pode ter **uma especialização por classe primária**, e **não é possível trocar** de especialização dentro da mesma classe.
-- Se o jogador **abandonar** a provação ([21.1](#211-regras-gerais)), pode pegá-la de novo depois, cumprindo os requisitos.
-- **Ajudantes de IA** ([28.1](#281-campanha)) **sorteiam** qual especialização vão buscar em cada classe (entre as 4 da classe) e seguem a provação sorteada.
+- Se o jogador **abandonar** a provação ([21.1](#211-regras-gerais)), pode pegá-la de novo depois (e escolher outra especialização), cumprindo os requisitos.
+- **Ajudantes de IA** ([28.1](#281-campanha)) **sorteiam** a especialização ao pegar a provação (entre as 4 da classe).
+
+#### Missões genéricas (provação e mentor)
+
+As missões de provação e do mentor valem em **qualquer** dimensão, qualquer que seja o tema ([3.1](#31-dimensões)). Por isso:
+- **Objetivos genéricos:** os objetivos são contadores que podem ser cumpridos em **qualquer zona**, usando só o que existe em toda dimensão (eventos aleatórios e combates da ação Iniciar evento). Nenhum objetivo cita tipo de zona, local, criatura, categoria de inimigo, mercado ou ferreiro.
+- **Objetivos padrão** (ajustáveis no laboratório):
+
+| Missão | Objetivos |
+|---|---|
+| **Provação** | Resolver **3** eventos aleatórios com sucesso **e** vencer **3** combates |
+| **Mentor** | Resolver **5** eventos aleatórios com sucesso **e** vencer **5** combates |
+
+- **Como conta:** só conta o que acontece **depois** de pegar a missão. "Resolver um evento aleatório com sucesso" = chegar ao êxito de um evento aleatório (inclusive os de missões). "Vencer um combate" = terminar **de pé** um combate que termina em **vitória**, como quem iniciou ou como ajudante ([19.5](#195-combate-com-2-ou-mais-jogadores--1-ou-mais-inimigos)). Um mesmo acontecimento conta para **todas** as missões em aberto do jogador que o contam.
+- **Progresso automático:** não existe "Continuar missão" para elas; o jogo conta o progresso sozinho.
+- **Finalizar:** com todos os objetivos cumpridos, o jogador usa a ação contextual **Finalizar missão** (1 ponto de ação) em **qualquer** zona **Urbana** ou **Habitada**. Como toda dimensão tem pelo menos 1 zona Urbana, a missão **sempre** pode ser concluída.
 
 ### 8.4 Como se tornar multiclasse
 
 **Mentoria:**
 - Pré-requisito: já ter uma especialização em **todas** as classes primárias atuais.
-- **Escolha da classe:** ao **pegar** a missão do mentor, o jogador escolhe **livremente** a nova classe primária, entre as que ainda não tem (ajudantes de IA **sorteiam**, [28.1](#281-campanha)). Cada classe tem **uma missão de mentor genérica** própria.
-- **Treinar com mentor:** ação de zona presente em **todas** as zonas **Urbanas** e **Habitadas** (custa todos os pontos de ação restantes) que dá ao jogador a **missão do mentor**. Ao concluir a missão, ele ganha a nova classe primária. Não existe custo de descartar cartas.
+- **Escolha da classe:** ao **pegar** a missão do mentor, o jogador escolhe **livremente** a nova classe primária, entre as que ainda não tem (ajudantes de IA **sorteiam**, [28.1](#281-campanha)). Existe **uma única missão do mentor, genérica**, igual para todas as classes, sem relação com o tema da classe e sem depender de tipo de zona (veja [Missões genéricas](#missões-genéricas-provação-e-mentor)).
+- **Treinar com mentor:** ação de zona presente em **todas** as zonas **Urbanas** e **Habitadas** (custa todos os pontos de ação restantes) que dá ao jogador a **missão do mentor**. Ao finalizar a missão (em qualquer zona Urbana ou Habitada), ele ganha a nova classe primária. Não existe custo de descartar cartas.
 - **Custo em ouro:** pago ao **pegar** a missão do mentor. O custo **dobra** a cada nova classe (ajustável no laboratório):
 
 | Nova classe | Custo (ouro) |
@@ -1195,7 +1212,7 @@ Todos veem o que acontece na vez dos outros **ao vivo** (movimento, eventos, com
 "Ação de zona" é qualquer ação que o jogador faz na sua vez. Elas se dividem em dois grupos:
 - **Ações universais**, disponíveis em **todas** as zonas: Movimentar, Recuperar, Preparar, Ajustar deck, Negociar, Iniciar evento, Abandonar missão (só para quem tem missão em aberto) e Oficina do Artífice (só para quem tem a classe Artífice ativa).
 - **Ações locais**, impressas na carta da zona: as demais, exceto as contextuais.
-- **Ações contextuais**, que não estão impressas na carta e aparecem quando o contexto permite: **Concluir dimensão** (zona indicada pela Carta de Dimensão, para quem cumpre o requisito, [3.2](#32-conclusão-de-uma-dimensão)) e **Pegar** missões de provação; **Continuar / Finalizar** missões de provação, do mentor e etapas de missões em andamento (zonas indicadas pela própria missão). A missão do mentor só é pega pela ação **Treinar com mentor** ([8.4](#84-como-se-tornar-multiclasse)). Na tabela abaixo elas aparecem como "Contextual".
+- **Ações contextuais**, que não estão impressas na carta e aparecem quando o contexto permite: **Concluir dimensão** (zona indicada pela Carta de Dimensão, para quem cumpre o requisito, [3.2](#32-conclusão-de-uma-dimensão)); **Pegar missão de provação** e **Finalizar** missões de provação e do mentor (qualquer zona Urbana ou Habitada, [Missões genéricas](#missões-genéricas-provação-e-mentor)); **Continuar / Finalizar** etapas de missões de zona em andamento (zonas indicadas pela própria missão). A missão do mentor só é pega pela ação **Treinar com mentor** ([8.4](#84-como-se-tornar-multiclasse)). Na tabela abaixo elas aparecem como "Contextual".
 
 ### 12.2 Lista de ações padrão
 
@@ -1211,7 +1228,7 @@ Todos veem o que acontece na vez dos outros **ao vivo** (movimento, eventos, com
 | **Iniciar evento** | Universal | 1 ponto de ação | Revela um [evento](#14-eventos). Resolver dá recompensas; falhar dá debuffs e penalidades. As mecânicas de TCG acontecem principalmente aqui. Pode ser usada **mais de uma vez** na mesma vez. |
 | **Vasculhar** | Local | 1 ponto de ação | Procura recursos na zona com uma **ferramenta** (veja [12.6](#126-vasculhar)). |
 | **Usar cofre** | Local (toda Urbana tem) | 1 ponto de ação | Acessa o [cofre](#64-cofre). Pode ser usada **mais de uma vez** na mesma vez. |
-| **Pegar / Continuar / Finalizar missão X** | Local (missão de zona) ou Contextual (pegar missões de provação; continuar/finalizar missões de provação, do mentor e etapas) | 1 ponto de ação | Interage com uma [missão](#21-missões) disponível na zona. A missão do mentor **só** é pega pela ação **Treinar com mentor**. |
+| **Pegar / Continuar / Finalizar missão X** | Local (missão de zona) ou Contextual (pegar provação e finalizar provação/mentor em qualquer Urbana ou Habitada; continuar/finalizar etapas de missões de zona) | 1 ponto de ação | Interage com uma [missão](#21-missões) disponível na zona. A missão do mentor **só** é pega pela ação **Treinar com mentor**. |
 | **Concluir dimensão** | Contextual | 1 ponto de ação | Só na zona indicada pela Carta de Dimensão e só para o jogador que cumpre sozinho o requisito. Conclui a dimensão ou, se houver chefe final, inicia o combate contra ele (veja [3.2](#32-conclusão-de-uma-dimensão)). |
 | **Ir ao Ferreiro** | Local | Todos os pontos de ação restantes (mínimo 1) | Refinar, encantar, criar e consertar equipamentos (veja [Ferreiro](#25-ferreiro)). |
 | **Ir ao Mercado** | Local | Todos os pontos de ação restantes (mínimo 1) | Comprar e vender itens, cartas e boosters (veja [Mercado](#24-mercado)). |
@@ -1671,7 +1688,7 @@ Dados de cada inimigo impresso na carta:
 | **Vida** e **modificadores** | Ataque, Defesa, Precisão, Esquiva, Celeridade, Perfuração, Reflexão. Seus valores já são **finais** (o Pico não se aplica). Buffs e debuffs **percentuais** sobre um inimigo usam só a etapa 3 do pipeline ([7.4](#74-escala-fórmulas-e-valores-iniciais)): somam-se num fator aplicado ao valor impresso, arredondado para baixo. Como os do jogador, os modificadores do inimigo têm **piso 0**: debuffs fixos ou percentuais nunca os deixam negativos, e o fator percentual tem mínimo ×0. |
 | **Habilidades** | As habilidades do inimigo ficam **impressas no bloco dele na carta** (inimigos não usam equipamentos). |
 | **Energia** | Opcional: Vigor do inimigo para pagar habilidades. Habilidades também podem ter só recarga ou nenhum custo. |
-| **Comportamento** | Perfil da IA: Agressivo, Defensivo, Suporte, Caçador (ataca o alvo mais fraco). Inimigos **nunca fogem** do combate. |
+| **Comportamento** | Perfil da IA: **Agressivo**, **Defensivo**, **Suporte** ou **Caçador**. Cada perfil define o alvo e o uso de habilidades (tabela em [19.6](#196-ia-dos-inimigos)). Inimigos **nunca fogem** do combate. |
 
 Inimigos **não têm** classe, especialização, inventário nem **equipamentos**. Efeitos que quebram equipamentos **não funcionam** contra inimigos.
 
@@ -1833,7 +1850,22 @@ Quem fugiu com sucesso não sofre as penalidades dos inimigos, mas pode sofrer p
 
 ### 19.6 IA dos inimigos
 
-É necessário implementar uma IA que controle as ações dos inimigos em combate: perceber quando o jogador tem defesa ou ataque fracos, escolher as melhores estratégias, ajudar um aliado, etc. **Inimigos nunca revivem** (nem a si mesmos nem outros inimigos). O campo **Comportamento** de cada inimigo na carta ([18.1](#181-o-inimigo-na-carta-de-evento-de-combate)) define o perfil que a IA segue.
+O sistema controla os inimigos em combate. O campo **Comportamento** de cada inimigo na carta ([18.1](#181-o-inimigo-na-carta-de-evento-de-combate)) define o perfil que a IA segue. **Inimigos nunca revivem** (nem a si mesmos nem outros inimigos).
+
+| Perfil | Alvo do ataque e das habilidades de dano | Uso de habilidade |
+|---|---|---|
+| **Agressivo** | O jogador com **menor Defesa** | A de **maior Poder** disponível |
+| **Defensivo** | O jogador que o **atacou por último**; se ninguém o atacou ainda, o de **menor Defesa** | Prioriza **buffs em si e habilidades Contínuas**; senão, a de maior Poder disponível |
+| **Suporte** | O jogador com **menor Defesa** (como o Agressivo) | Prioriza **cura ou buff num inimigo aliado ferido**; se não houver aliado ferido ou habilidade de suporte disponível, age como o Agressivo |
+| **Caçador** | O jogador com **menor vida atual** | A de **maior Poder** disponível |
+
+**Regras comuns a todos os perfis:**
+- **Habilidade disponível** = sem recarga pendente, com o custo pagável (Vigor do inimigo, se houver) e sem efeito que a impeça. O inimigo usa **no máximo uma** habilidade por turno de combate, salvo se a carta disser outra coisa.
+- Depois da habilidade (ou sem ela), o inimigo **sempre** faz o **ataque básico** no alvo do seu perfil, se puder atacar.
+- Habilidades de **Área** atingem todos os jogadores; o alvo não importa.
+- Só são alvos os jogadores **de pé** no combate (nocauteados e quem fugiu não contam).
+- **Desempates** (fixos, para o resultado ser sempre o mesmo): entre jogadores, vale a **ordem dos jogadores** ([11.2](#112-ordem-dos-jogadores)); entre habilidades, vale a **ordem em que estão impressas** no bloco do inimigo; entre inimigos aliados (Suporte), vale o de **menor vida atual** e, se empatar, a ordem impressa na carta.
+- Os perfis e seus critérios são ajustáveis no laboratório. A carta pode trazer uma regra própria de alvo ou de habilidade, que vale sobre o perfil (regra 1 do [Apêndice B](#apêndice-b--decisões-registradas)).
 
 ---
 
@@ -1873,14 +1905,14 @@ Quando o jogador chega a **0 pontos de vida**, ele é **nocauteado**:
 
 - Missões são encontradas em algumas zonas. Nem toda zona tem missões.
 - Algumas missões envolvem recolher itens, falar com um NPC, etc.
-- Ações relacionadas: **Pegar**, **Continuar** e **Finalizar missão**. Quando o jogador chega a uma zona que tem uma etapa de uma missão que ele já pegou, ele interage para continuar ou finalizar a missão. Missões de várias etapas indicam em que tipo de zona fica cada etapa.
-- **Tipos de zona inexistentes:** o jogo só oferece (ou sorteia) missões e etapas cujos tipos de zona **existem no mapa** da partida. As missões de provação e do mentor indicam **2 ou 3 tipos alternativos** por etapa; vale qualquer um que exista no mapa.
+- Ações relacionadas: **Pegar**, **Continuar** e **Finalizar missão**. Quando o jogador chega a uma zona que tem uma etapa de uma missão de zona que ele já pegou, ele interage para continuar ou finalizar a missão. Missões de zona de várias etapas indicam em que tipo de zona fica cada etapa.
+- **Tipos de zona:** missões de zona fazem parte da coleção da dimensão e só citam tipos de zona que existem nela (todas as zonas da dimensão entram no mapa, [3.5](#35-montagem-do-mapa)). As missões de provação e do mentor são **genéricas** e não citam tipo de zona ([Missões genéricas](#missões-genéricas-provação-e-mentor)).
 - **Onde ficam as cartas:** cartas de missão pegas e **itens de conclusão** ([3.2](#32-conclusão-de-uma-dimensão)) **não ocupam slot**: ficam numa **área própria** do jogador, separada do inventário, da pasta e do cofre.
 - **Limite:** cada jogador pode ter no máximo **3 missões em aberto** ao mesmo tempo, somando missões de zona, de provação e do mentor (ajustável no laboratório).
 - **Não são obrigatórias:** se o jogador pegar uma missão e não cumpri-la, nada acontece. A missão fica em aberto até ele cumpri-la ou abandoná-la.
 - **Abandonar missão:** ação **gratuita** e universal ([12.2](#122-lista-de-ações-padrão)), usada **na própria vez** e **fora de combate**, em qualquer zona. O jogador escolhe uma missão em aberto e desiste dela, sem receber nada e sem perder Pico. A vaga no limite de missões é liberada na hora.
   - **Missão de zona:** a carta volta para o **fundo** do deck de missões da zona de onde veio (outro jogador pode pegá-la mais tarde, quando ela voltar ao quadro).
-  - **Missão de provação:** pode ser pega de novo depois, nas zonas indicadas, cumprindo os requisitos.
+  - **Missão de provação:** pode ser pega de novo depois, em qualquer zona Urbana ou Habitada, cumprindo os requisitos.
   - **Missão do mentor:** o **ouro pago é perdido**; para tentar de novo, o jogador usa Treinar com mentor e paga outra vez ([8.4](#84-como-se-tornar-multiclasse)).
   - O progresso das etapas já feitas é **perdido**: se pegar a mesma missão de novo, começa do início.
   - Abandonar **não** conta como completar: a missão pode ser completada mais tarde (regra "Não se repetem").
@@ -1895,7 +1927,7 @@ Quando o jogador chega a **0 pontos de vida**, ele é **nocauteado**:
 | Tipo | Onde fica | Quem pode pegar |
 |---|---|---|
 | **Missão de zona** | No **deck de missões** da zona | **Exclusiva**: só o jogador que pegou (veja o quadro abaixo) |
-| **Missão de provação** (especialização) | Fixa nas zonas indicadas pela própria missão, fora do deck | **Qualquer** jogador que cumpra os requisitos ([8.3](#83-como-obter-uma-especialização)) |
+| **Missão de provação** (especialização) | Genérica, fora do deck; pega em qualquer zona Urbana ou Habitada | **Qualquer** jogador que cumpra os requisitos ([8.3](#83-como-obter-uma-especialização)) |
 | **Missão do mentor** (multiclasse) | Ação Treinar com mentor | **Qualquer** jogador que cumpra os requisitos ([8.4](#84-como-se-tornar-multiclasse)) |
 
 **Quadro de missões (missões de zona):**
@@ -2364,6 +2396,9 @@ Todos os valores abaixo são **pontos de partida** e podem ser alterados no [Lab
 | Combate | Limite de ciclos de combate (todo combate) | 20 | [19.1](#191-combate-1-jogador--1-inimigo-regra-base) |
 | Mercado | Cartas no pool de singles | 20 | [24.4](#244-singles) |
 | Mapa | Tentativas máximas do gerador de mapa | 1.000 | [3.5](#35-montagem-do-mapa) |
+| Missões | Objetivos da provação / do mentor (eventos aleatórios resolvidos + combates vencidos) | 3 + 3 / 5 + 5 | [8.3](#missões-genéricas-provação-e-mentor) |
+| Inimigos | Critérios de alvo e de habilidade de cada Comportamento | tabela | [19.6](#196-ia-dos-inimigos) |
+| IA de jogador | Ordem de prioridades | nocaute → conclusão → missões → Pico → ouro | [II.7](#ii7-jogadores-controlados-por-ia) |
 
 ### Pico por fonte
 
@@ -2456,8 +2491,14 @@ A lista completa de valores está no [Apêndice A](#apêndice-a--valores-ajustá
 ## II.7 Jogadores controlados por IA
 
 - A IA de jogador é **onisciente**: ela tem acesso a **todas** as informações do jogo, inclusive as ocultas (cartas da própria mão e das mãos dos outros, a ordem de todos os decks, o próximo evento de cada zona, etc.).
-- Ela conhece **todas as regras** e **todas as variáveis**, e escolhe sempre a **melhor decisão** (ações de zona, deck building, builds, negociação, combate, mercado, ferreiro). **Exceção:** a escolha de **classes primárias e especializações** é sempre **sorteada** (uniforme entre as opções válidas), nunca otimizada ([28.1](#281-campanha), ajudantes de IA). Dada a classe sorteada, a IA monta a melhor build para ela.
-- Resultado esperado: uma IA aliada que **não comete erros**.
+- Ela conhece **todas as regras** e **todas as variáveis**. É uma **IA heurística forte**: decide (ações de zona, deck building, builds, negociação, combate, mercado, ferreiro) seguindo uma **ordem de prioridades explícita**, sem tentar achar a jogada perfeita. Ordem de partida (ajustável no laboratório):
+  1. **não ser nocauteado**;
+  2. **avançar o requisito de conclusão** da dimensão ([3.2](#32-conclusão-de-uma-dimensão));
+  3. **missões**;
+  4. **Pico**;
+  5. **ouro**.
+- **Exceção:** a escolha de **classes primárias e especializações** é sempre **sorteada** (uniforme entre as opções válidas), nunca otimizada ([28.1](#281-campanha), ajudantes de IA). Dada a classe sorteada, a IA monta a build seguindo as mesmas prioridades.
+- **Critério de aceite:** a IA é avaliada por **métricas no laboratório** ([II.6](#ii6-laboratório-de-testes)), como **taxa de nocaute** e **rodadas até concluir a dimensão**. As metas dessas métricas são definidas pelo autor no laboratório.
 - É diferente da IA dos inimigos ([19.6](#196-ia-dos-inimigos)), que segue o Comportamento impresso na carta.
 - **IAs na campanha:** os **ajudantes de IA** só entram num grupo **na criação** dele, na quantidade que o host escolher, respeitando o limite de jogadores ([1.3](#13-número-de-jogadores), [28.1](#281-campanha)). IAs nunca desconectam e nunca são host. A IA que assume o personagem de um humano desconectado segue as mesmas regras (inclusive o sorteio de classes e especializações daí em diante).
 
@@ -2788,3 +2829,19 @@ A lista completa de valores está no [Apêndice A](#apêndice-a--valores-ajustá
 | K9 | Combate dentro de missão | Segue 19.5: o recrutamento é permitido, mas só o dono da missão avança a etapa. Na derrota ou na fuga, a etapa não é concluída, a missão continua em aberto e pode ser tentada de novo. | [21.1](#211-regras-gerais), [19.5](#195-combate-com-2-ou-mais-jogadores--1-ou-mais-inimigos) |
 
 **Situação após a B.10:** não há pendências de regra conhecidas. O único tema adiado continua sendo a autenticação (F29).
+
+### B.11 Décima primeira revisão (13/11/2026)
+
+> Mesma instrução de B.2: pontos **decididos pelo autor** e já aplicados no documento. **Não** sinalizar de novo como contradição, ambiguidade, ponto em aberto, bloqueio ou "estranho", e **não** propor alternativas, a menos que o autor peça. Quando conflitar com uma decisão anterior, **vale a daqui** (L1 substitui a E9 na parte de provação/mentor e a K1 na parte das ações contextuais; L4 substitui o "sempre a melhor decisão" citado na J5).
+>
+> **Exemplos do autor são ilustrativos:** quando o autor dá um exemplo (ex.: "dimensão de velho oeste com mais desertos"), ele explica um **conceito**; não é uma regra literal nem uma lista fechada.
+
+| # | Tema | Decisão | Onde |
+|---|---|---|---|
+| L1 | Missões de provação e do mentor sem zona válida | **Missões genéricas:** existe uma única missão de provação e uma única missão do mentor, iguais para todas as especializações/classes, sem relação com o tema da classe e sem depender de tipo de zona. Objetivos são contadores cumpridos em qualquer zona (provação: 3 eventos aleatórios resolvidos + 3 combates vencidos; mentor: 5 + 5; ajustáveis). A provação é pega pela ação contextual **Pegar missão de provação** (1 ponto) em qualquer Urbana ou Habitada, onde o jogador escolhe a especialização (IAs sorteiam). Progresso automático (sem "Continuar"); **Finalizar** (1 ponto) em qualquer Urbana ou Habitada. Como toda dimensão tem Urbana, as missões sempre podem ser concluídas. | [8.3](#83-como-obter-uma-especialização), [8.4](#84-como-se-tornar-multiclasse), [12.1](#121-ações-universais-e-ações-locais), [12.2](#122-lista-de-ações-padrão), [21.1](#211-regras-gerais), [21.2](#212-tipos-de-missão), [Apêndice A](#apêndice-a--valores-ajustáveis) |
+| L2 | Tema da dimensão | Cada dimensão tem um **tema** que define os tipos de zona e locais e suas proporções; qualquer tipo pode faltar, só o Urbano é garantido. Regras e cartas que valem em todas as dimensões nunca dependem de um tipo de zona específico (exceto Urbano). | [3.1](#31-dimensões) |
+| L3 | Comportamentos dos inimigos | Tabela de perfis: **Agressivo** (menor Defesa; habilidade de maior Poder), **Defensivo** (quem o atacou por último, senão menor Defesa; prioriza buffs/Contínuas), **Suporte** (cura/buff em aliado ferido; senão age como Agressivo), **Caçador** (menor vida atual; maior Poder). Máximo 1 habilidade por turno, depois sempre o ataque básico. Desempates fixos: ordem dos jogadores; ordem impressa das habilidades; aliado de menor vida e depois ordem impressa. | [18.1](#181-o-inimigo-na-carta-de-evento-de-combate), [19.6](#196-ia-dos-inimigos), [Apêndice A](#apêndice-a--valores-ajustáveis) |
+| L4 | IA de jogador | Deixa de ser "sempre a melhor decisão / não comete erros". Passa a ser **IA heurística forte** com ordem de prioridades explícita: não ser nocauteado → avançar o requisito de conclusão da dimensão → missões → Pico → ouro (ajustável). Aceite por **métricas no laboratório** (taxa de nocaute, rodadas até concluir a dimensão). O sorteio de classes e especializações continua (J5). | [II.7](#ii7-jogadores-controlados-por-ia), [Apêndice A](#apêndice-a--valores-ajustáveis) |
+| L5 | "Sem arma" × manoplas | **Sem arma = slot de Arma vazio.** Manoplas, garras e soco-inglês são Arma. O exemplo passou a ser "efeitos do Monge ou acessórios". | [5.1](#51-equipamentos) |
+
+**Situação após a B.11:** não há pendências de regra conhecidas. O único tema adiado continua sendo a autenticação (F29).
