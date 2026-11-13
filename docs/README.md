@@ -184,6 +184,7 @@ Dentro do combate: Ciclo   = [ turno jogador ] → [ turno inimigo 1 ] → [ tur
 | **Nocaute** | O que acontece ao chegar a 0 de vida: volta ao respawn, perde Pico e a próxima vez. | [20.2](#202-nocaute) |
 | **Spawn / respawn** | Onde o jogador aparece no início da partida / onde reaparece depois de um nocaute (o mesmo ponto). | [20.1](#201-spawn-e-respawn) |
 | **Missão** | Tarefa pega numa zona (de zona, de provação ou do mentor) que dá recompensas. | [21](#21-missões) |
+| **Item de conclusão** | Item exigido pela Carta de Dimensão na campanha; fica numa área própria, não ocupa slot e nunca é perdido (só muda de dono por negociação). | [3.2](#32-conclusão-de-uma-dimensão) |
 | **Raide** | Sequência de eventos em estilo jogo-livro, feita numa zona, com recompensas fortes. | [22](#22-raides) |
 | **Mercado / Ferreiro / Estábulo** | Serviços de zona: comprar e vender; refinar, encantar, criar e consertar; comprar e vender montarias. | [24](#24-mercado), [25](#25-ferreiro), [26](#26-montarias) |
 | **Coleção** | Conjunto de cartas lançado com uma dimensão. | [27](#27-coleções) |
@@ -211,6 +212,14 @@ Cada dimensão tem uma **Carta de Dimensão** que define:
 - a **condição de conclusão** (ex.: derrotar o chefe final na *Raide Final*, ou levar o artefato X até a zona Y);
 - o **requisito para liberar** a condição (ex.: reunir 3 *Fragmentos* obtidos em missões e raides). Quando o requisito é ter itens, **um único jogador** precisa ter todos eles (ex.: os 3 Fragmentos com o mesmo jogador); os itens podem ser negociados entre os jogadores para isso;
 - o **prêmio máximo**.
+
+**Itens de conclusão (campanha):** os itens exigidos pela Carta de Dimensão (ex.: os Fragmentos) são **itens de conclusão**. Para que a dimensão nunca fique impossível de concluir:
+- eles ficam numa **área própria** do jogador (a mesma das cartas de missão, [21.1](#211-regras-gerais)) e **não ocupam slot**, por isso são sempre recebidos, mesmo com o inventário cheio;
+- **não podem** ser vendidos, descartados, oferecidos, abdicados nem perdidos: nenhum efeito, habilidade, regra ou perda de montaria os manda para o limbo;
+- **só** mudam de dono por **negociação** ([23](#23-negociação));
+- os requisitos da **Raide Final** são sempre do tipo **"Ter"**, nunca "Oferecer" ([22.1](#221-como-iniciar)).
+
+Nos modos de run, a Carta de Dimensão é ignorada; lá esses itens são recursos comuns.
 
 Na campanha, quando a condição é cumprida, **todos os jogadores da partida** concluem a dimensão e cada um recebe o prêmio máximo. A partida daquela dimensão **termina** nesse momento: o grupo **não** continua explorando a dimensão concluída e **não** pode jogá-la de novo (veja [Ir para nova dimensão](#ir-para-nova-dimensão)). Nos modos de run, a Carta de Dimensão e o prêmio máximo são **ignorados**: a vitória é por pontos de objetivo (veja [28](#28-modos-de-jogo)). A Raide Final continua disponível como uma **raide normal**, sem concluir nada.
 
@@ -620,6 +629,7 @@ Os **slots de decks** também podem ser expandidos no mercado: **+1 slot de deck
 | **Carta vendida no mercado** (qualquer tipo) | **Sai do jogo** (não volta a pool, estoque nem deck) |
 | **Carta de evento de Chefe** derrotado | **Sai do jogo** nessa partida ([18.3](#183-categorias-de-inimigo)) |
 | Cartas **saqueadas** ou **negociadas** | Passam para o outro jogador |
+| **Item de conclusão** (campanha, [3.2](#32-conclusão-de-uma-dimensão)) | **Nunca** vai para o limbo; só muda de dono por negociação |
 
 - O **limbo** é uma **pilha de descarte comum a todos os jogadores**.
 - **Nada volta do limbo:** o que vai para o limbo é **perdido para sempre**. Nenhum efeito, habilidade, classe ou especialização pode recuperar coisas do limbo, e o limbo não é acessível nem guardado. Na prática, mandar algo para o limbo é **destruí-lo**.
@@ -646,6 +656,8 @@ Isso vale para tudo o que chega: recompensas, compras no mercado (estoque e sing
 
 Exceção: abrir um booster **dentro** do cofre manda as cartas para o cofre (veja [24.3](#243-boosters)).
 
+Exceção: **itens de conclusão** ([3.2](#32-conclusão-de-uma-dimensão)) vão sempre para a área própria do jogador, sem precisar de espaço.
+
 ---
 
 ## 7. Modificadores e Energia
@@ -668,7 +680,7 @@ Todos os modificadores são usados **principalmente em combate**, mas também po
 | **Perfuração** | Quantos pontos da **defesa** do oponente são ignorados no cálculo de dano (valor fixo). |
 | **Reflexão** | Quantos pontos do dano recebido são **devolvidos** ao atacante (valor fixo). O valor devolvido é subtraído do dano ao defensor. Se o ataque não causar dano (Ataque ≤ Defesa), a Reflexão **não** devolve nada. O dano refletido vai **direto na vida** do atacante (não passa pela Defesa dele) e **pode nocauteá-lo** (jogador ou inimigo). |
 
-**Escala:** os modificadores e a vida máxima **não têm limite** e **ambos escalam com o Pico** (a vida atual é limitada pela vida máxima, veja [9.1](#91-valores-iniciais)); o ouro é limitado só pela capacidade da [bolsa](#53-dinheiro) e do cofre. Eles começam pequenos e podem chegar às **centenas e aos milhares**.
+**Escala:** os modificadores e a vida máxima **não têm limite máximo** (os modificadores só têm **piso 0**, veja [7.4](#74-escala-fórmulas-e-valores-iniciais)) e **ambos escalam com o Pico** (a vida atual é limitada pela vida máxima, veja [9.1](#91-valores-iniciais)); o ouro é limitado só pela capacidade da [bolsa](#53-dinheiro) e do cofre. Eles começam pequenos e podem chegar às **centenas e aos milhares**.
 
 ### 7.2 Energia: Pico e Vigor
 
@@ -737,11 +749,12 @@ Todos os valores e fórmulas abaixo são o **ponto de partida para testes**. Cad
   1. **Soma fixa:** base + equipamentos + refino + efeitos de valor fixo (ex.: "+5 de Defesa");
   2. **× Pico:** multiplica por (1 + Pico ÷ 100);
   3. **× percentuais:** todos os percentuais **somados** num único fator (ex.: efeito +20%, outro efeito +5%, Exaustão −10% → ×1,15);
-  4. **+ Poder:** só no Ataque de uma habilidade, soma-se o Poder dela.
+  4. **+ Poder:** só no Ataque de uma habilidade, soma-se o Poder dela;
+  5. **Piso 0:** o resultado nunca fica negativo (mínimo 0), mesmo com debuffs fixos (ex.: "reduza Defesa em 5" com Defesa 2 → 0). O fator dos percentuais (etapa 3) também tem mínimo ×0 (ex.: −70% e −50% somados → ×0, não ×−0,2).
 
   Arredonda-se para baixo só no fim (inclusive o refino, que entra com casas decimais). Exemplo: base 5 + arma 12 + refino +2 (2 × 5% de 12 = 1,2) = 18,2 → × 1,10 (Pico 10) = 20,02 → × 1,20 (efeito de +20%) = 24,024 → + 40 (Poder) = 64,024 → **64**.
 - **Vida máxima:** **vida base × (1 + Pico ÷ 100)**, arredondada para baixo. A vida base é 20 por padrão (mais bônus permanentes). Ex.: vida base 20 com Pico 10 → 22; com Pico 100 → 40. Quando o Pico cai e a vida máxima fica abaixo da vida atual, a vida atual cai junto; quando o Pico sobe, a vida atual **não** sobe junto (como o Vigor).
-- **Acerto:** chance de acerto (%) = **Precisão ÷ (Precisão + Esquiva do alvo) × 100**, sorteada pelo sistema. Com 50 × 20, ~71% de acerto. A fórmula funciona em qualquer escala.
+- **Acerto:** chance de acerto (%) = **Precisão ÷ (Precisão + Esquiva do alvo) × 100**, sorteada pelo sistema. Com 50 × 20, ~71% de acerto. A fórmula funciona em qualquer escala. Se a Precisão do atacante for **0**, o ataque **erra** sem rolagem (evita a divisão por zero).
 - **Dano:** veja a fórmula completa em [19.2](#192-cálculo-do-dano).
 - **Dados não dependem da Energia:** rolagens de dado (teste de fuga, refino, etc.) **não** são influenciadas por Energia, Pico ou Vigor por padrão, a menos que um efeito ou habilidade diga o contrário.
 - **Modificadores iniciais (base):** dependem da **classe ativa** do jogador (veja a tabela em [8.7](#87-perfil-das-classes) e a regra do multiclasse em [8.4](#84-como-se-tornar-multiclasse)). No laboratório será possível usar o valor padrão, um valor customizado para todos ou um valor customizado por classe.
@@ -860,7 +873,7 @@ O mentor dá a missão de **nova classe**; a especialização da nova classe con
 **Regras do multiclasse:**
 - **Travas:** cada classe e especialização é checada contra a própria trava (veja [8.2](#82-a-trava-do-deck)).
 - **Inventário:** sempre 10 slots, com qualquer número de classes.
-- **Modificadores base:** valem os da **classe ativa**. Se **mais de uma** classe estiver ativa, valem os da classe ativa obtida **primeiro** (a mais antiga do jogador). Se **nenhuma** estiver ativa, vale o "valor padrão".
+- **Modificadores base:** valem os da **classe ativa**. Se **mais de uma** classe estiver ativa, valem os da classe ativa obtida **primeiro** (a mais antiga do jogador; no Enfrentamento, a primeira listada na build, [28.4](#284-enfrentamento-pvp)). Se **nenhuma** estiver ativa, vale o "valor padrão".
 
 ### 8.5 Como ler a tabela de classes
 
@@ -1156,11 +1169,14 @@ flowchart LR
 
 1. Cada vez tem um **tempo limite de 60 segundos**. Esgotado o tempo, a vez termina.
 2. **Relógio pausado:** o relógio da vez **pausa** durante **qualquer tela de escolha**: eventos, combates, raides, mercado, ferreiro, cofre, **Preparar**, **Ajustar deck**, **Negociação**, **Oficina do Artífice**, a escolha de carta no **Vasculhar**, **Treinar com mentor** (escolha da classe), missões, **Cumprir objetivo** e qualquer outra tela em que o jogador precise escolher algo. Cada um tem seu próprio tempo de decisão (padrão: **30 s por escolha**; turno de combate: **30 s**). O relógio de 60 s só corre enquanto o jogador decide qual ação de zona fazer. Por isso, uma vez pode durar mais de 60 s no total.
-   - **Tempo máximo da vez:** somando tudo (relógio de 60 s e telas pausadas), uma vez dura no máximo **5 minutos** (ajustável no laboratório). Esgotado esse tempo, a tela aberta é fechada com a ação padrão (item 3) e a vez termina. Combates e raides **não** contam para esse limite (eles têm o tempo por turno de combate e por escolha), para que ninguém seja cortado no meio de uma luta.
+   - **Tempo máximo da vez:** somando tudo (relógio de 60 s e telas pausadas), uma vez dura no máximo **5 minutos** (ajustável no laboratório). Esgotado esse tempo, a tela aberta é fechada com a ação padrão (item 3) e a vez termina. Combates e raides **não** contam para esse limite (eles têm o tempo por turno de combate e por escolha), para que ninguém seja cortado no meio de uma luta. Combates têm o seu próprio teto: o **limite de ciclos de combate** ([19.1](#191-combate-1-jogador--1-inimigo-regra-base), regra 10).
 3. **Tempo de escolha esgotado** (ação padrão):
    - **evento:** o jogador aceita a **coisa ruim** (como se não tentasse resolver);
    - **turno de combate:** o turno é **pulado** (nenhum ataque é feito);
    - **votação da raide:** vale a escolha do iniciador; se ele não confirmar, vale a opção mais votada; se ninguém votou, vale **sempre a primeira opção**;
+   - **recompensa sem espaço** ([6.6](#66-recompensas-e-falta-de-espaço)): o jogador **deixa a recompensa** (ela segue o destino de "deixar a recompensa" em 6.6);
+   - **alvo do Enfrentar** (lutar ou fugir, [28.2](#282-desbravadores)): o alvo **entra na briga**;
+   - **rodízio de cartas entre sobreviventes** ([19.5](#195-combate-com-2-ou-mais-jogadores--1-ou-mais-inimigos)): o sistema escolhe uma carta **aleatória** pelo jogador;
    - **outras telas** (mercado, ferreiro, cofre, negociação, etc.): a tela é fechada sem mudanças pendentes.
 4. **Vez encerrada cedo:** se o jogador encerrar a vez antes dos 60 s, ela passa imediatamente para o próximo (sem esperar o relógio).
 5. **Jogador ausente:** se um jogador deixar o tempo acabar em **2 vezes seguidas**, as próximas vezes dele são **puladas automaticamente** até ele apertar o botão **"Voltei"** (disponível a qualquer momento na tela); ele volta a jogar a partir da **próxima vez** dele.
@@ -1660,7 +1676,7 @@ Dados de cada inimigo impresso na carta:
 | **Criatura** | Registro livre: o que o inimigo é. Pode ser qualquer coisa ou **qualquer mistura** de criaturas (ex.: "Goblin", "Rato-leão-pombo"). Criaturas são infinitas. Efeitos e habilidades podem interagir **especificamente** com uma criatura (ex.: "+20% de dano contra Goblins"). |
 | **Categoria** | Veja [18.3](#183-categorias-de-inimigo). |
 | **Elemento** | 0 ou 1. Define a efetividade dos ataques recebidos (veja [16.1](#161-relações-e-efetividade)). |
-| **Vida** e **modificadores** | Ataque, Defesa, Precisão, Esquiva, Celeridade, Perfuração, Reflexão. Seus valores já são **finais** (o Pico não se aplica). Buffs e debuffs **percentuais** sobre um inimigo usam só a etapa 3 do pipeline ([7.4](#74-escala-fórmulas-e-valores-iniciais)): somam-se num fator aplicado ao valor impresso, arredondado para baixo. |
+| **Vida** e **modificadores** | Ataque, Defesa, Precisão, Esquiva, Celeridade, Perfuração, Reflexão. Seus valores já são **finais** (o Pico não se aplica). Buffs e debuffs **percentuais** sobre um inimigo usam só a etapa 3 do pipeline ([7.4](#74-escala-fórmulas-e-valores-iniciais)): somam-se num fator aplicado ao valor impresso, arredondado para baixo. Como os do jogador, os modificadores do inimigo têm **piso 0**: debuffs fixos ou percentuais nunca os deixam negativos, e o fator percentual tem mínimo ×0. |
 | **Habilidades** | As habilidades do inimigo ficam **impressas no bloco dele na carta** (inimigos não usam equipamentos). |
 | **Energia** | Opcional: Vigor do inimigo para pagar habilidades. Habilidades também podem ter só recarga ou nenhum custo. |
 | **Comportamento** | Perfil da IA: Agressivo, Defensivo, Suporte, Caçador (ataca o alvo mais fraco). Inimigos **nunca fogem** do combate. |
@@ -1736,8 +1752,13 @@ flowchart TB
 9. **Fuga:** o jogador pode tentar o [teste de fuga](#15-teste-de-fuga) no seu turno de combate.
    - **Sucesso:** o combate termina imediatamente.
    - **Falha:** o jogador **perde o turno de combate** e recebe um **ataque livre** (veja [15](#15-teste-de-fuga)). O combate continua.
+10. **Limite de ciclos de combate:** todo combate tem no máximo **20 ciclos de combate** (ajustável no laboratório). O limite garante que todo combate termine, mesmo quando nenhum lado consegue causar dano, ninguém ataca ou ninguém pode fugir. Quando o último ciclo termina sem vencedor:
+    - **PvE fora de raide:** os jogadores ainda de pé são tratados como se tivessem **fugido com sucesso** (perdem o Pico de "Fugir de um combate", [Apêndice A](#pico-por-fonte); não pagam o Vigor da fuga; não recebem recompensa nem sofrem a coisa ruim). Os nocauteados seguem as regras normais, e o resultado do combate segue a tabela de [19.5](#195-combate-com-2-ou-mais-jogadores--1-ou-mais-inimigos).
+    - **Raide:** a raide termina em **derrota** ([19.6](#196-combate-em-raides), regra 7).
+    - **PvP (Desbravadores):** **ninguém vence** ([28.2](#282-desbravadores), regra 9).
+    - **Enfrentamento (PVP):** decide-se como na condição de vitória **por ciclos de combate** ([28.4](#284-enfrentamento-pvp)).
 
-**Empates de Celeridade:** entre **aliados** (jogadores do mesmo lado), eles **escolhem** a ordem. Entre **adversários** jogadores (PvP), resolve-se por **D20** (maior começa; empate no dado, rola de novo). Entre jogador e inimigo, o inimigo tem prioridade (regra 1).
+**Empates de Celeridade:** entre **aliados** (jogadores do mesmo lado), eles **escolhem** a ordem. Entre **adversários** jogadores (PvP), resolve-se por **D20** (maior começa; empate no dado, rola de novo). Entre jogador e inimigo, o inimigo tem prioridade (regra 1). Entre **inimigos**, vale a **ordem em que estão impressos na carta** (o primeiro impresso age antes).
 
 ### 19.2 Cálculo do dano
 
@@ -1755,7 +1776,7 @@ flowchart LR
 
 Ordem fixa: **acerto → Ataque − Defesa → ×½ (Área/escudo) → ×efetividade → arredonda para baixo → Reflexão.**
 
-1. **Acerto:** chance (%) = Precisão ÷ (Precisão + Esquiva do alvo) × 100. Habilidades de Área não rolam acerto.
+1. **Acerto:** chance (%) = Precisão ÷ (Precisão + Esquiva do alvo) × 100. Habilidades de Área não rolam acerto. Com Precisão 0, o ataque erra sem rolagem ([7.4](#74-escala-fórmulas-e-valores-iniciais)).
 2. **Dano bruto:** Ataque (+ Poder da habilidade, se houver; calculado pelo pipeline de [7.4](#74-escala-fórmulas-e-valores-iniciais)) − **max(0, Defesa do alvo − Perfuração do atacante)**, mínimo 0. A Perfuração pode zerar a Defesa, mas nunca a deixa negativa.
 3. **Metades:** se a habilidade for de **Área**, ×½; se for **Projétil** contra alvo com **escudo**, ×½ ([17.4](#174-detalhe-das-formas)); se o alvo for **resistente** ao elemento do ataque (efeito, [13.3](#133-ativação)), ×½. Todas podem se acumular (ex.: ×¼). Se o alvo for **imune** ao elemento do ataque, o dano é 0.
 4. **Elemento:** se o alvo for um inimigo com elemento e o ataque tiver elemento, aplica-se a efetividade ([16.1](#161-relações-e-efetividade)).
@@ -1838,6 +1859,7 @@ Quem fugiu com sucesso não sofre as penalidades dos inimigos, mas pode sofrer p
 4. Se **todos** os jogadores forem nocauteados na mesma etapa, a raide termina em **derrota** e todos sofrem as penalidades da etapa.
 5. Quem sai da raide **não recebe** recompensas das etapas já vencidas: as recompensas são entregues só no final.
 6. Se o jogador que **iniciou** a raide (e decide as escolhas da história) sair, o **próximo jogador na ordem da rodada** que ainda está na raide passa a decidir e **herda o papel de iniciador**, inclusive o direito às recompensas finais.
+7. **Limite de ciclos de combate** ([19.1](#191-combate-1-jogador--1-inimigo-regra-base), regra 10): se uma batalha da raide chegar ao limite sem vencedor, a raide termina em **derrota**. Os participantes ainda de pé sofrem as penalidades da etapa e perdem o Pico de "Perder uma raide" ([Apêndice A](#pico-por-fonte)), mas **não** são nocauteados (não perdem a próxima vez nem vão para o respawn). Os que estavam nocauteados seguem a regra 3.
 
 ### 19.7 IA dos inimigos
 
@@ -1877,7 +1899,7 @@ Quando o jogador chega a **0 pontos de vida**, ele é **nocauteado**:
 - Algumas missões envolvem recolher itens, falar com um NPC, etc.
 - Ações relacionadas: **Pegar**, **Continuar** e **Finalizar missão**. Quando o jogador chega a uma zona que tem uma etapa de uma missão que ele já pegou, ele interage para continuar ou finalizar a missão. Missões de várias etapas indicam em que tipo de zona fica cada etapa.
 - **Tipos de zona inexistentes:** o jogo só oferece (ou sorteia) missões e etapas cujos tipos de zona **existem no mapa** da partida. As missões de provação e do mentor indicam **2 ou 3 tipos alternativos** por etapa; vale qualquer um que exista no mapa.
-- **Onde ficam as cartas:** cartas de missão pegas (e, nos modos de run, cartas de objetivo) **não ocupam slot**: ficam numa **área própria** do jogador, separada do inventário, da pasta e do cofre.
+- **Onde ficam as cartas:** cartas de missão pegas, **itens de conclusão** da campanha ([3.2](#32-conclusão-de-uma-dimensão)) e, nos modos de run, cartas de objetivo **não ocupam slot**: ficam numa **área própria** do jogador, separada do inventário, da pasta e do cofre.
 - **Limite:** cada jogador pode ter no máximo **3 missões em aberto** ao mesmo tempo, somando missões de zona, de provação e do mentor (ajustável no laboratório).
 - **Não são obrigatórias:** se o jogador pegar uma missão e não cumpri-la, nada acontece. A missão fica em aberto até ele decidir cumpri-la.
 - **Missões são individuais:** a missão fica atrelada ao jogador que a pegou e só ele pode finalizá-la.
@@ -1930,7 +1952,7 @@ Uma **raide** (dungeon ou instância) é uma **sequência determinada de eventos
 - Quem inicia a raide **gasta todos os pontos de ação** restantes. Ao terminar a raide, a vez dele termina.
 - Quem participa junto **não gasta pontos de ação** nem perde a vez.
 - Algumas raides exigem **requisitos** para ser iniciadas. Quando o jogador tenta iniciar a raide, o jogo verifica se ele tem os requisitos no inventário. Se tiver, a raide pode ser iniciada.
-- Cada carta de raide diz se o requisito é **"Ter"** (só verificado) ou **"Oferecer"** (consumido, vai para o limbo). Só quem **inicia** a raide precisa cumprir os requisitos.
+- Cada carta de raide diz se o requisito é **"Ter"** (só verificado) ou **"Oferecer"** (consumido, vai para o limbo). Só quem **inicia** a raide precisa cumprir os requisitos. Na **Raide Final**, os requisitos são **sempre "Ter"** ([3.2](#32-conclusão-de-uma-dimensão)); itens de conclusão contam mesmo estando na área própria do jogador.
 
 ### 22.2 Como funciona
 
@@ -1978,7 +2000,7 @@ flowchart LR
 - Só o jogador **da vez** pode convidar outro para negociar; o convidado pode aceitar e negociar fora da sua vez (veja [11.4](#114-agir-fora-da-vez)).
 - O relógio da vez fica **pausado** durante a negociação.
 - Não há limite de coisas negociadas de cada lado (respeitando o espaço de quem recebe, inclusive a capacidade da bolsa de ouro).
-- **O que pode ser negociado:** **ouro**, coisas do **inventário** e cartas da **pasta de TCG**. Cartas da mão, do deck, da pilha de descarte e equipamentos em uso não podem ser negociados.
+- **O que pode ser negociado:** **ouro**, coisas do **inventário**, cartas da **pasta de TCG** e **itens de conclusão** da campanha ([3.2](#32-conclusão-de-uma-dimensão)). Cartas da mão, do deck, da pilha de descarte e equipamentos em uso não podem ser negociados.
 - O **conteúdo** da montaria (inventário e pasta extras) pode ser negociado; a **montaria** em si, não.
 - Algumas zonas têm efeitos que **proíbem** a negociação.
 - **Nunca** é permitido negociar durante um combate.
@@ -2454,6 +2476,7 @@ flowchart TB
    - são nocauteados ([20.2](#202-nocaute)) e vão para o seu ponto de spawn (no fim do combate);
    - recebem a **bênção do spawn**.
 8. **Sem vencedor** (todos caem ao mesmo tempo, ex.: por Reflexão): ninguém saqueia; **todos** perdem os 3 pontos de objetivo e sofrem o nocaute normal.
+9. **Limite de ciclos de combate** ([19.1](#191-combate-1-jogador--1-inimigo-regra-base), regra 10): se o combate chegar ao limite com mais de um jogador de pé, **ninguém vence** e **ninguém saqueia**. Os jogadores ainda de pé **não** são nocauteados e **não** perdem pontos de objetivo. Os que já tinham caído sofrem o nocaute e perdem os 3 pontos de objetivo (regra 7), mas não são saqueados.
 
 ### 28.3 Clássico
 
@@ -2483,7 +2506,7 @@ Os dois valores são ajustáveis no laboratório.
 - **Times:** a habilidade de Área **não atinge aliados**, e aliados **podem reviver** uns aos outros.
 - **Não afeta** a progressão de nenhum outro modo: não dá recompensas nem vantagens que sejam levadas para outros modos.
 - Cada jogador tem **10 slots de builds** para testar combos. Cada slot é uma **build completa**: classes + especializações + deck + equipamentos + inventário (o jogador escolhe o que leva no inventário). O **próprio jogador** dono da build define o **nível de refino** e os **encantamentos** de cada equipamento dela (dentro dos limites impressos no equipamento). Esses slots são separados dos slots de decks do cofre da campanha.
-- Uma build pode ter **quantas classes primárias quiser** e **uma especialização por classe** que possui, sem missões de provação nem de mentor. As travas continuam valendo ([8.2](#82-a-trava-do-deck)).
+- Uma build pode ter **quantas classes primárias quiser** e **uma especialização por classe** que possui, sem missões de provação nem de mentor. As travas continuam valendo ([8.2](#82-a-trava-do-deck)). Como na build não existe ordem de obtenção, a **ordem das classes na build** a substitui: com várias classes ativas, os modificadores base são os da **primeira classe ativa listada** ([8.4](#84-como-se-tornar-multiclasse)).
 - Todos os jogadores têm acesso a **todas as cartas já lançadas**, de coleções vigentes ou não.
 - **Não é possível fugir**, mas é possível **desistir** do combate.
 - **Desconexão** (mais de 2 min sem conexão): quem desconecta é tratado como se tivesse **desistido**.
@@ -2495,7 +2518,7 @@ Os dois valores são ajustáveis no laboratório.
 
 Além disso, o host define para a partida:
 - a **condição de vitória**:
-  - **último de pé** (todos contra todos): quem chega a 0 pontos de vida sai do combate; vence o **último jogador de pé** (a vida inicial é a que o host definiu). Nos times, vence o time com o último jogador de pé;
+  - **último de pé** (todos contra todos): quem chega a 0 pontos de vida sai do combate; vence o **último jogador de pé** (a vida inicial é a que o host definiu). Nos times, vence o time com o último jogador de pé. Se o **limite de ciclos de combate** ([19.1](#191-combate-1-jogador--1-inimigo-regra-base), regra 10) for atingido antes, o resultado é decidido como na condição **por ciclos de combate** (abaixo);
   - **por ciclos de combate** (todos contra todos ou times): a partida tem um limite de **ciclos de combate** (um ciclo termina quando todos os participantes jogaram seu turno de combate uma vez, veja [2.1](#21-tempo)); quando ele acaba, vence quem tiver **mais vida restante, em percentual da vida inicial** (nos times, a soma da vida restante do time em percentual da soma das vidas iniciais; percentuais iguais: **empate**). Um time cujos jogadores estejam todos nocauteados perde antes do limite;
 - as **coleções permitidas**;
 - o **limite de cópias de cartas de recurso**, que existe só no PVP e por padrão é **sem limite** (o limite de cartas de atributo sinérgicas e aprimoradas **não** pode ser alterado);
@@ -2577,6 +2600,7 @@ Todos os valores abaixo são **pontos de partida** e podem ser alterados no [Lab
 | Missões | Missões em aberto por jogador (todos os tipos) | 3 | [21.1](#211-regras-gerais) |
 | Mercado | Munição por compra / lote mínimo de venda | 10 / 10 | [24.1](#241-compra-no-estoque) |
 | Todos os modos | Tempo sem conexão para contar como desconexão | 2 min | [28](#28-modos-de-jogo) |
+| Combate | Limite de ciclos de combate (todo combate) | 20 | [19.1](#191-combate-1-jogador--1-inimigo-regra-base) |
 
 ### Pico por fonte
 
@@ -2598,7 +2622,7 @@ Valores padrão para teste ([7.2](#72-energia-pico-e-vigor)). Quando uma carta d
 | Fugir de um combate (com sucesso) | −2 |
 | Fugir de um enfrentamento PvP (Desbravadores) | 0 (custa só Vigor) |
 | Ser nocauteado (= perder um combate) | −10% do Pico, mínimo 1, arredondado para baixo |
-| Perder uma raide (derrota de todos **ou** sair da raide nocauteado) | −5 (somado ao nocaute) |
+| Perder uma raide (derrota de todos, sair da raide nocauteado **ou** limite de ciclos de combate numa batalha da raide) | −5 (somado ao nocaute, se houver) |
 
 ---
 
@@ -2938,3 +2962,18 @@ A lista completa de valores está no [Apêndice A](#apêndice-a--valores-ajustá
 | G3 | Disponibilidade do Enfrentar | Só aparece se houver na zona pelo menos 1 alvo válido (sem bênção), e se o próprio jogador não tiver bênção. | [12.1](#121-ações-universais-e-ações-locais), [12.2](#122-lista-de-ações-padrão) |
 | G4 | Exemplo de combate em grupo | Reescrito: "o inimigo C faz o ataque livre; depois C e A jogam seus turnos normais". | [19.5](#195-combate-com-2-ou-mais-jogadores--1-ou-mais-inimigos) |
 | G5 | Regra de interpretação | Criada no início deste Apêndice B: ordem de desempate para situações não cobertas e critério do que uma revisão de IA pode sinalizar. | [Apêndice B](#apêndice-b--decisões-registradas) |
+
+### B.7 Sétima revisão (13/11/2026)
+
+> Mesma instrução de B.2: pontos decididos pelo autor e já aplicados no documento. **Não** sinalizar de novo como contradição, ambiguidade, ponto em aberto, bloqueio ou "estranho", e não propor alternativas. Quando conflitar com uma decisão anterior, **vale a daqui**.
+
+| # | Tema | Decisão | Onde |
+|---|---|---|---|
+| H1 | Combate sem fim | Todo combate tem **limite de 20 ciclos de combate** (ajustável). Ao atingir o limite sem vencedor: **PvE fora de raide**: jogadores de pé = fuga com sucesso (−2 Pico, sem custo de Vigor, sem recompensa, sem coisa ruim; resultado pela tabela de 19.5). **Raide**: derrota (penalidades da etapa e −5 Pico; quem está de pé não é nocauteado). **PvP do Desbravadores**: ninguém vence nem saqueia; quem está de pé não é nocauteado nem perde pontos de objetivo. **Enfrentamento**: decide-se como na condição "por ciclos de combate". O limite de 5 min da vez continua não se aplicando a combates. | [19.1](#191-combate-1-jogador--1-inimigo-regra-base), [19.6](#196-combate-em-raides), [28.2](#282-desbravadores), [28.4](#284-enfrentamento-pvp), [11.3](#113-tempo-da-vez), [Apêndice A](#apêndice-a--valores-ajustáveis) |
+| H2 | Save travado por itens perdidos | Itens exigidos pela Carta de Dimensão são **itens de conclusão**: área própria (não ocupam slot, sempre recebidos), nunca vendidos/descartados/oferecidos/abdicados/perdidos, nunca vão para o limbo, só mudam de dono por negociação. Requisitos da Raide Final são sempre "Ter". Nas runs, são recursos comuns. | [3.2](#32-conclusão-de-uma-dimensão), [2.2](#22-vocabulário-básico), [6.5](#65-pilhas-de-descarte-e-limbo), [6.6](#66-recompensas-e-falta-de-espaço), [21.1](#211-regras-gerais), [22.1](#221-como-iniciar), [23](#23-negociação) |
+| H3 | Modificadores negativos e divisão por zero | Todo modificador (jogador e inimigo) tem **piso 0** no fim do pipeline; o fator percentual tem mínimo ×0. Precisão 0 = erro automático, sem rolagem. | [7.1](#71-modificadores), [7.4](#74-escala-fórmulas-e-valores-iniciais), [18.1](#181-o-inimigo-na-carta-de-evento-de-combate), [19.2](#192-cálculo-do-dano) |
+| H4 | Tempo esgotado em telas obrigatórias | Recompensa sem espaço → deixar a recompensa (6.6). Alvo do Enfrentar → entra na briga. Rodízio entre sobreviventes → carta aleatória escolhida pelo sistema. | [11.3](#113-tempo-da-vez) |
+| H5 | Empate de Celeridade entre inimigos | Vale a ordem em que estão impressos na carta (o primeiro impresso age antes). | [19.1](#191-combate-1-jogador--1-inimigo-regra-base) |
+| H6 | Modificadores base no Enfrentamento | Sem ordem de obtenção nas builds, vale a **primeira classe ativa listada** na build. | [8.4](#84-como-se-tornar-multiclasse), [28.4](#284-enfrentamento-pvp) |
+
+**Situação após a B.7:** os bloqueios encontrados na revisão de 13/11/2026 (combate sem fim, save travado, modificadores negativos, tempo esgotado em telas obrigatórias, empates entre inimigos e ordem de classes no Enfrentamento) estão resolvidos e aplicados. **Não há pendências de regra conhecidas.** O único tema adiado continua sendo a autenticação (F29).
