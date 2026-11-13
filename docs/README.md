@@ -847,7 +847,7 @@ Uma build com 60 cartas ou mais que não cumpre a trava **não** é irregular: e
 - Existe **uma única missão de provação, genérica**, igual para todas as especializações. Ela **não** tem relação com o tema da classe ou da especialização e **não** depende de tipo de zona (veja [Missões genéricas](#missões-genéricas-provação-e-mentor)).
 - **Pegar:** ação contextual **Pegar missão de provação** (1 ponto de ação), em **qualquer** zona **Urbana** ou **Habitada**. Ao pegar, o jogador **escolhe** qual especialização vai buscar, entre as 4 de uma classe primária sua que ainda não tem especialização.
 - A missão de provação **não fica no deck de missões** e **não é exclusiva**: qualquer jogador pode pegá-la (veja [21.2](#212-tipos-de-missão)).
-- Requisito para **pegar** a provação: ter uma classe primária **sem** especialização e **Pico mínimo 30** (ajustável no laboratório).
+- Requisito para **pegar** a provação: ter uma classe primária **sem** especialização, **Pico mínimo 30** (ajustável no laboratório) e **nenhuma outra missão genérica em aberto** (veja [Missões genéricas](#missões-genéricas-provação-e-mentor)).
 - Ao **finalizar** a provação, o jogador ganha a especialização escolhida de forma permanente. Os benefícios dela só ficam ativos quando a build cumprir a trava da especialização.
 - O jogador pode ter **uma especialização por classe primária**, e **não é possível trocar** de especialização dentro da mesma classe.
 - Se o jogador **abandonar** a provação ([21.1](#211-regras-gerais)), pode pegá-la de novo depois (e escolher outra especialização), cumprindo os requisitos.
@@ -866,13 +866,14 @@ As missões de provação e do mentor valem em **qualquer** dimensão, qualquer 
 | **Mentor** | Resolver **5** eventos aleatórios com sucesso **e** vencer **5** combates |
 
 - **Como conta:** só conta o que acontece **depois** de pegar a missão. "Resolver um evento aleatório com sucesso" = chegar ao êxito de um evento aleatório (inclusive os de missões). "Vencer um combate" = terminar **de pé** um combate que termina em **vitória**, como quem iniciou ou como ajudante ([19.5](#195-combate-com-2-ou-mais-jogadores--1-ou-mais-inimigos)). Um mesmo acontecimento conta para **todas** as missões em aberto do jogador que o contam.
+- **Uma por vez:** cada jogador pode ter no máximo **1 missão genérica** (provação **ou** mentor) em aberto ao mesmo tempo. Não é possível ter duas provações, dois mentores, nem uma provação e um mentor juntos. Para pegar outra, o jogador precisa finalizar ou abandonar a que está aberta. A missão genérica conta para o limite geral de 3 missões em aberto ([21.1](#211-regras-gerais)).
 - **Progresso automático:** não existe "Continuar missão" para elas; o jogo conta o progresso sozinho.
 - **Finalizar:** com todos os objetivos cumpridos, o jogador usa a ação contextual **Finalizar missão** (1 ponto de ação) em **qualquer** zona **Urbana** ou **Habitada**. Como toda dimensão tem pelo menos 1 zona Urbana, a missão **sempre** pode ser concluída.
 
 ### 8.4 Como se tornar multiclasse
 
 **Mentoria:**
-- Pré-requisito: já ter uma especialização em **todas** as classes primárias atuais.
+- Pré-requisito: já ter uma especialização em **todas** as classes primárias atuais e **não** ter outra missão genérica em aberto (no máximo 1 por vez, veja [Missões genéricas](#missões-genéricas-provação-e-mentor)).
 - **Escolha da classe:** ao **pegar** a missão do mentor, o jogador escolhe **livremente** a nova classe primária, entre as que ainda não tem (ajudantes de IA **sorteiam**, [28.1](#281-campanha)). Existe **uma única missão do mentor, genérica**, igual para todas as classes, sem relação com o tema da classe e sem depender de tipo de zona (veja [Missões genéricas](#missões-genéricas-provação-e-mentor)).
 - **Treinar com mentor:** ação de zona presente em **todas** as zonas **Urbanas** e **Habitadas** (custa todos os pontos de ação restantes) que dá ao jogador a **missão do mentor**. Ao finalizar a missão (em qualquer zona Urbana ou Habitada), ele ganha a nova classe primária. Não existe custo de descartar cartas.
 - **Custo em ouro:** pago ao **pegar** a missão do mentor. O custo **dobra** a cada nova classe (ajustável no laboratório):
@@ -1910,7 +1911,7 @@ Quando o jogador chega a **0 pontos de vida**, ele é **nocauteado**:
 - Ações relacionadas: **Pegar**, **Continuar** e **Finalizar missão**. Quando o jogador chega a uma zona que tem uma etapa de uma missão de zona que ele já pegou, ele interage para continuar ou finalizar a missão. Missões de zona de várias etapas indicam em que tipo de zona fica cada etapa.
 - **Tipos de zona:** missões de zona fazem parte da coleção da dimensão e só citam tipos de zona que existem nela (todas as zonas da dimensão entram no mapa, [3.5](#35-montagem-do-mapa)). As missões de provação e do mentor são **genéricas** e não citam tipo de zona ([Missões genéricas](#missões-genéricas-provação-e-mentor)).
 - **Onde ficam as cartas:** cartas de missão pegas e **itens de conclusão** ([3.2](#32-conclusão-de-uma-dimensão)) **não ocupam slot**: ficam numa **área própria** do jogador, separada do inventário, da pasta e do cofre.
-- **Limite:** cada jogador pode ter no máximo **3 missões em aberto** ao mesmo tempo, somando missões de zona, de provação e do mentor (ajustável no laboratório).
+- **Limite:** cada jogador pode ter no máximo **3 missões em aberto** ao mesmo tempo, somando missões de zona, de provação e do mentor (ajustável no laboratório). Dessas, no máximo **1** pode ser genérica (provação **ou** mentor, [Missões genéricas](#missões-genéricas-provação-e-mentor)).
 - **Não são obrigatórias:** se o jogador pegar uma missão e não cumpri-la, nada acontece. A missão fica em aberto até ele cumpri-la ou abandoná-la.
 - **Abandonar missão:** ação **gratuita** e universal ([12.2](#122-lista-de-ações-padrão)), usada **na própria vez** e **fora de combate**, em qualquer zona. O jogador escolhe uma missão em aberto e desiste dela, sem receber nada e sem perder Pico. A vaga no limite de missões é liberada na hora.
   - **Missão de zona:** a carta volta para o **fundo** do deck de missões da zona de onde veio (outro jogador pode pegá-la mais tarde, quando ela voltar ao quadro).
@@ -1921,7 +1922,7 @@ Quando o jogador chega a **0 pontos de vida**, ele é **nocauteado**:
 - **Missões são individuais:** a missão fica atrelada ao jogador que a pegou e só ele pode finalizá-la.
 - **Não se repetem:** cada jogador só pode completar a mesma **missão de zona** **uma vez por dimensão** (uma dimensão nunca é jogada de novo, [3.2](#32-conclusão-de-uma-dimensão)). As missões de **provação** e do **mentor** **não** seguem essa regra: podem ser completadas de novo, na mesma dimensão, sempre que o jogador cumprir os requisitos delas ([8.3](#83-como-obter-uma-especialização), [8.4](#84-como-se-tornar-multiclasse)). Os próprios requisitos já impedem repetição sem sentido (a provação exige uma classe primária sem especialização; o mentor exige especialização em todas as classes primárias).
 - Missões em aberto ao sair de uma dimensão são canceladas.
-- **Combate em missão:** combates de missão (inimigos impressos na carta da missão, [18.1](#181-o-inimigo-na-carta-de-evento-de-combate)) seguem [19.5](#195-combate-com-2-ou-mais-jogadores--1-ou-mais-inimigos): o recrutamento é permitido, mas **só o dono da missão** avança a etapa. Se o combate terminar em **vitória**, a etapa do dono é **concluída**, mesmo que ele esteja **nocauteado** no fim (como o chefe final, [3.2](#32-conclusão-de-uma-dimensão)); nesse caso ele sofre o nocaute normal ([20.2](#202-nocaute)) e as recompensas do combate seguem a divisão entre sobreviventes de 19.5. Na **derrota** ou na **fuga**, a etapa não é concluída, a missão continua em aberto e pode ser tentada de novo.
+- **Combate em missão:** combates de missão (inimigos impressos na carta da missão, [18.1](#181-o-inimigo-na-carta-de-evento-de-combate)) seguem [19.5](#195-combate-com-2-ou-mais-jogadores--1-ou-mais-inimigos): o recrutamento é permitido, mas **só o dono da missão** avança a etapa. Se o combate terminar em **vitória**, a etapa do dono é **concluída**, mesmo que ele esteja **nocauteado** no fim (como o chefe final, [3.2](#32-conclusão-de-uma-dimensão)); nesse caso ele sofre o nocaute normal ([20.2](#202-nocaute)) e as recompensas do combate seguem a divisão entre sobreviventes de 19.5. A etapa depende **só do resultado do combate** (tabela de [19.5](#195-combate-com-2-ou-mais-jogadores--1-ou-mais-inimigos)): se o **dono fugir** e os ajudantes vencerem, o resultado é **vitória** e a etapa é concluída, como no chefe final ([3.2](#32-conclusão-de-uma-dimensão)). Na **derrota** ou na **fuga com sucesso** (resultado do combate: todos fugiram), a etapa não é concluída, a missão continua em aberto e pode ser tentada de novo.
 - Ao concluir uma missão, o jogador pode receber recompensas (inclusive do [deck de recompensas](#34-o-que-uma-carta-de-zona-contém)) e **Pico**.
 
 ### 21.2 Tipos de missão
@@ -2863,3 +2864,14 @@ A lista completa de valores está no [Apêndice A](#apêndice-a--valores-ajustá
 | M5 | Resíduo de raides no save | "cooldowns" trocado por "recargas" na lista do que o save guarda. | [28.1](#281-campanha) |
 
 **Situação após a B.12:** não há pendências de regra conhecidas. O único tema adiado continua sendo a autenticação (F29).
+
+### B.13 Décima terceira revisão (13/11/2026)
+
+> Mesma instrução de B.2: pontos **decididos pelo autor** e já aplicados no documento. **Não** sinalizar de novo como contradição, ambiguidade, ponto em aberto, bloqueio ou "estranho", e **não** propor alternativas, a menos que o autor peça. Quando conflitar com uma decisão anterior, **vale a daqui** (N1 completa a M1; N2 ajusta a K9 e a M2 na parte da fuga).
+
+| # | Tema | Decisão | Onde |
+|---|---|---|---|
+| N1 | Missões genéricas simultâneas | Cada jogador pode ter no máximo **1 missão genérica** (provação **ou** mentor) em aberto ao mesmo tempo. Fecha os casos de duas provações da mesma classe (especialização dupla), dois mentores (classe dupla) e o custo do mentor em paralelo. A missão genérica conta no limite geral de 3 missões. | [8.3](#83-como-obter-uma-especialização), [Missões genéricas](#missões-genéricas-provação-e-mentor), [8.4](#84-como-se-tornar-multiclasse), [21.1](#211-regras-gerais) |
+| N2 | Fuga no combate de missão | A etapa depende **só do resultado do combate** (tabela de 19.5). Dono fugiu e ajudantes venceram = **vitória**: a etapa é concluída, como no chefe final (3.2). "Fuga" na K9/M2 = resultado **fuga com sucesso** (todos fugiram), não a fuga individual do dono. | [21.1](#211-regras-gerais), [19.5](#195-combate-com-2-ou-mais-jogadores--1-ou-mais-inimigos), [3.2](#32-conclusão-de-uma-dimensão) |
+
+**Situação após a B.13:** não há pendências de regra conhecidas. O único tema adiado continua sendo a autenticação (F29).
