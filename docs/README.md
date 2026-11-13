@@ -212,7 +212,7 @@ Cada dimensão tem uma **Carta de Dimensão** que define:
 - o **requisito para liberar** a condição (ex.: reunir 3 *Fragmentos* obtidos em missões e raides). Quando o requisito é ter itens, **um único jogador** precisa ter todos eles (ex.: os 3 Fragmentos com o mesmo jogador); os itens podem ser negociados entre os jogadores para isso;
 - o **prêmio máximo**.
 
-Na campanha, quando a condição é cumprida, **todos os jogadores da partida** concluem a dimensão e cada um recebe o prêmio máximo. A partida daquela dimensão **termina** nesse momento: o grupo **não** continua explorando a dimensão concluída e **não** pode jogá-la de novo (veja [Ir para nova dimensão](#ir-para-nova-dimensão)). Nos modos de run, a Carta de Dimensão, a Raide Final e o prêmio máximo são **ignorados**: a vitória é por pontos de objetivo (veja [28](#28-modos-de-jogo)).
+Na campanha, quando a condição é cumprida, **todos os jogadores da partida** concluem a dimensão e cada um recebe o prêmio máximo. A partida daquela dimensão **termina** nesse momento: o grupo **não** continua explorando a dimensão concluída e **não** pode jogá-la de novo (veja [Ir para nova dimensão](#ir-para-nova-dimensão)). Nos modos de run, a Carta de Dimensão e o prêmio máximo são **ignorados**: a vitória é por pontos de objetivo (veja [28](#28-modos-de-jogo)). A Raide Final continua disponível como uma **raide normal**, sem concluir nada.
 
 **Sem repetição (campanha):** uma dimensão concluída **nunca** é jogada de novo pelo mesmo grupo. Se a próxima dimensão ainda não foi lançada, o save do grupo fica **congelado** até o lançamento (veja [28.1](#281-campanha)). O jogo é lançado já com algumas dimensões, para que os grupos tenham o que jogar enquanto as próximas não saem.
 
@@ -632,15 +632,15 @@ Os **slots de decks** também podem ser expandidos no mercado: **+1 slot de deck
 |---|---|
 | **Recursos e boosters** | **Inventário** ou, se o jogador tiver montaria, o **inventário extra** dela |
 | **Cartas de atributo** | **Pasta de TCG** ou, se o jogador tiver montaria, a **pasta extra** dela |
-
-Isso vale para tudo o que chega: recompensas, compras no mercado (estoque e singles) e cartas de boosters abertos. Quando há espaço nos dois, o jogador escolhe onde guardar. Nas regras que exigem espaço livre (ex.: comprar singles, abrir booster no Preparar), o espaço da montaria conta junto.
 | **Ouro** | **Bolsa** (o excesso é perdido) |
+
+Isso vale para tudo o que chega: recompensas, compras no mercado (estoque e singles) e cartas de boosters abertos. Quando há espaço nos dois (inventário/pasta e montaria), o jogador escolhe onde guardar. Nas regras que exigem espaço livre (ex.: comprar singles, abrir booster no Preparar), o espaço da montaria conta junto.
 
 **Pagamentos saem sempre da bolsa:** toda compra e todo pagamento em ouro (mercado, singles, boosters, expansões, ferreiro, mentor, custos de efeitos) usa **só o ouro da bolsa**. Para gastar o ouro do cofre, o jogador precisa antes movê-lo para a bolsa (ação Usar cofre).
 
 **Sem espaço**, o jogador escolhe entre:
 - **descartar** algo do inventário ou da pasta para abrir espaço (vai para o **limbo**, veja [6.5](#65-pilhas-de-descarte-e-limbo)); ou
-- **deixar a recompensa**: se ela veio do deck de recompensas, vai para o **fundo** desse deck; se não veio (recompensa fixa de inimigo, missão, raide, etc.), vai para o **limbo**.
+- **deixar a recompensa**: se ela veio do deck de recompensas, vai para o **fundo** desse deck; se veio do **deck de reserva**, simplesmente **desaparece** (o deck de reserva é infinito e não tem fundo); se não veio de deck nenhum (recompensa fixa de inimigo, missão, raide, etc.), vai para o **limbo**.
 
 Exceção: abrir um booster **dentro** do cofre manda as cartas para o cofre (veja [24.3](#243-boosters)).
 
@@ -827,7 +827,7 @@ Uma build com 60 cartas ou mais que não cumpre a trava **não** é irregular: e
 ### 8.3 Como obter uma especialização
 
 **Provação de especialização:**
-- Cada especialização tem uma **missão de provação**. A própria missão diz em quais zonas ela pode ser pega e continuada. Essas zonas **não precisam** ter relação com o tema da especialização (ex.: um Cavaleiro não depende de existir uma zona Fortificada na dimensão).
+- Cada especialização tem uma **missão de provação**. A própria missão diz em quais zonas ela pode ser pega e continuada, indicando **2 ou 3 tipos de zona alternativos** por etapa, e o jogo só usa os tipos que **existem no mapa** ([21.1](#211-regras-gerais)). Essas zonas **não precisam** ter relação com o tema da especialização (ex.: um Cavaleiro não depende de existir uma zona Fortificada na dimensão).
 - A missão de provação **não fica no deck de missões** e **não é exclusiva**: ela está sempre disponível nas zonas indicadas por ela, para qualquer jogador, em todos os modos de mapa (veja [21.2](#212-tipos-de-missão)).
 - Requisito para **pegar** a provação: ter a classe primária correspondente e **Pico mínimo 30** (ajustável no laboratório).
 - Ao **finalizar** a provação, o jogador ganha a especialização de forma permanente (na campanha). Os benefícios dela só ficam ativos quando a build cumprir a trava da especialização.
@@ -1260,11 +1260,11 @@ A ativação é a consequência do efeito: a ação, o ato. Podem existir **muit
 | **Interação de cartas** | Compre X cartas do deck de atributos; descarte X cartas da mão; descarte uma carta específica; escolha uma carta da pilha de descarte de atributos e coloque-a no topo do deck; coloque X cartas do topo do deck na pilha de descarte; procure um atributo X na pilha de descarte; procure um atributo X no deck e coloque-o na mão; procure duas cartas do atributo X no deck, coloque-as na mão e embaralhe o deck; coloque X cartas da mão no topo do deck; envie X cartas do topo/fundo do deck para a pilha de descarte de atributos. Interações de cartas só movem cartas **entre deck, mão e pilha de descarte**; nunca trazem cartas da pasta ou do cofre para o jogo. |
 | **Interação de efeito** | Anule todos os efeitos de um equipamento (a habilidade ativa, mas o efeito "não faz nada"); anule todos os efeitos dos itens; de equipamentos da categoria X; de itens da categoria X; de atributos aprimorados. |
 | **Interação de habilidade** | Anule todas as habilidades de um equipamento (a habilidade **nem pode ser ativada**); de equipamentos de capa e calçado; de armas; de cimitarras, katanas, adagas e facas. |
-| **Interação de regra** | Altera uma regra padrão do jogo (nunca os **valores iniciais** da aventura, como ouro, mão, Pico ou Vigor iniciais: efeitos desse tipo não existem): vida base 40 em vez de 20; ter 4 pontos de ação por vez em vez de 3; ganhar X pontos de ação extras por vez; andar até 2 (ou X) zonas de distância com um único Movimentar; Recuperar cura 25% da vida máxima em vez de 15%; não ativar a coisa ruim de um evento no revés; ter no máximo X cartas na mão; valor de sucesso de fuga passa a ser 5; diminuir o valor de fuga em uma quantidade igual às cartas na mão; aumentar o valor de fuga em 4; a vitrine do mercado mostra +2 cartas para você; a vitrine mostra apenas 1 carta para você; a pasta de TCG passa a caber 50 cartas; a pasta passa a caber apenas 5 cartas. |
+| **Interação de regra** | Altera uma regra padrão do jogo (nunca os **valores iniciais** da aventura, como ouro, mão, Pico ou Vigor iniciais: efeitos desse tipo não existem): não perder Pico ao ser nocauteado; ter 4 pontos de ação por vez em vez de 3; ganhar X pontos de ação extras por vez; andar até 2 (ou X) zonas de distância com um único Movimentar; Recuperar cura 25% da vida máxima em vez de 15%; não ativar a coisa ruim de um evento no revés; ter no máximo X cartas na mão; valor de sucesso de fuga passa a ser 5; diminuir o valor de fuga em uma quantidade igual às cartas na mão; aumentar o valor de fuga em 4; a vitrine do mercado mostra +2 cartas para você; a vitrine mostra apenas 1 carta para você; a pasta de TCG passa a caber 50 cartas; a pasta passa a caber apenas 5 cartas. |
 | **Interação de dados** | Ao rolar um dado, escolha o resultado; some 3 ao resultado; diminua do resultado uma quantidade igual às cartas na sua mão. |
 | **Interação de recursos** | **Só inimigos** (pool exclusiva, [17.5](#175-habilidades-exclusivas-de-inimigos)): quebre um equipamento do jogador; quebre o equipamento de tronco do jogador. **Qualquer um:** abdique de um equipamento seu à escolha ou aleatório; abdique do seu calçado ou da cabeça; repare um equipamento seu; repare um equipamento de um jogador na mesma zona; ofereça um recurso do tipo X ou Y do inventário; ofereça X recursos do inventário. |
-| **Interação de elemento** | Mude o elemento da sua próxima habilidade para X; dê o elemento X a uma habilidade sem elemento; o inimigo perde o elemento (vira "sem elemento"); ignore desvantagens elementais neste combate; a vantagem elemental passa a dar +50% em vez de +25%; inverta as relações elementais até o fim do combate (vantagem vira desvantagem); torne-se resistente ao elemento X (dano desse elemento reduzido pela metade); torne-se imune ao elemento X por 1 ciclo de combate; torne o inimigo vulnerável ao elemento X (todo dano X conta como vantagem); habilidades do elemento X custam 10% menos Vigor; nesta zona, habilidades de Gélido custam 10% mais Vigor. Nenhum efeito cria multi-elemento. |
-| **Interação de combate** | Derrote o inimigo automaticamente, sem causar dano; ganhe um ataque extra neste turno; o inimigo perde o próximo turno de combate; troque de lugar na ordem de Celeridade com outro participante; ressuscite um aliado nocauteado com metade da vida máxima; recrute um jogador de uma zona vizinha para este combate (não funciona no Desbravadores, onde recrutar é proibido). |
+| **Interação de elemento** | Mude o elemento da sua próxima habilidade para X; dê o elemento X a uma habilidade sem elemento; o inimigo perde o elemento (vira "sem elemento"); ignore desvantagens elementais neste combate; a vantagem elemental passa a dar +50% em vez de +25%; inverta as relações elementais até o fim do combate (vantagem vira desvantagem); torne-se resistente ao elemento X (dano desse elemento reduzido pela metade, na etapa 3 do cálculo de dano, [19.2](#192-cálculo-do-dano)); torne-se imune ao elemento X por 1 ciclo de combate; torne o inimigo vulnerável ao elemento X (todo dano X conta como vantagem); habilidades do elemento X custam 10% menos Vigor; nesta zona, habilidades de Gélido custam 10% mais Vigor. Nenhum efeito cria multi-elemento. |
+| **Interação de combate** | Derrote o inimigo automaticamente, sem causar dano; ganhe um ataque extra neste turno; o inimigo perde o próximo turno de combate; troque de lugar na ordem de Celeridade com outro participante; ressuscite um aliado nocauteado com metade da vida máxima. Não existem efeitos que recrutem jogadores de **outras zonas** para um combate (o recrutamento é só o da regra de [19.5](#195-combate-com-2-ou-mais-jogadores--1-ou-mais-inimigos), na mesma zona). |
 | **Interação de movimento** | Teleporte para seu ponto de respawn; mova-se para qualquer zona do mesmo tipo. Efeitos de movimento só movem **o próprio jogador**: não existem efeitos que empurrem, puxem ou movam **outro jogador** de zona. |
 
 ### 13.4 Duração
@@ -1371,7 +1371,7 @@ Durante o encontro, o jogador pode tentar **fugir** (veja [14.5](#145-fugir-de-u
 
 ### 14.4 Reposição de cartas
 
-Ao terminar o evento (depois do êxito ou do revés), o jogador **compra imediatamente** do deck de atributos **a mesma quantidade de cartas de atributo** que jogou para tentar resolver o evento.
+Esta regra vale para **todo evento aleatório**, inclusive os que aparecem dentro de raides e de missões. Ao terminar o evento (depois do êxito ou do revés), o jogador **compra imediatamente** do deck de atributos **a mesma quantidade de cartas de atributo** que jogou para tentar resolver o evento.
 
 | Exemplo | O que aconteceu | Compra cartas? |
 |---|---|---|
@@ -1494,7 +1494,7 @@ flowchart LR
 
 ### 16.3 Afinidade elemental das classes
 
-Cada classe tem **elementos de afinidade** (pode mudar no futuro). Habilidades desses elementos custam **10% menos Vigor**: custo final = custo × 0,9, **arredondando o custo para baixo**. Especializações podem acrescentar elementos. A afinidade é da classe, não do jogador: ela **não** dá elemento ao jogador nem ao ataque básico.
+Cada classe tem **elementos de afinidade** (pode mudar no futuro). Habilidades desses elementos custam **10% menos Vigor**: custo final = custo × 0,9, **arredondando o custo para baixo**, com **mínimo de 1** quando o custo original for 1 ou mais (o desconto nunca deixa uma habilidade de graça). Especializações podem acrescentar elementos. A afinidade é da classe, não do jogador: ela **não** dá elemento ao jogador nem ao ataque básico.
 
 | Classe | Afinidade | Especializações com afinidade própria |
 |---|---|---|
@@ -1558,6 +1558,7 @@ A habilidade **não tem requisito de Pico próprio**: ela usa o **Requisito de P
 4. **Dano de habilidade:** usa **o mesmo cálculo do ataque** ([19.2](#192-cálculo-do-dano)), somando o **Poder** ao Ataque, e rola acerto conforme a forma ([17.4](#174-detalhe-das-formas)). O elemento da habilidade define a efetividade.
 5. Habilidades de um equipamento **quebrado**, **anulado** ou com **Requisito de Pico** não cumprido não podem ser usadas.
 6. **Fim do combate:** quando o combate termina, todos os efeitos com duração em **turnos ou ciclos de combate** terminam junto, e as **recargas** de todas as habilidades **zeram** (fora do combate, a habilidade já pode ser usada de novo).
+7. **Início do combate:** ao começar um combate, as recargas também **zeram**; a contagem de recarga começa do zero dentro daquele combate. Uma recarga contada em vezes (fora do combate) **não** entra no combate.
 
 Classes **não têm habilidades**: só equipamentos (e inimigos) têm. Classes e especializações têm **efeitos**, que podem alterar habilidades (ex.: "suas habilidades de Fogo causam +10% de dano"). Nem todo equipamento com restrição de classe precisa ter habilidades que causam dano; só os que fazem sentido para aquelas classes.
 ### 17.3 Restrições de classe
@@ -1668,7 +1669,7 @@ flowchart TB
     N --> T
 ```
 
-1. **Ordem de ataque:** pela **Celeridade**, da maior para a menor. Em caso de empate, o **inimigo tem prioridade** por padrão (efeitos, habilidades e itens podem mudar isso).
+1. **Ordem de ataque:** pela **Celeridade**, da maior para a menor. Em caso de empate, o **inimigo tem prioridade** por padrão (efeitos, habilidades e itens podem mudar isso). A ordem é **recalculada no início de cada ciclo de combate** (mudanças de Celeridade no meio do ciclo só valem a partir do ciclo seguinte).
 2. **Turnos de combate:** as partes se revezam, uma por vez. Quando todas jogaram, termina um **ciclo de combate** e começa o próximo.
 3. **No seu turno de combate**, a parte pode ativar vários efeitos, habilidades, etc. **A última coisa do turno é o ataque**, que é **opcional**: o jogador pode encerrar o turno sem atacar. Efeitos, habilidades e builds também podem impedir o ataque.
 4. **Resultado do ataque** (veja o cálculo em [19.2](#192-cálculo-do-dano)):
@@ -1694,7 +1695,7 @@ flowchart LR
     A["Ataque<br/>(+ Poder, se habilidade)"] --> H{"Acertou?<br/>Precisão ÷ (Precisão + Esquiva)"}
     H -->|Não| M[Miss: 0]
     H -->|Sim| D["Ataque − max(0, Defesa − Perfuração)<br/>mínimo 0"]
-    D --> HF["× ½ se Área<br/>× ½ se Projétil contra escudo"]
+    D --> HF["× ½ se Área<br/>× ½ se Projétil contra escudo<br/>× ½ se alvo resistente ao elemento"]
     HF --> EL["× efetividade do elemento<br/>(só contra inimigos)"]
     EL --> RD[Arredonda para baixo]
     RD --> R["Reflexão do alvo<br/>(só se dano > 0)"]
@@ -1705,7 +1706,7 @@ Ordem fixa: **acerto → Ataque − Defesa → ×½ (Área/escudo) → ×efetivi
 
 1. **Acerto:** chance (%) = Precisão ÷ (Precisão + Esquiva do alvo) × 100. Habilidades de Área não rolam acerto.
 2. **Dano bruto:** Ataque (+ Poder da habilidade, se houver; calculado pelo pipeline de [7.4](#74-escala-fórmulas-e-valores-iniciais)) − **max(0, Defesa do alvo − Perfuração do atacante)**, mínimo 0. A Perfuração pode zerar a Defesa, mas nunca a deixa negativa.
-3. **Metades:** se a habilidade for de **Área**, ×½; se for **Projétil** contra alvo com **escudo**, ×½ ([17.4](#174-detalhe-das-formas)). As duas podem se acumular (×¼).
+3. **Metades:** se a habilidade for de **Área**, ×½; se for **Projétil** contra alvo com **escudo**, ×½ ([17.4](#174-detalhe-das-formas)); se o alvo for **resistente** ao elemento do ataque (efeito, [13.3](#133-ativação)), ×½. Todas podem se acumular (ex.: ×¼). Se o alvo for **imune** ao elemento do ataque, o dano é 0.
 4. **Elemento:** se o alvo for um inimigo com elemento e o ataque tiver elemento, aplica-se a efetividade ([16.1](#161-relações-e-efetividade)).
 5. **Arredondamento:** o dano é arredondado para baixo aqui.
 6. **Reflexão:** se o dano for maior que 0, o alvo devolve ao atacante até o valor da sua Reflexão, e esse valor é subtraído do dano que o alvo recebe. Com dano 0, nada é refletido. O dano refletido vai **direto na vida** do atacante (ignora a Defesa dele) e **pode nocauteá-lo**.
@@ -1738,8 +1739,10 @@ Este tipo de combate existe na Campanha e no Clássico. No Desbravadores, **não
 **Custo e recompensas:**
 - Só o **jogador que iniciou o combate** gasta ponto de ação. Os ajudantes não perdem pontos de ação.
 - Só o **jogador que iniciou** recebe os itens e recompensas.
-- **Ajudantes:** cada ajudante que termina o combate **de pé** ganha o **mesmo Pico e Vigor** calculados para quem iniciou (o valor da carta, se ela disser; senão, o padrão do [Apêndice A](#pico-por-fonte)).
-- **Exceção:** se quem iniciou fugir, ou for nocauteado e não for ressuscitado até o fim, e os outros vencerem, as recompensas são **divididas entre os sobreviventes**. Eles escolhem as recompensas em ordem de Celeridade, da maior para a menor.
+- **Ajudantes:** cada ajudante que termina o combate **de pé** ganha o **mesmo Pico** calculado para quem iniciou (o valor da carta, se ela disser; senão, o padrão do [Apêndice A](#pico-por-fonte)) e o **mesmo Vigor**, se a carta der Vigor. **Não existe ganho padrão de Vigor:** Vigor só é ganho quando a carta diz um valor.
+- **Exceção:** se quem iniciou fugir, ou for nocauteado e não for ressuscitado até o fim, e os outros vencerem, as recompensas são **divididas entre os sobreviventes**:
+  - **ouro:** dividido igualmente, arredondado para baixo (o resto se perde);
+  - **cartas** (itens, recursos, compras do deck de recompensas): compradas e escolhidas **uma por vez**, em **rodízio** por ordem de Celeridade (da maior para a menor), até acabarem.
 - Isso cria uma dinâmica no combate: alguns jogadores podem fugir por conta própria, enquanto outros podem querer ficar e vencer para levar as recompensas.
 
 **Nocaute durante o combate:**
@@ -1822,6 +1825,8 @@ Quando o jogador chega a **0 pontos de vida**, ele é **nocauteado**:
 - Missões são encontradas em algumas zonas. Nem toda zona tem missões.
 - Algumas missões envolvem recolher itens, falar com um NPC, etc.
 - Ações relacionadas: **Pegar**, **Continuar** e **Finalizar missão**. Quando o jogador chega a uma zona que tem uma etapa de uma missão que ele já pegou, ele interage para continuar ou finalizar a missão. Missões de várias etapas indicam em que tipo de zona fica cada etapa.
+- **Tipos de zona inexistentes:** o jogo só oferece (ou sorteia) missões e etapas cujos tipos de zona **existem no mapa** da partida. As missões de provação e do mentor indicam **2 ou 3 tipos alternativos** por etapa; vale qualquer um que exista no mapa.
+- **Onde ficam as cartas:** cartas de missão pegas (e, nos modos de run, cartas de objetivo) **não ocupam slot**: ficam numa **área própria** do jogador, separada do inventário, da pasta e do cofre.
 - **Não são obrigatórias:** se o jogador pegar uma missão e não cumpri-la, nada acontece. A missão fica em aberto até ele decidir cumpri-la.
 - **Missões são individuais:** a missão fica atrelada ao jogador que a pegou e só ele pode finalizá-la.
 - **Não se repetem:** cada jogador só pode completar a mesma missão **uma vez por dimensão** (na campanha, uma dimensão nunca é jogada de novo, [3.2](#32-conclusão-de-uma-dimensão)). Nos modos de run, vale **por partida**.
@@ -1894,7 +1899,7 @@ flowchart LR
 
 - Raides são **muito difíceis e extensas**, e por isso podem dar recompensas **muito boas e fortes** (uma ou mais).
 - **Quem recebe as recompensas** é o jogador que **iniciou** a raide (ou quem herdou esse papel, veja [19.6](#196-combate-em-raides)). Depois, os jogadores podem [negociar](#23-negociação) entre si para distribuí-las.
-- Os outros participantes que terminam a raide **de pé** ganham o **Pico e Vigor** de "derrotar inimigos", como os ajudantes no combate (veja [19.5](#195-combate-com-2-ou-mais-jogadores--1-ou-mais-inimigos)), **e também** o Pico de "Concluir uma raide" (+10, com o decaimento por repetição da raide, [22.3](#223-repetição-e-cooldown)).
+- Os outros participantes que terminam a raide **de pé** ganham o **Pico** de "derrotar inimigos" (a **soma** de todos os inimigos derrotados nas etapas em que o participante estava, calculada como para o iniciador) e o Vigor só se a carta der Vigor, como os ajudantes no combate (veja [19.5](#195-combate-com-2-ou-mais-jogadores--1-ou-mais-inimigos)), **e também** o Pico de "Concluir uma raide" (+10, com o decaimento por repetição da raide, [22.3](#223-repetição-e-cooldown)).
 - Para as regras de combate dentro da raide, veja [Combate em raides](#196-combate-em-raides).
 
 **Formato digital:**
@@ -1930,7 +1935,7 @@ flowchart LR
 
 ## 24. Mercado
 
-O mercado aparece em algumas zonas e permite **comprar e vender** recursos, cartas e boosters. Compras só são possíveis se houver espaço: recursos e boosters precisam de espaço no **inventário**, cartas de atributo precisam de espaço na **pasta de TCG** (veja [6.6](#66-recompensas-e-falta-de-espaço)).
+O mercado aparece em algumas zonas e permite **comprar e vender** recursos, cartas e boosters. Compras só são possíveis se houver espaço: recursos e boosters precisam de espaço no **inventário** (ou o espaço da montaria, [6.6](#66-recompensas-e-falta-de-espaço)), cartas de atributo precisam de espaço na **pasta de TCG** (ou o espaço da montaria, [6.6](#66-recompensas-e-falta-de-espaço)) (veja [6.6](#66-recompensas-e-falta-de-espaço)).
 
 O mercado tem **três vitrines**:
 
@@ -1954,14 +1959,14 @@ O mercado tem **três vitrines**:
 
 | Item de estoque (exemplo) | Preço base (ouro) |
 |---|---|
-| Munição (pacote de 10) | 3 |
+| Munição (10 cartas por compra) | 3 |
 | Poção de vida pequena | 6 |
 | Poção de Vigor pequena | 8 |
 | Antídoto / remédio simples | 5 |
 | Material básico (minério, couro, erva) | 4 |
 | Ferramenta (picareta, vara de pesca, foice) | 20 |
 
-**Munição:** é comprada no **mercado**. Armas como arcos, pistolas, etc. têm **habilidades** que consomem uma quantidade **X de munição**, que depende de cada habilidade. O **ataque básico** dessas armas **não** gasta munição; só as habilidades gastam. Sem munição, a habilidade não pode ser usada, mas o ataque básico continua.
+**Munição:** é comprada no **mercado**. **1 carta de munição = 1 unidade**; cada compra no estoque entrega **10 cartas** de munição (que se empilham num slot). Uma habilidade que consome "X de munição" gasta X cartas (vão para o limbo, [6.5](#65-pilhas-de-descarte-e-limbo)). Na venda, o preço de 50% vale por compra de 10 (cada carta vale 1/10 disso, com o arredondamento de [24.2](#242-venda-pelo-jogador) aplicado ao total vendido de uma vez). Armas como arcos, pistolas, etc. têm **habilidades** que consomem uma quantidade **X de munição**, que depende de cada habilidade. O **ataque básico** dessas armas **não** gasta munição; só as habilidades gastam. Sem munição, a habilidade não pode ser usada, mas o ataque básico continua.
 
 ### 24.2 Venda pelo jogador
 
@@ -1972,6 +1977,7 @@ O mercado tem **três vitrines**:
 - **Tesouros** (categoria Tesouros): existem para virar ouro, então são vendidos por **100% do valor impresso** na carta. Valores de referência por raridade (ajustáveis no laboratório): Comum 10, Incomum 25, Rara 60, Épica 150, Lendária 400.
 - **Boosters fechados:** vendidos por **15 ouro** (50% do preço tabelado de 30).
 - **Relíquias:** seguem a regra das cartas de coleção (50% de preço base da raridade × ajuste da carta).
+- **Refino e encantamentos valorizam o equipamento:** o preço de venda de um equipamento é multiplicado por **(1 + 0,08 × nível de refino + 0,20 × encantamentos ativos)**. Ex.: equipamento +5 com 1 encantamento → ×1,60. A conta é feita antes da redução por marcas de reparo. Encantamentos **desligados** (refino abaixo do requisito) não contam. Valores ajustáveis no laboratório. (Assim o jogador recupera parte do que investiu, sem que refinar para vender dê lucro: o ouro e os materiais gastos sempre superam o valor acrescentado.)
 - **Equipamentos quebrados** valem **0**. Cada marca de reparo reduz o preço de venda em **12%** (veja [5.1](#51-equipamentos)).
 - Efeitos, habilidades e recursos do jogador podem fazer o mercado oferecer **mais ouro**.
 - **Bolsa cheia:** a venda é permitida mesmo que o ouro ultrapasse a capacidade da bolsa; o excesso é **perdido** ([5.3](#53-dinheiro)).
@@ -1988,7 +1994,7 @@ O mercado tem **três vitrines**:
 
 **Abrir um booster:**
 - **Abrir** só é possível dentro das ações **Preparar** ou **Usar cofre**.
-- Dentro de **Preparar**, as cartas de **atributo** vão para a **pasta de TCG** e as de **recurso** vão para o **inventário**. O jogador **só pode abrir** o booster se a pasta de TCG tiver espaço livre para **todas as 8 cartas** (como se todas fossem de atributo), porque a divisão só é conhecida depois de abrir. As cartas de recurso que não couberem no inventário seguem a regra de [6.6](#66-recompensas-e-falta-de-espaço).
+- Dentro de **Preparar**, as cartas de **atributo** vão para a **pasta de TCG** e as de **recurso** vão para o **inventário**. O jogador **só pode abrir** o booster se a pasta de TCG (ou o espaço da montaria, [6.6](#66-recompensas-e-falta-de-espaço)) tiver espaço livre para **todas as 8 cartas** (como se todas fossem de atributo), porque a divisão só é conhecida depois de abrir. As cartas de recurso que não couberem no inventário seguem a regra de [6.6](#66-recompensas-e-falta-de-espaço).
 - Dentro de **Usar cofre**, as cartas vão **direto para o cofre**, com a mesma lógica: o booster **só pode** ser aberto se o cofre tiver **8 slots livres** (mesmo que algumas cartas acabem se empilhando).
 
 **Conteúdo e raridade** (ponto de partida para o laboratório):
@@ -2011,8 +2017,8 @@ O mercado tem **três vitrines**:
 **Singles** são cópias avulsas de uma carta específica de coleção: recursos, itens e equipamentos (que vão **sempre para o inventário**; para equipar, usa-se **Preparar**) e cartas de atributo.
 
 **Para onde vão os singles:**
-- Singles de **atributo** vão para a **pasta de TCG**. Com a pasta cheia, não é possível comprá-los. Para entrar no deck, o jogador usa **Ajustar deck** (veja [6.3](#63-pasta-de-tcg)).
-- Singles de **recurso** (itens e equipamentos) só podem ser comprados se houver **espaço no inventário**.
+- Singles de **atributo** vão para a **pasta de TCG** (ou o espaço da montaria, [6.6](#66-recompensas-e-falta-de-espaço)). Com a pasta cheia, não é possível comprá-los. Para entrar no deck, o jogador usa **Ajustar deck** (veja [6.3](#63-pasta-de-tcg)).
+- Singles de **recurso** (itens e equipamentos) só podem ser comprados se houver **espaço no inventário** (ou o espaço da montaria, [6.6](#66-recompensas-e-falta-de-espaço)).
 - Singles **nunca vão para o cofre** depois de comprados.
 
 **Onde aparecem:**
@@ -2159,7 +2165,7 @@ O Artífice carrega uma oficina portátil. Ela não substitui o ferreiro (não e
 - **Entre dimensões:** na campanha, a montaria (com tudo o que está nela) **acompanha o jogador** para a próxima dimensão.
 
 **Benefícios principais:**
-- **Movimento:** cada ação **Movimentar** pode levar o jogador **até 2 zonas** de distância (passando por zonas conectadas), pagando 1 ponto de ação. Não existe restrição de terreno: a montaria funciona em qualquer tipo de zona. Ao andar 2 zonas, os efeitos "ao entrar nesta zona" da zona do meio são **ativados**.
+- **Movimento:** cada ação **Movimentar** pode levar o jogador **até 2 zonas** de distância (passando por zonas conectadas), pagando 1 ponto de ação. Não existe restrição de terreno: a montaria funciona em qualquer tipo de zona. Ao andar 2 zonas, os efeitos "ao entrar nesta zona" da zona do meio são **ativados**. A montaria **não se acumula** com efeitos que aumentam a distância do Movimentar (ex.: "ande até 2 zonas"): vale o **maior** valor.
 - **Inventário extra:** **+4 slots** de inventário por padrão (valor ajustável).
 - **Pasta extra:** uma **pasta de TCG extra** de **10 cartas** (só cartas de atributo; valor ajustável no laboratório). Ela é usada junto com a pasta na ação **Ajustar deck**.
 
@@ -2168,7 +2174,7 @@ O Artífice carrega uma oficina portátil. Ela não substitui o ferreiro (não e
 **Tipo e criatura:** montarias têm **tipo** (um ou mais, como os inimigos: ex.: Dracônico e Constructo) e **criatura** (ex.: "Dragão Artefato"). Montarias **não têm categoria**, e o tipo da montaria **não tem mecânica** própria: o que ela faz vem dos seus efeitos.
 
 **Perda da montaria:**
-- Só **efeitos e habilidades** fazem o jogador perder a montaria. Inimigos e outros jogadores **não podem atacá-la**.
+- Só **efeitos, habilidades e o saque do PvP no Desbravadores** fazem o jogador perder a montaria. Inimigos e outros jogadores **não podem atacá-la**.
 - Ao perder a montaria, **tudo o que estiver nela** é perdido, sem chance de mover nada antes: os recursos do inventário extra **e** as cartas de atributo da pasta extra vão para o **limbo** (veja [6.5](#65-pilhas-de-descarte-e-limbo)).
 - No **Desbravadores**, o vencedor de um PvP pode **saquear** a montaria do perdedor **com tudo o que está nela**, desde que **não tenha** montaria.
 
@@ -2281,7 +2287,9 @@ A passagem para a nova dimensão é **automática**; não existe ação de zona,
 - **Abandono:** se um jogador abandonar o jogo de vez, o grupo pode passar o personagem dele para uma **IA**, que assume o personagem com tudo o que ele tem. Assim o save não se perde.
 - **Troca de controle:** um personagem só passa para uma IA (por abandono ou desconexão); **nunca** é possível colocar outro humano no lugar, nem devolver o personagem ao jogador original.
 
-**Desconexão:** se um jogador **desconectar** durante uma sessão de campanha, uma **IA** ([II.7](#ii7-jogadores-controlados-por-ia)) assume o personagem dele **imediatamente** (inclusive no meio da vez) e de forma **definitiva**: o jogador **nunca mais pode voltar** a esse save. A sessão continua normalmente com os outros jogadores. A regra do "jogador ausente" ([11.3](#113-tempo-da-vez)) vale para quem continua conectado mas não joga.
+**Encerrar sessão:** para parar de jogar (ex.: "por hoje é só"), qualquer jogador pode usar **Encerrar sessão** (fora de combates e raides; se for na vez de outro jogador, vale no fim daquela vez). O save é gravado e fica **pausado para todos**; ninguém perde o personagem. A sessão seguinte começa de onde parou, com o grupo completo.
+
+**Desconexão:** a regra abaixo vale só para **quedas** no meio da sessão (não para o Encerrar sessão). Um jogador conta como **desconectado** se ficar sem conexão por mais de **2 minutos seguidos** (ajustável no laboratório); antes disso, a vez dele segue as regras de tempo de [11.3](#113-tempo-da-vez) e ele pode voltar normalmente. Passado esse tempo, uma **IA** ([II.7](#ii7-jogadores-controlados-por-ia)) assume o personagem dele **imediatamente** (inclusive no meio da vez) e de forma **definitiva**: o jogador **nunca mais pode voltar** a esse save. A sessão continua normalmente com os outros jogadores. A regra do "jogador ausente" ([11.3](#113-tempo-da-vez)) vale para quem continua conectado mas não joga.
 
 ### 28.2 Desbravadores
 
@@ -2289,13 +2297,13 @@ A passagem para a nova dimensão é **automática**; não existe ação de zona,
 - **Competitivo, sempre cada um por si.** **Não existem alianças**, nem temporárias.
 - Formato de **runs**: é possível jogar a mesma dimensão várias vezes, só por diversão. Cada run é uma **aventura nova**, sem relação com outras runs.
 - As vezes são jogadas **uma de cada vez**, e a movimentação segue **as mesmas regras da campanha**.
-- A Carta de Dimensão, a Raide Final e o prêmio máximo são **ignorados**.
+- A Carta de Dimensão e o prêmio máximo são **ignorados**; a Raide Final é uma raide normal ([3.2](#32-conclusão-de-uma-dimensão)).
 - **Dimensão e coleções:** antes da partida, o **host** escolhe a dimensão e quais coleções de cartas ficam ativas, com a **mesma regra do Clássico** ([28.3](#283-clássico)): uma coleção ativada afeta tudo.
 - **Progressões separadas:** Desbravadores e Clássico **não afetam** a progressão da campanha, e a campanha **não afeta** esses modos.
 - **Desconexão:** se um jogador desconectar, a partida é **encerrada imediatamente**: quem desconectou **perde** e **todos os outros** jogadores **empatam** (ninguém vence).
 
 **Com o que o jogador começa uma run** (vale também para o Clássico):
-- Cada jogador começa como na "primeira dimensão": valores iniciais, **sem equipamentos**, pasta vazia.
+- Cada jogador começa como na "primeira dimensão": valores iniciais, **sem equipamentos**, pasta vazia. **Exceção:** o **Pico e o Vigor iniciais** são o **"Pico de referência ao entrar"** da dimensão escolhida ([28.1](#281-campanha)), para que os inimigos dela sejam enfrentáveis (ex.: na 3ª dimensão, Pico 130 e Vigor 130).
 - Ele escolhe a classe e começa **sempre** com o **deck pré-pronto** dela.
 - O **cofre não existe** na run: a ação Usar cofre abre um **cofre temporário** que começa vazio e é apagado no fim da partida. Ele funciona como o cofre normal, inclusive guardando até **2.000 moedas de ouro** e permitindo expansões no mercado (que também são apagadas no fim).
 - Os **slots de decks** pertencem à run: são os slots do cofre temporário, servem para montar decks durante a run e são apagados no fim da partida.
@@ -2304,14 +2312,15 @@ A passagem para a nova dimensão é **automática**; não existe ação de zona,
 
 **Objetivos e vitória:**
 - **Deck de objetivos:** é **universal**, o mesmo para qualquer dimensão. Por isso os objetivos são **genéricos** (ex.: "ir para uma zona do tipo X", e não para uma zona específica de uma dimensão). **Não existem** objetivos de atacar ou nocautear outros jogadores (nem no Desbravadores, nem no Clássico).
-- No início, cada jogador recebe **5 cartas de objetivo** por padrão. Exemplos: "Ir para a zona X", "Ir para a zona Y", "Coletar N itens de um tipo".
+- No início, cada jogador recebe **5 cartas de objetivo** por padrão. Exemplos: "Ir para uma zona do tipo X", "Ir para uma zona do tipo Y", "Coletar N itens de um tipo".
+- O jogo só entrega (no início e ao comprar novos) objetivos cujos tipos de zona **existem no mapa**; os outros são devolvidos e substituídos.
 - Os objetivos são **secretos** até serem cumpridos.
 - Cada jogador escolhe quais objetivos quer cumprir.
 - **Categorias de objetivo:**
 
 | Categoria | Como é cumprido | Exemplos |
 |---|---|---|
-| **De zona** | O jogador vai até a zona descrita na carta e usa a ação **Cumprir objetivo** (1 ponto de ação). | "Ir para a zona X" |
+| **De zona** | O jogador vai até uma zona do tipo descrito na carta e usa a ação **Cumprir objetivo** (1 ponto de ação). | "Ir para uma zona do tipo X" |
 | **Passivo** | É cumprido automaticamente quando a condição acontece; não usa ação. | "Coletar N itens de um tipo", "Resolver 3 eventos aleatórios sem entrar em combate" |
 
 - Cada objetivo dá a quantidade de **pontos de objetivo** escrita na carta. Objetivos mais difíceis dão mais pontos, e o mínimo por padrão é **2 pontos**.
@@ -2324,12 +2333,12 @@ A passagem para a nova dimensão é **automática**; não existe ação de zona,
 - **Proibido:** pedir ajuda de outro jogador (recrutar) para enfrentar inimigos. Cada jogador enfrenta seus inimigos sozinho.
 - **Proibido:** raides em grupo. Cada jogador faz a raide **sozinho**.
 - **Permitido:** **negociar** itens entre jogadores ([23](#23-negociação)).
-- Efeitos que beneficiam "outro jogador" (curar, dar buffs, transferir Vigor, etc.) **funcionam normalmente**: o jogador pode usá-los em outro jogador, mesmo que isso ajude um adversário. **Exceção:** efeitos que recrutam jogadores para um combate contra inimigos **não funcionam** neste modo.
+- Efeitos que beneficiam "outro jogador" (curar, dar buffs, transferir Vigor, etc.) **funcionam normalmente**: o jogador pode usá-los em outro jogador, mesmo que isso ajude um adversário.
 - **Missões de zona** são exclusivas (como em todos os modos); **missões de provação e do mentor** não são (veja [21.2](#212-tipos-de-missão)).
 
 **Classes de suporte no Desbravadores (proposta para validar):** Bardo e Clérigo causam pouco dano e brilham ajudando os outros, o que vale pouco num modo cada um por si. Para que tenham builds viáveis, baseadas em **evitar o combate** em vez de vencê-lo, o design deve oferecer:
 - **Objetivos de sobrevivência e evasão** no deck universal, que qualquer classe pode cumprir, mas que favorecem essas builds: "fugir com sucesso de 2 enfrentamentos", "terminar 5 rodadas seguidas sem ser nocauteado", "resolver 3 eventos aleatórios sem entrar em combate", "negociar com 2 jogadores diferentes".
-- **Efeitos de evasão no PvP** (para especializações e equipamentos dessas classes): "+3 no D20 de fuga do PvP"; "ao fugir com sucesso de um enfrentamento, mova-se para uma zona conectada"; "a bênção que você ganha ao fugir dura 1 rodada a mais".
+- **Efeitos de evasão no PvP** (para especializações e equipamentos dessas classes): "+3 no D20 de fuga do PvP"; "ao fugir com sucesso de um enfrentamento, mova-se para uma zona conectada" (a bênção vai junto, veja abaixo); "a bênção que você ganha ao fugir dura até o fim da sua próxima vez também".
 - **Dissuasão** (Bardo, com Carisma): "quando alguém usar Enfrentar na sua zona, descarte 2 cartas de Carisma: você é ignorado neste enfrentamento (como se tivesse a bênção)"; "o jogador que iniciar um enfrentamento contra você perde 1 ponto de ação extra".
 - **Retribuição** (Clérigo, com Reflexão e cura): builds de Defesa e Reflexão altas, em que o atacante se machuca mais do que o Clérigo, e curas em si mesmo durante o combate para durar até o atacante cair por reflexão.
 
@@ -2344,7 +2353,7 @@ Esses efeitos valem para Desbravadores; os que dependem de PvP não têm efeito 
 - Quem **foge com sucesso** de um enfrentamento também recebe a bênção (fica na mesma zona; veja o item 3 do PvP abaixo).
 - Enquanto tem a bênção, ele **não pode ser atacado** por outros jogadores e **também não pode atacá-los**. Quando alguém usa Enfrentar, jogadores com a bênção na zona são **ignorados** (não participam).
 - A bênção acaba quando:
-  - o jogador **sai do seu ponto de spawn** (ou, se ganhou a bênção fugindo, **sai da zona onde fugiu**), ou
+  - o jogador **sai do seu ponto de spawn** (ou, se ganhou a bênção fugindo, **sai da zona onde fugiu**) por conta própria. **Exceção:** se um efeito o move **no momento da fuga** (ex.: "ao fugir com sucesso, mova-se para uma zona conectada"), a bênção **vai junto** e passa a valer para a nova zona; ou
   - termina a **primeira vez que ele realmente joga** depois de ganhar a bênção (vezes perdidas pelo nocaute não contam).
 
 **Encontro entre jogadores (PvP):**
@@ -2365,19 +2374,21 @@ flowchart TB
    - quem **iniciou** o enfrentamento é o **"rolador mestre"**: ele rola um D20 contra **cada** jogador que quer fugir (um teste por fugitivo). Os outros jogadores que vão lutar **não** rolam;
    - quem quer fugir rola um D20;
    - se o resultado de quem quer fugir for **menor** que o do iniciador, ele é obrigado a lutar; se for **maior**, a fuga dá certo; se for **igual**, os dois rolam de novo;
-   - quem **foge com sucesso** continua **na mesma zona** e recebe a **bênção do spawn** (não pode ser enfrentado de novo enquanto tiver a bênção).
+   - quem **foge com sucesso** continua **na mesma zona** e recebe a **bênção do spawn** (não pode ser enfrentado de novo enquanto tiver a bênção);
+   - a fuga do PvP (com ou sem sucesso) **não tira Pico**: o custo é só o Vigor.
 4. **Combate de vários lados:** o combate **não é entre dois times**. Cada jogador que ficou na briga é **um lado**, e todos lutam contra todos. Exemplo: 3 jogadores na zona, todos aceitam lutar → a batalha tem **3 lados**.
    - A ordem dos turnos de combate segue a **Celeridade** (empate entre jogadores: D20).
    - No seu turno de combate, o jogador **escolhe qual outro jogador quer atacar**.
    - Quem chega a 0 de vida está fora do combate. Os nocauteados só vão para o spawn **no fim do combate**.
    - **Reviver:** no PvP, **ninguém** pode ser revivido.
 5. Pode haver lutas com **2, 3, 4, 5 ou mais jogadores**, dependendo de quantos estão na mesma zona. **Só pode haver um vencedor**: o último jogador de pé.
-6. **Vencedor:** vencer um PvP **não dá** Pico, Vigor nem pontos de objetivo; a única recompensa é o saque (para não incentivar caçar jogadores). Só o **vencedor final** pode **saquear** o inventário, a pasta de TCG e o **ouro** dos perdedores (e a montaria, veja [26](#26-montarias)), pegando quanto quiser **enquanto tiver espaço** no próprio inventário, pasta de TCG e bolsa de ouro. **Equipamentos em uso não podem ser saqueados.**
+6. **Vencedor:** vencer um PvP **não dá** Pico, Vigor nem pontos de objetivo; a única recompensa é o saque (para não incentivar caçar jogadores). Só o **vencedor final** pode **saquear** o inventário, a pasta de TCG e o **ouro** dos perdedores, o **conteúdo** da montaria deles (inventário e pasta extras, como na [negociação](#23-negociação), mesmo que o vencedor já tenha montaria) e a própria montaria (só se o vencedor **não** tiver uma, veja [26](#26-montarias)), pegando quanto quiser **enquanto tiver espaço** no próprio inventário, pasta de TCG e bolsa de ouro. **Equipamentos em uso não podem ser saqueados.**
 7. **Perdedores:**
    - perdem os itens e o ouro saqueados;
    - perdem **3 pontos de objetivo** por padrão;
    - são nocauteados ([20.2](#202-nocaute)) e vão para o seu ponto de spawn (no fim do combate);
    - recebem a **bênção do spawn**.
+8. **Sem vencedor** (todos caem ao mesmo tempo, ex.: por Reflexão): ninguém saqueia; **todos** perdem os 3 pontos de objetivo e sofrem o nocaute normal.
 
 ### 28.3 Clássico
 
@@ -2387,7 +2398,7 @@ flowchart TB
 - Usa o mesmo **deck universal de objetivos**.
 - As vezes são jogadas **uma de cada vez**, como na campanha.
 - **Não existe combate entre jogadores.**
-- A Carta de Dimensão, a Raide Final e o prêmio máximo são **ignorados**.
+- A Carta de Dimensão e o prêmio máximo são **ignorados**; a Raide Final é uma raide normal ([3.2](#32-conclusão-de-uma-dimensão)).
 - Os objetivos são **abertos**: todos veem os objetivos de todos, mas cada jogador só cumpre os **próprios**. Ao cumprir um objetivo, o jogador **compra 1 novo** objetivo.
 - **Desconexão:** se um jogador desconectar, a partida é **encerrada imediatamente**. Ninguém ganha e ninguém perde.
 - **Nenhuma recompensa** é levada para outras dimensões. É uma run curta, para jogar rápido com amigos ou sozinho e para testar a dimensão.
@@ -2403,7 +2414,7 @@ Os dois valores são ajustáveis no laboratório.
 ### 28.4 Enfrentamento (PVP)
 
 - Modo **apenas de combate** entre jogadores, sem compromisso, para **testar decks e builds**.
-- Aceita **todos contra todos** ou várias combinações de **times**: 1 contra 1, 1 contra 3, 4 contra 3, etc.
+- Aceita **todos contra todos** ou várias combinações de **times**: 1 contra 1, 1 contra 3, 3 contra 3, etc.
 - **Times:** a habilidade de Área **não atinge aliados**, e aliados **podem reviver** uns aos outros.
 - **Não afeta** a progressão de nenhum outro modo: não dá recompensas nem vantagens que sejam levadas para outros modos.
 - Cada jogador tem **10 slots de builds** para testar combos. Cada slot é uma **build completa**: classes + especializações + deck + equipamentos + inventário (o jogador escolhe o que leva no inventário). O **próprio jogador** dono da build define o **nível de refino** e os **encantamentos** de cada equipamento dela (dentro dos limites impressos no equipamento). Esses slots são separados dos slots de decks do cofre da campanha.
@@ -2441,7 +2452,7 @@ Todos os valores abaixo são **pontos de partida** e podem ser alterados no [Lab
 | Deck | Travas de classe/especialização | 18 / 10+10 / 6 / +4 | [8.2](#82-a-trava-do-deck) |
 | Mapa | Zonas por dimensão | 12, 16 ou 20 (teste com 16) | [3.5](#35-montagem-do-mapa) |
 | Mapa | Cartas do deck de eventos por tipo de zona | ~30 (especulativo) | [3.4](#34-o-que-uma-carta-de-zona-contém) |
-| Jogador | Vida base, ouro e mão iniciais | 20 / 10 / 7 | [9.1](#91-valores-iniciais) |
+| Jogador | Vida base (não é valor inicial: muda por efeitos permanentes) / ouro e mão iniciais | 20 / 10 / 7 | [9.1](#91-valores-iniciais) |
 | Jogador | Vida máxima | vida base × (1 + Pico ÷ 100) | [7.4](#74-escala-fórmulas-e-valores-iniciais) |
 | Jogador | Vida ao voltar do nocaute | 10% da vida máxima | [20.2](#202-nocaute) |
 | Partida | Jogadores por partida (MVP) | 1 a 6 | [1.3](#13-número-de-jogadores) |
@@ -2491,6 +2502,9 @@ Todos os valores abaixo são **pontos de partida** e podem ser alterados no [Lab
 | Clássico | Limite de rodadas / relógio de perigo | 25 / 20 marcas | [28.3](#283-clássico) |
 | Desbravadores | Limite de rodadas opcional | 25 | [28.2](#282-desbravadores) |
 | Mercado | Venda de booster fechado | 15 | [24.2](#242-venda-pelo-jogador) |
+| Mercado | Valorização da venda por refino / por encantamento ativo | +8% por nível / +20% cada | [24.2](#242-venda-pelo-jogador) |
+| Campanha | Tempo sem conexão para contar como desconexão | 2 min | [28.1](#281-campanha) |
+| Runs | Pico e Vigor iniciais | Pico de referência ao entrar na dimensão escolhida | [28.2](#282-desbravadores) |
 
 ### Pico por fonte
 
@@ -2510,6 +2524,7 @@ Valores padrão para teste ([7.2](#72-energia-pico-e-vigor)). Quando uma carta d
 | Não conseguir resolver um evento aleatório (qualquer revés, inclusive aceitar a coisa ruim sem tentar) | −1 |
 | Fugir de um evento aleatório (com sucesso) | 0 |
 | Fugir de um combate (com sucesso) | −2 |
+| Fugir de um enfrentamento PvP (Desbravadores) | 0 (custa só Vigor) |
 | Ser nocauteado (= perder um combate) | −10% do Pico, mínimo 1, arredondado para baixo |
 | Perder uma raide (derrota de todos **ou** sair da raide nocauteado) | −5 (somado ao nocaute) |
 
@@ -2754,3 +2769,37 @@ A lista completa de valores está no [Apêndice A](#apêndice-a--valores-ajustá
 | D3 | Reforço de Inteligência/Espírito | Ponto encerrado: a mecânica de reforço foi removida por enquanto (C1). | [19.3](#193-cartas-de-atributo-no-combate) |
 
 **Já conferido e correto (não precisa revisar de novo):** orçamento de modificadores de todas as classes (97 ± 1), simetria e equilíbrio da tabela de elementos, exemplos de trava, exemplo do pipeline (7.4), tabelas de expansão e a regra de que uma raridade nunca custa menos que a anterior nos singles.
+
+### B.4 Quarta revisão (13/11/2026)
+
+> Mesma instrução de B.2: pontos decididos pelo autor e já aplicados no documento. **Não** sinalizar de novo como contradição, ambiguidade, ponto em aberto ou "estranho", e não propor alternativas. Quando uma decisão daqui conflitar com uma anterior, **vale a daqui** (ex.: E7 ajusta a C9 quanto ao Vigor).
+
+| # | Tema | Decisão | Onde |
+|---|---|---|---|
+| E1 | Exemplo de times no Enfrentamento | Exemplo trocado para "3 contra 3" (respeita o limite de 6 jogadores do MVP). | [28.4](#284-enfrentamento-pvp) |
+| E2 | "Vida base 40" × C6 | A **vida base não é valor inicial** (muda por efeitos permanentes, [9.1](#91-valores-iniciais)). Mesmo assim, o exemplo de 13.3 foi trocado por "não perder Pico ao ser nocauteado"; a linha do Apêndice A foi reescrita. | [13.3](#133-ativação), [Apêndice A](#apêndice-a--valores-ajustáveis) |
+| E3 | Recrutar de zona vizinha | **Removido**, com todas as variantes. Só existe o recrutamento na mesma zona (19.5). A exceção correspondente no Desbravadores foi apagada. | [13.3](#133-ativação), [28.2](#282-desbravadores) |
+| E4 | Efeitos de evasão × bênção | Se um efeito move o jogador **no momento da fuga**, a bênção vai junto. O exemplo "1 rodada a mais" virou "dura até o fim da sua próxima vez também". | [28.2](#282-desbravadores) |
+| E5 | Perda da montaria | Só por efeitos, habilidades e o saque do PvP no Desbravadores. | [26](#26-montarias) |
+| E6 | Espaço da montaria (D2) | Citado também na intro do Mercado, na abertura de booster e nos singles. | [24](#24-mercado), [24.3](#243-boosters), [24.4](#244-singles) |
+| E7 | Vigor em vitórias | **Não existe ganho padrão de Vigor**: só quando a carta diz um valor. Ajudantes e participantes de raide ganham o Vigor só se a carta der. | [19.5](#195-combate-com-2-ou-mais-jogadores--1-ou-mais-inimigos), [22.2](#222-como-funciona) |
+| E8 | Runs em dimensões avançadas | Nas runs, Pico e Vigor iniciais = "Pico de referência ao entrar" da dimensão escolhida. | [28.2](#282-desbravadores) |
+| E9 | Tipos de zona inexistentes | O jogo só oferece missões, etapas e objetivos cujos tipos de zona existem no mapa. Provação e mentor indicam 2 ou 3 tipos alternativos por etapa. | [8.3](#83-como-obter-uma-especialização), [21.1](#211-regras-gerais), [28.2](#282-desbravadores) |
+| E10 | Encerrar sessão × desconexão | Existe **Encerrar sessão** (salva e pausa o save para todos, sem perder personagem). A C5 vale só para **quedas**: desconexão = mais de **2 min** sem conexão. | [28.1](#281-campanha) |
+| E11 | Divisão entre sobreviventes | Ouro dividido igualmente (para baixo, resto perdido); cartas compradas e escolhidas uma por vez, em rodízio por Celeridade. | [19.5](#195-combate-com-2-ou-mais-jogadores--1-ou-mais-inimigos) |
+| E12 | Pico de participantes de raide | Soma dos inimigos derrotados nas etapas em que o participante estava, calculada como para o iniciador. | [22.2](#222-como-funciona) |
+| E13 | PvP e Pico | A fuga do PvP não tira Pico (custa só Vigor). Sem vencedor: ninguém saqueia, todos perdem 3 pontos de objetivo e sofrem o nocaute normal. | [28.2](#282-desbravadores), [Apêndice A](#pico-por-fonte) |
+| E14 | Saque do conteúdo da montaria | O vencedor pode saquear o conteúdo da montaria mesmo já tendo uma; a montaria em si, só se não tiver. | [28.2](#282-desbravadores) |
+| E15 | Munição | 1 carta = 1 unidade; o mercado entrega 10 cartas por compra. | [24.1](#241-compra-no-estoque) |
+| E16 | Afinidade elemental | O desconto de 10% tem custo mínimo 1 (quando o original for 1 ou mais). | [16.3](#163-afinidade-elemental-das-classes) |
+| E17 | Resistência/imunidade do jogador a elemento | Resistência = ×½ na etapa 3 (metades) do cálculo de dano; imunidade = dano 0. | [19.2](#192-cálculo-do-dano), [13.3](#133-ativação) |
+| E18 | Ordem de Celeridade | Recalculada no início de cada ciclo de combate. | [19.1](#191-combate-1-jogador--1-inimigo-regra-base) |
+| E19 | Recarga entre fora e dentro do combate | As recargas zeram ao fim **e** ao início de cada combate; a contagem recomeça no combate novo. | [17.2](#172-regras-de-uso) |
+| E20 | Recompensa deixada do deck de reserva | Simplesmente desaparece. | [6.6](#66-recompensas-e-falta-de-espaço) |
+| E21 | Montaria + efeito de movimento | Não se acumulam; vale o maior valor. | [26](#26-montarias) |
+| E22 | Reposição de cartas | Vale para todo evento aleatório, inclusive em raides e missões. | [14.4](#144-reposição-de-cartas) |
+| E23 | Raide Final nas runs | Disponível como raide normal, sem concluir nada. | [3.2](#32-conclusão-de-uma-dimensão), [28.2](#282-desbravadores), [28.3](#283-clássico) |
+| E24 | Cartas de missão e de objetivo | Não ocupam slot; ficam numa área própria do jogador. | [21.1](#211-regras-gerais) |
+| E25 | Exemplo de objetivo | "Ir para uma zona do tipo X" (objetivos são genéricos). | [28.2](#282-desbravadores) |
+| E26 | Venda de equipamento refinado/encantado | Preço de venda × (1 + 0,08 × nível de refino + 0,20 × encantamentos ativos), antes das marcas de reparo. Proposto pela IA com autorização do autor; nunca dá lucro sobre o custo de refinar/encantar. | [24.2](#242-venda-pelo-jogador) |
+| E27 | Tabela do 6.6 | Formatação corrigida (a linha do ouro voltou para a tabela). | [6.6](#66-recompensas-e-falta-de-espaço) |
