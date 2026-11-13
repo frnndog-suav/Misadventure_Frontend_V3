@@ -201,7 +201,7 @@ Antes de conhecer o personagem, é preciso conhecer o palco: **onde** a partida 
   - jogadores precisam pagar 1 moeda de ouro para usar uma ação;
   - durante eventos de combate, não é possível usar poções.
 - Uma dimensão sem efeitos pode significar que seus eventos são muito difíceis.
-- **Tema:** cada dimensão tem um **tema**, que define quais tipos de zona e quais locais aparecem nela, e em que proporção. Ex.: uma dimensão de velho oeste teria mais zonas Desérticas e locais como oásis e cidadezinhas. Por isso, **qualquer tipo de zona pode faltar** numa dimensão; o único tipo garantido é o **Urbano** (validação de [3.5](#35-montagem-do-mapa)). Regras e cartas que valem em **todas** as dimensões (como as missões de provação e do mentor, [8.3](#83-como-obter-uma-especialização)) **nunca** dependem de um tipo de zona específico, exceto o Urbano.
+- **Tema:** cada dimensão tem um **tema**, que define quais tipos de zona e quais locais aparecem nela, e em que proporção. Ex.: uma dimensão de velho oeste teria mais zonas Desérticas e locais como oásis e cidadezinhas. Por isso, **qualquer tipo de zona pode faltar** numa dimensão; o único tipo garantido é o **Urbano** (validação de [3.5](#35-montagem-do-mapa)). Por isso, **nada que seja necessário para progredir** (missões, requisitos, ações obrigatórias; ex.: as missões de provação e do mentor, [8.3](#83-como-obter-uma-especialização)) depende de um tipo de zona além do Urbano. **Bônus e gatilhos ligados a tipo de zona são permitidos** em qualquer carta, classe ou especialização (ex.: os efeitos do Druida, [8.7](#87-perfil-das-classes)): numa dimensão sem aquele tipo, eles simplesmente não se ativam.
 
 ### 3.2 Conclusão de uma dimensão
 
@@ -267,7 +267,7 @@ Quando a dimensão é concluída, **todos os jogadores da partida** a concluem e
 
 - **Setas de conexão:** de uma a quatro setas, cada uma apontando para uma aresta da carta. **Toda zona tem pelo menos 1 seta.** **Toda zona Urbana tem obrigatoriamente as quatro setas.** A **maioria** das cartas tem **2 setas** (veja [3.5](#35-montagem-do-mapa)).
 - **Ações:** cada zona tem as suas próprias [ações de zona](#12-ações-de-zona). Uma zona pode ter 5 ações e outra apenas 1. Algumas ações são exclusivas de certas zonas; outras aparecem em várias. Exemplo: uma cidade (Urbana) pode ter, além das ações obrigatórias de toda Urbana (Usar cofre, Salvar ponto de respawn e Treinar com mentor), "Ir ao Ferreiro" e "Ir ao Mercado"; já um bosque (Florestal) pode ter só "Iniciar evento" e "Vasculhar". Isso obriga o jogador a pensar para onde ir para cumprir seus objetivos ou conseguir algum item ou serviço.
-- **Ofertas dos serviços:** quando a zona tem **Mercado**, a carta lista os **itens do estoque** daquele mercado e indica se ele tem **vitrine de singles** ([24](#24-mercado)); quando tem **Estábulo**, a carta lista as **montarias à venda** ([26](#26-montarias)). São dados do designer da coleção.
+- **Ofertas dos serviços:** quando a zona tem **Mercado**, a carta lista os **itens do estoque** daquele mercado e indica se ele tem **vitrine de singles** ([24](#24-mercado)); quando tem **Estábulo**, a carta lista as **montarias à venda** ([26](#26-montarias)); quando tem **Ferreiro**, a carta lista os **encantamentos oferecidos** (tipo e custo em relíquias/materiais, [25.3](#253-encantar)). São dados do designer da coleção e não mudam durante a partida.
 - **Efeitos:** nenhum, um ou vários. Exemplos: na zona X, a classe Mago causa mais dano em combate; na zona Y, quem for nocauteado em evento ou combate perde todas as moedas de ouro; na zona Z, equipamentos do tipo armadura têm seus efeitos anulados.
 - **Decks por tipo de zona:** zonas do **mesmo tipo** compartilham os mesmos decks (ex.: todas as zonas Florestais da dimensão usam o mesmo deck de eventos):
   - **deck de eventos** (cerca de 30 cartas de eventos aleatórios por tipo de zona; número especulativo, sujeito a análise);
@@ -1204,7 +1204,7 @@ flowchart LR
 Todos veem o que acontece na vez dos outros **ao vivo** (movimento, eventos, combates). Um jogador fora da sua vez **nunca inicia** uma ação: ele só participa quando outro jogador, na vez dele, o convida.
 - **Negociação:** o jogador da vez pode convidar outro para negociar; o convidado negocia fora da sua vez. O jogador fora da vez não pode iniciar uma negociação.
 - **Combate:** quem é **convidado** (recrutado para um combate, [19.5](#195-combate-com-2-ou-mais-jogadores--1-ou-mais-inimigos)) participa fora da sua vez.
-- Efeitos com gatilho "na vez de outro jogador" também podem ser ativados.
+- Efeitos com gatilho também disparam fora da vez (inclusive os de gatilho "na vez de outro jogador"), seguindo a regra de efeitos automáticos e opcionais de [13](#13-efeitos).
 - **Preparar** e **Ajustar deck** não podem ser usadas fora da vez para adiantar a jogada.
 
 ---
@@ -1285,6 +1285,19 @@ flowchart LR
 ```
 
 **Exemplo lido parte por parte:** *"Ao entrar numa zona Montanhosa (gatilho), descarte 1 carta de Força (custo): ganhe +5 de Defesa (ativação) até sair desta zona (duração)."*
+
+**Efeitos automáticos e opcionais.** A combinação de gatilho e custo define se o efeito dispara sozinho ou se o jogador escolhe ativá-lo:
+
+| Gatilho | Custo | Como funciona |
+|---|---|---|
+| Não | Não | **Passivo:** sempre ligado enquanto a fonte estiver ativa (ex.: "+5% de Defesa enquanto sem marca de reparo"). |
+| Não | Sim | **Ativado pelo jogador:** fora do combate, dentro da ação **Preparar** (na própria vez) ou na fase de **antecipação** de um evento ([14.3](#143-fases-do-evento)); no combate, no **próprio turno de combate**. |
+| Sim | Não | **Automático e obrigatório:** dispara sozinho quando o gatilho acontece. |
+| Sim | Sim | **Opcional:** quando o gatilho acontece, o jogo pergunta ao jogador se ele quer pagar o custo (o relógio pausa; tempo esgotado = o efeito **não** é ativado). Vale também fora da vez ([11.4](#114-agir-fora-da-vez)). |
+
+- Efeitos de **dimensão**, de **zona**, de **evento** (coisa boa e coisa ruim, [14.1](#141-a-carta-de-evento)) e de **inimigo** são **sempre obrigatórios**, com ou sem gatilho. Se um deles pedir um custo ao jogador (ex.: "pague 1 moeda de ouro para usar uma ação"), o custo é **condição** daquilo que ele afeta: sem pagar, a ação não pode ser usada.
+- Quando vários efeitos disparam ao mesmo tempo, vale a ordem de [13.5](#135-ordem-de-resolução).
+- Esta tabela vale para **efeitos**. Para **habilidades**, valem as regras de [17](#17-habilidades) (a forma Passiva funciona sem ativação; as demais são usadas pelo jogador).
 
 Em todas as categorias abaixo, mais variações podem surgir no futuro (veja a [Parte III](#parte-iii--etapas-de-desenvolvimento)).
 
@@ -2176,6 +2189,7 @@ Em todos os serviços, **valores, custos e chances** são ajustáveis no laborat
 ### 25.3 Encantar
 
 - Adiciona ao equipamento **um bônus de elemento** ou **um efeito/habilidade** de uma lista oferecida pelo ferreiro daquela zona (ferreiros de zonas diferentes oferecem encantamentos diferentes).
+- **Lista de encantamentos:** fica na **carta de zona** do Ferreiro ([3.4](#34-o-que-uma-carta-de-zona-contém)), definida pelo designer da coleção: cada encantamento diz o tipo (elemento ou efeito/habilidade) e o custo em relíquias/materiais. A lista não muda durante a partida.
 - Custo: **relíquias** ou materiais raros (quais e quantos, a **lista de encantamentos de cada ferreiro** diz) + **50 ouro** (encantamento de elemento) ou **100 ouro** (encantamento de efeito/habilidade) (ajustável no laboratório).
 - **O próprio equipamento diz** quantos encantamentos e elementos pode receber, e a partir de qual **nível de refino**. Exemplos: "o equipamento A só pode receber uma nova habilidade com refino mínimo +5"; "o equipamento B pode receber até dois encantamentos diferentes (1 elemental e 1 de habilidade) a partir do refino +9". As variações são ilimitadas.
 - **Nem todo equipamento pode ser encantado**: o próprio equipamento indica isso.
@@ -2895,3 +2909,17 @@ A lista completa de valores está no [Apêndice A](#apêndice-a--valores-ajustá
 | O2 | Ofertas do Mercado e do Estábulo | A **carta de zona** (dado do designer) lista os itens do estoque do mercado, indica se ele tem vitrine de singles e lista as montarias do Estábulo. O Estábulo tem **estoque ilimitado** (sem vitrine, sorteio nem decaimento); montarias vendidas pelo jogador saem do jogo e não mudam a oferta. | [3.4](#34-o-que-uma-carta-de-zona-contém), [24.1](#241-compra-no-estoque), [24.4](#244-singles), [24.5](#245-serviços-do-mercado), [26](#26-montarias) |
 
 **Situação após a B.14:** não há pendências de regra conhecidas. O único tema adiado continua sendo a autenticação (F29).
+
+### B.15 Décima quinta revisão (13/11/2026)
+
+> Mesma instrução de B.2: pontos **decididos pelo autor** e já aplicados no documento. **Não** sinalizar de novo como contradição, ambiguidade, ponto em aberto, bloqueio ou "estranho", e **não** propor alternativas, a menos que o autor peça. Quando conflitar com uma decisão anterior, **vale a daqui** (P2 substitui a redação da L2 sobre tipos de zona; P3 completa a O2 e a F26).
+
+| # | Tema | Decisão | Onde |
+|---|---|---|---|
+| P1 | Efeitos automáticos × opcionais | Regra geral no início do capítulo 13: **sem gatilho e sem custo** = passivo, sempre ligado; **sem gatilho e com custo** = ativado pelo jogador (fora do combate, em Preparar ou na antecipação de um evento; no combate, no próprio turno de combate); **com gatilho e sem custo** = automático e obrigatório; **com gatilho e com custo** = opcional (o jogo pergunta; relógio pausado; tempo esgotado = não ativa; vale também fora da vez). Efeitos de dimensão, zona, evento e inimigo são **sempre obrigatórios**; se pedirem custo ao jogador, o custo é condição da ação. Habilidades seguem o capítulo 17. 11.4 alinhada. | [13](#13-efeitos), [11.4](#114-agir-fora-da-vez) |
+| P2 | Tema da dimensão × efeitos por tipo de zona | A L2 vale para **o que é necessário para progredir** (missões, requisitos, ações obrigatórias): isso nunca depende de tipo de zona além do Urbano. **Bônus e gatilhos ligados a tipo de zona são permitidos** em cartas, classes e especializações (Druida, Metamorfo, Guardião, Xamã, Explorador, gatilhos de zona de 13.1); numa dimensão sem aquele tipo, simplesmente não se ativam. | [3.1](#31-dimensões) |
+| P3 | Lista de encantamentos do ferreiro | Fica na **carta de zona** do Ferreiro (como a O2 para Mercado e Estábulo): cada encantamento diz o tipo (elemento ou efeito/habilidade) e o custo em relíquias/materiais. Dado do designer; não muda durante a partida. | [3.4](#34-o-que-uma-carta-de-zona-contém), [25.3](#253-encantar) |
+
+**Já conferido e não sinalizar (casos raros, resolvidos pela regra 4 deste Apêndice na hora da implementação):** nocaute simultâneo por Reflexão em **combate de grupo** (quem recebe a coisa boa e se o resultado é vitória quando ninguém fica de pé); linha "Nocaute" do glossário sem citar a exceção do jogo solo (a linha "Jogo solo" do glossário já cobre).
+
+**Situação após a B.15:** não há pendências de regra conhecidas. O único tema adiado continua sendo a autenticação (F29).
