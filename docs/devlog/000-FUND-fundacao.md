@@ -2,7 +2,7 @@
 
 - **FEAT:** FEAT-00 (lado frontend)
 - **Data:** 2026-11-13
-- **Status:** aguardando revisão
+- **Status:** concluída (commit 99ef0b9; backend confirmou o contrato v0.2 em 9d32dee)
 - **Versões:** spec 0.1 · contrato 0.1 · roadmap 0.1
 
 ## Objetivo

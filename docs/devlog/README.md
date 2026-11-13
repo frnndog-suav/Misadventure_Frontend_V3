@@ -17,7 +17,7 @@ Registro de cada etapa do frontend, escrito para que **outra IA consiga replicar
 ## Índice
 | Nº | ID | Título | Status |
 |---|---|---|---|
-| 000 | FUND | [Fundação: agentes, skills, specs, roadmap e contrato](000-FUND-fundacao.md) | aguardando revisão |
+| 000 | FUND | [Fundação: agentes, skills, specs, roadmap e contrato](000-FUND-fundacao.md) | concluída |
 
 ## Como replicar
 O que um projeto novo precisa para ter o mesmo sistema:

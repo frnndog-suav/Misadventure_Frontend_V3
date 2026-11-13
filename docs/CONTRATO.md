@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.1 · **Data:** 2026-11-13
+> **Versão do contrato:** 0.2 · **Data:** 2026-11-13
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -15,7 +15,7 @@
 | `implementado (BE)` | O backend entregou e testou. |
 | `validado` | O frontend rodou o cenário contra o backend real e passou. Só aqui a FEAT pode fechar. |
 
-## 1. Convenções — `proposto (FE)`
+## 1. Convenções — `acordado`
 
 ### 1.1 Transporte
 - Momentos 1 e 2 do roadmap: **HTTP + JSON**.
@@ -50,7 +50,7 @@ O backend informa qual versão deste contrato implementa (o endpoint é definido
 ### 1.6 Estado e intenções
 O frontend lê o **estado** e envia **intenções** (o que o jogador quer fazer). O backend valida a intenção, aplica as regras e devolve o novo estado (ou um erro de §1.4). Como os acontecimentos intermediários chegam à tela (a lista ordenada de `domainEvent` da pendência P-02) é decidido antes da FEAT-21.
 
-## 2. Glossário termo → identificador — `proposto (FE)`
+## 2. Glossário termo → identificador — `acordado`
 
 Base dos nomes no código dos dois lados e dos termos com destaque e tooltip (README II.4). Novos termos entram junto com a seção da FEAT que os usa.
 
@@ -165,3 +165,4 @@ Regras: README <seções>
 | Versão | Data | Lado | Mudança |
 |---|---|---|---|
 | 0.1 | 2026-11-13 | FE | Versão inicial: convenções (§1) e glossário (§2) propostos. Aguarda confirmação do backend. |
+| 0.2 | 2026-11-13 | BE | §1 e §2 confirmados sem mudanças → `acordado` (FEAT-00 do backend). |
