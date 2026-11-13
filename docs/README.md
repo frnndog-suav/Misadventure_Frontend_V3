@@ -169,6 +169,8 @@ Dentro do combate: Ciclo   = [ turno jogador ] → [ turno inimigo 1 ] → [ tur
 | **Trava** | Quantidade mínima de cartas de certos atributos que o deck precisa ter para ativar uma classe/especialização. | [8.2](#82-a-trava-do-deck) |
 | **Ponto de ação** | O que o jogador gasta para executar ações de zona na sua vez. | [11](#11-a-vez-do-jogador) |
 | **Efeito** | Qualquer regra escrita numa carta: gatilho → custo → ativação → duração. | [13](#13-efeitos) |
+| **Buff / debuff (status)** | Efeito com duração, positivo (buff) ou negativo (debuff), marcado na carta; maldição = debuff num inimigo. | [13.6](#136-buffs-e-debuffs-status) |
+| **Etiqueta (Tipos)** | Campo das cartas de equipamento e item que diz o que ela é (ex.: Espada, Armadura, Pesada, Poção); é o que efeitos e gatilhos citam. | [5.1](#51-equipamentos) |
 | **Evento** | Carta de desafio comprada do deck da zona. | [14](#14-eventos) |
 | **Habilidade** | Poder ligado a um equipamento ou inimigo (impresso no inimigo da carta de evento de combate); pode ser ativa (paga, em geral, com Vigor) ou passiva. | [17](#17-habilidades) |
 | **Booster** | Pacote fechado de cartas novas; é um recurso que fica no inventário até ser aberto. | [24.3](#243-boosters) |
@@ -268,7 +270,7 @@ Quando a dimensão é concluída, **todos os jogadores da partida** a concluem e
 - **Setas de conexão:** de uma a quatro setas, cada uma apontando para uma aresta da carta. **Toda zona tem pelo menos 1 seta.** **Toda zona Urbana tem obrigatoriamente as quatro setas.** A **maioria** das cartas tem **2 setas** (veja [3.5](#35-montagem-do-mapa)).
 - **Ações:** cada zona tem as suas próprias [ações de zona](#12-ações-de-zona). Uma zona pode ter 5 ações e outra apenas 1. Algumas ações são exclusivas de certas zonas; outras aparecem em várias. Exemplo: uma cidade (Urbana) pode ter, além das ações obrigatórias de toda Urbana (Usar cofre, Salvar ponto de respawn e Treinar com mentor), "Ir ao Ferreiro" e "Ir ao Mercado"; já um bosque (Florestal) pode ter só "Iniciar evento" e "Vasculhar". Isso obriga o jogador a pensar para onde ir para cumprir seus objetivos ou conseguir algum item ou serviço.
 - **Ofertas dos serviços:** quando a zona tem **Mercado**, a carta lista os **itens do estoque** daquele mercado e indica se ele tem **vitrine de singles** ([24](#24-mercado)); quando tem **Estábulo**, a carta lista as **montarias à venda** ([26](#26-montarias)); quando tem **Ferreiro**, a carta lista os **encantamentos oferecidos** (tipo e custo em relíquias/materiais, [25.3](#253-encantar)). São dados do designer da coleção e não mudam durante a partida.
-- **Efeitos:** nenhum, um ou vários. Exemplos: na zona X, a classe Mago causa mais dano em combate; na zona Y, quem for nocauteado em evento ou combate perde todas as moedas de ouro; na zona Z, equipamentos do tipo armadura têm seus efeitos anulados.
+- **Efeitos:** nenhum, um ou vários. Exemplos: na zona X, a classe Mago causa mais dano em combate; na zona Y, quem for nocauteado em evento ou combate perde todas as moedas de ouro; na zona Z, equipamentos com a etiqueta **Armadura** ([5.1](#51-equipamentos)) têm seus efeitos anulados. Os efeitos de zona também são marcados como **positivos** ou **negativos** ([13.6](#136-buffs-e-debuffs-status)), para que efeitos como "ignore os efeitos negativos de 'ao entrar nesta zona'" funcionem.
 - **Decks por tipo de zona:** zonas do **mesmo tipo** compartilham os mesmos decks (ex.: todas as zonas Florestais da dimensão usam o mesmo deck de eventos):
   - **deck de eventos** (cerca de 30 cartas de eventos aleatórios por tipo de zona; número especulativo, sujeito a análise);
   - **deck de recompensas**, que contém cartas de recursos (equipamentos e itens, inclusive boosters) e cartas de atributo. Não existe deck de recursos separado.
@@ -478,6 +480,7 @@ Isso tudo faz parte da mesma ação; recolher não é uma ação separada. Se o 
 |---|---|---|
 | **Nome** | Nome do equipamento | *Espada Rúnica* |
 | **Categoria** | Uma das categorias acima (ícone + label) | Arma |
+| **Tipos** | 0 ou mais **etiquetas** definidas pelo designer da coleção (lista aberta), usadas por efeitos e gatilhos (veja abaixo) | Espada, Duas mãos, Pesada |
 | **Raridade** | Comum a Lendária (símbolo no canto, veja [24.3](#243-boosters)) | Rara |
 | **Modificadores** | Bônus que dá enquanto equipado; o primeiro listado é o **modificador principal** (usado pelo refino) | +12 Ataque, +5 Precisão |
 | **Requisito de Pico** | Opcional. Pico mínimo para equipar e usar (veja [7.3](#73-regras-da-energia)) | Pico 30 |
@@ -489,6 +492,11 @@ Isso tudo faz parte da mesma ação; recolher não é uma ação separada. Se o 
 | **Encantamentos** | Se pode ser encantado, quantos, de que tipo e com qual refino mínimo | 1 elemental a partir de +3 |
 | **Ajuste de preço** | ×0,8 a ×1,5, definido pelo designer (veja [24.4](#244-singles)) | ×1,2 |
 | **Estado** | Quebrado ou não; marca "Reparado ×N" | Reparado ×1 |
+
+**Tipos (etiquetas):** é o campo que diz **o que** o equipamento ou item é, além da categoria (ex.: Espada, Adaga, Manopla, Arco, Armadura, Pesada, Duas mãos; nos itens, ex.: Poção, Erva, Bomba, Veneno). A lista é **aberta**: o designer cria as etiquetas de que a coleção precisa, e uma carta pode ter várias. Regras:
+- Efeitos, gatilhos e conceitos de classe só podem se referir ao que existe nos dados da carta: **categoria**, **etiqueta**, **tipo de zona** ou o **nome exato** de uma carta. Quando um texto diz "espada", "armadura", "poção", etc., ele se refere à **etiqueta** de mesmo nome, nunca ao nome da carta (uma "Lâmina do Crepúsculo" com a etiqueta Espada é espada).
+- Não existem agrupamentos vagos de zonas (ex.: "zonas naturais"): a carta lista os **tipos de zona** por extenso.
+- **Armas pesadas** não têm penalidade geral. Se uma arma tiver uma desvantagem, ela vem **impressa** na própria carta como um efeito comum (ex.: "−10% de Celeridade"), e a carta tem a etiqueta **Pesada**.
 
 **Quebra de equipamentos:** equipamentos são quebrados por **habilidades e efeitos de inimigos** (pool exclusiva, veja [17.5](#175-habilidades-exclusivas-de-inimigos)), e pela **falha de refino** a partir de +7 ([25.2](#252-refinar)). Para repará-los, é preciso levá-los ao [ferreiro](#25-ferreiro) ou usar um efeito/habilidade/recurso de reparo. Um equipamento **quebrado**:
 - **continua no slot** (ou no inventário) e ainda ocupa o slot;
@@ -503,7 +511,7 @@ Podem existir mais categorias no futuro, inclusive categorias exclusivas de uma 
 
 | Categoria | Finalidade | Exemplos |
 |---|---|---|
-| **Consumíveis** | Recuperar vida, remover status negativos, obter status positivos e ganhar efeitos. | Poções, elixires, alimentos, bebidas, pergaminhos, bombas, remédios, munição, etc. |
+| **Consumíveis** | Recuperar vida, remover **debuffs**, obter **buffs** e ganhar efeitos (veja [13.6](#136-buffs-e-debuffs-status)). | Poções, elixires, alimentos, bebidas, pergaminhos, bombas, remédios, munição, etc. |
 | **Materiais** | Fabricação, aprimoramento ou outras atividades. | Minérios, gemas, ervas, tecidos, couros, componentes, peças, etc. |
 | **Relíquias** | Objetos especiais, geralmente raros, mágicos ou com propriedades extraordinárias. Não se equipam. | Artefatos, amuletos, talismãs, objetos amaldiçoados, objetos lendários, etc. |
 | **Ferramentas** | Executar atividades específicas, interagir com o ambiente ou superar obstáculos. | Ferramentas de mineração e de coleta, instrumentos, utensílios, equipamentos de exploração, dispositivos. |
@@ -513,6 +521,8 @@ Podem existir mais categorias no futuro, inclusive categorias exclusivas de uma 
 | **Objetos especiais** | Relacionados a eventos, progressão ou situações específicas do jogo. | Qualquer coisa, inclusive itens das outras categorias. |
 
 Todo item é uma **carta**, inclusive os vendidos no estoque do mercado (poções, munição, etc.).
+
+Como os equipamentos, os itens têm o campo **Tipos** (etiquetas, ex.: Poção, Erva, Bomba, Veneno), com as mesmas regras de [5.1](#51-equipamentos).
 
 ### 5.3 Dinheiro
 
@@ -710,7 +720,7 @@ Vigor (atual)  ███████████░░░░░░░░░   55
 | Resolver eventos com sucesso | Perder combates (= ser nocauteado) |
 | Ganhar combates | |
 | Derrotar inimigos | |
-| Efeitos positivos (buffs) | Efeitos negativos (debuffs) |
+| Efeitos positivos (buffs, [13.6](#136-buffs-e-debuffs-status)) | Efeitos negativos (debuffs, [13.6](#136-buffs-e-debuffs-status)) |
 | Etc. | Etc. |
 
 Os valores padrão de cada fonte estão no [Apêndice A](#apêndice-a--valores-ajustáveis) (tabela "Pico por fonte") e são ajustáveis no laboratório. Quando uma carta diz um valor próprio, vale o da carta.
@@ -1022,10 +1032,10 @@ O mentor dá a missão de **nova classe**; a especialização da nova classe con
 
 | Classe | Conceito principal |
 |---|---|
-| Guerreiro | Aguenta mais: menos dano recebido, armas pesadas sem penalidade |
+| Guerreiro | Aguenta mais: menos dano recebido; ignora os efeitos negativos de armas com a etiqueta **Pesada** ([5.1](#51-equipamentos)) |
 | Mago | Habilidades mais fortes e mais baratas em Vigor |
 | Ladino | Manipula o deck: olha/reordena o topo, compra extra, fuga mais fácil |
-| Clérigo | Cura e remove debuffs de si e de outros jogadores na mesma zona |
+| Clérigo | Cura e remove debuffs ([13.6](#136-buffs-e-debuffs-status)) de si e de outros jogadores na mesma zona |
 | Patrulheiro | Mobilidade no mapa e ataques à distância (Projétil) |
 | Druida | Bônus conforme o **tipo de zona** em que está |
 | Monge | Ataques múltiplos e Celeridade; luta bem sem arma |
@@ -1065,6 +1075,8 @@ A **afinidade elemental** de cada classe está em [16.3](#163-afinidade-elementa
 
 O **conceito principal** de cada especialização é o ponto de partida para criar os **efeitos** dela (lembrando: especializações têm efeitos, não habilidades). Os números exatos ficam para o design das cartas e o laboratório. Um conceito pode ou não ser exclusivo, e mais de uma especialização pode compartilhar o mesmo conceito. Algumas builds podem ser exclusivas de certas classes e especializações.
 
+Nos conceitos abaixo, palavras como espada, armadura, manopla, garra, poção, erva, bomba e veneno são **etiquetas** ([5.1](#51-equipamentos)); buffs, debuffs, maldições e "efeitos negativos" seguem [13.6](#136-buffs-e-debuffs-status).
+
 | Classe | Especialização | Conceito principal |
 |---|---|---|
 | Guerreiro | Cavaleiro | Defesa extra para si e para os aliados do mesmo combate |
@@ -1089,7 +1101,7 @@ O **conceito principal** de cada especialização é o ponto de partida para cri
 | Patrulheiro | Rastreador | Precisão e Celeridade extras no primeiro combate depois de se mover na vez |
 | Druida | Metamorfo | Ganha uma "forma" conforme o tipo de zona (ex.: Florestal → Esquiva, Montanhosa → Defesa) |
 | Druida | Guardião | Defesa extra para si e aliados em zonas que não sejam Urbanas, Fortificadas ou Industriais |
-| Druida | Xamã | Restaura Vigor ao entrar em zonas Religiosas ou naturais; bônus em habilidades Espirituais |
+| Druida | Xamã | Restaura Vigor ao entrar em zonas Religiosas ou de outros tipos listados por extenso no efeito (ex.: Florestal, Pantanosa); bônus em habilidades Espirituais |
 | Druida | Naturalista | Vasculhar mais eficiente e consumíveis de ervas mais fortes |
 | Monge | Mestre Marcial | Ataque extra quando luta sem arma |
 | Monge | Asceta | Bônus quando está com a mão vazia ou o inventário quase vazio |
@@ -1298,6 +1310,8 @@ flowchart LR
 - Efeitos de **dimensão**, de **zona**, de **evento** (coisa boa e coisa ruim, [14.1](#141-a-carta-de-evento)) e de **inimigo** são **sempre obrigatórios**, com ou sem gatilho. Se um deles pedir um custo ao jogador (ex.: "pague 1 moeda de ouro para usar uma ação"), o custo é **condição** daquilo que ele afeta: sem pagar, a ação não pode ser usada.
 - Quando vários efeitos disparam ao mesmo tempo, vale a ordem de [13.5](#135-ordem-de-resolução).
 - Esta tabela vale para **efeitos**. Para **habilidades**, valem as regras de [17](#17-habilidades) (a forma Passiva funciona sem ativação; as demais são usadas pelo jogador).
+- **O que um efeito pode citar:** só categoria, **etiqueta** (campo Tipos, [5.1](#51-equipamentos)), tipo de zona, local ou o nome exato de uma carta. Nos exemplos deste capítulo, "espada", "adaga", "shuriken", "cimitarra", "katana", etc. são etiquetas.
+- **Buffs e debuffs:** veja [13.6](#136-buffs-e-debuffs-status).
 
 Em todas as categorias abaixo, mais variações podem surgir no futuro (veja a [Parte III](#parte-iii--etapas-de-desenvolvimento)).
 
@@ -1398,6 +1412,17 @@ dimensão → zona → evento/inimigos → jogador da vez → outros jogadores (
 ```
 
 Dentro de um mesmo jogador, ele escolhe a ordem.
+
+### 13.6 Buffs e debuffs (status)
+
+- **Buff** e **debuff** (juntos, **status**) são efeitos **com duração** (qualquer duração de [13.4](#134-duração), menos a Imediata) aplicados a um **jogador** ou a um **inimigo**. Buff = positivo para quem o recebe; debuff = negativo. **Maldição** é o nome dado a um debuff num inimigo.
+- **Marcação na carta:** o designer marca cada efeito com duração como **buff** ou **debuff**. Um efeito misto (ex.: "+5 de Defesa e −10% de Celeridade") é dividido em duas partes, cada uma com a sua marca. Efeitos de **zona** e de **dimensão** também são marcados como **positivos** ou **negativos**.
+- **Remover debuff** encerra os debuffs ativos no alvo, de qualquer origem (evento, inimigo ou carta). **Remover/anular buff** (ex.: Inquisidor) faz o mesmo com buffs.
+- Remover debuff **não** afeta:
+  - efeitos de **dimensão** e de **zona**: eles pertencem ao lugar; só podem ser **ignorados** quando a carta disser (ex.: "ignore os efeitos negativos de 'ao entrar nesta zona'");
+  - **estados de regra**: Exaustão ([7.3](#73-regras-da-energia)), equipamento quebrado ([5.1](#51-equipamentos)), nocaute ([20.2](#202-nocaute)) e Requisito de Pico não cumprido;
+  - efeitos **imediatos** já resolvidos (ex.: Pico ou vida já perdidos).
+- "Efeito negativo" em qualquer texto = efeito marcado como debuff ou como negativo.
 
 ---
 
@@ -2180,7 +2205,7 @@ Em todos os serviços, **valores, custos e chances** são ajustáveis no laborat
 
 - O jogador leva **1 conjunto de materiais por tentativa** (a quantidade não muda com o nível) e paga **10 ouro × o nível de refino desejado** (só o ouro escala com o nível) (ex.: subir para +5 custa 50 ouro; ajustável no laboratório).
 - **Materiais de refino:** todo equipamento refinável traz na carta o texto com os materiais necessários ([5.1](#51-equipamentos)). A **maioria** segue o mesmo **modelo padrão** de materiais; equipamentos mais raros, lendários ou fortes podem exigir um ou mais **materiais específicos**.
-- Aumenta o **nível de refino** do equipamento (+1 a +10). Cada nível dá **+5% do valor base** do modificador principal do equipamento (Ataque para armas, Defesa para armaduras/escudos, etc.; veja a anatomia em [5.1](#51-equipamentos)). Efeitos e habilidades podem alterar esse valor; o laboratório testa outras fórmulas.
+- Aumenta o **nível de refino** do equipamento (+1 a +10). Cada nível dá **+5% do valor base** do modificador principal do equipamento (o primeiro listado na carta; ex.: Ataque numa arma, Defesa num escudo; veja a anatomia em [5.1](#51-equipamentos)). Efeitos e habilidades podem alterar esse valor; o laboratório testa outras fórmulas.
 - **Nem todo equipamento pode ser refinado**: o próprio equipamento indica isso.
 - **Teste de refino:** rola-se 1 D20. Até +3, sucesso garantido; de +4 a +6, precisa de 8 ou mais; de +7 a +9, 12 ou mais; para +10, 16 ou mais.
 - **Falha (padrão):** os materiais e o ouro são perdidos. A partir de +7, uma falha também **quebra** o equipamento (o refino é mantido).
@@ -2923,3 +2948,14 @@ A lista completa de valores está no [Apêndice A](#apêndice-a--valores-ajustá
 **Já conferido e não sinalizar (casos raros, resolvidos pela regra 4 deste Apêndice na hora da implementação):** nocaute simultâneo por Reflexão em **combate de grupo** (quem recebe a coisa boa e se o resultado é vitória quando ninguém fica de pé); linha "Nocaute" do glossário sem citar a exceção do jogo solo (a linha "Jogo solo" do glossário já cobre).
 
 **Situação após a B.15:** não há pendências de regra conhecidas. O único tema adiado continua sendo a autenticação (F29).
+
+### B.16 Décima sexta revisão (13/11/2026)
+
+> Mesma instrução de B.2: pontos **decididos pelo autor** e já aplicados no documento. **Não** sinalizar de novo como contradição, ambiguidade, ponto em aberto, bloqueio ou "estranho", e **não** propor alternativas, a menos que o autor peça. Quando conflitar com uma decisão anterior, **vale a daqui**.
+
+| # | Tema | Decisão | Onde |
+|---|---|---|---|
+| Q1 | Tipos de equipamento/item e grupos de zona | Campo **Tipos** (etiquetas de lista aberta, definidas pelo designer; várias por carta) nas cartas de equipamento e de item. Efeitos, gatilhos e conceitos só citam categoria, etiqueta, tipo de zona, local ou nome exato; "espada", "armadura", "poção", etc. são etiquetas. Agrupamentos vagos de zonas ("naturais") não existem: a carta lista os tipos por extenso. Armas pesadas não têm penalidade geral: a desvantagem vem impressa na carta com a etiqueta **Pesada**, e o Guerreiro ignora os efeitos negativos dessas armas. | [5.1](#51-equipamentos), [5.2](#52-itens), [3.4](#34-o-que-uma-carta-de-zona-contém), [8.7](#87-perfil-das-classes), [8.8](#88-conceitos-das-especializações), [13](#13-efeitos), [25.2](#252-refinar), [2.2](#22-vocabulário-básico) |
+| Q2 | Buff, debuff e "efeito negativo" | **Status** = efeito com duração (não Imediata) num jogador ou inimigo; o designer marca cada um como buff ou debuff (efeito misto é dividido em partes); maldição = debuff num inimigo. Efeitos de zona e de dimensão são marcados como positivos ou negativos. Remover debuff encerra os debuffs ativos de qualquer origem, mas **não** afeta efeitos de dimensão/zona (só "ignorar", se a carta disser), estados de regra (Exaustão, quebrado, nocaute, Requisito de Pico) nem efeitos imediatos já resolvidos. | [13.6](#136-buffs-e-debuffs-status), [5.2](#52-itens), [7.2](#72-energia-pico-e-vigor), [3.4](#34-o-que-uma-carta-de-zona-contém), [8.7](#87-perfil-das-classes), [8.8](#88-conceitos-das-especializações), [2.2](#22-vocabulário-básico) |
+
+**Situação após a B.16:** não há pendências de regra conhecidas. O único tema adiado continua sendo a autenticação (F29).
