@@ -522,6 +522,8 @@ Podem existir mais categorias no futuro, inclusive categorias exclusivas de uma 
 
 Todo item é uma **carta**, inclusive os vendidos no estoque do mercado (poções, munição, etc.).
 
+**Usar um item:** usar um consumível é sempre uma **ativação do jogador** (nunca um efeito passivo); a carta usada é o custo e vai para o limbo. Quando pode ser usado: nos **momentos de uso do jogador** ([13](#13-efeitos)).
+
 Como os equipamentos, os itens têm o campo **Tipos** (etiquetas, ex.: Poção, Erva, Bomba, Veneno), com as mesmas regras de [5.1](#51-equipamentos).
 
 ### 5.3 Dinheiro
@@ -578,7 +580,7 @@ flowchart TB
 
 - Funciona como uma **"segunda mão"**.
 - **Todas as classes têm 10 slots**, sempre. Classe, especialização, trava, buffs, efeitos, itens, equipamentos e habilidades **não alteram** o tamanho do inventário (o valor pode ser mudado só no laboratório). O inventário extra da montaria é um espaço **separado** ([26](#26-montarias)), não um aumento do inventário.
-- Durante eventos, combates, etc., o jogador pode usar o que está no inventário, desde que o conteúdo do slot permita. Equipamentos guardados no inventário não funcionam ([5.1](#51-equipamentos)).
+- O jogador pode usar o que está no inventário nos **momentos de uso do jogador** ([13](#13-efeitos)): em **Preparar**, na **antecipação** e no **encontro** de um evento aleatório, e no **próprio turno de combate**, desde que o conteúdo do slot permita. Equipamentos guardados no inventário não funcionam ([5.1](#51-equipamentos)).
 
 **Empilhamento:**
 
@@ -1302,14 +1304,18 @@ flowchart LR
 
 | Gatilho | Custo | Como funciona |
 |---|---|---|
-| Não | Não | **Passivo:** sempre ligado enquanto a fonte estiver ativa (ex.: "+5% de Defesa enquanto sem marca de reparo"). |
-| Não | Sim | **Ativado pelo jogador:** fora do combate, dentro da ação **Preparar** (na própria vez) ou na fase de **antecipação** de um evento ([14.3](#143-fases-do-evento)); no combate, no **próprio turno de combate**. |
+| Não | Não | **Passivo:** sempre ligado enquanto a fonte estiver ativa (ex.: "+5% de Defesa enquanto sem marca de reparo"). Vale só para cartas que **continuam em jogo**; consumíveis nunca são passivos (veja "Usar um recurso", abaixo). |
+| Não | Sim | **Ativado pelo jogador**, nos **momentos de uso do jogador** (abaixo): fora do combate, na ação **Preparar** (na própria vez), na **antecipação** ou no **encontro** de um evento aleatório ([14.3](#143-fases-do-evento)); no combate, no **próprio turno de combate**. |
 | Sim | Não | **Automático e obrigatório:** dispara sozinho quando o gatilho acontece. |
 | Sim | Sim | **Opcional:** quando o gatilho acontece, o jogo pergunta ao jogador se ele quer pagar o custo (o relógio pausa; tempo esgotado = o efeito **não** é ativado). Vale também fora da vez ([11.4](#114-agir-fora-da-vez)). |
 
 - Efeitos de **dimensão**, de **zona**, de **evento** (coisa boa e coisa ruim, [14.1](#141-a-carta-de-evento)) e de **inimigo** são **sempre obrigatórios**, com ou sem gatilho. Se um deles pedir um custo ao jogador (ex.: "pague 1 moeda de ouro para usar uma ação"), o custo é **condição** daquilo que ele afeta: sem pagar, a ação não pode ser usada.
 - Quando vários efeitos disparam ao mesmo tempo, vale a ordem de [13.5](#135-ordem-de-resolução).
-- Esta tabela vale para **efeitos**. Para **habilidades**, valem as regras de [17](#17-habilidades) (a forma Passiva funciona sem ativação; as demais são usadas pelo jogador).
+- Esta tabela vale para **efeitos**. Para **habilidades**, valem as regras de [17](#17-habilidades) (a forma Passiva funciona sem ativação; as demais são usadas pelo jogador, nos momentos de uso abaixo).
+- **Usar um recurso:** usar um consumível (ou qualquer recurso cujo texto diga "Usar") é **sempre uma ativação do jogador**, nunca um efeito passivo. O custo é a **própria carta**: o consumível vai para o limbo ([6.5](#65-pilhas-de-descarte-e-limbo)); um recurso que não é consumível segue o que a carta disser. A linha "Passivo" da tabela vale só para efeitos de cartas que **continuam em jogo** (ex.: equipamento em uso, acessório, relíquia com efeito "enquanto estiver no inventário").
+- **Momentos de uso do jogador** (fonte única; valem para efeitos ativados pelo jogador, uso de recursos e habilidades):
+  - **fora do combate:** na ação **Preparar** (na própria vez), na **antecipação** de um evento e no **encontro** de um evento aleatório (depois de ver a carta, **antes** de pagar ou recusar os requisitos, [14.3](#143-fases-do-evento));
+  - **no combate:** no **próprio turno de combate** ([19.1](#191-combate-1-jogador--1-inimigo-regra-base)).
 - **O que um efeito pode citar:** só categoria, **etiqueta** (campo Tipos, [5.1](#51-equipamentos)), tipo de zona, local ou o nome exato de uma carta. Nos exemplos deste capítulo, "espada", "adaga", "shuriken", "cimitarra", "katana", etc. são etiquetas.
 - **Buffs e debuffs:** veja [13.6](#136-buffs-e-debuffs-status).
 
@@ -1482,11 +1488,13 @@ flowchart LR
 | Fase | Quando acontece |
 |---|---|
 | **Antecipação** | Antes de a carta de evento ser revelada. |
-| **Encontro** | O jogador tenta (ou não) resolver o evento. |
+| **Encontro** | O jogador vê a carta e tenta (ou não) resolver o evento. Antes de pagar ou recusar os requisitos, pode usar recursos e ativar efeitos e habilidades. |
 | **Êxito** | Depois de o evento ser resolvido com sucesso: o jogador recebe benefícios, buffs, itens e/ou recompensas (ou apenas evita a coisa ruim). |
 | **Revés** | Depois de o evento não ser resolvido: o jogador sofre as penalidades da carta. |
 
 **Antecipação:** é a fase para **se preparar** para o evento. Nela, o jogador pode ativar efeitos e habilidades (pagando seus custos), inclusive efeitos com gatilho "na fase de antecipação". Exemplos: olhar a carta do topo do deck de eventos e decidir se a compra ou a manda para o fundo; ganhar +1 em todos os atributos para este evento.
+
+**Encontro:** depois de ver a carta, e **antes** de pagar ou recusar os requisitos, o jogador pode **usar recursos do inventário** e **ativar efeitos e habilidades** (pagando seus custos), por exemplo, beber uma poção de buff para cumprir um requisito de modificador mínimo (momentos de uso do jogador, [13](#13-efeitos)). As cartas descartadas como custo desses efeitos não são repostas ([14.4](#144-reposição-de-cartas)).
 
 Durante o encontro, o jogador pode tentar **fugir** (veja [14.5](#145-fugir-de-um-evento-aleatório)).
 
@@ -1665,7 +1673,7 @@ Toda habilidade (impressa no equipamento ou no inimigo da carta de evento de com
 | **Poder** | Valor somado ao Ataque quando a habilidade causa dano | +40 |
 | **Efeitos** | Gatilho/custo/ativação/duração (capítulo [13](#13-efeitos)) | O alvo sofre 10 de dano no início de cada turno de combate dele, por 2 turnos de combate |
 | **Recarga** | Quantos **turnos de combate do usuário** é preciso esperar até poder usar a habilidade de novo (0 = pode usar de novo no próximo turno). **Fora do combate**, a recarga conta em **vezes** do usuário | 1 (usa no turno 1, espera o turno 2, volta no turno 3) |
-| **Momento de uso** | Em combate, fora de combate (via Preparar) ou ambos | Em combate |
+| **Momento de uso** | Em combate (no próprio turno de combate), fora de combate (em Preparar, na antecipação ou no encontro de um evento aleatório; momentos de uso do jogador, [13](#13-efeitos)) ou ambos | Em combate |
 
 A habilidade **não tem requisito de Pico próprio**: ela usa o **Requisito de Pico do equipamento** em que está (veja [7.3](#73-regras-da-energia)).
 
@@ -1788,7 +1796,7 @@ flowchart TB
 
 1. **Ordem de ataque:** pela **Celeridade**, da maior para a menor. Em caso de empate, o **inimigo tem prioridade** por padrão (efeitos, habilidades e itens podem mudar isso). A ordem é **recalculada no início de cada ciclo de combate** (mudanças de Celeridade no meio do ciclo só valem a partir do ciclo seguinte).
 2. **Turnos de combate:** as partes se revezam, uma por vez. Quando todas jogaram, termina um **ciclo de combate** e começa o próximo.
-3. **No seu turno de combate**, a parte pode ativar vários efeitos, habilidades, etc. **A última coisa do turno é o ataque**, que é **opcional**: o jogador pode encerrar o turno sem atacar. Efeitos, habilidades e builds também podem impedir o ataque.
+3. **No seu turno de combate**, a parte pode ativar vários efeitos, habilidades, usar recursos do inventário (jogadores), etc. **A última coisa do turno é o ataque**, que é **opcional**: o jogador pode encerrar o turno sem atacar. Efeitos, habilidades e builds também podem impedir o ataque.
 4. **Resultado do ataque** (veja o cálculo em [19.2](#192-cálculo-do-dano)):
    - Ataque **igual ou menor** que a defesa → o oponente não toma dano.
    - Ataque **maior** que a defesa → o oponente perde vida igual à diferença.
@@ -2959,3 +2967,13 @@ A lista completa de valores está no [Apêndice A](#apêndice-a--valores-ajustá
 | Q2 | Buff, debuff e "efeito negativo" | **Status** = efeito com duração (não Imediata) num jogador ou inimigo; o designer marca cada um como buff ou debuff (efeito misto é dividido em partes); maldição = debuff num inimigo. Efeitos de zona e de dimensão são marcados como positivos ou negativos. Remover debuff encerra os debuffs ativos de qualquer origem, mas **não** afeta efeitos de dimensão/zona (só "ignorar", se a carta disser), estados de regra (Exaustão, quebrado, nocaute, Requisito de Pico) nem efeitos imediatos já resolvidos. | [13.6](#136-buffs-e-debuffs-status), [5.2](#52-itens), [7.2](#72-energia-pico-e-vigor), [3.4](#34-o-que-uma-carta-de-zona-contém), [8.7](#87-perfil-das-classes), [8.8](#88-conceitos-das-especializações), [2.2](#22-vocabulário-básico) |
 
 **Situação após a B.16:** não há pendências de regra conhecidas. O único tema adiado continua sendo a autenticação (F29).
+
+### B.17 Décima sétima revisão (13/11/2026)
+
+> Mesma instrução de B.2: ponto **decidido pelo autor** e já aplicado no documento. **Não** sinalizar de novo como contradição, ambiguidade, ponto em aberto, bloqueio ou "estranho", e **não** propor alternativas, a menos que o autor peça. **Ponto encerrado: não mexer novamente.** Quando conflitar com uma decisão anterior, **vale a daqui** (R1 completa a P1 da B.15 quanto aos momentos de ativação e ao uso de recursos).
+
+| # | Tema | Decisão | Onde |
+|---|---|---|---|
+| R1 | Uso de consumíveis e momentos de uso do jogador | **Usar um recurso** (consumível ou recurso com "Usar") é **sempre ativação do jogador**, nunca passivo; o custo é a própria carta (consumível → limbo). A linha "Passivo" da tabela P1 vale só para cartas que continuam em jogo (equipamento em uso, acessório, relíquia "enquanto no inventário"). **Momentos de uso do jogador** (fonte única no capítulo 13; valem para efeitos ativados pelo jogador, recursos e habilidades): fora do combate, em **Preparar**, na **antecipação** e no **encontro** de um evento aleatório (depois de ver a carta, antes de pagar ou recusar os requisitos); no combate, no **próprio turno de combate**. 5.2, 6.2, 14.3, 17.1 e 19.1 alinhados. | [13](#13-efeitos), [5.2](#52-itens), [6.2](#62-inventário), [14.3](#143-fases-do-evento), [17.1](#171-anatomia-de-uma-habilidade), [19.1](#191-combate-1-jogador--1-inimigo-regra-base) |
+
+**Situação após a B.17:** não há pendências de regra conhecidas. O único tema adiado continua sendo a autenticação (F29).
