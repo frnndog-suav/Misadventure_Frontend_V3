@@ -207,7 +207,7 @@ Antes de conhecer o personagem, é preciso conhecer o palco: **onde** a partida 
 
 Cada dimensão tem uma **Carta de Dimensão** que define:
 - a **condição de conclusão**: a **zona** onde a dimensão é concluída com a ação **Concluir dimensão** e, opcionalmente, um **chefe final** impresso na própria Carta de Dimensão (ex.: "derrotar o Rei Lich na zona Y", ou "levar o artefato X até a zona Y");
-- o **requisito para liberar** a condição (ex.: reunir 3 *Fragmentos* obtidos em missões e eventos). Quando o requisito é ter itens, **um único jogador** precisa ter todos eles (ex.: os 3 Fragmentos com o mesmo jogador); os itens podem ser negociados entre os jogadores para isso;
+- o **requisito para liberar** a condição: por enquanto, ele é **sempre uma lista de itens de conclusão** (ex.: reunir 3 *Fragmentos* obtidos em missões e eventos), só **verificados** ("Ter"). Não existem outros tipos de requisito. **Um único jogador** precisa ter todos os itens (ex.: os 3 Fragmentos com o mesmo jogador); os itens podem ser negociados entre os jogadores para isso;
 - o **prêmio máximo**.
 
 **Ação Concluir dimensão:** é uma **ação contextual** (não está impressa na carta de zona, veja [12.1](#121-ações-universais-e-ações-locais)) que custa **1 ponto de ação**. Ela só aparece **na zona indicada** pela Carta de Dimensão e só para o jogador que **cumpre sozinho** o requisito (ex.: tem os 3 Fragmentos). Assim, ninguém conclui a dimensão sem querer só por entrar na zona.
@@ -851,6 +851,7 @@ Uma build com 60 cartas ou mais que não cumpre a trava **não** é irregular: e
 - Ao **finalizar** a provação, o jogador ganha a especialização escolhida de forma permanente. Os benefícios dela só ficam ativos quando a build cumprir a trava da especialização.
 - O jogador pode ter **uma especialização por classe primária**, e **não é possível trocar** de especialização dentro da mesma classe.
 - Se o jogador **abandonar** a provação ([21.1](#211-regras-gerais)), pode pegá-la de novo depois (e escolher outra especialização), cumprindo os requisitos.
+- A provação pode ser **completada mais de uma vez na mesma dimensão** (ex.: depois de ganhar uma nova classe pelo mentor, o jogador pode fazer a provação da nova classe na mesma dimensão). A regra "Não se repetem" de [21.1](#211-regras-gerais) vale só para missões de zona.
 - **Ajudantes de IA** ([28.1](#281-campanha)) **sorteiam** a especialização ao pegar a provação (entre as 4 da classe).
 
 #### Missões genéricas (provação e mentor)
@@ -885,6 +886,7 @@ As missões de provação e do mentor valem em **qualquer** dimensão, qualquer 
 
 - Se o jogador **abandonar** a missão do mentor (ação **Abandonar missão**, [21.1](#211-regras-gerais)) ou ela for cancelada ao mudar de dimensão, o **ouro é perdido**; para tentar de novo, pega a missão outra vez e paga outra vez.
 - A missão do mentor também **não fica no deck de missões** e **não é exclusiva**.
+- A missão do mentor pode ser **completada mais de uma vez na mesma dimensão**, sempre que o jogador cumprir o pré-requisito (e pagar o custo da nova classe). A regra "Não se repetem" de [21.1](#211-regras-gerais) vale só para missões de zona.
 
 O mentor dá a missão de **nova classe**; a especialização da nova classe continua vindo da **missão de provação**.
 
@@ -1917,9 +1919,9 @@ Quando o jogador chega a **0 pontos de vida**, ele é **nocauteado**:
   - O progresso das etapas já feitas é **perdido**: se pegar a mesma missão de novo, começa do início.
   - Abandonar **não** conta como completar: a missão pode ser completada mais tarde (regra "Não se repetem").
 - **Missões são individuais:** a missão fica atrelada ao jogador que a pegou e só ele pode finalizá-la.
-- **Não se repetem:** cada jogador só pode completar a mesma missão **uma vez por dimensão** (uma dimensão nunca é jogada de novo, [3.2](#32-conclusão-de-uma-dimensão)).
+- **Não se repetem:** cada jogador só pode completar a mesma **missão de zona** **uma vez por dimensão** (uma dimensão nunca é jogada de novo, [3.2](#32-conclusão-de-uma-dimensão)). As missões de **provação** e do **mentor** **não** seguem essa regra: podem ser completadas de novo, na mesma dimensão, sempre que o jogador cumprir os requisitos delas ([8.3](#83-como-obter-uma-especialização), [8.4](#84-como-se-tornar-multiclasse)). Os próprios requisitos já impedem repetição sem sentido (a provação exige uma classe primária sem especialização; o mentor exige especialização em todas as classes primárias).
 - Missões em aberto ao sair de uma dimensão são canceladas.
-- **Combate em missão:** combates de missão (inimigos impressos na carta da missão, [18.1](#181-o-inimigo-na-carta-de-evento-de-combate)) seguem [19.5](#195-combate-com-2-ou-mais-jogadores--1-ou-mais-inimigos): o recrutamento é permitido, mas **só o dono da missão** avança a etapa. Na **derrota** ou na **fuga**, a etapa não é concluída, a missão continua em aberto e pode ser tentada de novo.
+- **Combate em missão:** combates de missão (inimigos impressos na carta da missão, [18.1](#181-o-inimigo-na-carta-de-evento-de-combate)) seguem [19.5](#195-combate-com-2-ou-mais-jogadores--1-ou-mais-inimigos): o recrutamento é permitido, mas **só o dono da missão** avança a etapa. Se o combate terminar em **vitória**, a etapa do dono é **concluída**, mesmo que ele esteja **nocauteado** no fim (como o chefe final, [3.2](#32-conclusão-de-uma-dimensão)); nesse caso ele sofre o nocaute normal ([20.2](#202-nocaute)) e as recompensas do combate seguem a divisão entre sobreviventes de 19.5. Na **derrota** ou na **fuga**, a etapa não é concluída, a missão continua em aberto e pode ser tentada de novo.
 - Ao concluir uma missão, o jogador pode receber recompensas (inclusive do [deck de recompensas](#34-o-que-uma-carta-de-zona-contém)) e **Pico**.
 
 ### 21.2 Tipos de missão
@@ -2057,6 +2059,8 @@ O mercado tem **três vitrines**:
 
 **Singles** são cópias avulsas de uma carta específica de coleção: recursos, itens e equipamentos (que vão **sempre para o inventário**; para equipar, usa-se **Preparar**) e cartas de atributo.
 
+**Cartas elegíveis:** o pool de singles usa o **mesmo filtro do booster** ([24.3](#243-boosters)): ficam de fora **montarias**, **tesouros**, **boosters** e **itens de conclusão**.
+
 **Para onde vão os singles:**
 - Singles de **atributo** vão para a **pasta de TCG** (ou o espaço da montaria, [6.6](#66-recompensas-e-falta-de-espaço)). Com a pasta cheia, não é possível comprá-los. Para entrar no deck, o jogador usa **Ajustar deck** (veja [6.3](#63-pasta-de-tcg)).
 - Singles de **recurso** (itens e equipamentos) só podem ser comprados se houver **espaço no inventário** (ou o espaço da montaria, [6.6](#66-recompensas-e-falta-de-espaço)).
@@ -2069,7 +2073,7 @@ O mercado tem **três vitrines**:
 - Nem todas as cartas das coleções vigentes estarão disponíveis como singles, porque o volume de cartas é grande e provavelmente não haveria tempo de jogo para todas circularem.
 
 **Pool e esgotamento:**
-1. No início da partida, sorteia-se um **pool de singles** da dimensão com **20 cartas** (um subconjunto das coleções vigentes; ajustável no laboratório).
+1. No início da partida, sorteia-se um **pool de singles** da dimensão com **20 cartas** (um subconjunto das cartas **elegíveis** das coleções vigentes, veja acima; ajustável no laboratório).
 2. Cada carta do pool tem um **estoque global** (ex.: 1 a 6 cópias, conforme a raridade), distribuído aleatoriamente entre os mercados que vendem singles. Exemplo: a carta X tem 4 cópias no mercado da zona A e 2 no da zona B.
 3. Quando o estoque global de X acaba (por compra de jogadores ou decaimento), X sai do pool e não aparece mais em nenhuma vitrine.
 4. Quando **todas** as cartas do pool tiverem saído, sorteia-se um novo pool (do mesmo tamanho) e o ciclo recomeça.
@@ -2258,7 +2262,7 @@ Por enquanto, a **Campanha** é o **único modo** do jogo. Outros modos serão a
 - Jogadores **não podem se enfrentar**.
 - Os capítulos 3 a 27 descrevem as regras deste modo.
 
-**Partida e save:** na campanha, uma **partida** é a **jogada de uma dimensão** inteira (do início até a conclusão da dimensão), que pode durar várias sessões. Tudo o que o manual diz que é sorteado ou definido "no início da partida" (fator do mercado, pool de singles, mapa, etc.) vale para a dimensão inteira. O **save** guarda o **estado completo** da partida: mapa, decks de zona e pilhas de descarte, vitrines e estoques dos mercados, missões, cooldowns, posição, cartas e valores de cada jogador e a ordem da rodada.
+**Partida e save:** na campanha, uma **partida** é a **jogada de uma dimensão** inteira (do início até a conclusão da dimensão), que pode durar várias sessões. Tudo o que o manual diz que é sorteado ou definido "no início da partida" (fator do mercado, pool de singles, mapa, etc.) vale para a dimensão inteira. O **save** guarda o **estado completo** da partida: mapa, decks de zona e pilhas de descarte, vitrines e estoques dos mercados, missões, recargas, posição, cartas e valores de cada jogador e a ordem da rodada.
 
 **Salvamento automático:** o save é gravado automaticamente **no fim de cada vez**. Todo sorteio já feito (ordem dos decks, rolagens de dado, estado do gerador de números aleatórios) é **definitivo**: voltar a um salvamento nunca gera um resultado diferente para o mesmo sorteio.
 
@@ -2307,7 +2311,7 @@ A passagem para a nova dimensão é **automática**; não existe ação de zona,
 
 | Mantém | Reinicia |
 |---|---|
-| Vida atual, ouro, cofre (com expansões), bolsa (com expansões), inventário, pasta de TCG, montaria, equipamentos em uso, decks, classes e especializações, Energia (Pico e Vigor), todas as cartas de qualquer coleção | A mão **e a pilha de descarte de atributos** voltam ao deck, que é embaralhado, e compra-se 7; efeitos com duração de partida/dimensão terminam; missões em aberto da dimensão anterior são canceladas; os itens de conclusão da dimensão concluída saem do jogo; o registro de missões concluídas é zerado; a ordem dos jogadores é rolada de novo (D20) e fica fixa na nova dimensão |
+| Vida atual, ouro, cofre (com expansões), bolsa (com expansões), inventário, pasta de TCG, montaria, equipamentos em uso, decks, classes e especializações, Energia (Pico e Vigor), todas as cartas de qualquer coleção | A mão **e a pilha de descarte de atributos** voltam ao deck, que é embaralhado, e compra-se 7; efeitos com duração de partida/dimensão terminam; missões em aberto da dimensão anterior são canceladas; os itens de conclusão da dimensão concluída saem do jogo; o registro de missões de zona concluídas é zerado; a ordem dos jogadores é rolada de novo (D20) e fica fixa na nova dimensão |
 
 **Grupos e saves:**
 - Ao começar uma campanha com outros jogadores, o grupo fica **preso a essa configuração de jogadores**. Esse grupo é um **save** com identidade própria: a dimensão atual, o progresso e as coisas de cada jogador.
@@ -2845,3 +2849,17 @@ A lista completa de valores está no [Apêndice A](#apêndice-a--valores-ajustá
 | L5 | "Sem arma" × manoplas | **Sem arma = slot de Arma vazio.** Manoplas, garras e soco-inglês são Arma. O exemplo passou a ser "efeitos do Monge ou acessórios". | [5.1](#51-equipamentos) |
 
 **Situação após a B.11:** não há pendências de regra conhecidas. O único tema adiado continua sendo a autenticação (F29).
+
+### B.12 Décima segunda revisão (13/11/2026)
+
+> Mesma instrução de B.2: pontos **decididos pelo autor** e já aplicados no documento. **Não** sinalizar de novo como contradição, ambiguidade, ponto em aberto, bloqueio ou "estranho", e **não** propor alternativas, a menos que o autor peça. Quando conflitar com uma decisão anterior, **vale a daqui** (M1 ajusta a regra "Não se repetem" depois da L1; M2 completa a K9).
+
+| # | Tema | Decisão | Onde |
+|---|---|---|---|
+| M1 | "Não se repetem" × missões genéricas | A regra "cada jogador só completa a mesma missão uma vez por dimensão" vale **só para missões de zona**. As missões de **provação** e do **mentor** podem ser completadas de novo na mesma dimensão sempre que o jogador cumprir os requisitos (eles já impedem repetição sem sentido: provação exige classe sem especialização; mentor exige especialização em todas). **Não** existe limite de 1 especialização + 1 classe por dimensão. O registro zerado ao trocar de dimensão é o de missões de zona. | [21.1](#211-regras-gerais), [8.3](#83-como-obter-uma-especialização), [8.4](#84-como-se-tornar-multiclasse), [28.1](#281-campanha) |
+| M2 | Combate de missão vencido com o dono nocauteado | **Vitória conclui a etapa do dono**, mesmo que ele esteja nocauteado no fim (mesma lógica do chefe final, 3.2). Ele sofre o nocaute normal e as recompensas seguem a divisão entre sobreviventes (19.5). Derrota e fuga continuam como na K9. | [21.1](#211-regras-gerais), [19.5](#195-combate-com-2-ou-mais-jogadores--1-ou-mais-inimigos) |
+| M3 | Tipos de requisito da Carta de Dimensão | Por enquanto, o requisito é **sempre uma lista de itens de conclusão**, só verificados ("Ter"), todos com um único jogador. Não existem outros tipos de requisito. | [3.2](#32-conclusão-de-uma-dimensão) |
+| M4 | Cartas elegíveis ao pool de singles | Mesmo filtro do booster (K6): ficam de fora **montarias, tesouros, boosters e itens de conclusão**. | [24.4](#244-singles) |
+| M5 | Resíduo de raides no save | "cooldowns" trocado por "recargas" na lista do que o save guarda. | [28.1](#281-campanha) |
+
+**Situação após a B.12:** não há pendências de regra conhecidas. O único tema adiado continua sendo a autenticação (F29).
