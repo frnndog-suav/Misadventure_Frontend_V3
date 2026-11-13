@@ -94,10 +94,10 @@ No modo **Campanha** (o único modo do jogo por enquanto, veja [1.4](#14-modos-d
 flowchart LR
     A[Início da vez<br/>3 pontos de ação] --> B{Escolher ação de zona}
     B -->|Gratuitas:<br/>Preparar / Negociar /<br/>Abandonar missão| B
-    B -->|1 ponto:<br/>Movimentar / Recuperar /<br/>Ajustar deck / Vasculhar /<br/>Usar cofre / Salvar respawn /<br/>Oficina do Artífice| S[Ação resolvida]
+    B -->|1 ponto:<br/>Movimentar / Recuperar /<br/>Ajustar deck / Vasculhar /<br/>Usar cofre / Salvar respawn /<br/>Oficina do Artífice /<br/>Ir ao Mercado| S[Ação resolvida]
     B -->|1 ponto:<br/>Iniciar evento| D[Evento aleatório<br/>ou combate]
     B -->|1 ponto:<br/>Missão /<br/>Concluir dimensão| F[Missão ou<br/>conclusão da dimensão]
-    B -->|Todos os pontos:<br/>Mercado / Ferreiro /<br/>Treinar com mentor| E[Serviço da zona]
+    B -->|Todos os pontos:<br/>Ferreiro /<br/>Treinar com mentor| E[Serviço da zona]
     B -->|Encerrar a vez| I
     D --> G[Recompensas<br/>ou penalidades]
     F --> G
@@ -156,7 +156,8 @@ Dentro do combate: Ciclo   = [ turno jogador ] → [ turno inimigo 1 ] → [ tur
 | Termo | Em uma frase | Capítulo |
 |---|---|---|
 | **Dimensão** | O mundo de uma partida, formado por cartas de zona. | [3](#3-dimensões-zonas-e-mapa) |
-| **Zona** | Carta de lugar que compõe o mapa e oferece ações. | [3](#3-dimensões-zonas-e-mapa) |
+| **Zona** | Carta de lugar que compõe o mapa e oferece ações; tem **título** (nome próprio, único na dimensão), tipo e local. | [3](#3-dimensões-zonas-e-mapa) |
+| **Cidade inicial** | Zona Urbana onde o mapa começa a ser montado e onde **todos** os jogadores chegam à dimensão (spawn de todos). | [3.5](#35-montagem-do-mapa) |
 | **Carta de atributo** | Carta do deck do jogador, usada para resolver eventos e pagar custos. | [4](#4-atributos-e-o-deck-de-atributos) |
 | **Recurso** | Equipamento, item ou montaria que o jogador possui. | [5](#5-recursos) |
 | **Inventário / pasta de TCG / cofre / montaria** | Os lugares onde o jogador guarda suas coisas (a montaria tem inventário e pasta extras). | [6](#6-onde-ficam-as-cartas) |
@@ -174,12 +175,13 @@ Dentro do combate: Ciclo   = [ turno jogador ] → [ turno inimigo 1 ] → [ tur
 | **Evento** | Carta de desafio comprada do deck da zona. | [14](#14-eventos) |
 | **Habilidade** | Poder ligado a um equipamento ou inimigo (impresso no inimigo da carta de evento de combate); pode ser ativa (paga, em geral, com Vigor) ou passiva. | [17](#17-habilidades) |
 | **Booster** | Pacote fechado de cartas novas; é um recurso que fica no inventário até ser aberto. | [24.3](#243-boosters) |
+| **Raridade** | Comum, Incomum, Rara, Épica ou Lendária. Cada carta tem **uma única** raridade, impressa e definida pelo designer. | [24.3](#243-boosters) |
 | **Travessia** | Ligação entre duas zonas, formada quando as setas de conexão das duas apontam uma para a outra. | [3.5](#35-montagem-do-mapa) |
 | **Build** | A lista de cartas do deck de atributos salva pelo jogador. | [4.4](#44-o-deck-de-atributos) |
 | **Cartas em jogo** | As cartas da build durante a partida: deck de atributos, mão e pilha de descarte de atributos. | [4.4](#44-o-deck-de-atributos) |
 | **Exaustão** | Estado de quem está com Vigor 0: não paga custos de Vigor e tem −10% em todos os modificadores. | [7.3](#73-regras-da-energia) |
 | **Nocaute** | O que acontece ao chegar a 0 de vida: volta ao respawn, perde Pico e a próxima vez. | [20.2](#202-nocaute) |
-| **Spawn / respawn** | Onde o jogador aparece no início da partida / onde reaparece depois de um nocaute (o mesmo ponto). | [20.1](#201-spawn-e-respawn) |
+| **Spawn / respawn** | Onde o jogador aparece no início da partida (a cidade inicial, igual para todos) / onde reaparece depois de um nocaute (começa na cidade inicial e muda com Salvar ponto de respawn). | [20.1](#201-spawn-e-respawn) |
 | **Missão** | Tarefa pega numa zona (de zona, de provação ou do mentor) que dá recompensas. Pode ser abandonada. | [21](#21-missões) |
 | **Item de conclusão** | Item exigido pela Carta de Dimensão; fica numa área própria, não ocupa slot e nunca é perdido (só muda de dono por negociação). | [3.2](#32-conclusão-de-uma-dimensão) |
 | **Concluir dimensão** | Ação feita na zona indicada pela Carta de Dimensão, por quem cumpre o requisito; conclui a dimensão (ou inicia o combate contra o chefe final). | [3.2](#32-conclusão-de-uma-dimensão) |
@@ -208,9 +210,10 @@ Antes de conhecer o personagem, é preciso conhecer o palco: **onde** a partida 
 ### 3.2 Conclusão de uma dimensão
 
 Cada dimensão tem uma **Carta de Dimensão** que define:
-- a **condição de conclusão**: a **zona** onde a dimensão é concluída com a ação **Concluir dimensão** e, opcionalmente, um **chefe final** impresso na própria Carta de Dimensão (ex.: "derrotar o Rei Lich na zona Y", ou "levar o artefato X até a zona Y");
+- a **condição de conclusão**: a **zona** (indicada pelo **título**, [3.4](#34-o-que-uma-carta-de-zona-contém)) onde a dimensão é concluída com a ação **Concluir dimensão** e, opcionalmente, um **chefe final** impresso na própria Carta de Dimensão (ex.: "derrotar o Rei Lich na zona Y", ou "levar o artefato X até a zona Y");
 - o **requisito para liberar** a condição: por enquanto, ele é **sempre uma lista de itens de conclusão** (ex.: reunir 3 *Fragmentos* obtidos em missões e eventos), só **verificados** ("Ter"). Não existem outros tipos de requisito. **Um único jogador** precisa ter todos os itens (ex.: os 3 Fragmentos com o mesmo jogador); os itens podem ser negociados entre os jogadores para isso;
-- o **prêmio máximo**.
+- o **prêmio máximo**;
+- opcionalmente, a **zona de chegada**: uma zona **Urbana** da dimensão, indicada pelo **título**, que será a **cidade inicial** (onde todos os jogadores chegam, [3.5](#35-montagem-do-mapa)). Se a Carta de Dimensão não indicar, a cidade inicial é sorteada entre as Urbanas sem efeitos negativos.
 
 **Ação Concluir dimensão:** é uma **ação contextual** (não está impressa na carta de zona, veja [12.1](#121-ações-universais-e-ações-locais)) que custa **1 ponto de ação**. Ela só aparece **na zona indicada** pela Carta de Dimensão e só para o jogador que **cumpre sozinho** o requisito (ex.: tem os 3 Fragmentos). Assim, ninguém conclui a dimensão sem querer só por entrar na zona.
 - **Sem chefe final:** ao usar a ação, a dimensão é **concluída** na hora.
@@ -233,7 +236,7 @@ Quando a dimensão é concluída, **todos os jogadores da partida** a concluem e
 
 ![Referência de imagem protótipo de zonas](images/prototipo_de_zonas.JPG)
 
-**Zonas** são cartas de lugares que compõem o mapa de uma dimensão. Cada zona tem um **tipo** e um **local**. Outras dimensões podem ter zonas específicas e diferentes.
+**Zonas** são cartas de lugares que compõem o mapa de uma dimensão. Cada zona tem um **título**, um **tipo** e um **local** (veja [3.4](#34-o-que-uma-carta-de-zona-contém)). Outras dimensões podem ter zonas específicas e diferentes.
 
 | Tipo de zona | Possíveis locais |
 |---|---|
@@ -258,6 +261,7 @@ Quando a dimensão é concluída, **todos os jogadores da partida** a concluem e
 
 ```
 ┌──────────────── ▲ ────────────────┐
+│      Título: Bosque dos Sussurros  │
 │  [Tipo: Florestal]  [Local: Bosque]│
 │                                    │
 ◄   Ações: Iniciar evento, Vasculhar │   ▲ ◄ ►  = setas de conexão
@@ -267,6 +271,7 @@ Quando a dimensão é concluída, **todos os jogadores da partida** a concluem e
 └────────────────────────────────────┘
 ```
 
+- **Título:** o **nome próprio** da zona (ex.: "Bosque dos Sussurros", "Forte Cinzento"), definido pelo designer da coleção. O título é **único dentro da dimensão** (validação de [3.5](#35-montagem-do-mapa)), por isso identifica uma zona sem ambiguidade, mesmo quando várias zonas têm o mesmo tipo e o mesmo local. A Carta de Dimensão ([3.2](#32-conclusão-de-uma-dimensão)), as missões de zona ([21.1](#211-regras-gerais)) e os efeitos ([13](#13-efeitos)) podem citar uma zona pelo título. Como todas as zonas da dimensão entram no mapa ([3.5](#35-montagem-do-mapa)), a zona citada pelo título sempre existe.
 - **Setas de conexão:** de uma a quatro setas, cada uma apontando para uma aresta da carta. **Toda zona tem pelo menos 1 seta.** **Toda zona Urbana tem obrigatoriamente as quatro setas.** A **maioria** das cartas tem **2 setas** (veja [3.5](#35-montagem-do-mapa)).
 - **Ações:** cada zona tem as suas próprias [ações de zona](#12-ações-de-zona). Uma zona pode ter 5 ações e outra apenas 1. Algumas ações são exclusivas de certas zonas; outras aparecem em várias. Exemplo: uma cidade (Urbana) pode ter, além das ações obrigatórias de toda Urbana (Usar cofre, Salvar ponto de respawn e Treinar com mentor), "Ir ao Ferreiro" e "Ir ao Mercado"; já um bosque (Florestal) pode ter só "Iniciar evento" e "Vasculhar". Isso obriga o jogador a pensar para onde ir para cumprir seus objetivos ou conseguir algum item ou serviço.
 - **Ofertas dos serviços:** quando a zona tem **Mercado**, a carta lista os **itens do estoque** daquele mercado e indica se ele tem **vitrine de singles** ([24](#24-mercado)); quando tem **Estábulo**, a carta lista as **montarias à venda** ([26](#26-montarias)); quando tem **Ferreiro**, a carta lista os **encantamentos oferecidos** (tipo e custo em relíquias/materiais, [25.3](#253-encantar)). São dados do designer da coleção e não mudam durante a partida.
@@ -294,7 +299,7 @@ O destino das cartas compradas do deck de recompensas está em [6.6](#66-recompe
 ![Protótipo de mapa-múndi](images/protótipo_mapa_mundi.JPG)
 
 1. **Embaralhe** as cartas de zona da dimensão.
-2. Selecione **aleatoriamente uma zona Urbana** (cidade, metrópole ou outro local Urbano) e posicione-a na mesa como **primeira carta** (a **cidade inicial**).
+2. Posicione na mesa, como **primeira carta**, a **cidade inicial**: a **zona de chegada** indicada pelo título na Carta de Dimensão ([3.2](#32-conclusão-de-uma-dimensão)) ou, se a Carta não indicar, uma zona **Urbana sem efeitos negativos** ([13.6](#136-buffs-e-debuffs-status)) sorteada. É na cidade inicial que **todos os jogadores** chegam à dimensão (spawn de todos, [10.1](#101-passo-a-passo), [20.1](#201-spawn-e-respawn)).
 3. Compre cartas do **topo** do deck de zonas.
 4. Posicione cada nova carta **onde uma seta de conexão livre de uma carta já posicionada aponta**, girada de forma que uma **seta de conexão dela aponte para essa carta** (veja as regras de encaixe).
 5. Repita até montar o mapa. **Todas as cartas de zona da dimensão devem entrar no mapa.**
@@ -321,7 +326,7 @@ flowchart LR
 
 **Gerador de mapa:**
 1. **Todas as zonas entram (obrigatório):** o mapa é montado por um algoritmo que **refaz a montagem** (outro sorteio) sempre que alguma carta não couber, até **todas** as cartas de zona entrarem, com limite de **1.000 tentativas** (ajustável no laboratório). Se o limite for atingido, o jogo **não monta o mapa** e mostra o mesmo **erro para o designer** da validação (item 2). O mapa continua aleatório a cada partida.
-2. **Validação da composição:** ao carregar a dimensão (antes de montar o mapa), o jogo confere se ela tem **pelo menos 1 zona Urbana** e se a **soma das setas** de todas as zonas é **maior ou igual a 2 × (número de zonas − 1)** (o mínimo para ligar todas as cartas). Se falhar, o jogo **não monta o mapa** e mostra um **erro para o designer** da coleção, em vez de tentar para sempre.
+2. **Validação da composição:** ao carregar a dimensão (antes de montar o mapa), o jogo confere se ela tem **pelo menos 1 zona Urbana**; se a **cidade inicial** pode ser definida (a zona de chegada indicada pela Carta de Dimensão existe e é Urbana ou, se a Carta não indicar, existe pelo menos 1 zona Urbana sem efeitos negativos); se os **títulos** das zonas são **únicos**; e se a **soma das setas** de todas as zonas é **maior ou igual a 2 × (número de zonas − 1)** (o mínimo para ligar todas as cartas). Se falhar, o jogo **não monta o mapa** e mostra um **erro para o designer** da coleção, em vez de tentar para sempre.
 3. **Regras de composição da dimensão** (para o designer da coleção): 2 setas na maioria, 4 nas Urbanas, poucas com 1 seta ("becos") e poucas com 3 ("encruzilhadas"). Assim o gerador quase sempre acerta de primeira.
 4. **Tamanho:** começar os testes com **16 zonas** por dimensão (ex.: 2–3 Urbanas, ~9 com 2 setas, ~2 com 3 setas, ~2 com 1 seta). O laboratório deve permitir testar 12, 16 e 20 zonas.
 5. **Aleatoriedade sem restrições de distância:** o gerador **não** controla distâncias entre zonas (nem da cidade inicial, nem entre mercados, ferreiros ou cidades). A disposição é **totalmente aleatória**, de propósito. Como todas as zonas sempre entram, o conteúdo é igual para todos os grupos; só muda o caminho.
@@ -396,7 +401,7 @@ Espírito e Sanidade **não são exclusivos de personagens mágicos**. Um guerre
 O limite de cópias vale **dentro do deck**; na pasta de TCG e no cofre, não há limite de cópias.
 
 **Como a carta sinérgica paga requisitos:**
-- A carta sinérgica fornece **todos** os seus atributos ao mesmo tempo, mas **só num único pagamento** (não dá para usar o Carisma num evento e a Sabedoria noutro).
+- A carta sinérgica fornece **todos** os seus atributos ao mesmo tempo, mas **só num único pagamento** (não dá para usar o Carisma num evento e a Sabedoria noutro). No pagamento **por partes** de um evento ([14.2](#142-requisitos-de-resolução)), ela entrega todos os seus atributos de uma vez, quando é paga; os atributos dela que não cumprirem nenhum requisito ainda não pago se perdem.
 - Ela paga "N atributos quaisquer" contando cada atributo dela (a carta "1 Carisma + 1 Sabedoria" paga 2).
 - Em requisitos que contam **cartas** ("descarte 3 cartas", "tenha 2 cartas na mão"), ela conta como **1 carta**.
 - Em gatilhos de atributo ("se tiver uma carta de Carisma na mão"), ela conta como carta de **cada** atributo que possui.
@@ -481,7 +486,7 @@ Isso tudo faz parte da mesma ação; recolher não é uma ação separada. Se o 
 | **Nome** | Nome do equipamento | *Espada Rúnica* |
 | **Categoria** | Uma das categorias acima (ícone + label) | Arma |
 | **Tipos** | 0 ou mais **etiquetas** definidas pelo designer da coleção (lista aberta), usadas por efeitos e gatilhos (veja abaixo) | Espada, Duas mãos, Pesada |
-| **Raridade** | Comum a Lendária (símbolo no canto, veja [24.3](#243-boosters)) | Rara |
+| **Raridade** | Comum a Lendária (símbolo no canto); **uma única** por carta (veja [24.3](#243-boosters)) | Rara |
 | **Modificadores** | Bônus que dá enquanto equipado; o primeiro listado é o **modificador principal** (usado pelo refino) | +12 Ataque, +5 Precisão |
 | **Requisito de Pico** | Opcional. Pico mínimo para equipar e usar (veja [7.3](#73-regras-da-energia)) | Pico 30 |
 | **Restrição de classe** | Opcional (veja [17.3](#173-restrições-de-classe)) | Só Guerreiro, Monge |
@@ -494,7 +499,7 @@ Isso tudo faz parte da mesma ação; recolher não é uma ação separada. Se o 
 | **Estado** | Quebrado ou não; marca "Reparado ×N" | Reparado ×1 |
 
 **Tipos (etiquetas):** é o campo que diz **o que** o equipamento ou item é, além da categoria (ex.: Espada, Adaga, Manopla, Arco, Armadura, Pesada, Duas mãos; nos itens, ex.: Poção, Erva, Bomba, Veneno). A lista é **aberta**: o designer cria as etiquetas de que a coleção precisa, e uma carta pode ter várias. Regras:
-- Efeitos, gatilhos e conceitos de classe só podem se referir ao que existe nos dados da carta: **categoria**, **etiqueta**, **tipo de zona** ou o **nome exato** de uma carta. Quando um texto diz "espada", "armadura", "poção", etc., ele se refere à **etiqueta** de mesmo nome, nunca ao nome da carta (uma "Lâmina do Crepúsculo" com a etiqueta Espada é espada).
+- Efeitos, gatilhos e conceitos de classe só podem se referir ao que existe nos dados da carta: **categoria**, **etiqueta**, **tipo de zona**, **local** ou o **nome exato** de uma carta (no caso de uma zona, o **título**, [3.4](#34-o-que-uma-carta-de-zona-contém)). Quando um texto diz "espada", "armadura", "poção", etc., ele se refere à **etiqueta** de mesmo nome, nunca ao nome da carta (uma "Lâmina do Crepúsculo" com a etiqueta Espada é espada).
 - Não existem agrupamentos vagos de zonas (ex.: "zonas naturais"): a carta lista os **tipos de zona** por extenso.
 - **Armas pesadas** não têm penalidade geral. Se uma arma tiver uma desvantagem, ela vem **impressa** na própria carta como um efeito comum (ex.: "−10% de Celeridade"), e a carta tem a etiqueta **Pesada**.
 
@@ -808,7 +813,6 @@ A trava é uma **quantidade mínima** de cartas de certos atributos na **build**
 
 **A trava habilita a classe.** O jogador **pode** montar um deck que não cumpre a trava. Cumprir a trava é o que **habilita** o que a classe e a especialização proporcionam. Enquanto a build não cumprir a trava de uma classe (ou especialização), o jogador **não tem**:
 - os efeitos da classe (ou da especialização);
-- a afinidade elemental dela;
 - os modificadores base dela (veja [8.4](#84-como-se-tornar-multiclasse));
 - as habilidades com restrição daquela classe.
 
@@ -1024,7 +1028,7 @@ O mentor dá a missão de **nova classe**; a especialização da nova classe con
 | Especialização | Foco | Adicional | Reforço |
 |---|---|---|---|
 | **Dracônico** | Herança de dragões e poderes dracônicos | Resistência (vigor e tolerância a poderes dracônicos) | Espírito (manifestação dos poderes herdados) |
-| **Elemental** | Afinidade natural com elementos | Sabedoria (compreensão e percepção das forças elementais) | Espírito (manifestação e controle dos poderes elementais) |
+| **Elemental** | Domínio natural dos elementos | Sabedoria (compreensão e percepção das forças elementais) | Espírito (manifestação e controle dos poderes elementais) |
 | **Celestial** | Poderes de origem divina ou celestial | Sabedoria (discernimento e compreensão de forças divinas) | Espírito e Carisma (manifestação e expressão dos poderes celestiais) |
 | **Trevoso** | Poderes de origem demoníaca ou infernal | Sanidade (exposição e adaptação a forças sombrias) | Espírito (controle e manifestação dos poderes infernais) |
 
@@ -1071,7 +1075,7 @@ O mentor dá a missão de **nova classe**; a especialização da nova classe con
 | Bruxo | 5 | 2 | 50 | 15 | 10 | 1 | 2 | 97 | *Maldições e retribuição* |
 | Feiticeiro | 6 | 2 | 48 | 18 | 10 | 1 | 0 | 97 | *Dano alto, frágil* |
 
-A **afinidade elemental** de cada classe está em [16.3](#163-afinidade-elemental-das-classes), depois que os elementos são explicados.
+Classes e especializações **não têm afinidade elemental** ([16.3](#163-afinidade-elemental-das-classes-removida)). Quando uma classe ou especialização tem relação com um elemento, isso vem de um **efeito** dela (ex.: "suas habilidades de Fogo custam 10% menos Vigor").
 
 ### 8.8 Conceitos das especializações
 
@@ -1168,7 +1172,7 @@ Se essa é a **primeira dimensão** do jogador (é a primeira aventura dele), el
 2. Cada jogador escolhe uma **classe primária** e o **deck pré-pronto** dela (só na primeira aventura do grupo; depois ele mantém as classes e os decks que tem). Para os **ajudantes de IA**, a classe é **sorteada** ([28.1](#281-campanha)).
 3. Cada jogador escolhe o **deck** que vai usar (um dos slots de decks do cofre) e compra **7 cartas** do deck de atributos. Os [valores iniciais](#91-valores-iniciais) são recebidos **só na primeira aventura** (a primeira dimensão do grupo). Nas dimensões seguintes, o jogador mantém o que tem ([28.1](#281-campanha)). As **travas** são checadas nesse momento ([8.2](#82-a-trava-do-deck)).
 4. Define-se a **ordem dos jogadores** com D20, fixa até o fim da dimensão (veja [11.2](#112-ordem-dos-jogadores)).
-5. Na **ordem dos jogadores**, cada um escolhe a **zona inicial** (seu ponto de **spawn**, veja [20.1](#201-spawn-e-respawn)), obrigatoriamente uma zona **Urbana** (a **cidade inicial** também pode ser escolhida). Cada jogador precisa escolher uma zona **diferente** das já escolhidas; só quando não houver zona Urbana livre ele pode escolher uma zona com outro jogador.
+5. **Todos os jogadores** (inclusive os ajudantes de IA) chegam à dimensão na **cidade inicial** ([3.5](#35-montagem-do-mapa)), que passa a ser o ponto de **spawn** e de **respawn** de cada um ([20.1](#201-spawn-e-respawn)). Não há escolha de zona inicial.
 
 Na campanha, esta preparação é refeita **inteira** a cada nova dimensão, **menos** o passo 2 (escolha de classe e deck pré-pronto). Veja [Ir para nova dimensão](#ir-para-nova-dimensão).
 
@@ -1180,7 +1184,7 @@ Na campanha, esta preparação é refeita **inteira** a cada nova dimensão, **m
 
 1. O jogador tem **3 pontos de ação** por vez, por padrão.
 2. Cada [ação de zona](#12-ações-de-zona) gasta pontos de ação (exceto as indicadas como gratuitas), inclusive a ação **Movimentar**.
-3. As ações podem ser feitas **em qualquer ordem**. Exemplo: Iniciar evento → Movimentar → Ir ao Mercado.
+3. As ações podem ser feitas **em qualquer ordem**. Exemplo: Ir ao Mercado → Movimentar → Iniciar evento.
 4. O jogador **não precisa usar todos os pontos**: ele pode encerrar a vez quando quiser.
 5. A vez passa para o próximo jogador quando o jogador **encerra a vez** ou quando o **tempo acaba**. Com **0 pontos de ação**, o jogador ainda pode usar as **ações gratuitas** (Preparar, Negociar, Abandonar missão) antes de encerrar a vez.
 
@@ -1204,7 +1208,7 @@ flowchart LR
 2. **Relógio pausado:** o relógio da vez **pausa** durante **qualquer tela de escolha**: eventos, combates, mercado, ferreiro, cofre, **Preparar**, **Ajustar deck**, **Negociação**, **Oficina do Artífice**, a escolha de carta no **Vasculhar**, **Treinar com mentor** (escolha da classe), missões (inclusive **Abandonar missão**), **Concluir dimensão** e qualquer outra tela em que o jogador precise escolher algo. Cada um tem seu próprio tempo de decisão (padrão: **30 s por escolha**; turno de combate: **30 s**). O relógio de 60 s só corre enquanto o jogador decide qual ação de zona fazer. Por isso, uma vez pode durar mais de 60 s no total.
    - **Tempo máximo da vez:** somando tudo (relógio de 60 s e telas pausadas), uma vez dura no máximo **5 minutos** (ajustável no laboratório). Esgotado esse tempo, a tela aberta é fechada com a ação padrão (item 3) e a vez termina. Combates **não** contam para esse limite (eles têm o tempo por turno de combate e por escolha), para que ninguém seja cortado no meio de uma luta. Combates têm o seu próprio teto: o **limite de ciclos de combate** ([19.1](#191-combate-1-jogador--1-inimigo-regra-base), regra 10).
 3. **Tempo de escolha esgotado** (ação padrão):
-   - **evento:** o jogador aceita a **coisa ruim** (como se não tentasse resolver);
+   - **evento:** o jogador **desiste** ([14.2](#142-requisitos-de-resolução)): se ainda não pagou nenhuma parte dos requisitos, aceita a **coisa ruim** (como se não tentasse resolver); se já pagou alguma parte, ela é perdida, ele sofre a coisa ruim e as cartas de atributo pagas são repostas ([14.4](#144-reposição-de-cartas));
    - **turno de combate:** o turno é **pulado** (nenhum ataque é feito);
    - **recompensa sem espaço** ([6.6](#66-recompensas-e-falta-de-espaço)): o jogador **deixa a recompensa** (ela segue o destino de "deixar a recompensa" em 6.6);
    - **rodízio de cartas entre sobreviventes** ([19.5](#195-combate-com-2-ou-mais-jogadores--1-ou-mais-inimigos)): o sistema escolhe uma carta **aleatória** pelo jogador;
@@ -1249,7 +1253,7 @@ Todos veem o que acontece na vez dos outros **ao vivo** (movimento, eventos, com
 | **Pegar / Continuar / Finalizar missão X** | Local (missão de zona) ou Contextual (pegar provação e finalizar provação/mentor em qualquer Urbana ou Habitada; continuar/finalizar etapas de missões de zona) | 1 ponto de ação | Interage com uma [missão](#21-missões) disponível na zona. A missão do mentor **só** é pega pela ação **Treinar com mentor**. |
 | **Concluir dimensão** | Contextual | 1 ponto de ação | Só na zona indicada pela Carta de Dimensão e só para o jogador que cumpre sozinho o requisito. Conclui a dimensão ou, se houver chefe final, inicia o combate contra ele (veja [3.2](#32-conclusão-de-uma-dimensão)). |
 | **Ir ao Ferreiro** | Local | Todos os pontos de ação restantes (mínimo 1) | Refinar, encantar, criar e consertar equipamentos (veja [Ferreiro](#25-ferreiro)). |
-| **Ir ao Mercado** | Local | Todos os pontos de ação restantes (mínimo 1) | Comprar e vender itens, cartas e boosters (veja [Mercado](#24-mercado)). |
+| **Ir ao Mercado** | Local | 1 ponto de ação | Comprar e vender itens, cartas e boosters, usar os serviços do mercado e, onde houver, o Estábulo (veja [Mercado](#24-mercado)). Numa mesma visita, o jogador faz quantas compras, vendas e serviços puder pagar. Pode ser usada **mais de uma vez** na mesma vez. |
 | **Treinar com mentor** | Local (todas as Urbanas e Habitadas) | Todos os pontos de ação restantes (mínimo 1) | Pega a missão do mentor para ganhar uma nova classe primária (veja [8.4](#84-como-se-tornar-multiclasse)). |
 | **Salvar ponto de respawn** | Local (só zonas Urbanas; toda Urbana tem) | 1 ponto de ação | Define a zona atual como o ponto de [respawn](#20-nocaute-spawn-e-respawn). |
 
@@ -1264,10 +1268,11 @@ Todos veem o que acontece na vez dos outros **ao vivo** (movimento, eventos, com
 GRATUITAS            1 PONTO DE AÇÃO                       TODOS OS PONTOS RESTANTES
 ─────────            ───────────────                       ─────────────────────────
 Preparar             Movimentar      Usar cofre            Ir ao Ferreiro
-Negociar             Recuperar       Missões               Ir ao Mercado
-Abandonar missão     Ajustar deck    Concluir dimensão     Treinar com mentor
+Negociar             Recuperar       Missões               Treinar com mentor
+Abandonar missão     Ajustar deck    Concluir dimensão
                      Iniciar evento  Oficina do Artífice
                      Vasculhar       Salvar ponto de respawn
+                     Ir ao Mercado
 ```
 
 ### 12.5 Recuperar
@@ -1314,9 +1319,9 @@ flowchart LR
 - Esta tabela vale para **efeitos**. Para **habilidades**, valem as regras de [17](#17-habilidades) (a forma Passiva funciona sem ativação; as demais são usadas pelo jogador, nos momentos de uso abaixo).
 - **Usar um recurso:** usar um consumível (ou qualquer recurso cujo texto diga "Usar") é **sempre uma ativação do jogador**, nunca um efeito passivo. O custo é a **própria carta**: o consumível vai para o limbo ([6.5](#65-pilhas-de-descarte-e-limbo)); um recurso que não é consumível segue o que a carta disser. A linha "Passivo" da tabela vale só para efeitos de cartas que **continuam em jogo** (ex.: equipamento em uso, acessório, relíquia com efeito "enquanto estiver no inventário").
 - **Momentos de uso do jogador** (fonte única; valem para efeitos ativados pelo jogador, uso de recursos e habilidades):
-  - **fora do combate:** na ação **Preparar** (na própria vez), na **antecipação** de um evento e no **encontro** de um evento aleatório (depois de ver a carta, **antes** de pagar ou recusar os requisitos, [14.3](#143-fases-do-evento));
+  - **fora do combate:** na ação **Preparar** (na própria vez), na **antecipação** de um evento e no **encontro** de um evento aleatório (depois de ver a carta, **antes** de pagar ou recusar os requisitos, isto é, antes de pagar a **primeira parte** deles, [14.2](#142-requisitos-de-resolução), [14.3](#143-fases-do-evento));
   - **no combate:** no **próprio turno de combate** ([19.1](#191-combate-1-jogador--1-inimigo-regra-base)).
-- **O que um efeito pode citar:** só categoria, **etiqueta** (campo Tipos, [5.1](#51-equipamentos)), tipo de zona, local ou o nome exato de uma carta. Nos exemplos deste capítulo, "espada", "adaga", "shuriken", "cimitarra", "katana", etc. são etiquetas.
+- **O que um efeito pode citar:** só categoria, **etiqueta** (campo Tipos, [5.1](#51-equipamentos)), tipo de zona, local ou o nome exato de uma carta (no caso de uma zona, o **título**, [3.4](#34-o-que-uma-carta-de-zona-contém)). Nos exemplos deste capítulo, "espada", "adaga", "shuriken", "cimitarra", "katana", etc. são etiquetas.
 - **Buffs e debuffs:** veja [13.6](#136-buffs-e-debuffs-status).
 
 Em todas as categorias abaixo, mais variações podem surgir no futuro (veja a [Parte III](#parte-iii--etapas-de-desenvolvimento)).
@@ -1327,7 +1332,7 @@ O gatilho é a **condição de ativação**. Nem todo efeito tem gatilho.
 
 | Categoria | Exemplos |
 |---|---|
-| **De zona** | Ao entrar nesta zona; ao entrar numa zona montanhosa; ao entrar numa zona campestre, fluvial ou religiosa; ao entrar em qualquer zona que não seja vulcânica ou subterrânea; ao entrar numa zona pantanosa, num local de vila, de castelo ou de pradaria; ao entrar numa zona desértica que não seja um oásis. |
+| **De zona** | Ao entrar nesta zona; ao entrar na zona "Forte Cinzento" (pelo título); ao entrar numa zona montanhosa; ao entrar numa zona campestre, fluvial ou religiosa; ao entrar em qualquer zona que não seja vulcânica ou subterrânea; ao entrar numa zona pantanosa, num local de vila, de castelo ou de pradaria; ao entrar numa zona desértica que não seja um oásis. |
 | **De ação de zona** | Ao não usar **Iniciar evento** numa zona; ao passar por mais de duas zonas diferentes sem usar Iniciar evento; ao usar **Recuperar** três vezes seguidas; ao não usar Recuperar nenhuma vez ao chegar a uma zona; enquanto não usar Recuperar mais de 1 vez; ao ficar sem usar Recuperar depois de passar por mais de quatro zonas; ao finalizar uma missão numa zona; ao finalizar todas as missões de uma zona; ao finalizar mais de três missões numa zona; ao finalizar uma missão em três zonas diferentes; ao abandonar uma missão. |
 | **De evento aleatório** | Na fase de antecipação; na fase de encontro; na fase de êxito ou revés; em qualquer fase que não seja a de antecipação. |
 | **De evento de combate** | Ao derrotar um oponente; ao derrotar três oponentes diferentes; ao tentar fugir. |
@@ -1453,14 +1458,14 @@ Ao usar **Iniciar evento**, compra-se uma carta do **deck de eventos da zona**, 
 Na **carta de evento de combate**, o requisito de resolução é **vencer o combate**: a **coisa boa** são as recompensas por derrotar os inimigos e a **coisa ruim** são as penalidades para quem for nocauteado por eles. Os inimigos (com seus dados) também estão na carta.
 
 Observações:
-- No **evento aleatório**, o jogador **não é obrigado** a resolver o evento. Ele pode simplesmente aceitar a coisa ruim.
+- No **evento aleatório**, o jogador **não é obrigado** a resolver o evento. Ele pode simplesmente aceitar a coisa ruim, ou **desistir** no meio do pagamento dos requisitos ([14.2](#142-requisitos-de-resolução)).
 - No **evento de combate**, o jogador **não pode recusar** o combate: as únicas saídas são **lutar** ou **tentar fugir** ([15](#15-teste-de-fuga)).
 - Nem sempre resolver dá algo ao jogador: às vezes, resolver apenas **evita a coisa ruim**.
 - A coisa boa e a coisa ruim são **efeitos** (capítulo [13](#13-efeitos)) e **devem ser ativadas** por padrão.
 
 ### 14.2 Requisitos de resolução
 
-Um evento pode exigir um ou uma combinação de dois ou mais dos requisitos abaixo. Eles funcionam como os **custos** de efeitos (veja [13.2](#132-custo-opcional) para exemplos de cada um):
+Um evento pode exigir um ou uma combinação de dois ou mais dos requisitos abaixo. Eles funcionam como os **custos** de efeitos (veja [13.2](#132-custo-opcional) para exemplos de cada um), exceto pelo **pagamento por partes** (abaixo), que só existe nos requisitos de evento:
 - **Atributos**: uma combinação de atributos específicos, um único atributo específico ou um atributo genérico;
 - **Doar vida** (pagar com pontos de vida);
 - **Descartar carta de atributo**;
@@ -1471,7 +1476,14 @@ Um evento pode exigir um ou uma combinação de dois ou mais dos requisitos abai
 - **Gastar Vigor**, ou ter **Pico/Vigor mínimo**;
 - **Modificador mínimo** (ex.: ter Esquiva 80 ou mais).
 
-**Pagamento tudo ou nada:** os requisitos são pagos **todos de uma vez**, num único pagamento. Não existe pagamento parcial: ou o jogador paga tudo e resolve o evento, ou não paga nada.
+**Pagamento por partes:** os requisitos podem ser pagos **aos poucos**, parte por parte. Cada parte paga **fica paga** e não volta.
+- **O que é uma parte:** cada **carta de atributo** entregue para um requisito de atributos ou de descarte é uma parte. Os demais requisitos (doar vida, pagar ouro, gastar Vigor, oferecer recurso, abdicar de equipamento, manipulação de cartas) são pagos **inteiros, de uma vez** (ex.: "pague 15 moedas" não pode ser pago aos poucos).
+- Só pode ser entregue o que cumpre (no todo ou em parte) um requisito **ainda não pago**. Uma carta **sinérgica** entrega todos os seus atributos de uma vez; os que sobrarem se perdem ([4.3](#43-tipos-de-carta-de-atributo)).
+- **Requisitos de verificação** (Pico/Vigor mínimo, modificador mínimo) não são pagos: são conferidos no momento em que o jogador **completa** o pagamento (ou, se o evento só tiver verificações, quando ele declara que vai resolver). Se não estiverem cumpridos nesse momento, o evento não pode ser resolvido.
+- **Êxito:** o evento é resolvido quando **todos** os requisitos estiverem pagos e as verificações cumpridas.
+- **Depois da primeira parte:** o jogador **não pode mais** tentar fugir ([14.5](#145-fugir-de-um-evento-aleatório)) nem usar recursos ou ativar efeitos e habilidades (os momentos de uso do encontro terminam antes do pagamento, [13](#13-efeitos)).
+
+**Desistir:** a qualquer momento do encontro, antes de completar o pagamento, o jogador pode **desistir**. Desistir é um **revés**: ele sofre a **coisa ruim** e conta como não resolver o evento (perda de Pico, [Apêndice A](#pico-por-fonte)). Tudo o que já foi pago é **perdido** (ouro, vida, Vigor, recursos, equipamentos), mas as **cartas de atributo** pagas são **repostas** ([14.4](#144-reposição-de-cartas)). Desistir sem ter pago nenhuma parte é o mesmo que aceitar a coisa ruim.
 
 ### 14.3 Fases do evento
 
@@ -1479,7 +1491,7 @@ Um evento pode exigir um ou uma combinação de dois ou mais dos requisitos abai
 flowchart LR
     A[Antecipação<br/>preparar-se] --> E[Encontro<br/>tentar resolver]
     E -->|resolveu| X[Êxito<br/>coisa boa]
-    E -->|não resolveu<br/>ou falhou na fuga| R[Revés<br/>coisa ruim]
+    E -->|não resolveu, desistiu<br/>ou falhou na fuga| R[Revés<br/>coisa ruim]
     E -->|fugiu com sucesso| F[Fim do encontro<br/>sem coisa ruim]
     X --> P[Reposição de cartas]
     R --> P
@@ -1488,19 +1500,21 @@ flowchart LR
 | Fase | Quando acontece |
 |---|---|
 | **Antecipação** | Antes de a carta de evento ser revelada. |
-| **Encontro** | O jogador vê a carta e tenta (ou não) resolver o evento. Antes de pagar ou recusar os requisitos, pode usar recursos e ativar efeitos e habilidades. |
+| **Encontro** | O jogador vê a carta e tenta (ou não) resolver o evento. Antes de pagar ou recusar os requisitos (antes da primeira parte), pode usar recursos e ativar efeitos e habilidades. Depois, paga os requisitos por partes e pode desistir antes de completar ([14.2](#142-requisitos-de-resolução)). |
 | **Êxito** | Depois de o evento ser resolvido com sucesso: o jogador recebe benefícios, buffs, itens e/ou recompensas (ou apenas evita a coisa ruim). |
-| **Revés** | Depois de o evento não ser resolvido: o jogador sofre as penalidades da carta. |
+| **Revés** | Depois de o evento não ser resolvido (recusa, desistência ou fuga falha): o jogador sofre as penalidades da carta. |
 
 **Antecipação:** é a fase para **se preparar** para o evento. Nela, o jogador pode ativar efeitos e habilidades (pagando seus custos), inclusive efeitos com gatilho "na fase de antecipação". Exemplos: olhar a carta do topo do deck de eventos e decidir se a compra ou a manda para o fundo; ganhar +1 em todos os atributos para este evento.
 
-**Encontro:** depois de ver a carta, e **antes** de pagar ou recusar os requisitos, o jogador pode **usar recursos do inventário** e **ativar efeitos e habilidades** (pagando seus custos), por exemplo, beber uma poção de buff para cumprir um requisito de modificador mínimo (momentos de uso do jogador, [13](#13-efeitos)). As cartas descartadas como custo desses efeitos não são repostas ([14.4](#144-reposição-de-cartas)).
+**Encontro:** depois de ver a carta, e **antes** de pagar ou recusar os requisitos (isto é, antes de pagar a primeira parte, [14.2](#142-requisitos-de-resolução)), o jogador pode **usar recursos do inventário** e **ativar efeitos e habilidades** (pagando seus custos), por exemplo, beber uma poção de buff para cumprir um requisito de modificador mínimo (momentos de uso do jogador, [13](#13-efeitos)). As cartas descartadas como custo desses efeitos não são repostas ([14.4](#144-reposição-de-cartas)).
 
-Durante o encontro, o jogador pode tentar **fugir** (veja [14.5](#145-fugir-de-um-evento-aleatório)).
+Durante o encontro, **antes de pagar a primeira parte** dos requisitos, o jogador pode tentar **fugir** (veja [14.5](#145-fugir-de-um-evento-aleatório)).
+
+Depois disso, o jogador paga os requisitos **por partes** e pode **desistir** antes de completar o pagamento ([14.2](#142-requisitos-de-resolução)).
 
 ### 14.4 Reposição de cartas
 
-Esta regra vale para **todo evento aleatório**, inclusive os que aparecem dentro de missões. Ao terminar o evento (depois do êxito ou do revés), o jogador **compra imediatamente** do deck de atributos **a mesma quantidade de cartas de atributo** que jogou para tentar resolver o evento.
+Esta regra vale para **todo evento aleatório**, inclusive os que aparecem dentro de missões. Ao terminar o evento (depois do êxito ou do revés, **inclusive por desistência**), o jogador **compra imediatamente** do deck de atributos **a mesma quantidade de cartas de atributo** que saíram da sua mão para pagar os requisitos do evento (no todo ou em parte, [14.2](#142-requisitos-de-resolução)).
 
 | Exemplo | O que aconteceu | Compra cartas? |
 |---|---|---|
@@ -1508,14 +1522,15 @@ Esta regra vale para **todo evento aleatório**, inclusive os que aparecem dentr
 | 2 | Não pagou os requisitos e aceitou a coisa ruim → revés encerrado. | **Não** (nenhuma carta usada) |
 | 3 | Não pagou os requisitos, tentou fugir e falhou → sofre as penalidades → revés encerrado. | **Não** (nenhuma carta usada) |
 | 4 | Não pagou os requisitos, tentou fugir e **conseguiu** → não sofre penalidades → o encontro se encerra. | **Não** (nenhuma carta usada) |
-
-Como o pagamento é tudo ou nada ([14.2](#142-requisitos-de-resolução)), na prática só o êxito gera reposição em eventos aleatórios.
+| 5 | O evento pede 4 cartas de Força. Pagou 2, percebeu que não conseguiria completar e **desistiu** → as 2 cartas vão para a pilha de descarte de atributos → sofre a coisa ruim → revés encerrado. | **Sim, 2** |
+| 6 | O evento pede 10 moedas de ouro + 2 cartas de Destreza. Pagou o ouro e 1 carta de Destreza e **desistiu** → o ouro é perdido → sofre a coisa ruim → revés encerrado. | **Sim, 1** (o ouro não volta) |
 
 As cartas descartadas como **custo de efeitos** durante o evento (não como requisito) **não** são repostas. Só as cartas usadas para cumprir os requisitos do evento são repostas.
 
 ### 14.5 Fugir de um evento aleatório
 
 A fuga usa o [teste de fuga](#15-teste-de-fuga). No evento aleatório, ela tem estas regras extras:
+- Só é possível tentar fugir **antes de pagar a primeira parte** dos requisitos ([14.2](#142-requisitos-de-resolução)). Depois disso, as saídas são completar o pagamento ou desistir.
 - Se a fuga **falhar**, além da coisa ruim, o jogador **perde 1 ponto de ação**. Se ele estiver com **0 pontos de ação**, a perda fica **acumulada** e ele perde 1 ponto na **próxima vez**.
 - Eventos com o símbolo **Sem fuga** não permitem fuga. O texto da carta também diz que não é possível fugir.
 
@@ -1541,6 +1556,7 @@ Esta é a **fonte única** das regras de fuga; os capítulos de evento e combate
 
 **Não é possível fugir:**
 - de eventos com o símbolo **Sem fuga**;
+- de um evento aleatório depois de pagar a **primeira parte** dos requisitos ([14.2](#142-requisitos-de-resolução));
 - do combate contra o chefe final quando a Carta de Dimensão disser **Sem fuga** ([3.2](#32-conclusão-de-uma-dimensão)).
 
 ---
@@ -1556,7 +1572,7 @@ Elementos têm relações de vantagem, desvantagem e neutralidade entre si. O el
 | **Vantagem** | +25% de efetividade contra o elemento |
 | **Desvantagem** | −25% de efetividade contra o elemento |
 | **Neutro** | Os elementos não têm relação entre si; a habilidade funciona normalmente. |
-| **Sem elemento** | A habilidade não tem afinidade elemental; o resultado é sempre neutro. |
+| **Sem elemento** | A habilidade não tem elemento; o resultado é sempre neutro. |
 
 Exemplos: Fogo contra Água tem desvantagem. Fogo contra Elétrico é neutro. Uma habilidade sem elemento contra Água ou contra Fogo é neutra.
 
@@ -1619,28 +1635,11 @@ flowchart LR
     Ar --> Fogo
 ```
 
-### 16.3 Afinidade elemental das classes
+### 16.3 Afinidade elemental das classes (removida)
 
-Cada classe tem **elementos de afinidade** (pode mudar no futuro). Habilidades desses elementos custam **10% menos Vigor**: custo final = custo × 0,9, **arredondando o custo para baixo**, com **mínimo de 1** quando o custo original for 1 ou mais (o desconto nunca deixa uma habilidade de graça). Especializações podem acrescentar elementos. A afinidade é da classe, não do jogador: ela **não** dá elemento ao jogador nem ao ataque básico.
+A **afinidade elemental das classes foi removida do jogo**. Classes e especializações **não têm** elementos de afinidade nem desconto automático de Vigor por elemento. A numeração foi mantida para não quebrar as referências do documento.
 
-| Classe | Afinidade | Especializações com afinidade própria |
-|---|---|---|
-| Guerreiro | Terra, Sanguíneo | Cavaleiro: + Celestial |
-| Mago | Arcano | Necromante: + Obscuro; Elementalista: + os 6 elementos básicos |
-| Ladino | Ar, Tóxico | Assassino: + Obscuro |
-| Clérigo | Celestial, Espiritual | Exorcista: + Sônico |
-| Patrulheiro | Orgânico, Ar | — |
-| Druida | Orgânico, Terra, Água | Xamã: + Espiritual; Metamorfo: + Sanguíneo |
-| Monge | Espiritual, Ar | Punho Elemental: + os 6 elementos básicos |
-| Bardo | Sônico, Psíquico | — |
-| Alquimista | Tóxico, Fogo | Transmutador: + Arcano |
-| Artífice | Elétrico, Terra | Ferreiro Arcano: + Arcano |
-| Bruxo | Obscuro | Demonologista: + Fogo; Abissalista: + Cósmico; Pactário: + Sanguíneo |
-| Feiticeiro | Arcano | Dracônico: + Dracônico; Elemental: + os 6 elementos básicos; Celestial: + Celestial; Trevoso: + Obscuro |
-
-Elementalista, Punho Elemental e Feiticeiro Elemental têm afinidade com **os 6** elementos básicos, sem limite nem custo (não há escolha).
-
-**Multiclasse:** a afinidade do jogador é a **união** dos elementos de todas as classes e especializações ativas. O desconto **não se soma**: um elemento presente em duas classes (ex.: Arcano no Mago e no Feiticeiro) continua com um único desconto de 10%.
+Quando uma classe ou especialização tem relação com um elemento, isso vem de um **efeito** dela ([13](#13-efeitos)), escrito na própria classe ou especialização (ex.: "suas habilidades de Fogo custam 10% menos Vigor"; os conceitos do Elementalista, do Punho Elemental, do Xamã e das especializações do Feiticeiro em [8.8](#88-conceitos-das-especializações)). Esses efeitos só valem com a trava cumprida ([8.2](#82-a-trava-do-deck)), como qualquer efeito de classe.
 
 ---
 
@@ -1931,9 +1930,9 @@ O sistema controla os inimigos em combate. O campo **Comportamento** de cada ini
 ### 20.1 Spawn e respawn
 
 - **Spawn** e **respawn** são o mesmo ponto do mapa:
-  - **spawn** é onde o jogador aparece no mundo **pela primeira vez** (escolhido na [preparação](#101-passo-a-passo));
-  - **respawn** é onde o jogador **reaparece depois de ser nocauteado**.
-- A ação **Salvar ponto de respawn** muda esse ponto para a zona atual. Só zonas **Urbanas** têm essa ação.
+  - **spawn** é onde o jogador aparece no mundo **pela primeira vez**: a **cidade inicial** ([3.5](#35-montagem-do-mapa)), **a mesma para todos** os jogadores ([preparação](#101-passo-a-passo)). Não há escolha de spawn;
+  - **respawn** é onde o jogador **reaparece depois de ser nocauteado**. No início da dimensão, o respawn de todos é a cidade inicial.
+- A ação **Salvar ponto de respawn** muda esse ponto para a zona atual (só para o jogador que a usou). Só zonas **Urbanas** têm essa ação.
 
 ### 20.2 Nocaute
 
@@ -1962,8 +1961,8 @@ Quando o jogador chega a **0 pontos de vida**, ele é **nocauteado**:
 
 - Missões são encontradas em algumas zonas. Nem toda zona tem missões.
 - Algumas missões envolvem recolher itens, falar com um NPC, etc.
-- Ações relacionadas: **Pegar**, **Continuar** e **Finalizar missão**. Quando o jogador chega a uma zona que tem uma etapa de uma missão de zona que ele já pegou, ele interage para continuar ou finalizar a missão. Missões de zona de várias etapas indicam em que tipo de zona fica cada etapa.
-- **Tipos de zona:** missões de zona fazem parte da coleção da dimensão e só citam tipos de zona que existem nela (todas as zonas da dimensão entram no mapa, [3.5](#35-montagem-do-mapa)). As missões de provação e do mentor são **genéricas** e não citam tipo de zona ([Missões genéricas](#missões-genéricas-provação-e-mentor)).
+- Ações relacionadas: **Pegar**, **Continuar** e **Finalizar missão**. Quando o jogador chega a uma zona que tem uma etapa de uma missão de zona que ele já pegou, ele interage para continuar ou finalizar a missão. Missões de zona de várias etapas indicam onde fica cada etapa: num **tipo de zona** ou numa **zona específica**, citada pelo **título** ([3.4](#34-o-que-uma-carta-de-zona-contém)).
+- **Tipos de zona e títulos:** missões de zona fazem parte da coleção da dimensão e só citam tipos de zona e títulos de zonas que existem nela (todas as zonas da dimensão entram no mapa, [3.5](#35-montagem-do-mapa)). As missões de provação e do mentor são **genéricas** e não citam tipo de zona ([Missões genéricas](#missões-genéricas-provação-e-mentor)).
 - **Onde ficam as cartas:** cartas de missão pegas e **itens de conclusão** ([3.2](#32-conclusão-de-uma-dimensão)) **não ocupam slot**: ficam numa **área própria** do jogador, separada do inventário, da pasta e do cofre.
 - **Limite:** cada jogador pode ter no máximo **3 missões em aberto** ao mesmo tempo, somando missões de zona, de provação e do mentor (ajustável no laboratório). Dessas, no máximo **1** pode ser genérica (provação **ou** mentor, [Missões genéricas](#missões-genéricas-provação-e-mentor)).
 - **Não são obrigatórias:** se o jogador pegar uma missão e não cumpri-la, nada acontece. A missão fica em aberto até ele cumpri-la ou abandoná-la.
@@ -2005,7 +2004,7 @@ Deck de missões da zona          Quadro (visível ao entrar na zona)
 3. Ao **concluir** a missão, a carta sai do jogo nessa partida.
 4. Ao **abandonar** a missão, a carta vai para o **fundo** do deck de missões da zona. Se o quadro estiver com vaga (deck vazio), ela entra direto no quadro.
 
-**NPCs:** NPCs **não são uma mecânica**. São apenas **flavor text** ou uma lógica calculada automaticamente pelo jogo. "Falar com o NPC X na zona Y" = usar a ação **Continuar missão** na zona Y. Mercado, ferreiro e mentor também são mecânicas do jogo; qualquer "personagem" neles é só flavor text.
+**NPCs:** NPCs **não são uma mecânica**. São apenas **flavor text** ou uma lógica calculada automaticamente pelo jogo. "Falar com o NPC X na zona Y" = usar a ação **Continuar missão** na zona Y (a zona de título Y, ou uma zona do tipo Y, conforme a missão). Mercado, ferreiro e mentor também são mecânicas do jogo; qualquer "personagem" neles é só flavor text.
 
 ---
 
@@ -2031,7 +2030,7 @@ As **raides foram removidas do jogo por enquanto**, para simplificar a implement
 
 ## 24. Mercado
 
-O mercado aparece em algumas zonas e permite **comprar e vender** recursos, cartas e boosters. Compras só são possíveis se houver espaço: recursos e boosters no **inventário**, cartas de atributo na **pasta de TCG**; em ambos os casos o espaço da montaria também conta ([6.6](#66-recompensas-e-falta-de-espaço)).
+O mercado aparece em algumas zonas e permite **comprar e vender** recursos, cartas e boosters. A ação de zona **Ir ao Mercado** custa **1 ponto de ação** e pode ser usada **mais de uma vez** na mesma vez ([12.2](#122-lista-de-ações-padrão)); numa mesma visita, o jogador faz quantas compras, vendas e serviços (inclusive o Estábulo, onde houver) puder pagar. Compras só são possíveis se houver espaço: recursos e boosters no **inventário**, cartas de atributo na **pasta de TCG**; em ambos os casos o espaço da montaria também conta ([6.6](#66-recompensas-e-falta-de-espaço)).
 
 O mercado tem **três vitrines**:
 
@@ -2098,7 +2097,8 @@ O mercado tem **três vitrines**:
 - **8 cartas** por booster, com proporção **variada** entre atributos e recursos. Algumas cartas são **mais raras** (têm chance menor de vir no booster).
 - **Composição (sorteio):** para cada carta, sorteia-se a **raridade** pela tabela abaixo e depois **uma carta da coleção com essa raridade**, com chance igual entre as elegíveis (atributos e recursos juntos; ficam de fora montarias, tesouros, boosters e itens de conclusão). Por isso a quantidade de atributos e de recursos varia de booster para booster.
 - **Slot garantido:** 1 carta de cada booster é Incomum ou melhor. Nesse slot, a tabela é refeita **sem a Comum** (as chances das outras raridades mantêm a proporção entre si).
-- **Cartas de atributo Básicas** são sempre Comuns; Sinérgicas e Aprimoradas podem ser de qualquer raridade.
+- **Raridade única por carta:** cada carta tem **uma única raridade**, impressa e definida pelo designer. Todas as cópias têm a mesma raridade, inclusive em reprints ([27](#27-coleções)); não existem versões da mesma carta. Para outra raridade, cria-se outra carta.
+- **Cartas de atributo Básicas** são sempre Comuns; cada carta Sinérgica ou Aprimorada tem a raridade que o designer definir.
 - A raridade aparece como um **símbolo no canto da carta**.
 - O laboratório mostra estatísticas (ex.: quantos boosters, em média, para completar uma coleção) para ajudar no balanceamento.
 
@@ -2186,7 +2186,7 @@ Os preços base foram escolhidos para que, sem escassez, uma carta de raridade m
 
 - **Pagamento das expansões:** como toda compra ([6.6](#66-recompensas-e-falta-de-espaço)), as expansões (bolsa, pasta de TCG, slots do cofre, slots de decks e ouro do cofre) são pagas **só com o ouro da bolsa**. Por isso a 1ª expansão de ouro do cofre (500) exige expandir a bolsa antes.
 - Todas as expansões são **permanentes** na campanha (veja [5.3](#53-dinheiro)).
-- **Estábulo** (em **todas** as zonas Rurais e Habitadas que têm mercado): compra e venda de montarias; as montarias à venda estão listadas na carta de zona, com estoque ilimitado (veja [26](#26-montarias)).
+- **Estábulo** (em **todas** as zonas Rurais e Habitadas que têm mercado; usado dentro da ação Ir ao Mercado): compra e venda de montarias; as montarias à venda estão listadas na carta de zona, com estoque ilimitado (veja [26](#26-montarias)).
 
 ---
 
@@ -2296,7 +2296,7 @@ O Artífice carrega uma oficina portátil. Ela não substitui o ferreiro (não e
 - **Por padrão, cada dimensão é uma coleção nova** de cartas (atributos, recursos, zonas, etc.).
 - Todas as cartas de uma coleção podem ser obtidas dentro da dimensão em que ela foi lançada.
 - Uma coleção pode **estender seu período ativo**, por exemplo, por até três dimensões seguintes. Por isso, **várias coleções podem estar vigentes** ao mesmo tempo numa dimensão: a da própria dimensão e as estendidas.
-- Pode haver **reprint** de uma coleção já lançada numa nova dimensão completamente diferente.
+- Pode haver **reprint** de uma coleção já lançada numa nova dimensão completamente diferente. A carta reimpressa é a **mesma carta**: mantém a mesma raridade ([24.3](#243-boosters)).
 - O que uma nova coleção traz:
   - **Para o jogador** (dentro dos boosters): novas cartas de recursos e atributos.
   - **Para o jogo** (a dimensão): novas zonas, possíveis ações exclusivas, novos eventos, novas missões, etc.
@@ -2349,7 +2349,7 @@ flowchart LR
 A passagem para a nova dimensão é **automática**; não existe ação de zona, votação nem encontro dos jogadores:
 1. Quando a dimensão é **concluída** ([3.2](#32-conclusão-de-uma-dimensão)), a **vez termina** imediatamente (os pontos de ação restantes são perdidos) e a partida daquela dimensão acaba.
 2. Se a próxima dimensão já foi **lançada**, o grupo passa para ela. Se ainda não foi, o save fica **congelado** até o lançamento.
-3. Faz-se uma **nova preparação completa** ([10.1](#101-passo-a-passo)) na nova dimensão, **menos** a escolha de classe e deck pré-pronto: monta-se um mapa novo, rola-se a nova ordem dos jogadores (D20) e cada um escolhe, nessa ordem, uma zona Urbana de spawn.
+3. Faz-se uma **nova preparação completa** ([10.1](#101-passo-a-passo)) na nova dimensão, **menos** a escolha de classe e deck pré-pronto: monta-se um mapa novo, rola-se a nova ordem dos jogadores (D20) e **todos** chegam à **cidade inicial** da nova dimensão, que passa a ser o spawn e o respawn de cada um ([3.5](#35-montagem-do-mapa), [20.1](#201-spawn-e-respawn)).
 4. A nova dimensão começa pela vez do **1º jogador da nova ordem**.
 
 **Curva de progressão (diretriz de design):** os inimigos têm valores finais (sem Pico), e os jogadores ficam mais fortes com o Pico. Para acompanhar, **cada dimensão é desenhada para uma faixa de Pico de referência**, e os inimigos dela são calibrados para essa faixa. Ponto de partida para o laboratório (ajustável):
@@ -2368,7 +2368,7 @@ A passagem para a nova dimensão é **automática**; não existe ação de zona,
 
 | Mantém | Reinicia |
 |---|---|
-| Vida atual, ouro, cofre (com expansões), bolsa (com expansões), inventário, pasta de TCG, montaria, equipamentos em uso, decks, classes e especializações, Energia (Pico e Vigor), todas as cartas de qualquer coleção | A mão **e a pilha de descarte de atributos** voltam ao deck, que é embaralhado, e compra-se 7; efeitos com duração de partida/dimensão terminam; missões em aberto da dimensão anterior são canceladas; os itens de conclusão da dimensão concluída saem do jogo; o registro de missões de zona concluídas é zerado; a ordem dos jogadores é rolada de novo (D20) e fica fixa na nova dimensão |
+| Vida atual, ouro, cofre (com expansões), bolsa (com expansões), inventário, pasta de TCG, montaria, equipamentos em uso, decks, classes e especializações, Energia (Pico e Vigor), todas as cartas de qualquer coleção | A mão **e a pilha de descarte de atributos** voltam ao deck, que é embaralhado, e compra-se 7; efeitos com duração de partida/dimensão terminam; missões em aberto da dimensão anterior são canceladas; os itens de conclusão da dimensão concluída saem do jogo; o registro de missões de zona concluídas é zerado; a ordem dos jogadores é rolada de novo (D20) e fica fixa na nova dimensão; o ponto de respawn de todos passa a ser a cidade inicial da nova dimensão |
 
 **Grupos e saves:**
 - Ao começar uma campanha com outros jogadores, o grupo fica **preso a essa configuração de jogadores**. Esse grupo é um **save** com identidade própria: a dimensão atual, o progresso e as coisas de cada jogador.
@@ -2378,7 +2378,7 @@ A passagem para a nova dimensão é **automática**; não existe ação de zona,
 - Jogar **sozinho** na campanha também é um **"grupo de 1"** (um save separado).
 - Um grupo **não pode aceitar** novos jogadores depois de criado, nem humanos nem IAs.
 - **Ajudantes de IA:** ao **criar o grupo** (começar uma nova aventura na campanha), o host escolhe se quer incluir **ajudantes de IA** e **quantos** (de 0 até completar o limite de jogadores da partida, [1.3](#13-número-de-jogadores)). Cada ajudante de IA é um **jogador completo** do grupo, controlado pela IA de jogador ([II.7](#ii7-jogadores-controlados-por-ia)):
-  - **"segue a sua vida":** joga as próprias vezes, entra na ordem dos jogadores (D20), escolhe o próprio spawn, tem o próprio deck, inventário, cofre, ouro, Energia e missões, e progride sozinho ao longo das dimensões, como qualquer jogador;
+  - **"segue a sua vida":** joga as próprias vezes, entra na ordem dos jogadores (D20), começa na cidade inicial como todos ([10.1](#101-passo-a-passo)), tem o próprio deck, inventário, cofre, ouro, Energia e missões, e progride sozinho ao longo das dimensões, como qualquer jogador;
   - **classes e especializações aleatórias:** todas as escolhas de **classe primária** (inclusive a inicial, com o deck pré-pronto dela, e a classe nova do mentor) e de **especialização** (qual provação fazer) são feitas por **sorteio uniforme** entre as opções válidas naquele momento. O ajudante não escolhe "a melhor" classe nem combina classes de propósito. Todas as outras decisões (ações, deck building, combate, mercado, etc.) seguem a IA de jogador normal;
   - é tratado como **jogador** por todas as regras: pode ser recrutado para combates ([19.5](#195-combate-com-2-ou-mais-jogadores--1-ou-mais-inimigos)) e pode recrutar, negociar ([23](#23-negociação)), concluir a dimensão ([3.2](#32-conclusão-de-uma-dimensão)) e receber o prêmio máximo;
   - IAs **só** entram na **criação** do grupo. Para jogar com outra quantidade de ajudantes, cria-se um **novo grupo** (novo save).
@@ -2436,7 +2436,6 @@ Todos os valores abaixo são **pontos de partida** e podem ser alterados no [Lab
 | Fuga | Valor mínimo no D20 | maior que 10 | [15](#15-teste-de-fuga) |
 | Fuga | Pontos de ação perdidos na fuga falha de evento aleatório | 1 | [14.5](#145-fugir-de-um-evento-aleatório) |
 | Elementos | Efetividade com vantagem / desvantagem | +25% / −25% | [16.1](#161-relações-e-efetividade) |
-| Elementos | Desconto de Vigor por afinidade elemental da classe | 10% | [16.3](#163-afinidade-elemental-das-classes) |
 | Habilidades | Fórmulas das formas; limite da Canalizada | 20% da vida inicial da canalização | [17.4](#174-detalhe-das-formas) |
 | Guardar | Inventário (fixo para todas as classes; só muda no laboratório) / pasta / cofre | 10 / 30 / 30 slots + 10 decks + 2.000 ouro | [6](#6-onde-ficam-as-cartas) |
 | Guardar | Bolsa de ouro | 300 | [5.3](#53-dinheiro) |
@@ -2475,7 +2474,7 @@ Valores padrão para teste ([7.2](#72-energia-pico-e-vigor)). Quando uma carta d
 | Cumprir uma missão de zona | +3 |
 | Cumprir uma missão de provação ou do mentor | +5 |
 | Concluir a dimensão (qualquer condição) | +25 (todos os jogadores da partida) |
-| Não conseguir resolver um evento aleatório (qualquer revés, inclusive aceitar a coisa ruim sem tentar) | −1 |
+| Não conseguir resolver um evento aleatório (qualquer revés, inclusive aceitar a coisa ruim sem tentar ou desistir no meio do pagamento) | −1 |
 | Fugir de um evento aleatório (com sucesso) | 0 |
 | Fugir de um combate (com sucesso) | −2 |
 | Ser nocauteado (= perder um combate) | −10% do Pico, mínimo 1, arredondado para baixo |
@@ -2642,15 +2641,15 @@ A lista completa de valores está no [Apêndice A](#apêndice-a--valores-ajustá
 | 10 | Glossário: Habilidade | "Poder ligado a um equipamento ou inimigo" (ativa ou passiva). | [2.2](#22-vocabulário-básico) |
 | 11 | Coleções no Desbravadores | Mesma regra do Clássico: o host escolhe e a coleção ativada afeta tudo. | [27](#27-coleções), [28.2](#282-desbravadores) |
 | 12 | Deck de recompensas esgotado | Compras do topo passam a vir de um **deck de reserva genérico e infinito**. Buscar e Vasculhar não usam a reserva. | [3.4](#34-o-que-uma-carta-de-zona-contém) |
-| 13 | Ordem de escolha do spawn | A ordem dos jogadores é definida antes; o spawn é escolhido nessa ordem. | [10.1](#101-passo-a-passo) |
+| 13 | Ordem de escolha do spawn | **Substituída pela S2**: não há escolha de spawn; todos começam na cidade inicial. | [10.1](#101-passo-a-passo) |
 | 14 | Ordem das reduções no dano | Acerto → Ataque − Defesa → ×½ (Área/escudo) → ×efetividade → arredonda para baixo → Reflexão. | [19.2](#192-cálculo-do-dano) |
 | 15 | Bônus de efetividade | Somam-se num único fator (ex.: +25% +10% = ×1,35). | [16.1](#161-relações-e-efetividade) |
 | 16 | Percentuais em inimigos | Só a etapa 3 do pipeline, sobre o valor impresso. | [18.1](#181-o-inimigo-na-carta-de-evento-de-combate) |
 | 17 | Valor do refino | O percentual entra com decimais e só se arredonda no fim do pipeline; exemplo de 7.4 corrigido. | [7.4](#74-escala-fórmulas-e-valores-iniciais) |
-| 18 | Afinidade no multiclasse | União dos elementos; desconto único de 10% (não soma). | [16.3](#163-afinidade-elemental-das-classes) |
+| 18 | Afinidade no multiclasse | **Substituída pela S5**: a afinidade elemental das classes foi removida. | [16.3](#163-afinidade-elemental-das-classes-removida) |
 | 19 | Pico de fontes grandes | Todas as fontes se somam (ex.: Chefe + raide + conclusão = +50). | [Apêndice A](#pico-por-fonte) |
 | 20 | Falhar evento (−1 Pico) | Qualquer revés conta, inclusive aceitar a coisa ruim sem tentar. | [Apêndice A](#pico-por-fonte) |
-| 21 | Pagamento de requisitos | Tudo ou nada; não há pagamento parcial. Exemplos de 14.4 refeitos. | [14.2](#142-requisitos-de-resolução), [14.4](#144-reposição-de-cartas) |
+| 21 | Pagamento de requisitos | **Substituída pela S4**: pagamento por partes, com desistência. | [14.2](#142-requisitos-de-resolução), [14.4](#144-reposição-de-cartas) |
 | 22 | Abrir booster | Só com espaço livre na pasta para as 8 cartas (no Preparar) ou no cofre para as 8 cartas (no Usar cofre). | [24.3](#243-boosters) |
 | 23 | Pasta que diminui | **Substituída pela G2**: nenhum efeito altera a pasta; não existem cartas desabilitadas. | [6.3](#63-pasta-de-tcg) |
 | 24 | Venda com a bolsa cheia | Mantido: a venda é permitida e o ouro que passa da capacidade da bolsa é **perdido**. Intencional. | [5.3](#53-dinheiro), [6.6](#66-recompensas-e-falta-de-espaço) |
@@ -2758,7 +2757,7 @@ A lista completa de valores está no [Apêndice A](#apêndice-a--valores-ajustá
 | E13 | PvP e Pico | A fuga do PvP não tira Pico (custa só Vigor). Sem vencedor: ninguém saqueia, todos perdem 3 pontos de objetivo e sofrem o nocaute normal. | [28.2](#282-desbravadores), [Apêndice A](#pico-por-fonte) |
 | E14 | Saque do conteúdo da montaria | O vencedor pode saquear o conteúdo da montaria mesmo já tendo uma; a montaria em si, só se não tiver. | [28.2](#282-desbravadores) |
 | E15 | Munição | 1 carta = 1 unidade; o mercado entrega 10 cartas por compra. | [24.1](#241-compra-no-estoque) |
-| E16 | Afinidade elemental | O desconto de 10% tem custo mínimo 1 (quando o original for 1 ou mais). | [16.3](#163-afinidade-elemental-das-classes) |
+| E16 | Afinidade elemental | **Substituída pela S5**: a afinidade elemental das classes foi removida. | [16.3](#163-afinidade-elemental-das-classes-removida) |
 | E17 | Resistência/imunidade do jogador a elemento | Resistência = ×½ na etapa 3 (metades) do cálculo de dano; imunidade = dano 0. | [19.2](#192-cálculo-do-dano), [13.3](#133-ativação) |
 | E18 | Ordem de Celeridade | Recalculada no início de cada ciclo de combate. | [19.1](#191-combate-1-jogador--1-inimigo-regra-base) |
 | E19 | Recarga entre fora e dentro do combate | As recargas zeram ao fim **e** ao início de cada combate; a contagem recomeça no combate novo. | [17.2](#172-regras-de-uso) |
@@ -2977,3 +2976,25 @@ A lista completa de valores está no [Apêndice A](#apêndice-a--valores-ajustá
 | R1 | Uso de consumíveis e momentos de uso do jogador | **Usar um recurso** (consumível ou recurso com "Usar") é **sempre ativação do jogador**, nunca passivo; o custo é a própria carta (consumível → limbo). A linha "Passivo" da tabela P1 vale só para cartas que continuam em jogo (equipamento em uso, acessório, relíquia "enquanto no inventário"). **Momentos de uso do jogador** (fonte única no capítulo 13; valem para efeitos ativados pelo jogador, recursos e habilidades): fora do combate, em **Preparar**, na **antecipação** e no **encontro** de um evento aleatório (depois de ver a carta, antes de pagar ou recusar os requisitos); no combate, no **próprio turno de combate**. 5.2, 6.2, 14.3, 17.1 e 19.1 alinhados. | [13](#13-efeitos), [5.2](#52-itens), [6.2](#62-inventário), [14.3](#143-fases-do-evento), [17.1](#171-anatomia-de-uma-habilidade), [19.1](#191-combate-1-jogador--1-inimigo-regra-base) |
 
 **Situação após a B.17:** não há pendências de regra conhecidas. O único tema adiado continua sendo a autenticação (F29).
+
+### B.18 Décima oitava revisão (13/11/2026)
+
+> Mesma instrução de B.2: pontos **decididos pelo autor** e já aplicados no documento. **Não** sinalizar de novo como contradição, ambiguidade, ponto em aberto, bloqueio ou "estranho", e **não** propor alternativas, a menos que o autor peça. Quando conflitar com uma decisão anterior, **vale a daqui** (S2 substitui a #13; S4 substitui a #21; S5 substitui a #18 e a E16). A **R1** (B.17) **não** foi alterada: a S4 só esclarece que "antes de pagar ou recusar os requisitos" = antes de pagar a primeira parte.
+
+| # | Tema | Decisão | Onde |
+|---|---|---|---|
+| S1 | Título da carta de zona | Toda carta de zona tem **Título** (nome próprio), **único dentro da dimensão** (validado pelo gerador de mapa). A Carta de Dimensão (zona de conclusão e zona de chegada), as **missões de zona** (etapas e "falar com NPC") e os **efeitos/gatilhos** podem citar uma zona pelo título; como todas as zonas entram no mapa, a zona citada sempre existe. O título é o "nome exato" da carta de zona nas regras de citação (5.1 passou a incluir "local", alinhada a 13 e à Q1). | [2.2](#22-vocabulário-básico), [3.2](#32-conclusão-de-uma-dimensão), [3.3](#33-zonas), [3.4](#34-o-que-uma-carta-de-zona-contém), [3.5](#35-montagem-do-mapa), [5.1](#51-equipamentos), [13](#13-efeitos), [13.1](#131-gatilho-opcional), [21.1](#211-regras-gerais), [21.2](#212-tipos-de-missão) |
+| S2 | Spawn único na cidade inicial | **Todos** os jogadores (inclusive ajudantes de IA) chegam à dimensão na **cidade inicial** (a primeira carta do mapa), que é o spawn e o respawn inicial de todos. Não existe escolha de spawn. A cidade inicial é a **zona de chegada** indicada pelo título na Carta de Dimensão (precisa ser Urbana) ou, se a Carta não indicar, uma **Urbana sem efeitos negativos** sorteada; a validação de 3.5 garante que ela possa ser definida. Na nova dimensão, o respawn de todos volta a ser a cidade inicial dela. A disputa pelo quadro de missões e pela vitrine da cidade inicial na primeira rodada é **aceita** (vale a ordem dos jogadores). | [2.2](#22-vocabulário-básico), [3.2](#32-conclusão-de-uma-dimensão), [3.5](#35-montagem-do-mapa), [10.1](#101-passo-a-passo), [20.1](#201-spawn-e-respawn), [28.1](#281-campanha) |
+| S3 | Custo de Ir ao Mercado | **1 ponto de ação**; pode ser usada **mais de uma vez** na mesma vez; numa visita, quantas compras, vendas e serviços (inclusive Estábulo) o jogador puder pagar. As combinações na mesma vez (mercado → evento/combate, Estábulo → Movimentar, cofre → mercado → cofre, mercado → abrir booster → mercado) são **intencionais**. **Ir ao Ferreiro** e **Treinar com mentor** continuam custando todos os pontos restantes (a vantagem da Oficina do Artífice depende disso). | [1.2](#12-como-se-joga-em-resumo), [11.1](#111-pontos-de-ação), [12.2](#122-lista-de-ações-padrão), [12.4](#124-ações-por-custo-resumo-visual), [24](#24-mercado), [24.5](#245-serviços-do-mercado) |
+| S4 | Pagamento por partes e desistência | Requisitos de evento aleatório são pagos **por partes** (cada carta de atributo é uma parte; os demais requisitos são pagos inteiros); o que foi pago não volta; só se entrega o que cumpre requisito ainda não pago; sinérgica entrega todos os atributos de uma vez (sobras perdidas); verificações conferidas ao completar. O jogador pode **desistir** antes de completar: revés (coisa ruim e −1 Pico); o que foi pago é perdido, mas as **cartas de atributo pagas são repostas**. Depois da primeira parte, **não** é possível fugir nem usar recursos/efeitos/habilidades. Tempo esgotado no evento = desistir. Custos de **efeitos** continuam tudo ou nada. | [4.3](#43-tipos-de-carta-de-atributo), [11.3](#113-tempo-da-vez), [13](#13-efeitos), [14.1](#141-a-carta-de-evento), [14.2](#142-requisitos-de-resolução), [14.3](#143-fases-do-evento), [14.4](#144-reposição-de-cartas), [14.5](#145-fugir-de-um-evento-aleatório), [15](#15-teste-de-fuga), [Apêndice A](#pico-por-fonte) |
+| S5 | Afinidade elemental das classes | **Removida.** Classes e especializações não têm elementos de afinidade nem desconto automático de Vigor. Relação com elementos só por **efeitos** da classe/especialização (com trava cumprida). 16.3 virou marcador (numeração mantida); item da trava (8.2), nota de 8.7 e linha do Apêndice A apagados. | [8.2](#82-a-trava-do-deck), [8.7](#87-perfil-das-classes), [16.1](#161-relações-e-efetividade), [16.3](#163-afinidade-elemental-das-classes-removida), [Apêndice A](#apêndice-a--valores-ajustáveis) |
+| S6 | Raridade única por carta | Cada carta tem **uma única raridade**, impressa e definida pelo designer. Todas as cópias têm a mesma raridade, inclusive em reprints; não existem versões da mesma carta. Para outra raridade, cria-se outra carta. Cada carta Sinérgica ou Aprimorada tem a raridade que o designer definir (Básicas são sempre Comuns). | [2.2](#22-vocabulário-básico), [5.1](#51-equipamentos), [24.3](#243-boosters), [27](#27-coleções) |
+
+**Situação após a B.18:** não há pendências de regra conhecidas. O único tema adiado continua sendo a autenticação (F29).
+
+### Melhorias para o futuro
+Essa sessão diz quais funcionalidades eu gostaria de ter no futuro. Elas não devem ser implementadas sem minha permissão. Você deve ignorar esta sessão na hora de implementar. Essa sessão é voltada apenas para o desenvolvedor.
+- Sistema de exploração de tiles (cartas de zonas viradas para baixo).
+- Reparo de equipamentos (a cada reparo, o equipamento começa a perder seus bonus de modificadores e também habilidades além de seu preço cair).
+- revisitar o ponto 8.4 Como se tornar multiclasse ("Modificadores base: valem os da classe ativa. Se mais de uma classe estiver ativa, valem os da classe ativa obtida primeiro (a mais antiga do jogador). Se nenhuma estiver ativa, vale o "valor padrão". "). Rever essa regra. Talvez somar os atributos base das duas classes e dividir por 2?
+- Criar mecânicas de moedas diferentes por dimensão? Criar um serviço de cambio para trocar valores entre moedas.
