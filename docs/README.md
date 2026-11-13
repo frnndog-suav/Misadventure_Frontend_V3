@@ -217,7 +217,8 @@ Cada dimensão tem uma **Carta de Dimensão** que define:
 **Itens de conclusão:** os itens exigidos pela Carta de Dimensão (ex.: os Fragmentos) são **itens de conclusão**. Para que a dimensão nunca fique impossível de concluir:
 - eles ficam numa **área própria** do jogador (a mesma das cartas de missão, [21.1](#211-regras-gerais)) e **não ocupam slot**, por isso são sempre recebidos, mesmo com o inventário cheio;
 - **não podem** ser vendidos, descartados, oferecidos, abdicados nem perdidos: nenhum efeito, habilidade, regra ou perda de montaria os manda para o limbo;
-- **só** mudam de dono por **negociação** ([23](#23-negociação)).
+- **só** mudam de dono por **negociação** ([23](#23-negociação));
+- quando a dimensão é concluída, eles **saem do jogo** ([28.1](#281-campanha)).
 
 Quando a dimensão é concluída, **todos os jogadores da partida** a concluem e cada um recebe o prêmio máximo. A partida daquela dimensão **termina** nesse momento: o grupo **não** continua explorando a dimensão concluída e **não** pode jogá-la de novo (veja [Ir para nova dimensão](#ir-para-nova-dimensão)).
 
@@ -315,7 +316,7 @@ flowchart LR
 5. **Sem orientação:** cartas de zona **não têm** "topo", "baixo", "esquerda" nem "direita". Elas podem ser posicionadas **em qualquer rotação**. O gerador escolhe a rotação.
 
 **Gerador de mapa:**
-1. **Todas as zonas entram (obrigatório):** o mapa é montado por um algoritmo que **refaz a montagem** (outro sorteio) sempre que alguma carta não couber, até **todas** as cartas de zona entrarem. O mapa continua aleatório a cada partida.
+1. **Todas as zonas entram (obrigatório):** o mapa é montado por um algoritmo que **refaz a montagem** (outro sorteio) sempre que alguma carta não couber, até **todas** as cartas de zona entrarem, com limite de **1.000 tentativas** (ajustável no laboratório). Se o limite for atingido, o jogo **não monta o mapa** e mostra o mesmo **erro para o designer** da validação (item 2). O mapa continua aleatório a cada partida.
 2. **Validação da composição:** ao carregar a dimensão (antes de montar o mapa), o jogo confere se ela tem **pelo menos 1 zona Urbana** e se a **soma das setas** de todas as zonas é **maior ou igual a 2 × (número de zonas − 1)** (o mínimo para ligar todas as cartas). Se falhar, o jogo **não monta o mapa** e mostra um **erro para o designer** da coleção, em vez de tentar para sempre.
 3. **Regras de composição da dimensão** (para o designer da coleção): 2 setas na maioria, 4 nas Urbanas, poucas com 1 seta ("becos") e poucas com 3 ("encruzilhadas"). Assim o gerador quase sempre acerta de primeira.
 4. **Tamanho:** começar os testes com **16 zonas** por dimensão (ex.: 2–3 Urbanas, ~9 com 2 setas, ~2 com 3 setas, ~2 com 1 seta). O laboratório deve permitir testar 12, 16 e 20 zonas.
@@ -445,6 +446,7 @@ Isso tudo faz parte da mesma ação; recolher não é uma ação separada. Se o 
 
 - São recursos que o jogador usa **o tempo todo**. As cartas ficam posicionadas **na frente do jogador**, mostrando que estão equipadas.
 - Equipamentos **não vão para a mão**. Podem ser guardados no **inventário** e trocados pelos que estão em uso, por estratégia (veja a ação [Preparar](#12-ações-de-zona)).
+- **Equipamento guardado não funciona:** um equipamento no inventário (ou no inventário extra da montaria) **não** dá bônus de modificadores, efeitos nem habilidades. Ele só funciona enquanto estiver **em uso** (no slot).
 - O jogador pode usar **1 equipamento de cada categoria**:
 
 | Categoria | Exemplos |
@@ -564,7 +566,7 @@ flowchart TB
 
 - Funciona como uma **"segunda mão"**.
 - **Todas as classes têm 10 slots**, sempre. Classe, especialização, trava, buffs, efeitos, itens, equipamentos e habilidades **não alteram** o tamanho do inventário (o valor pode ser mudado só no laboratório). O inventário extra da montaria é um espaço **separado** ([26](#26-montarias)), não um aumento do inventário.
-- Durante eventos, combates, etc., o jogador pode usar o que está no inventário, desde que o conteúdo do slot permita.
+- Durante eventos, combates, etc., o jogador pode usar o que está no inventário, desde que o conteúdo do slot permita. Equipamentos guardados no inventário não funcionam ([5.1](#51-equipamentos)).
 
 **Empilhamento:**
 
@@ -628,7 +630,7 @@ Os **slots de decks** também podem ser expandidos no mercado: **+1 slot de deck
 | **Carta vendida no mercado** (qualquer tipo) | **Sai do jogo** (não volta a pool, estoque nem deck) |
 | **Carta de evento de Chefe** derrotado | **Sai do jogo** nessa partida ([18.3](#183-categorias-de-inimigo)) |
 | Cartas **negociadas** | Passam para o outro jogador |
-| **Item de conclusão** ([3.2](#32-conclusão-de-uma-dimensão)) | **Nunca** vai para o limbo; só muda de dono por negociação |
+| **Item de conclusão** ([3.2](#32-conclusão-de-uma-dimensão)) | **Nunca** vai para o limbo; só muda de dono por negociação. **Sai do jogo** quando a dimensão é concluída ([28.1](#281-campanha)) |
 
 - O **limbo** é uma **pilha de descarte comum a todos os jogadores**.
 - **Nada volta do limbo:** o que vai para o limbo é **perdido para sempre**. Nenhum efeito, habilidade, classe ou especialização pode recuperar coisas do limbo, e o limbo não é acessível nem guardado. Na prática, mandar algo para o limbo é **destruí-lo**.
@@ -1145,7 +1147,7 @@ Na campanha, esta preparação é refeita **inteira** a cada nova dimensão, **m
 2. Cada [ação de zona](#12-ações-de-zona) gasta pontos de ação (exceto as indicadas como gratuitas), inclusive a ação **Movimentar**.
 3. As ações podem ser feitas **em qualquer ordem**. Exemplo: Iniciar evento → Movimentar → Ir ao Mercado.
 4. O jogador **não precisa usar todos os pontos**: ele pode encerrar a vez quando quiser.
-5. A vez passa para o próximo jogador quando os pontos acabam, quando o jogador encerra a vez ou quando o tempo acaba.
+5. A vez passa para o próximo jogador quando o jogador **encerra a vez** ou quando o **tempo acaba**. Com **0 pontos de ação**, o jogador ainda pode usar as **ações gratuitas** (Preparar, Negociar, Abandonar missão) antes de encerrar a vez.
 
 Os pontos de ação são sempre **por vez**, nunca por zona. Efeitos que dão pontos extras dizem "por vez".
 
@@ -1193,7 +1195,7 @@ Todos veem o que acontece na vez dos outros **ao vivo** (movimento, eventos, com
 "Ação de zona" é qualquer ação que o jogador faz na sua vez. Elas se dividem em dois grupos:
 - **Ações universais**, disponíveis em **todas** as zonas: Movimentar, Recuperar, Preparar, Ajustar deck, Negociar, Iniciar evento, Abandonar missão (só para quem tem missão em aberto) e Oficina do Artífice (só para quem tem a classe Artífice ativa).
 - **Ações locais**, impressas na carta da zona: as demais, exceto as contextuais.
-- **Ações contextuais**, que não estão impressas na carta e aparecem quando o contexto permite: **Concluir dimensão** (zona indicada pela Carta de Dimensão, para quem cumpre o requisito, [3.2](#32-conclusão-de-uma-dimensão)) e **Pegar / Continuar / Finalizar** missões de provação, do mentor e etapas de missões em andamento (zonas indicadas pela própria missão). Na tabela abaixo elas aparecem como "Contextual".
+- **Ações contextuais**, que não estão impressas na carta e aparecem quando o contexto permite: **Concluir dimensão** (zona indicada pela Carta de Dimensão, para quem cumpre o requisito, [3.2](#32-conclusão-de-uma-dimensão)) e **Pegar** missões de provação; **Continuar / Finalizar** missões de provação, do mentor e etapas de missões em andamento (zonas indicadas pela própria missão). A missão do mentor só é pega pela ação **Treinar com mentor** ([8.4](#84-como-se-tornar-multiclasse)). Na tabela abaixo elas aparecem como "Contextual".
 
 ### 12.2 Lista de ações padrão
 
@@ -1201,7 +1203,7 @@ Todos veem o que acontece na vez dos outros **ao vivo** (movimento, eventos, com
 |---|---|---|---|
 | **Movimentar** | Universal | 1 ponto de ação | O jogador se move para uma zona **conectada** à zona atual. Pode ser usada **mais de uma vez** na mesma vez. |
 | **Recuperar** | Universal | 1 ponto de ação | O jogador recupera **15% da vida máxima** (arredondado para baixo, mínimo 1, sem passar da vida máxima) e restaura em **Vigor** o equivalente a **5% do Pico** por padrão, e escolhe uma opção: (a) comprar cartas até ter 7 na mão; (b) reembaralhar a mão no deck de atributos; (c) reembaralhar a pilha de descarte de atributos no deck de atributos. Pode ser usada **mais de uma vez** na mesma vez, sem limite (veja [12.5](#125-recuperar)). |
-| **Preparar** | Universal | **Gratuita** | Pode ser usada **mais de uma vez** na mesma vez. Faz tudo isto na mesma ação: (a) **trocar equipamentos** em uso por outros do inventário (arma que bloqueia escudo: veja [5.1](#51-equipamentos)); (b) **usar recursos** do inventário (ativar efeitos e habilidades); (c) **abrir boosters** (veja [24.3](#243-boosters)). |
+| **Preparar** | Universal | **Gratuita** | Pode ser usada **mais de uma vez** na mesma vez. Faz tudo isto na mesma ação: (a) **trocar equipamentos** em uso por outros do inventário (arma que bloqueia escudo: veja [5.1](#51-equipamentos)); (b) **usar recursos** do inventário e **ativar efeitos e habilidades dos equipamentos em uso**; (c) **abrir boosters** (veja [24.3](#243-boosters)). |
 | **Ajustar deck** | Universal | 1 ponto de ação | Mexe na build do deck usando as cartas da **pasta de TCG** (e da pasta extra da montaria): trocar, colocar ou tirar cartas. Recolhe a mão e a pilha de descarte no deck, salva a build (travas checadas), embaralha e compra a mesma quantidade de cartas que havia na mão (veja [4.4](#44-o-deck-de-atributos)). |
 | **Negociar** | Universal | **Gratuita** | Troca de itens entre jogadores na mesma zona (veja [Negociação](#23-negociação)). Não gasta ponto de ação de nenhum envolvido. |
 | **Abandonar missão** | Universal (só com missão em aberto) | **Gratuita** | Desiste de uma missão em aberto, na própria vez e fora de combate (veja [21.1](#211-regras-gerais)). Pode ser usada **mais de uma vez** na mesma vez. |
@@ -1209,7 +1211,7 @@ Todos veem o que acontece na vez dos outros **ao vivo** (movimento, eventos, com
 | **Iniciar evento** | Universal | 1 ponto de ação | Revela um [evento](#14-eventos). Resolver dá recompensas; falhar dá debuffs e penalidades. As mecânicas de TCG acontecem principalmente aqui. Pode ser usada **mais de uma vez** na mesma vez. |
 | **Vasculhar** | Local | 1 ponto de ação | Procura recursos na zona com uma **ferramenta** (veja [12.6](#126-vasculhar)). |
 | **Usar cofre** | Local (toda Urbana tem) | 1 ponto de ação | Acessa o [cofre](#64-cofre). Pode ser usada **mais de uma vez** na mesma vez. |
-| **Pegar / Continuar / Finalizar missão X** | Local (missão de zona) ou Contextual (provação, mentor, etapas) | 1 ponto de ação | Interage com uma [missão](#21-missões) disponível na zona. |
+| **Pegar / Continuar / Finalizar missão X** | Local (missão de zona) ou Contextual (pegar missões de provação; continuar/finalizar missões de provação, do mentor e etapas) | 1 ponto de ação | Interage com uma [missão](#21-missões) disponível na zona. A missão do mentor **só** é pega pela ação **Treinar com mentor**. |
 | **Concluir dimensão** | Contextual | 1 ponto de ação | Só na zona indicada pela Carta de Dimensão e só para o jogador que cumpre sozinho o requisito. Conclui a dimensão ou, se houver chefe final, inicia o combate contra ele (veja [3.2](#32-conclusão-de-uma-dimensão)). |
 | **Ir ao Ferreiro** | Local | Todos os pontos de ação restantes (mínimo 1) | Refinar, encantar, criar e consertar equipamentos (veja [Ferreiro](#25-ferreiro)). |
 | **Ir ao Mercado** | Local | Todos os pontos de ação restantes (mínimo 1) | Comprar e vender itens, cartas e boosters (veja [Mercado](#24-mercado)). |
@@ -1219,7 +1221,7 @@ Todos veem o que acontece na vez dos outros **ao vivo** (movimento, eventos, com
 ### 12.3 Regras gerais das ações
 
 - Jogadores **não podem se enfrentar**: não existe combate entre jogadores.
-- Depois de qualquer ação que gasta "todos os pontos restantes", o jogador ainda pode usar **ações gratuitas** (Preparar, Negociar, Abandonar missão) e depois a vez termina.
+- Sempre que os pontos de ação chegarem a 0 (inclusive depois de uma ação que gasta "todos os pontos restantes"), o jogador ainda pode usar **ações gratuitas** (Preparar, Negociar, Abandonar missão); a vez termina quando ele a encerra ou quando o tempo acaba ([11.1](#111-pontos-de-ação)).
 
 ### 12.4 Ações por custo (resumo visual)
 
@@ -1280,7 +1282,7 @@ O gatilho é a **condição de ativação**. Nem todo efeito tem gatilho.
 | **De classe/especialização** | Enquanto você for de uma especialização da classe Bruxo; enquanto tiver apenas uma classe primária; se tiver duas classes primárias; se tiver mais de três classes primárias; se tiver duas especializações; se for um Guerreiro; se for um Ladino ou Clérigo; se for Feiticeiro **e** Druida (multiclasse). |
 | **De modificador** | Se seu maior modificador for Reflexão; se seu maior modificador for Celeridade ou Precisão; se seu menor modificador for Ataque; se seu menor modificador for Esquiva ou Celeridade; se tiver mais Precisão do que Defesa; se a soma de Ataque e Reflexão for maior que N. |
 | **De atributo** | Se tiver uma carta de Sanidade na mão; duas cartas de Sorte; mais de três cartas de Destreza; três ou menos cartas de Força; uma de Resistência e uma de Carisma; uma de Espírito ou de Inteligência; três ou mais atributos diferentes; apenas um tipo de atributo; quatro ou menos atributos diferentes na mão. |
-| **De inventário** | Ao ativar um efeito de um recurso do inventário; ao ativar dois ou mais efeitos de recursos diferentes do inventário; ao ativar um efeito de um item do inventário; ao ativar um efeito de um equipamento do inventário; ao ter 4 ou menos recursos diferentes no inventário; se não tiver nenhum recurso no inventário. |
+| **De inventário** | Ao ativar um efeito de um recurso do inventário; ao ativar dois ou mais efeitos de recursos diferentes do inventário; ao ativar um efeito de um item do inventário; ao ativar um efeito de um equipamento em uso; ao ter 4 ou menos recursos diferentes no inventário; se não tiver nenhum recurso no inventário. |
 | **De efeito** | Ao usar um efeito de um equipamento; ao usar dois ou mais efeitos de equipamentos diferentes; ao usar três ou menos efeitos de recursos diferentes do inventário; se usou efeitos de um item e de um equipamento; se usou efeitos de um equipamento de cabeça; se não usou efeito de equipamento de tronco ou capa; se usou três ou mais efeitos de itens diferentes do inventário. |
 | **De jogador** | Se estiver sem cartas na mão; se tiver três ou menos cartas na mão; se não tiver cartas na pilha de descarte de atributos; se tiver 10 ou mais pontos de vida; se não tiver mais cartas no deck de atributos; se tiver 30 ou mais moedas de ouro; se tiver 3 ou menos pontos de vida. |
 | **De energia** | Se seu Vigor for igual ao Pico; ao ficar com 0 de Vigor; se seu Pico for 100 ou mais; ao gastar 50 ou mais de Vigor numa vez; se seu Vigor for menor que a metade do Pico; ao perder Pico. |
@@ -1743,7 +1745,7 @@ flowchart TB
    - **Falha:** o jogador **perde o turno de combate** e recebe um **ataque livre** (veja [15](#15-teste-de-fuga)). O combate continua.
 10. **Limite de ciclos de combate:** todo combate tem no máximo **20 ciclos de combate** (ajustável no laboratório). O limite garante que todo combate termine, mesmo quando nenhum lado consegue causar dano, ninguém ataca ou ninguém pode fugir. Quando o último ciclo termina sem vencedor, os jogadores ainda de pé são tratados como se tivessem **fugido com sucesso** (perdem o Pico de "Fugir de um combate", [Apêndice A](#pico-por-fonte); não pagam o Vigor da fuga; não recebem recompensa nem sofrem a coisa ruim). Os nocauteados seguem as regras normais, e o resultado do combate segue a tabela de [19.5](#195-combate-com-2-ou-mais-jogadores--1-ou-mais-inimigos). Isso vale também para combates marcados **Sem fuga** (ex.: chefe final).
 
-**Empates de Celeridade:** entre **jogadores**, eles **escolhem** a ordem. Entre jogador e inimigo, o inimigo tem prioridade (regra 1). Entre **inimigos**, vale a **ordem em que estão impressos na carta** (o primeiro impresso age antes).
+**Empates de Celeridade:** entre **jogadores** empatados, vale a **ordem dos jogadores** ([11.2](#112-ordem-dos-jogadores)); eles podem combinar outra ordem antes do primeiro ciclo de combate. Se o tempo de escolha acabar, vale a ordem dos jogadores. Entre jogador e inimigo, o inimigo tem prioridade (regra 1). Entre **inimigos**, vale a **ordem em que estão impressos na carta** (o primeiro impresso age antes).
 
 ### 19.2 Cálculo do dano
 
@@ -1787,7 +1789,7 @@ Segue a regra base, com duas diferenças:
 
 ### 19.5 Combate com 2 ou mais jogadores × 1 ou mais inimigos
 
-**Quem pode entrar:** se um jogador inicia um evento de combate e há outros jogadores na mesma zona, ele pode **recrutá-los** para ajudar. Não há limite de ajudantes. O convidado **pode recusar**, e o convite só pode ser feito **antes do primeiro ciclo de combate**; ninguém entra depois que o combate começou.
+**Quem pode entrar:** se um jogador inicia um evento de combate (ou um combate de missão, [21.1](#211-regras-gerais)) e há outros jogadores na mesma zona, ele pode **recrutá-los** para ajudar. Não há limite de ajudantes. O convidado **pode recusar**, e o convite só pode ser feito **antes do primeiro ciclo de combate**; ninguém entra depois que o combate começou.
 
 **Custo e recompensas:**
 - Só o **jogador que iniciou o combate** gasta ponto de ação. Os ajudantes não perdem pontos de ação.
@@ -1795,7 +1797,7 @@ Segue a regra base, com duas diferenças:
 - **Ajudantes:** cada ajudante que termina o combate **de pé** ganha o **mesmo Pico** calculado para quem iniciou (o valor da carta, se ela disser; senão, o padrão do [Apêndice A](#pico-por-fonte)) e o **mesmo Vigor**, se a carta der Vigor. **Não existe ganho padrão de Vigor:** Vigor só é ganho quando a carta diz um valor.
 - **Exceção:** se quem iniciou fugir, ou for nocauteado e não for ressuscitado até o fim, e os outros vencerem, as recompensas são **divididas entre os sobreviventes**:
   - **ouro:** dividido igualmente, arredondado para baixo (o resto se perde);
-  - **cartas** (itens, recursos, compras do deck de recompensas): compradas e escolhidas **uma por vez**, em **rodízio** por ordem de Celeridade (da maior para a menor), até acabarem.
+  - **cartas** (itens, recursos, compras do deck de recompensas): compradas e escolhidas **uma por vez**, em **rodízio** por ordem de Celeridade (da maior para a menor; empates seguem a regra de empate entre jogadores de [19.1](#191-combate-1-jogador--1-inimigo-regra-base)), até acabarem.
 - Isso cria uma dinâmica no combate: alguns jogadores podem fugir por conta própria, enquanto outros podem querer ficar e vencer para levar as recompensas.
 
 **Nocaute durante o combate:**
@@ -1885,6 +1887,7 @@ Quando o jogador chega a **0 pontos de vida**, ele é **nocauteado**:
 - **Missões são individuais:** a missão fica atrelada ao jogador que a pegou e só ele pode finalizá-la.
 - **Não se repetem:** cada jogador só pode completar a mesma missão **uma vez por dimensão** (uma dimensão nunca é jogada de novo, [3.2](#32-conclusão-de-uma-dimensão)).
 - Missões em aberto ao sair de uma dimensão são canceladas.
+- **Combate em missão:** combates de missão (inimigos impressos na carta da missão, [18.1](#181-o-inimigo-na-carta-de-evento-de-combate)) seguem [19.5](#195-combate-com-2-ou-mais-jogadores--1-ou-mais-inimigos): o recrutamento é permitido, mas **só o dono da missão** avança a etapa. Na **derrota** ou na **fuga**, a etapa não é concluída, a missão continua em aberto e pode ser tentada de novo.
 - Ao concluir uma missão, o jogador pode receber recompensas (inclusive do [deck de recompensas](#34-o-que-uma-carta-de-zona-contém)) e **Pico**.
 
 ### 21.2 Tipos de missão
@@ -2004,7 +2007,8 @@ O mercado tem **três vitrines**:
 
 **Conteúdo e raridade** (ponto de partida para o laboratório):
 - **8 cartas** por booster, com proporção **variada** entre atributos e recursos. Algumas cartas são **mais raras** (têm chance menor de vir no booster).
-- **Composição:** a quantidade de atributos e de recursos varia de booster para booster; as cartas são sorteadas com as chances abaixo, com **1 slot garantido** de Incomum ou melhor.
+- **Composição (sorteio):** para cada carta, sorteia-se a **raridade** pela tabela abaixo e depois **uma carta da coleção com essa raridade**, com chance igual entre as elegíveis (atributos e recursos juntos; ficam de fora montarias, tesouros, boosters e itens de conclusão). Por isso a quantidade de atributos e de recursos varia de booster para booster.
+- **Slot garantido:** 1 carta de cada booster é Incomum ou melhor. Nesse slot, a tabela é refeita **sem a Comum** (as chances das outras raridades mantêm a proporção entre si).
 - **Cartas de atributo Básicas** são sempre Comuns; Sinérgicas e Aprimoradas podem ser de qualquer raridade.
 - A raridade aparece como um **símbolo no canto da carta**.
 - O laboratório mostra estatísticas (ex.: quantos boosters, em média, para completar uma coleção) para ajudar no balanceamento.
@@ -2033,10 +2037,10 @@ O mercado tem **três vitrines**:
 - Nem todas as cartas das coleções vigentes estarão disponíveis como singles, porque o volume de cartas é grande e provavelmente não haveria tempo de jogo para todas circularem.
 
 **Pool e esgotamento:**
-1. No início da partida, sorteia-se um **pool de singles** da dimensão (um subconjunto das coleções vigentes).
+1. No início da partida, sorteia-se um **pool de singles** da dimensão com **20 cartas** (um subconjunto das coleções vigentes; ajustável no laboratório).
 2. Cada carta do pool tem um **estoque global** (ex.: 1 a 6 cópias, conforme a raridade), distribuído aleatoriamente entre os mercados que vendem singles. Exemplo: a carta X tem 4 cópias no mercado da zona A e 2 no da zona B.
 3. Quando o estoque global de X acaba (por compra de jogadores ou decaimento), X sai do pool e não aparece mais em nenhuma vitrine.
-4. Quando **todas** as cartas do pool tiverem saído, sorteia-se um novo pool e o ciclo recomeça.
+4. Quando **todas** as cartas do pool tiverem saído, sorteia-se um novo pool (do mesmo tamanho) e o ciclo recomeça.
 
 **Mercado "vivo" (decaimento):** independentemente do número de jogadores, no fim de cada rodada cada mercado com singles rola 1 D20 por slot da vitrine; com 1–3, aquela carta é "comprada" pelo jogo (sai da vitrine e do estoque global). Os jogadores precisam ficar atentos para não perder uma carta de que precisam.
 
@@ -2271,7 +2275,7 @@ A passagem para a nova dimensão é **automática**; não existe ação de zona,
 
 | Mantém | Reinicia |
 |---|---|
-| Vida atual, ouro, cofre (com expansões), bolsa (com expansões), inventário, pasta de TCG, montaria, equipamentos em uso, decks, classes e especializações, Energia (Pico e Vigor), todas as cartas de qualquer coleção | A mão **e a pilha de descarte de atributos** voltam ao deck, que é embaralhado, e compra-se 7; efeitos com duração de partida/dimensão terminam; missões em aberto da dimensão anterior são canceladas; o registro de missões concluídas é zerado; a ordem dos jogadores é rolada de novo (D20) e fica fixa na nova dimensão |
+| Vida atual, ouro, cofre (com expansões), bolsa (com expansões), inventário, pasta de TCG, montaria, equipamentos em uso, decks, classes e especializações, Energia (Pico e Vigor), todas as cartas de qualquer coleção | A mão **e a pilha de descarte de atributos** voltam ao deck, que é embaralhado, e compra-se 7; efeitos com duração de partida/dimensão terminam; missões em aberto da dimensão anterior são canceladas; os itens de conclusão da dimensão concluída saem do jogo; o registro de missões concluídas é zerado; a ordem dos jogadores é rolada de novo (D20) e fica fixa na nova dimensão |
 
 **Grupos e saves:**
 - Ao começar uma campanha com outros jogadores, o grupo fica **preso a essa configuração de jogadores**. Esse grupo é um **save** com identidade própria: a dimensão atual, o progresso e as coisas de cada jogador.
@@ -2358,6 +2362,8 @@ Todos os valores abaixo são **pontos de partida** e podem ser alterados no [Lab
 | Missões | Missões em aberto por jogador (todos os tipos) | 3 | [21.1](#211-regras-gerais) |
 | Mercado | Munição por compra / lote mínimo de venda | 10 / 10 | [24.1](#241-compra-no-estoque) |
 | Combate | Limite de ciclos de combate (todo combate) | 20 | [19.1](#191-combate-1-jogador--1-inimigo-regra-base) |
+| Mercado | Cartas no pool de singles | 20 | [24.4](#244-singles) |
+| Mapa | Tentativas máximas do gerador de mapa | 1.000 | [3.5](#35-montagem-do-mapa) |
 
 ### Pico por fonte
 
@@ -2764,3 +2770,21 @@ A lista completa de valores está no [Apêndice A](#apêndice-a--valores-ajustá
 | J6 | Termo "ajudante" | "Ajudante de IA" (jogador do grupo controlado por IA) ≠ "ajudante" de combate (qualquer jogador recrutado para um combate, 19.5). Um ajudante de IA recrutado é as duas coisas; não há conflito. | [2.2](#22-vocabulário-básico) |
 
 **Situação após a B.9:** não há pendências de regra conhecidas. O único tema adiado continua sendo a autenticação (F29).
+
+### B.10 Décima revisão (13/11/2026)
+
+> Mesma instrução de B.2: pontos **decididos pelo autor** e já aplicados no documento. **Não** sinalizar de novo como contradição, ambiguidade, ponto em aberto, bloqueio ou "estranho", e **não** propor alternativas, a menos que o autor peça. Quando conflitar com uma decisão anterior, **vale a daqui**.
+
+| # | Tema | Decisão | Onde |
+|---|---|---|---|
+| K1 | Pegar a missão do mentor | A missão do mentor **só** é pega pela ação **Treinar com mentor** (todos os pontos de ação restantes). As ações contextuais são: **Pegar** missões de provação; **Continuar/Finalizar** missões de provação, do mentor e etapas (1 ponto de ação). | [12.1](#121-ações-universais-e-ações-locais), [12.2](#122-lista-de-ações-padrão), [8.4](#84-como-se-tornar-multiclasse) |
+| K2 | Vez com 0 pontos de ação | A vez **não** termina sozinha quando os pontos acabam: com 0 pontos, o jogador ainda pode usar ações gratuitas (Preparar, Negociar, Abandonar missão); a vez termina quando ele encerra ou quando o tempo acaba. | [11.1](#111-pontos-de-ação), [12.3](#123-regras-gerais-das-ações) |
+| K3 | Equipamento no inventário | Equipamento guardado (inventário ou inventário extra da montaria) **não** dá modificadores, efeitos nem habilidades; só funciona em uso. Gatilho de 13.1 trocado para "equipamento em uso". Preparar (b) = usar recursos do inventário e ativar efeitos e habilidades dos equipamentos em uso. | [5.1](#51-equipamentos), [6.2](#62-inventário), [12.2](#122-lista-de-ações-padrão), [13.1](#131-gatilho-opcional) |
+| K4 | Empate de Celeridade entre jogadores | Vale a ordem dos jogadores (11.2); eles podem combinar outra ordem antes do primeiro ciclo de combate. Se o tempo acabar, vale a ordem dos jogadores. A mesma regra vale para o rodízio de cartas entre sobreviventes. | [19.1](#191-combate-1-jogador--1-inimigo-regra-base), [19.5](#195-combate-com-2-ou-mais-jogadores--1-ou-mais-inimigos) |
+| K5 | Tamanho do pool de singles | **20 cartas** (ajustável no laboratório); o novo pool tem o mesmo tamanho. | [24.4](#244-singles), [Apêndice A](#apêndice-a--valores-ajustáveis) |
+| K6 | Sorteio do booster | Para cada carta: sorteia-se a raridade pela tabela e depois uma carta da coleção com essa raridade, com chance igual entre as elegíveis (atributos e recursos juntos; ficam de fora montarias, tesouros, boosters e itens de conclusão). No slot garantido, a tabela é refeita sem a Comum. | [24.3](#243-boosters) |
+| K7 | Término do gerador de mapa | Limite de **1.000 tentativas** (ajustável no laboratório); ao passar do limite, o mapa não é montado e aparece o mesmo erro para o designer da validação. | [3.5](#35-montagem-do-mapa), [Apêndice A](#apêndice-a--valores-ajustáveis) |
+| K8 | Itens de conclusão após a dimensão | Os itens de conclusão da dimensão concluída **saem do jogo** (linha incluída em "Reinicia"). | [3.2](#32-conclusão-de-uma-dimensão), [6.5](#65-pilhas-de-descarte-e-limbo), [28.1](#281-campanha) |
+| K9 | Combate dentro de missão | Segue 19.5: o recrutamento é permitido, mas só o dono da missão avança a etapa. Na derrota ou na fuga, a etapa não é concluída, a missão continua em aberto e pode ser tentada de novo. | [21.1](#211-regras-gerais), [19.5](#195-combate-com-2-ou-mais-jogadores--1-ou-mais-inimigos) |
+
+**Situação após a B.10:** não há pendências de regra conhecidas. O único tema adiado continua sendo a autenticação (F29).
