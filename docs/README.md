@@ -267,6 +267,7 @@ Quando a dimensão é concluída, **todos os jogadores da partida** a concluem e
 
 - **Setas de conexão:** de uma a quatro setas, cada uma apontando para uma aresta da carta. **Toda zona tem pelo menos 1 seta.** **Toda zona Urbana tem obrigatoriamente as quatro setas.** A **maioria** das cartas tem **2 setas** (veja [3.5](#35-montagem-do-mapa)).
 - **Ações:** cada zona tem as suas próprias [ações de zona](#12-ações-de-zona). Uma zona pode ter 5 ações e outra apenas 1. Algumas ações são exclusivas de certas zonas; outras aparecem em várias. Exemplo: uma cidade (Urbana) pode ter, além das ações obrigatórias de toda Urbana (Usar cofre, Salvar ponto de respawn e Treinar com mentor), "Ir ao Ferreiro" e "Ir ao Mercado"; já um bosque (Florestal) pode ter só "Iniciar evento" e "Vasculhar". Isso obriga o jogador a pensar para onde ir para cumprir seus objetivos ou conseguir algum item ou serviço.
+- **Ofertas dos serviços:** quando a zona tem **Mercado**, a carta lista os **itens do estoque** daquele mercado e indica se ele tem **vitrine de singles** ([24](#24-mercado)); quando tem **Estábulo**, a carta lista as **montarias à venda** ([26](#26-montarias)). São dados do designer da coleção.
 - **Efeitos:** nenhum, um ou vários. Exemplos: na zona X, a classe Mago causa mais dano em combate; na zona Y, quem for nocauteado em evento ou combate perde todas as moedas de ouro; na zona Z, equipamentos do tipo armadura têm seus efeitos anulados.
 - **Decks por tipo de zona:** zonas do **mesmo tipo** compartilham os mesmos decks (ex.: todas as zonas Florestais da dimensão usam o mesmo deck de eventos):
   - **deck de eventos** (cerca de 30 cartas de eventos aleatórios por tipo de zona; número especulativo, sujeito a análise);
@@ -680,7 +681,7 @@ Todos os modificadores são usados **principalmente em combate**, mas também po
 | **Esquiva** | Se o alvo **escapa** do ataque. Se escapar, não sofre dano. |
 | **Celeridade** | A **ordem de ação** no combate: quanto maior, mais cedo a parte age. (Não afeta a ordem dos jogadores na rodada, que é fixa; veja [11.2](#112-ordem-dos-jogadores).) |
 | **Perfuração** | Quantos pontos da **defesa** do oponente são ignorados no cálculo de dano (valor fixo). |
-| **Reflexão** | Quantos pontos do dano recebido são **devolvidos** ao atacante (valor fixo). O valor devolvido é subtraído do dano ao defensor. Se o ataque não causar dano (Ataque ≤ Defesa), a Reflexão **não** devolve nada. O dano refletido vai **direto na vida** do atacante (não passa pela Defesa dele) e **pode nocauteá-lo** (jogador ou inimigo). |
+| **Reflexão** | Quantos pontos do dano recebido são **devolvidos** ao atacante (valor fixo). O valor devolvido é subtraído do dano ao defensor. Se o ataque não causar dano (Ataque ≤ Defesa), a Reflexão **não** devolve nada. O dano refletido vai **direto na vida** do atacante (não passa pela Defesa dele) e **pode nocauteá-lo** (jogador ou inimigo). Só ataques disparam Reflexão; **dano de efeito** não ([19.2](#192-cálculo-do-dano)). |
 
 **Escala:** os modificadores e a vida máxima **não têm limite máximo** (os modificadores só têm **piso 0**, veja [7.4](#74-escala-fórmulas-e-valores-iniciais)) e **ambos escalam com o Pico** (a vida atual é limitada pela vida máxima, veja [9.1](#91-valores-iniciais)); o ouro é limitado só pela capacidade da [bolsa](#53-dinheiro) e do cofre. Eles começam pequenos e podem chegar às **centenas e aos milhares**.
 
@@ -1338,7 +1339,7 @@ A ativação é a consequência do efeito: a ação, o ato. Podem existir **muit
 
 | Categoria | Exemplos |
 |---|---|
-| **Interação matemática** | Perca/ganhe X moedas de ouro; perca/ganhe X pontos de vida; aumente seu Pico em X; restaure X de Vigor (nunca acima do Pico); aumente Ataque e Esquiva em X; reduza Defesa, Perfuração e Reflexão em X; zere Celeridade e Defesa; zere o modificador X; uma carta do atributo X vale 2; uma carta do atributo X tem o valor multiplicado por 2; reduza sua vida pela metade (arredonde para cima); cause X de dano no oponente; reduza o ataque do oponente em X. |
+| **Interação matemática** | Perca/ganhe X moedas de ouro; perca/ganhe X pontos de vida; aumente seu Pico em X; restaure X de Vigor (nunca acima do Pico); aumente Ataque e Esquiva em X; reduza Defesa, Perfuração e Reflexão em X; zere Celeridade e Defesa; zere o modificador X; uma carta do atributo X vale 2; uma carta do atributo X tem o valor multiplicado por 2; reduza sua vida pela metade (arredonde para cima); cause X de dano no oponente (**dano de efeito**, [19.2](#192-cálculo-do-dano)); reduza o ataque do oponente em X. |
 | **Interação de cartas** | Compre X cartas do deck de atributos; descarte X cartas da mão; descarte uma carta específica; escolha uma carta da pilha de descarte de atributos e coloque-a no topo do deck; coloque X cartas do topo do deck na pilha de descarte; procure um atributo X na pilha de descarte; procure um atributo X no deck e coloque-o na mão; procure duas cartas do atributo X no deck, coloque-as na mão e embaralhe o deck; coloque X cartas da mão no topo do deck; envie X cartas do topo/fundo do deck para a pilha de descarte de atributos. Interações de cartas só movem cartas **entre deck, mão e pilha de descarte**; nunca trazem cartas da pasta ou do cofre para o jogo. |
 | **Interação de efeito** | Anule todos os efeitos de um equipamento (a habilidade ativa, mas o efeito "não faz nada"); anule todos os efeitos dos itens; de equipamentos da categoria X; de itens da categoria X; de atributos aprimorados. |
 | **Interação de habilidade** | Anule todas as habilidades de um equipamento (a habilidade **nem pode ser ativada**); de equipamentos de capa e calçado; de armas; de cimitarras, katanas, adagas e facas. |
@@ -1635,7 +1636,7 @@ A habilidade **não tem requisito de Pico próprio**: ela usa o **Requisito de P
 1. Cada habilidade pode ser usada **uma vez por turno de combate por padrão** e, **fora do combate**, **uma vez por vez**, a menos que a própria habilidade diga o contrário (ex.: "pode usar esta habilidade até X vezes"). Depois de usada, ela respeita a **Recarga** (em turnos de combate dentro do combate; em vezes fora dele).
 2. Várias habilidades **diferentes** podem ser usadas no mesmo turno, desde que o jogador pague todos os custos.
 3. Habilidades que causam dano **não substituem** o ataque com a arma no fim do turno: elas causam um **dano extra**, e depois o jogador ainda tem direito ao seu ataque.
-4. **Dano de habilidade:** usa **o mesmo cálculo do ataque** ([19.2](#192-cálculo-do-dano)), somando o **Poder** ao Ataque, e rola acerto conforme a forma ([17.4](#174-detalhe-das-formas)). O elemento da habilidade define a efetividade.
+4. **Dano de habilidade:** usa **o mesmo cálculo do ataque** ([19.2](#192-cálculo-do-dano)), somando o **Poder** ao Ataque, e rola acerto conforme a forma ([17.4](#174-detalhe-das-formas)). O elemento da habilidade define a efetividade. Efeitos da habilidade que causam dano à parte (ex.: veneno contínuo) são **dano de efeito** ([19.2](#192-cálculo-do-dano)).
 5. Habilidades de um equipamento **quebrado**, **anulado** ou com **Requisito de Pico** não cumprido não podem ser usadas.
 6. **Fim do combate:** quando o combate termina, todos os efeitos com duração em **turnos ou ciclos de combate** terminam junto, e as **recargas** de todas as habilidades **zeram** (fora do combate, a habilidade já pode ser usada de novo).
 7. **Início do combate:** ao começar um combate, as recargas também **zeram**; a contagem de recarga começa do zero dentro daquele combate. Uma recarga contada em vezes (fora do combate) **não** entra no combate.
@@ -1659,7 +1660,7 @@ Os cálculos podem ser trocados no laboratório.
 | **Projétil** | Escolhe 1 alvo. Rola acerto com **+10% de Precisão** (percentual no modificador, etapa 3 do pipeline de [7.4](#74-escala-fórmulas-e-valores-iniciais)), mas um **escudo** do alvo reduz o dano pela metade (só afeta jogadores, porque inimigos não têm equipamentos; escudo **quebrado** não conta). |
 | **Área** | Atinge **todos** os inimigos (ou todos os jogadores, se usada por inimigo). Dano em cada alvo é **metade** do normal. **Não rola acerto e não pode ser esquivada.** Para compensar, a maioria das habilidades de área deve ter alguma desvantagem ou ser **Canalizada**. |
 | **Contínua** | Paga uma vez, fica ativa por N turnos de combate (ex.: aura que dá +2 Defesa). Só uma habilidade contínua ativa por equipamento. |
-| **Canalizada** | Precisa ser "carregada" N vezes (cada carga usa a ação da habilidade no turno). Na carga final, dispara com efeito muito forte. Se o jogador sofrer, num único golpe, dano **maior que 20% da vida que tinha ao começar a canalização**, as cargas são perdidas (ajustável no laboratório). As cargas também se perdem no **fim do combate**, junto com as durações. |
+| **Canalizada** | Precisa ser "carregada" N vezes (cada carga usa a ação da habilidade no turno). Na carga final, dispara com efeito muito forte. Se o jogador sofrer, num único golpe, dano **maior que 20% da vida que tinha ao começar a canalização**, as cargas são perdidas (ajustável no laboratório); cada aplicação de **dano de efeito** ([19.2](#192-cálculo-do-dano)) também conta como um golpe. As cargas também se perdem no **fim do combate**, junto com as durações. |
 | **Passiva** | Sem custo de ativação; vale enquanto o equipamento estiver em uso. Não conta como "usar uma habilidade" para gatilhos. |
 
 ### 17.5 Habilidades exclusivas de inimigos
@@ -1791,6 +1792,13 @@ Ordem fixa: **acerto → Ataque − Defesa → ×½ (Área/escudo) → ×efetivi
 6. **Reflexão:** se o dano for maior que 0, o alvo devolve ao atacante até o valor da sua Reflexão, e esse valor é subtraído do dano que o alvo recebe. Com dano 0, nada é refletido. O dano refletido vai **direto na vida** do atacante (ignora a Defesa dele) e **pode nocauteá-lo**.
 
 **Nocaute simultâneo (Reflexão):** o dano principal resolve **antes** do dano refletido. Se o alvo cair com o ataque e o atacante também cair pela Reflexão, o atacante **vence** o combate (recebe a coisa boa) e **também** sofre o nocaute dele ([20.2](#202-nocaute)).
+
+**Dano de efeito:** é todo dano que **não** vem de um ataque (básico ou de habilidade): o valor fixo de um efeito ("cause X de dano"), o dano contínuo (ex.: veneno, "sofre 10 de dano no início de cada turno de combate") e os consumíveis de dano (ex.: bombas). Numa habilidade, o dano principal (com o Poder) é ataque e segue o cálculo acima ([17.2](#172-regras-de-uso)); os efeitos dela que causam dano à parte (ex.: o veneno que fica no alvo) são dano de efeito. O dano de efeito **não** segue as etapas 1, 2, 3 (×½ de Área e de escudo) nem 6 acima:
+- o valor da carta vai **direto na vida** do alvo: **não** rola acerto, **ignora** Defesa e Perfuração e **não** dispara Reflexão;
+- se o efeito tiver elemento, aplicam-se só a **resistência** (×½) e a **imunidade** (dano 0) do alvo e a **efetividade** do elemento contra inimigos ([16.1](#161-relações-e-efetividade)); depois arredonda-se para baixo;
+- "dano em Área" de efeito (ex.: bomba): **cada** alvo recebe o valor impresso, **sem** o ×½ (o ×½ é regra da forma Área das habilidades, [17.4](#174-detalhe-das-formas));
+- conta como **dano recebido** para gatilhos e para a perda de cargas da Canalizada (cada aplicação conta como um golpe);
+- o resultado do combate segue as regras normais: se o dano de efeito derrotar o último inimigo, o combate termina em **vitória**; se derrotar o último jogador de pé, em **derrota**.
 
 Fórmulas em teste; podem mudar no laboratório.
 
@@ -1994,7 +2002,7 @@ O mercado tem **três vitrines**:
 ### 24.1 Compra no estoque
 
 - O **estoque** vende recursos comuns (poções, munição, materiais básicos, ferramentas, etc.). Todo item do estoque é uma **carta**.
-- Mercados de zonas diferentes podem oferecer recursos **iguais** e recursos **exclusivos**. O jogador precisa explorar vários mercados para encontrar o que procura.
+- Mercados de zonas diferentes podem oferecer recursos **iguais** e recursos **exclusivos**. O jogador precisa explorar vários mercados para encontrar o que procura. Os itens do estoque de cada mercado estão **listados na carta de zona** ([3.4](#34-o-que-uma-carta-de-zona-contém)).
 - O estoque é **ilimitado**: não há limite de compra de um item do estoque.
 - O estoque vende **só** consumíveis, materiais básicos e ferramentas. **Não vende** equipamentos, relíquias, tesouros, documentos nem montarias (equipamentos vêm de boosters, singles, recompensas e do ferreiro).
 - Coisas essenciais, como **munição e poções**, existem em todos os mercados.
@@ -2068,7 +2076,7 @@ O mercado tem **três vitrines**:
 - Singles **nunca vão para o cofre** depois de comprados.
 
 **Onde aparecem:**
-- **Nem todo mercado** vende singles.
+- **Nem todo mercado** vende singles: a **carta de zona** indica se o mercado tem vitrine de singles ([3.4](#34-o-que-uma-carta-de-zona-contém)).
 - **Vitrine:** os singles ficam numa vitrine de **4 slots** por padrão. Quando uma carta sai da vitrine (compra ou decaimento), entra outra carta aleatória do **pool** que ainda tenha **estoque naquele mercado**. Se o mercado não tiver mais estoque de nenhuma carta do pool, o slot fica **vazio** até o próximo pool.
 - **Distribuição aleatória:** não se sabe em qual mercado um single vai aparecer. Mais de um mercado pode vender o mesmo single.
 - Nem todas as cartas das coleções vigentes estarão disponíveis como singles, porque o volume de cartas é grande e provavelmente não haveria tempo de jogo para todas circularem.
@@ -2132,7 +2140,7 @@ Os preços base foram escolhidos para que, sem escassez, uma carta de raridade m
 
 - **Pagamento das expansões:** como toda compra ([6.6](#66-recompensas-e-falta-de-espaço)), as expansões (bolsa, pasta de TCG, slots do cofre, slots de decks e ouro do cofre) são pagas **só com o ouro da bolsa**. Por isso a 1ª expansão de ouro do cofre (500) exige expandir a bolsa antes.
 - Todas as expansões são **permanentes** na campanha (veja [5.3](#53-dinheiro)).
-- **Estábulo** (em **todas** as zonas Rurais e Habitadas que têm mercado): compra e venda de montarias (veja [26](#26-montarias)).
+- **Estábulo** (em **todas** as zonas Rurais e Habitadas que têm mercado): compra e venda de montarias; as montarias à venda estão listadas na carta de zona, com estoque ilimitado (veja [26](#26-montarias)).
 
 ---
 
@@ -2205,6 +2213,7 @@ O Artífice carrega uma oficina portátil. Ela não substitui o ferreiro (não e
 
 - **Montaria** é um tipo de **recurso**, com **slot próprio** (não ocupa inventário nem slot de equipamento). **O jogador tem no máximo 1 montaria.**
 - **Como obter:** só o próprio jogo dá montarias: em mercados com o serviço *Estábulo* (zonas Rurais e Habitadas) e como recompensa de eventos e missões. Montarias **nunca** aparecem em boosters.
+- **O que o Estábulo vende:** as montarias **listadas na carta de zona** ([3.4](#34-o-que-uma-carta-de-zona-contém)), com **estoque ilimitado**, como o estoque do mercado (não há vitrine, sorteio nem decaimento). Montarias vendidas pelo jogador saem do jogo ([6.5](#65-pilhas-de-descarte-e-limbo)) e não mudam o que o Estábulo oferece.
 - **Trocar de montaria:** para ter uma montaria nova, o jogador precisa **vender a antiga no Estábulo** antes. **Só no Estábulo** é possível se livrar da montaria (não há como descartá-la em outro lugar).
 - **Preço:** cada montaria tem raridade. Compra no Estábulo = **preço base da raridade × fator do mercado**, arredondado para cima. Venda = **50% do preço base** (sem fator do mercado). Valores de referência (ajustáveis no laboratório):
 
@@ -2875,3 +2884,14 @@ A lista completa de valores está no [Apêndice A](#apêndice-a--valores-ajustá
 | N2 | Fuga no combate de missão | A etapa depende **só do resultado do combate** (tabela de 19.5). Dono fugiu e ajudantes venceram = **vitória**: a etapa é concluída, como no chefe final (3.2). "Fuga" na K9/M2 = resultado **fuga com sucesso** (todos fugiram), não a fuga individual do dono. | [21.1](#211-regras-gerais), [19.5](#195-combate-com-2-ou-mais-jogadores--1-ou-mais-inimigos), [3.2](#32-conclusão-de-uma-dimensão) |
 
 **Situação após a B.13:** não há pendências de regra conhecidas. O único tema adiado continua sendo a autenticação (F29).
+
+### B.14 Décima quarta revisão (13/11/2026)
+
+> Mesma instrução de B.2: pontos **decididos pelo autor** e já aplicados no documento. **Não** sinalizar de novo como contradição, ambiguidade, ponto em aberto, bloqueio ou "estranho", e **não** propor alternativas, a menos que o autor peça. Quando conflitar com uma decisão anterior, **vale a daqui**.
+
+| # | Tema | Decisão | Onde |
+|---|---|---|---|
+| O1 | Dano de efeito | Dano que não vem de ataque (valor fixo "cause X de dano", dano contínuo como veneno, consumíveis de dano como bombas) vai **direto na vida**: não rola acerto, ignora Defesa e Perfuração, **não** dispara Reflexão. Com elemento, aplicam-se só resistência (×½), imunidade (0) e efetividade contra inimigos; arredonda para baixo. "Área" de efeito: cada alvo recebe o valor impresso, **sem** ×½. Conta como dano recebido (gatilhos e Canalizada, cada aplicação = um golpe). O resultado do combate segue as regras normais. Numa habilidade, o dano principal (com Poder) é ataque; os danos à parte dos efeitos dela são dano de efeito. | [19.2](#192-cálculo-do-dano), [17.2](#172-regras-de-uso), [17.4](#174-detalhe-das-formas), [13.3](#133-ativação), [7.1](#71-modificadores) |
+| O2 | Ofertas do Mercado e do Estábulo | A **carta de zona** (dado do designer) lista os itens do estoque do mercado, indica se ele tem vitrine de singles e lista as montarias do Estábulo. O Estábulo tem **estoque ilimitado** (sem vitrine, sorteio nem decaimento); montarias vendidas pelo jogador saem do jogo e não mudam a oferta. | [3.4](#34-o-que-uma-carta-de-zona-contém), [24.1](#241-compra-no-estoque), [24.4](#244-singles), [24.5](#245-serviços-do-mercado), [26](#26-montarias) |
+
+**Situação após a B.14:** não há pendências de regra conhecidas. O único tema adiado continua sendo a autenticação (F29).
