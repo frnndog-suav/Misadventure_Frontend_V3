@@ -18,28 +18,51 @@ export type ErrorEnvelope = z.infer<typeof errorEnvelopeSchema>
  */
 export class ApiError extends Error {
   readonly code: string
+  /** `details` do envelope, ainda não validado (cada código tem o seu formato). */
+  readonly details: unknown
 
-  constructor(code: string, message: string) {
+  constructor(code: string, message: string, details?: unknown) {
     super(message)
     this.name = 'ApiError'
     this.code = code
+    this.details = details
   }
 }
 
+/** GET em `path`; veja `requestJson`. */
+export function getJson(path: string): Promise<unknown> {
+  return requestJson('GET', path)
+}
+
 /**
- * GET em `path`, relativo a `VITE_API_URL` (spec D-10; vazio = mesma origem).
- * Resposta ok → corpo devolvido como `unknown` (o chamador valida com o
- * schema do contrato, D-14). Erro no formato §1.4 → lança `ApiError`.
- * Qualquer outra falha (rede, corpo fora do envelope) → `Error` genérico.
+ * Pedido em `path`, relativo a `VITE_API_URL` (spec D-10; vazio = mesma
+ * origem); `body`, quando há, vai como JSON. Resposta ok → corpo devolvido
+ * como `unknown` (o chamador valida com o schema do contrato, D-14). Erro no
+ * formato §1.4 → lança `ApiError`. Qualquer outra falha (rede, corpo fora do
+ * envelope) → `Error` genérico.
  */
-export async function getJson(path: string): Promise<unknown> {
+export async function requestJson(
+  method: 'GET' | 'POST' | 'PATCH',
+  path: string,
+  body?: unknown,
+): Promise<unknown> {
   const base = import.meta.env.VITE_API_URL ?? ''
-  const response = await fetch(`${base}${path}`)
+  const response = await fetch(
+    `${base}${path}`,
+    body === undefined
+      ? { method }
+      : {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        },
+  )
   if (!response.ok) {
-    const body: unknown = await response.json().catch(() => undefined)
-    const envelope = errorEnvelopeSchema.safeParse(body)
+    const errorBody: unknown = await response.json().catch(() => undefined)
+    const envelope = errorEnvelopeSchema.safeParse(errorBody)
     if (envelope.success) {
-      throw new ApiError(envelope.data.error.code, envelope.data.error.message)
+      const { code, message, details } = envelope.data.error
+      throw new ApiError(code, message, details)
     }
     throw new Error(
       `Resposta de erro fora do contrato (§1.4): HTTP ${response.status}`,

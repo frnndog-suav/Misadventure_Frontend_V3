@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.11 · **Data:** 2026-11-14
+> **Versão da spec:** 0.13 · **Data:** 2026-11-14
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -76,12 +76,18 @@ Funções e hooks que as telas usam para ler o estado e enviar intenções. Regr
 | Função/hook | O que entrega | Tarefa |
 |---|---|---|
 | `useHealth()` | consulta `GET /health` e entrega o estado da ponte: carregando, `HealthResponse` validado, erro §1.4 (com `code` e `message`) ou falha de rede/validação | T-04 |
+| `useLabConfig()` | consulta `GET /lab/config`: carregando, `LabConfig` validado, erro §1.4 ou falha de rede/validação | T-08 |
+| `useUpdateLabConfig()` | mutação `PATCH /lab/config` com `LabConfigPatch`; sucesso atualiza o cache de `useLabConfig` com o `LabConfig` devolvido; erro §1.4 com `details` de `LAB_CONFIG_INVALID` validado | T-08 |
+| `useResetLabConfig()` | mutação `POST /lab/config/reset`; sucesso atualiza o cache de `useLabConfig` | T-08 |
+
+Base comum (T-08): `requestJson(method, path, body?)` em `src/api/http.ts` faz todo pedido; `ApiError` traz `code`, `message` e `details` (ainda `unknown`); `LAB_CONFIG_INVALID` com `details` válido vira `LabConfigInvalidError` (subclasse, com `fields`); com `details` fora do contrato vira erro genérico (falha de validação, REQ-06).
 
 ### 3.5 Telas e áreas de e2e
 
 | Área | Rota | Telas | FEAT |
 |---|---|---|---|
 | app | `/` | rota inicial (placeholder "Misadventures" até a primeira tela real) + área de status da ponte com o servidor (REQ-01); tema e tipografia da base visual (REQ-02) | FEAT-01, FEAT-02 |
+| lab | `/lab` (só dev, D-07) | laboratório: configuração ajustável do jogo e vitrine de componentes (REQ-05 a REQ-07) | FEAT-03 |
 
 Os componentes compartilhados da FEAT-02 (termo do jogo, categoria de carta) ainda não aparecem em nenhuma tela: são verificados por testes de componente até entrarem no laboratório (FEAT-03) e nas telas da FEAT-04.
 
@@ -121,6 +127,27 @@ A rota inicial mostra uma **área de status** (elemento com papel acessível `st
 - **Dado** o ícone da categoria ao lado do rótulo, **então** o ícone é decorativo (`alt=""`); a imagem tem texto alternativo com o rótulo da categoria.
 - **Dado** o catálogo de categorias, **quando** os testes rodam, **então** todo id do catálogo tem ícone e imagem (ou está marcado como "arte pendente").
 
+### REQ-05 — Laboratório só no build de dev
+
+- **Dado** o app no build de dev, **quando** o jogador abre `/lab`, **então** vê a tela com o título "Laboratório".
+- **Dado** o build de release (`npm run build`), **quando** o `dist/` é inspecionado, **então** não contém código de `src/lab/` nem a rota `/lab` (teste de build, D-07).
+
+### REQ-06 — Configuração ajustável do jogo
+
+Valores, padrões e limites vêm prontos do backend (CONTRATO §3 FEAT-03); o frontend não valida regra, só exibe e envia. Rótulos dos campos (glossário §2.6): "Jogadores (mínimo)", "Jogadores (máximo)", "Pontos de ação por vez", "Pico inicial", "Vigor inicial", "Vida base", "Ouro inicial", "Mão inicial".
+
+- **Dado** a consulta `GET /lab/config` em andamento, **então** a área de status da tela mostra "Carregando configuração…".
+- **Dado** o backend devolvendo o `LabConfig` dos padrões, **quando** a tela carrega, **então** há um campo numérico rotulado por chave com o valor de `values`, e junto dele o texto "Padrão: {defaults} · Mín. {min} · Máx. {max}" (ex.: "Padrão: 3 · Mín. 1 · Máx. 10").
+- **Dado** nenhum campo alterado, ou algum campo vazio, **então** o botão "Salvar" fica desabilitado.
+- **Dado** o jogador mudou "Pontos de ação por vez" para 4, **quando** clica em "Salvar", **então** o pedido `PATCH /lab/config` leva só as chaves alteradas (`{ "actionPointsPerTurn": 4 }`); com `200`, os campos mostram o `values` devolvido e a área de status mostra "Configuração salva.".
+- **Dado** o backend respondendo `400` `LAB_CONFIG_INVALID`, **quando** o jogador salva, **então** a área de status mostra a `message` recebida, os campos mantêm o que o jogador digitou e cada campo listado em `details.fields` mostra, ligado a ele por `aria-describedby`: `outOfRange` → "Use um valor entre {min} e {max}." (de `limits`); `notInteger` → "Use um número inteiro."; `minAboveMax` → "O mínimo de jogadores não pode passar do máximo.". `unknownKey` e `invalidBody` ficam só com a `message`.
+- **Dado** a tela carregada, **quando** o jogador clica em "Restaurar padrões", **então** é enviado `POST /lab/config/reset`; com `200`, os campos mostram o `values` devolvido e a área de status mostra "Padrões restaurados.".
+- **Dado** qualquer outro erro §1.4 (inclusive `404` `NOT_FOUND` com o laboratório desligado no backend), **então** a área de status mostra a `message` recebida; **dado** falha de rede ou resposta fora do contrato, mostra "Servidor indisponível. Tente novamente.". Nenhuma exceção chega à tela.
+
+### REQ-07 — Vitrine dos componentes compartilhados no laboratório
+
+- **Dado** a tela do laboratório, **quando** ela é exibida, **então** há uma seção "Componentes" que mostra o termo do jogo (REQ-03) com os 9 atributos do catálogo e a categoria de carta (REQ-04) com os ids de teste, inclusive um com arte pendente; o comportamento de cada um é o do seu REQ.
+
 Formato:
 
 ### REQ-nn — <nome>
@@ -151,6 +178,7 @@ Formato:
 - **D-20 — Textos dos tooltips no frontend:** o catálogo de termos (id do glossário do CONTRATO §2 → nome e texto explicativo em pt-BR) fica em `src/ui/`. O texto descreve o termo para o jogador; não calcula nem decide regra. Cada texto é aprovado pelo autor na tarefa que o acrescenta. Não muda o contrato. *(Autor, 2026-11-14; alternativa descartada: glossário enviado pelo backend, que exigiria endpoint novo.)*
 - **D-21 — Valores da base visual:** `src/ui/tokens.css` é a fonte única dos tokens (cores do tema escuro, escala de tipografia, espaçamentos, movimento). A fonte raiz acompanha o monitor (`clamp(14px, 0.5rem + 0.5vw, 20px)`) e tudo em `rem` escala junto, o que atende a D-09 sem media queries. Movimento: 120 ms (micro), 250 ms (troca de tela), teto 500 ms, easing `cubic-bezier(0.2, 0, 0, 1)`. Paleta e easing foram propostos na T-05 e o autor pode vetá-los; o teste de contraste lê todos os tokens `--color-*` do arquivo e protege o WCAG AA em qualquer troca ou acréscimo de cor. `--color-border` é só decorativo e fica fora do teste; um contorno informativo (campo, botão) exige token próprio com 3:1. *(T-05, 2026-11-14.)*
 - **D-22 — Imagens do jogo:** originais do autor em `assets-src/` (no Git, nunca editados); as versões do produto são exportadas à mão pelo autor para `src/assets/<categoria>/` (sem lib de conversão). O componente `CardCategory` recebe a entrada do catálogo (rótulo + ícone e imagem, ou `'pending'`); o catálogo de produção `src/ui/categories.ts` começa vazio (as categorias reais chegam na FEAT-04) e os ids `test-…` com SVG ficam em `src/ui/test-assets/`, importados só pelos testes, então nunca entram no release. Arte pendente: moldura neutra no lugar da imagem, sem ícone, rótulo visível. *(Autor, 2026-11-14.)*
+- **D-23 — Laboratório: consultas sem retry e textos por `reason`:** `useLabConfig` e as mutações usam `retry: false` (como a D-16). Os textos por campo do REQ-06 são do frontend, montados de `reason` + `limits` como o contrato pede (CONTRATO §3 FEAT-03); não decidem regra. Campo vazio desabilita "Salvar" porque não há número para enviar (formato, não regra). *(Autor, 2026-11-14, com os rótulos e textos do REQ-06.)*
 
 **Pendências (decidir antes da tarefa indicada):**
 - **P-02 — Como o jogador vê as vezes dos outros no momento 2** (antes da FEAT-21): proposta: o backend devolve a lista ordenada de eventos do domínio e o frontend anima um por um; no momento 3 só o transporte muda (socket). Registrada também no ROADMAP.
@@ -177,6 +205,14 @@ A T-04 fecha o lado FE da FEAT-01: depois dela a coluna FE vai a `pronto`, aguar
 
 A T-07 fecha o lado FE da FEAT-02 (o backend não tem alteração nela, ROADMAP `—`).
 
+**FEAT-03 — Esqueleto do laboratório** (CONTRATO v0.7 `acordado`)
+
+- [x] **T-08 — Cliente da configuração do laboratório** (REQ-06; CONTRATO §3 FEAT-03; D-01, D-14, D-23). Em `src/api/`: tipos `GameConfigValues`, `LabConfig`, `LabConfigPatch`, `LabConfigInvalidDetails` + schemas Zod; `useLabConfig`, `useUpdateLabConfig`, `useResetLabConfig`. Em `src/mocks/`: handlers de `/lab/config` e `/lab/config/reset` com fixtures dos cenários do contrato (cada resposta é fixa; os testes trocam o handler por cenário). Como verificar: unitários da camada de cliente.
+- [ ] **T-09 — Rota do laboratório só no dev** (REQ-05; D-07, D-08). Rota `/lab` registrada só atrás de `import.meta.env.DEV` com tela vazia titulada "Laboratório"; teste de build que procura marcas de `src/lab/` no `dist/`. Como verificar: `npm run dev` abre `/lab`; `npm run build` + teste de build passam; e2e da área `lab`.
+- [ ] **T-10 — Tela de configuração do laboratório** (REQ-06, REQ-07). Formulário em `src/lab/` com os 8 campos, padrões e limites, "Salvar", "Restaurar padrões", erros por campo e área de status; seção "Componentes" com o termo do jogo e a categoria de carta (os ids de teste passam a ser importados também por `src/lab/`, que é só dev — ajustar D-22 e a guarda se preciso). Como verificar: `npm run dev` (mocks) em `/lab`; unitários do REQ-06 e e2e da área `lab`.
+
+A T-10 fecha o lado FE da FEAT-03 com MSW; depois, `/retorno-backend` contra o backend real.
+
 ## 8. Histórico
 
 | Versão | Data | Mudança |
@@ -192,3 +228,5 @@ A T-07 fecha o lado FE da FEAT-02 (o backend não tem alteração nela, ROADMAP 
 | 0.9 | 2026-11-14 | T-05 concluída: D-18 revisada (Lora no lugar da Press Start 2P, pedido do autor), D-21 (valores da base visual em `src/ui/tokens.css`); REQ-02 ajustado à fonte de títulos. |
 | 0.10 | 2026-11-14 | T-06 concluída: componente `Term` e catálogo `src/ui/terms.ts` com os 9 atributos (textos aprovados pelo autor); tooltip abaixo do termo, conferido pela regra de CSS (jsdom não mede layout). |
 | 0.11 | 2026-11-14 | T-07 concluída: D-22 (originais em `assets-src/`, exportação manual para `src/assets/`, catálogo de produção vazio e ids de teste só nos testes); componente `CardCategory`. FE da FEAT-02 pronto. |
+| 0.12 | 2026-11-14 | FEAT-03 planejada: REQ-05 (laboratório só no dev), REQ-06 (configuração ajustável), REQ-07 (vitrine de componentes, autor), D-23 (aprovada), hooks do laboratório em 3.4, área `lab` em 3.5, tarefas T-08 a T-10. |
+| 0.13 | 2026-11-14 | T-08 concluída: cliente do laboratório (`useLabConfig`, `useUpdateLabConfig`, `useResetLabConfig`), `requestJson` e `LabConfigInvalidError` registrados em 3.4. |
