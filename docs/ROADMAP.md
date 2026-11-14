@@ -1,6 +1,6 @@
 # Misadventures — Roadmap de desenvolvimento
 
-> **Versão:** 0.10 · **Data:** 2026-11-14
+> **Versão:** 0.11 · **Data:** 2026-11-14
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend; o autor copia o arquivo inteiro quando ele muda. Base: README Parte III (III.2 e III.4). As regras estão em [`README.md`](README.md); o que trafega entre os lados, em [`CONTRATO.md`](CONTRATO.md).
 
@@ -48,7 +48,7 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | FEAT-00 | Fundação: agentes, skills, specs, devlog, roadmap e contrato (só documentos) | III.1, III.2, III.4 | pronto | pronto |
 | FEAT-01 | Esqueleto técnico. FE: ferramentas, guarda, pastas, MSW. BE: NestJS, Docker Compose (banco + backend), Drizzle, testes. Fecha com um endpoint mínimo que valida a ponte de ponta a ponta. | II.2, II.3 | pronto | pronto |
 | FEAT-02 | Base visual: guia visual PSX, tokens, carta com categoria (ícone, imagem e label), termo do jogo com destaque e tooltip | II.4, II.5 | pronto | — |
-| FEAT-03 | Esqueleto do laboratório: tela só no dev; BE com os valores ajustáveis numa configuração lida pelas regras | II.6, Apêndice A | aguardando outro lado | a fazer |
+| FEAT-03 | Esqueleto do laboratório: tela só no dev; BE com os valores ajustáveis numa configuração lida pelas regras | II.6, Apêndice A | validado | validado |
 
 ### Momento 1 — Um jogador
 
@@ -115,4 +115,5 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | 0.7 | 2026-11-14 | FEAT-03: contrato proposto pelo BE (CONTRATO v0.6); BE `aguardando outro lado`. |
 | 0.8 | 2026-11-14 | FEAT-03: contrato `acordado` pelo FE (CONTRATO v0.7); FE `a fazer` (falta planejar os REQs e as tarefas na spec); o BE pode implementar. |
 | 0.9 | 2026-11-14 | FEAT-03: BE sai de `aguardando outro lado` para `a fazer` (tarefas já planejadas na SPEC-BACKEND v0.6). |
-| 0.10 | 2026-11-14 | FEAT-03: lado FE pronto com MSW (T-08 a T-10, SPEC-FRONTEND v0.15); FE `aguardando outro lado` (validação contra o backend real). |
+| 0.10 | 2026-11-14 | FEAT-03: lado BE `pronto` (T-04 a T-06); CONTRATO v0.8 marca a FEAT-03 `implementado (BE)`. |
+| 0.11 | 2026-11-14 | FEAT-03 `validado` (CONTRATO v0.9): lado FE pronto com MSW (T-08 a T-10, SPEC-FRONTEND v0.15) e cenários do contrato passando contra o backend real. FEAT concluída. |
