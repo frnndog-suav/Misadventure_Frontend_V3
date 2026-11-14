@@ -4,7 +4,14 @@ import { categoryCatalog } from '../categories'
 import { playerClassLabels } from '../labels'
 import { Term } from '../Term'
 import { formatNumber, formatSigned } from './format'
-import { CardFrame, Effects, LabeledList, Tags } from './parts'
+import {
+  Abilities,
+  CardFrame,
+  Effects,
+  LabeledList,
+  RuleBlock,
+  Tags,
+} from './parts'
 
 /**
  * Carta de equipamento (REQ-10, README 5.1). Valores como vieram do backend;
@@ -39,15 +46,7 @@ export function EquipmentCard({ card }: { card: EquipmentCardData }) {
         render={(c) => playerClassLabels[c]}
       />
       {card.blocksShield && <p>Bloqueia escudo</p>}
-      <LabeledList
-        label="Habilidades"
-        items={card.abilities}
-        render={(a) => (
-          <>
-            <strong>{a.name}</strong> <span>{a.text}</span>
-          </>
-        )}
-      />
+      <Abilities abilities={card.abilities} />
       <Effects effects={card.effects} />
       {card.refinement !== null && (
         <div className="game-card-block">
@@ -56,10 +55,7 @@ export function EquipmentCard({ card }: { card: EquipmentCardData }) {
         </div>
       )}
       {card.enchantment !== null && (
-        <div className="game-card-block">
-          <p className="game-card-block-title">Encantamento</p>
-          <p>{card.enchantment.text}</p>
-        </div>
+        <RuleBlock title="Encantamento" rule={card.enchantment} />
       )}
     </CardFrame>
   )

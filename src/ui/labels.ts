@@ -11,6 +11,7 @@ import type {
   EnemyType,
   PlayerClass,
   Rarity,
+  ZoneAction,
   ZoneType,
 } from '../api/catalog'
 
@@ -118,3 +119,26 @@ export const behaviorLabels = {
   support: 'Suporte',
   hunter: 'Caçador',
 } satisfies Record<EnemyBehavior, string>
+
+/** Ações de zona (CONTRATO §2.5). "Pegar / Continuar / Finalizar missão" vira três rótulos. */
+export const zoneActionLabels = {
+  move: 'Movimentar',
+  recover: 'Recuperar',
+  prepare: 'Preparar',
+  adjustDeck: 'Ajustar deck',
+  negotiate: 'Negociar',
+  abandonQuest: 'Abandonar missão',
+  artificerWorkshop: 'Oficina do Artífice',
+  startEvent: 'Iniciar evento',
+  scavenge: 'Vasculhar',
+  useVault: 'Usar cofre',
+  takeQuest: 'Pegar missão',
+  continueQuest: 'Continuar missão',
+  finishQuest: 'Finalizar missão',
+  takeTrialQuest: 'Pegar missão de provação',
+  completeDimension: 'Concluir dimensão',
+  visitBlacksmith: 'Ir ao Ferreiro',
+  visitMarket: 'Ir ao Mercado',
+  trainWithMentor: 'Treinar com mentor',
+  saveRespawnPoint: 'Salvar ponto de respawn',
+} satisfies Record<ZoneAction, string>

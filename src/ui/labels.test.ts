@@ -7,6 +7,7 @@ import {
   enemyTypeSchema,
   playerClassSchema,
   raritySchema,
+  zoneActionSchema,
   zoneTypeSchema,
 } from '../api/catalog'
 import {
@@ -17,6 +18,7 @@ import {
   enemyTypeLabels,
   playerClassLabels,
   rarityLabels,
+  zoneActionLabels,
   zoneTypeLabels,
 } from './labels'
 
@@ -31,6 +33,7 @@ const cases = [
   ['enemyTypes', enemyTypeSchema.options, enemyTypeLabels],
   ['enemyCategory', enemyCategorySchema.options, enemyCategoryLabels],
   ['behavior', enemyBehaviorSchema.options, behaviorLabels],
+  ['zoneAction', zoneActionSchema.options, zoneActionLabels],
 ] as const
 
 describe('rótulos pt-BR dos identificadores do catálogo (CONTRATO §2.7)', () => {
@@ -53,5 +56,7 @@ describe('rótulos pt-BR dos identificadores do catálogo (CONTRATO §2.7)', () 
     expect(enemyTypeLabels.undead).toBe('Morto-vivo')
     expect(enemyCategoryLabels.boss).toBe('Chefe')
     expect(behaviorLabels.hunter).toBe('Caçador')
+    expect(zoneActionLabels.adjustDeck).toBe('Ajustar deck')
+    expect(zoneActionLabels.continueQuest).toBe('Continuar missão')
   })
 })
