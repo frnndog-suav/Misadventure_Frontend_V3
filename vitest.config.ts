@@ -13,8 +13,8 @@ export default mergeConfig(
       include: ['src/**/*.test.{ts,tsx}', '.claude/hooks/**/*.test.ts'],
       setupFiles: ['./vitest.setup.ts'],
       passWithNoTests: true,
-      // O Vitest esvazia CSS por padrão; o teste de contraste lê tokens.css?raw.
-      css: { include: [/src[\\/]ui[\\/]tokens\.css/] },
+      // O Vitest esvazia CSS por padrão; os testes leem tokens.css?raw e Term.css?raw.
+      css: { include: [/src[\\/]ui[\\/](tokens|Term)\.css/] },
     },
   }),
 )

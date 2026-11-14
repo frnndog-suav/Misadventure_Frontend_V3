@@ -16,7 +16,7 @@ Registro de cada etapa do frontend, escrito para que **outra IA consiga replicar
 
 ## Registro de tempo
 
-O tempo gasto no desenvolvimento fica em [`tempo.html`](tempo.html): um arquivo só, com os dados (array `SESSOES` no topo) e a visualização (abrir no navegador — totais, dias, período e horas por etapa). Uma linha por sessão de trabalho: `{ data, horas, etapa, nota }`; `horas: null` enquanto não souber. A `/registrar-etapa` acrescenta a sessão de cada etapa; sessões fora das etapas (estudo, documentação), o autor acrescenta à mão.
+O tempo gasto no desenvolvimento fica em [`tempo.html`](tempo.html): um arquivo só, com os dados (array `SESSOES` no topo) e a visualização (abrir no navegador — totais, dias, período e horas por etapa). Uma linha por sessão de trabalho: `{ data, horas, etapa, nota }`; `horas: null` enquanto não souber. Desde 2026-11-14, os hooks `UserPromptSubmit`/`Stop` (`.claude/hooks/time-log.mjs`) gravam a hora do sistema em `tempo-eventos.log`; `node .claude/hooks/time-log.mjs --resumo [AAAA-MM-DD]` soma o tempo ativo por dia (intervalos ≥ 30 min contam como pausa). A `/registrar-etapa` acrescenta a sessão de cada etapa; sessões fora das etapas (estudo, documentação), o autor acrescenta à mão.
 
 ## Índice
 | Nº | ID | Título | Status |
@@ -30,6 +30,7 @@ O tempo gasto no desenvolvimento fica em [`tempo.html`](tempo.html): um arquivo 
 | 006 | TEMPO | [Registro de tempo de desenvolvimento](006-TEMPO-registro-de-tempo.md) | concluída |
 | 007 | T-04 | [Consumo do GET /health na rota inicial](007-T-04-consumo-do-health.md) | concluída |
 | 008 | T-05 | [Tokens, tema escuro e tipografia](008-T-05-tokens-tema-e-tipografia.md) | aguardando revisão |
+| 009 | T-06 | [Termo do jogo com destaque e tooltip](009-T-06-termo-com-tooltip.md) | aguardando revisão |
 
 ## Como replicar
 O que um projeto novo precisa para ter o mesmo sistema:

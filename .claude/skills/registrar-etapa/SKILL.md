@@ -19,7 +19,7 @@ O devlog existe para que **outra IA consiga replicar o projeto** lendo as entrad
 5. Em **Backend**, diga se a etapa depende do backend e qual Aviso de backend foi dado (ou "nenhuma dependência").
 6. Atualize o índice (status `aguardando revisão`). O commit do autor conta como confirmação: ao criar uma entrada nova, marque como `concluída` as anteriores que já estão em commit (`git log --oneline -- docs/devlog/`).
 7. Se a etapa mudou algo que um projeto novo também precisaria (agente, skill, guarda, convenção), atualize **Como replicar**.
-8. Acrescente a sessão de trabalho da etapa no array `SESSOES` de `docs/devlog/tempo.html` (`{ data, horas, etapa, nota }`). Se não souber as horas, pergunte ao autor; sem resposta, use `horas: null` com a nota "a preencher".
+8. Acrescente a sessão de trabalho da etapa no array `SESSOES` de `docs/devlog/tempo.html` (`{ data, horas, etapa, nota }`). As horas vêm do registro automático: rode `node .claude/hooks/time-log.mjs --resumo <AAAA-MM-DD>` (soma o tempo ativo do dia a partir de `docs/devlog/tempo-eventos.log`, gravado pelos hooks UserPromptSubmit/Stop; intervalos ≥ 30 min contam como pausa). Se a data já tem sessão no array, atualize as horas em vez de duplicar. Sem eventos no dia, use `horas: null` com a nota "a preencher".
 
 ## Regras
 
