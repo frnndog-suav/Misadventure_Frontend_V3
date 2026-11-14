@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.2 · **Data:** 2026-11-13
+> **Versão da spec:** 0.3 · **Data:** 2026-11-13
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -105,6 +105,7 @@ Formato:
 - **D-10 — Variáveis de ambiente (proposta, confirmar na T-03):** `VITE_API_URL` (endereço do backend) e `VITE_USE_MOCKS` (`true` liga o MSW no dev).
 - **D-11 — TypeScript 6.0 em vez do 7.0:** o template veio com TS ~7.0.2, mas o typescript-eslint só suporta até `<6.1` (o `npm run lint` falhava com "typescript-eslint does not support TS 7.0" e o npm recusava instalar libs novas por conflito de peer). Voltou para ~6.0.3. *(Autor, 2026-11-13. Volta para o 7 quando o typescript-eslint suportar.)*
 - **D-12 — Testes de componentes e estilo de formatação:** autorizados `@testing-library/react`, `@testing-library/jest-dom` e `jsdom` (Vitest roda em `jsdom`, setup em `vitest.setup.ts`). Prettier sem ponto e vírgula e com aspas simples (o estilo que o código do template já usava). O Prettier formata também os Markdown fora de `docs/` (`CLAUDE.md`, `.claude/`); `docs/` fica fora para não reformatar o README compartilhado. `test:e2e` usa `--pass-with-no-tests` enquanto não houver e2e. *(Autor, 2026-11-13.)*
+- **D-13 — Correção do `npm audit`:** os 9 alertas moderados eram uma única falha (GHSA-g3hv-75wg-m249, negação de serviço no `minimatch` 10), só em ferramentas de desenvolvimento (ESLint e typescript-eslint); o build de release já tinha 0. ESLint atualizado para ^10.15.0 e `overrides.minimatch = ^11.0.8` no `package.json`, porque o typescript-eslint mais novo (8.72.2) ainda pede o `minimatch` vulnerável e o `npm audit fix --force` o rebaixaria para 8.36. **Remover o override** quando o typescript-eslint publicar uma versão com o `minimatch` corrigido (conferir com `npm audit` depois de tirá-lo). *(Pedido do autor, 2026-11-13.)*
 
 **Pendências (decidir antes da tarefa indicada):**
 - **P-01 — Validação dos dados recebidos** (antes da T-03): Zod (lib nova, precisa de autorização; schemas legíveis, menos código) ou validadores escritos à mão (sem lib; mais código para manter).
@@ -128,3 +129,4 @@ O endpoint mínimo que valida a ponte FE↔BE de ponta a ponta (fecho da FEAT-01
 |---|---|---|
 | 0.1 | 2026-11-13 | Versão inicial (FEAT-00): visão, arquitetura, decisões D-01 a D-10, pendências P-01 e P-02, tarefas T-01 a T-03. |
 | 0.2 | 2026-11-13 | T-01 concluída: D-11 (TypeScript 6.0) e D-12 (libs de teste de componentes e estilo do Prettier); tabela 3.2 atualizada. |
+| 0.3 | 2026-11-13 | D-13: correção do `npm audit` (ESLint ^10.15 e override do `minimatch`). |
