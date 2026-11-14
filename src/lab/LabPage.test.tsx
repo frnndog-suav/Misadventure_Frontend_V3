@@ -75,6 +75,11 @@ async function loaded(): Promise<void> {
 
 const field = (name: string) => screen.getByRole('spinbutton', { name })
 const saveButton = () => screen.getByRole('button', { name: 'Salvar' })
+/** Área de status da seção "Configuração" (o Catálogo tem a sua, T-15). */
+const configStatus = () =>
+  within(screen.getByRole('region', { name: 'Configuração' })).getByRole(
+    'status',
+  )
 
 function setField(name: string, value: string): void {
   fireEvent.change(field(name), { target: { value } })
@@ -83,9 +88,7 @@ function setField(name: string, value: string): void {
 describe('REQ-06: configuração ajustável do jogo', () => {
   it('REQ-06: com o GET em andamento, a área de status mostra "Carregando configuração…"', async () => {
     renderLab()
-    expect(screen.getByRole('status')).toHaveTextContent(
-      'Carregando configuração…',
-    )
+    expect(configStatus()).toHaveTextContent('Carregando configuração…')
     await loaded()
   })
 
@@ -139,7 +142,7 @@ describe('REQ-06: configuração ajustável do jogo', () => {
     fireEvent.click(saveButton())
 
     expect(await screen.findByText('Configuração salva.')).toBeVisible()
-    expect(screen.getByRole('status')).toHaveTextContent('Configuração salva.')
+    expect(configStatus()).toHaveTextContent('Configuração salva.')
     expect(sentBody).toEqual({ actionPointsPerTurn: 4 })
     expect(field('Pontos de ação por vez')).toHaveValue(4)
     expect(saveButton()).toBeDisabled()
@@ -174,7 +177,7 @@ describe('REQ-06: configuração ajustável do jogo', () => {
     fireEvent.click(saveButton())
 
     await waitFor(() =>
-      expect(screen.getByRole('status')).toHaveTextContent(
+      expect(configStatus()).toHaveTextContent(
         'Configuração do laboratório inválida.',
       ),
     )
@@ -248,7 +251,7 @@ describe('REQ-06: configuração ajustável do jogo', () => {
     setField('Vida base', '30')
     fireEvent.click(saveButton())
     await waitFor(() =>
-      expect(screen.getByRole('status')).toHaveTextContent(
+      expect(configStatus()).toHaveTextContent(
         'Configuração do laboratório inválida.',
       ),
     )
@@ -319,9 +322,7 @@ describe('REQ-06: configuração ajustável do jogo', () => {
     )
     renderLab()
     await waitFor(() =>
-      expect(screen.getByRole('status')).toHaveTextContent(
-        'Recurso não encontrado.',
-      ),
+      expect(configStatus()).toHaveTextContent('Recurso não encontrado.'),
     )
     expect(
       screen.getByRole('heading', { level: 1, name: 'Laboratório' }),
@@ -332,7 +333,7 @@ describe('REQ-06: configuração ajustável do jogo', () => {
     server.use(http.get('*/lab/config', () => HttpResponse.error()))
     renderLab()
     await waitFor(() =>
-      expect(screen.getByRole('status')).toHaveTextContent(
+      expect(configStatus()).toHaveTextContent(
         'Servidor indisponível. Tente novamente.',
       ),
     )
@@ -342,7 +343,7 @@ describe('REQ-06: configuração ajustável do jogo', () => {
     server.use(http.get('*/lab/config', () => HttpResponse.json({})))
     renderLab()
     await waitFor(() =>
-      expect(screen.getByRole('status')).toHaveTextContent(
+      expect(configStatus()).toHaveTextContent(
         'Servidor indisponível. Tente novamente.',
       ),
     )
@@ -359,7 +360,7 @@ describe('REQ-06: configuração ajustável do jogo', () => {
     setField('Vida base', '30')
     fireEvent.click(saveButton())
     await waitFor(() =>
-      expect(screen.getByRole('status')).toHaveTextContent(
+      expect(configStatus()).toHaveTextContent(
         'Erro inesperado no servidor. Tente novamente.',
       ),
     )
@@ -367,7 +368,7 @@ describe('REQ-06: configuração ajustável do jogo', () => {
     server.use(http.patch('*/lab/config', () => HttpResponse.error()))
     fireEvent.click(saveButton())
     await waitFor(() =>
-      expect(screen.getByRole('status')).toHaveTextContent(
+      expect(configStatus()).toHaveTextContent(
         'Servidor indisponível. Tente novamente.',
       ),
     )
@@ -384,9 +385,7 @@ describe('REQ-06: configuração ajustável do jogo', () => {
     await loaded()
     fireEvent.click(screen.getByRole('button', { name: 'Restaurar padrões' }))
     await waitFor(() =>
-      expect(screen.getByRole('status')).toHaveTextContent(
-        'Recurso não encontrado.',
-      ),
+      expect(configStatus()).toHaveTextContent('Recurso não encontrado.'),
     )
   })
 })

@@ -14,6 +14,7 @@ import { CardCategory } from '../ui/CardCategory'
 import { Term } from '../ui/Term'
 import { attributeSchema } from '../api/catalog'
 import { testCategoryCatalog } from '../ui/test-assets/categories'
+import { CatalogSection } from './CatalogSection'
 import './LabPage.css'
 
 /** Rótulos dos campos (REQ-06, glossário §2.6), na ordem da tela. */
@@ -205,6 +206,7 @@ export default function LabPage() {
       <h1>Laboratório</h1>
       <LabConfigSection />
       <ComponentsSection />
+      <CatalogSection />
     </main>
   )
 }

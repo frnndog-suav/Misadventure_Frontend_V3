@@ -13,6 +13,9 @@ test('REQ-06: carrega, salva e restaura a configuração (MSW)', async ({
   page,
 }) => {
   await page.goto('/lab')
+  const status = page
+    .getByRole('region', { name: 'Configuração' })
+    .getByRole('status')
   const actionPoints = page.getByRole('spinbutton', {
     name: 'Pontos de ação por vez',
   })
@@ -25,11 +28,11 @@ test('REQ-06: carrega, salva e restaura a configuração (MSW)', async ({
   await actionPoints.fill('4')
   await expect(save).toBeEnabled()
   await save.click()
-  await expect(page.getByRole('status')).toHaveText('Configuração salva.')
+  await expect(status).toHaveText('Configuração salva.')
   await expect(actionPoints).toHaveValue('4')
 
   await page.getByRole('button', { name: 'Restaurar padrões' }).click()
-  await expect(page.getByRole('status')).toHaveText('Padrões restaurados.')
+  await expect(status).toHaveText('Padrões restaurados.')
   await expect(actionPoints).toHaveValue('3')
 })
 
@@ -55,4 +58,23 @@ test('REQ-07: a seção "Componentes" mostra o termo e as categorias de teste', 
 
   await section.getByText('Força').hover()
   await expect(page.getByRole('tooltip')).toBeVisible()
+})
+
+test('REQ-08: o Catálogo filtra por tipo e mostra a carta escolhida (MSW)', async ({
+  page,
+}) => {
+  await page.goto('/lab')
+  const section = page.getByRole('region', { name: 'Catálogo' })
+  await expect(
+    section.getByRole('radio', { name: 'Coleção de Teste' }),
+  ).toBeChecked()
+  const list = section.getByRole('list', { name: 'Cartas' })
+  await expect(list.getByRole('button')).toHaveCount(6)
+
+  await section.getByRole('radio', { name: 'Zona (1)' }).check()
+  await expect(list.getByRole('button')).toHaveCount(1)
+  await list.getByRole('button', { name: 'Bosque Sussurrante · Zona' }).click()
+  await expect(
+    section.getByRole('article', { name: 'Bosque Sussurrante' }),
+  ).toBeVisible()
 })

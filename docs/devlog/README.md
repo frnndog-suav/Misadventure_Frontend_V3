@@ -49,5 +49,6 @@ O que um projeto novo precisa para ter o mesmo sistema:
 4. Hook de guarda e regras de lint entram na primeira tarefa de código (aqui, T-02), quando já existe `src/` a proteger.
 5. Registro de tempo: copiar `docs/devlog/tempo.html` com o array `SESSOES` zerado e acrescentar o passo correspondente na skill de registrar etapa. Fica em `docs/`, nunca dentro do app (nenhum painel de desenvolvimento fora do laboratório).
 | 019 | T-12 | [Categorias e rótulos](019-T-12-categorias-e-rotulos.md) | concluída |
-| 020 | T-13 | [Cartas de atributo, equipamento e item](020-T-13-cartas-atributo-equipamento-item.md) | aguardando revisão |
-| 021 | T-14 | [Cartas de zona e de evento](021-T-14-cartas-zona-evento.md) | aguardando revisão |
+| 020 | T-13 | [Cartas de atributo, equipamento e item](020-T-13-cartas-atributo-equipamento-item.md) | concluída |
+| 021 | T-14 | [Cartas de zona e de evento](021-T-14-cartas-zona-evento.md) | concluída |
+| 022 | T-15 | [Seção Catálogo no laboratório](022-T-15-catalogo-no-laboratorio.md) | aguardando revisão |
