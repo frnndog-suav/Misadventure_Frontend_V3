@@ -12,7 +12,7 @@ import {
 } from '../api/labConfig'
 import { CardCategory } from '../ui/CardCategory'
 import { Term } from '../ui/Term'
-import { termCatalog, type TermId } from '../ui/terms'
+import { attributeSchema } from '../api/catalog'
 import { testCategoryCatalog } from '../ui/test-assets/categories'
 import './LabPage.css'
 
@@ -185,7 +185,7 @@ function ComponentsSection() {
     <section aria-labelledby="lab-components-title">
       <h2 id="lab-components-title">Componentes</h2>
       <p className="lab-terms">
-        {(Object.keys(termCatalog) as TermId[]).map((id) => (
+        {attributeSchema.options.map((id) => (
           <Term key={id} id={id} />
         ))}
       </p>

@@ -16,6 +16,16 @@ const attributeIds: TermId[] = [
   'luck',
 ]
 
+const modifierIds: TermId[] = [
+  'attack',
+  'defense',
+  'accuracy',
+  'evasion',
+  'celerity',
+  'piercing',
+  'reflection',
+]
+
 describe('Term', () => {
   it('REQ-03: exibe o nome pt-BR do catálogo com o estilo de destaque', () => {
     render(<Term id="strength" />)
@@ -23,9 +33,12 @@ describe('Term', () => {
     expect(term).toHaveClass('term')
   })
 
-  it('REQ-03: o catálogo começa com os 9 atributos, cada um com nome e texto', () => {
-    expect(Object.keys(termCatalog).sort()).toEqual([...attributeIds].sort())
-    for (const id of attributeIds) {
+  it('REQ-03 (T-13): o catálogo tem os 9 atributos e os 7 modificadores, cada um com nome e texto', () => {
+    const ids: TermId[] = [...attributeIds, ...modifierIds]
+    expect(Object.keys(termCatalog).sort()).toEqual([...ids].sort())
+    expect(termCatalog.attack.name).toBe('Ataque')
+    expect(termCatalog.reflection.name).toBe('Reflexão')
+    for (const id of ids) {
       expect(termCatalog[id].name.length).toBeGreaterThan(0)
       expect(termCatalog[id].description.length).toBeGreaterThan(0)
     }

@@ -48,4 +48,5 @@ O que um projeto novo precisa para ter o mesmo sistema:
 3. Incluir literalmente as quatro instruções obrigatórias de README III.1 no `CLAUDE.md` e em todos os agentes de desenvolvimento.
 4. Hook de guarda e regras de lint entram na primeira tarefa de código (aqui, T-02), quando já existe `src/` a proteger.
 5. Registro de tempo: copiar `docs/devlog/tempo.html` com o array `SESSOES` zerado e acrescentar o passo correspondente na skill de registrar etapa. Fica em `docs/`, nunca dentro do app (nenhum painel de desenvolvimento fora do laboratório).
-| 019 | T-12 | [Categorias e rótulos](019-T-12-categorias-e-rotulos.md) | aguardando revisão |
+| 019 | T-12 | [Categorias e rótulos](019-T-12-categorias-e-rotulos.md) | concluída |
+| 020 | T-13 | [Cartas de atributo, equipamento e item](020-T-13-cartas-atributo-equipamento-item.md) | aguardando revisão |

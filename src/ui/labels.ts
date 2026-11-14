@@ -3,6 +3,7 @@
 // faz faltar um rótulo virar erro de tipo. Categorias de slot/itemCategory
 // ficam em categories.ts (D-28).
 import type {
+  AttributeCard,
   CardType,
   Element,
   EnemyBehavior,
@@ -21,6 +22,13 @@ export const cardTypeLabels = {
   randomEvent: 'Evento aleatório',
   combatEvent: 'Evento de combate',
 } satisfies Record<CardType, string>
+
+/** Tipo da carta de atributo (CONTRATO §2, README 4.3). */
+export const attributeKindLabels = {
+  basic: 'Básica',
+  synergy: 'Sinérgica',
+  enhanced: 'Aprimorada',
+} satisfies Record<AttributeCard['attributeKind'], string>
 
 export const rarityLabels = {
   common: 'Comum',

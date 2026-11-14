@@ -1,6 +1,7 @@
 // Catálogo de termos do jogo (spec D-20, REQ-03). Ids do glossário do
 // docs/CONTRATO.md §2; nome e texto em pt-BR, aprovados pelo autor.
 // O texto descreve o termo; não calcula nem decide regra.
+import type { Attribute, Modifier } from '../api/catalog'
 
 export type TermEntry = { name: string; description: string }
 
@@ -50,6 +51,36 @@ export const termCatalog = {
     description:
       'Influência do acaso: encontrar oportunidades, evitar o pior e se beneficiar do imprevisível.',
   },
-} as const satisfies Record<string, TermEntry>
+  // Modificadores (README 7.1), T-13.
+  attack: {
+    name: 'Ataque',
+    description: 'O valor do ataque desferido no oponente.',
+  },
+  defense: {
+    name: 'Defesa',
+    description: 'Quanto se resiste ao ataque do oponente.',
+  },
+  accuracy: {
+    name: 'Precisão',
+    description: 'Se o ataque acerta o alvo.',
+  },
+  evasion: {
+    name: 'Esquiva',
+    description: 'Se o alvo escapa do ataque.',
+  },
+  celerity: {
+    name: 'Celeridade',
+    description:
+      'A ordem de ação no combate: quanto maior, mais cedo a parte age.',
+  },
+  piercing: {
+    name: 'Perfuração',
+    description: 'Quantos pontos da defesa do oponente são ignorados.',
+  },
+  reflection: {
+    name: 'Reflexão',
+    description: 'Quantos pontos do dano recebido são devolvidos ao atacante.',
+  },
+} as const satisfies Record<Attribute | Modifier, TermEntry>
 
 export type TermId = keyof typeof termCatalog
