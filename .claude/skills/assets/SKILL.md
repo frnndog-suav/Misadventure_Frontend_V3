@@ -5,18 +5,18 @@ description: Convenção de imagens e ícones do Misadventures (referência) - a
 
 # /assets
 
-> **Estado (2026-11-13):** convenção inicial. Onde ficam os originais, formatos finais e como gerar as versões do produto são definidos com o autor na **FEAT-02**. Até lá, pergunte em vez de decidir.
+> **Estado (2026-11-14):** definida com o autor na T-07 (spec D-22).
 
 ## 1. Origem
 
 - **Imagens e ícones do jogo são fornecidos pelo autor** (README II.4), no estilo PSX de README II.5.
-- **SVG próprio só para testes** (README II.4): placeholders com prefixo `test-` no nome, usados em testes e fixtures do MSW, nunca no build de release.
-- _O que a tela mostra quando a arte do autor ainda não existe: a definir na FEAT-02._
+- **SVG próprio só para testes** (README II.4): placeholders com prefixo `test-` no nome, em `src/ui/test-assets/`, importados só por testes (e fixtures do MSW), nunca pelo código de produção — assim ficam fora do release.
+- **Arte ainda não entregue:** a entrada do catálogo usa `art: 'pending'`; a tela mostra uma moldura neutra no lugar da imagem, sem ícone, com o rótulo visível.
 
 ## 2. Duas camadas, nunca misturadas
 
-- **Originais:** os arquivos como o autor entregou. Nunca editados no lugar. _Pasta e se ficam no Git: a definir na FEAT-02._
-- **Versões do produto:** as que o app importa, derivadas dos originais escolhidos. _Como são geradas (sem lib nova sem autorização): a definir na FEAT-02._
+- **Originais:** os arquivos como o autor entregou. Nunca editados no lugar. Ficam em `assets-src/` (raiz), versionados no Git.
+- **Versões do produto:** as que o app importa, derivadas dos originais escolhidos. **Exportadas à mão pelo autor** no tamanho e formato final para `src/assets/<categoria>/` (sem script nem lib de conversão).
 
 ## 3. Nome e catálogo
 
@@ -25,9 +25,10 @@ description: Convenção de imagens e ícones do Misadventures (referência) - a
 - Os ids seguem o glossário do `docs/CONTRATO.md` §2 (ex.: o ícone do atributo Força é `attribute-strength`).
 - Ao acrescentar um ícone, acrescente o id ao catálogo e a esta lista:
 
-| Categoria        | Ids disponíveis | Planejados |
-| ---------------- | --------------- | ---------- |
-| _(nenhum ainda)_ |                 |            |
+| Categoria                                   | Ids disponíveis              | Planejados       |
+| ------------------------------------------- | ---------------------------- | ---------------- |
+| Categoria de carta (`src/ui/categories.ts`) | _(nenhum; catálogo vazio)_   | reais na FEAT-04 |
+| Teste (`src/ui/test-assets/categories.ts`)  | `test-relic`, `test-pending` | —                |
 
 ## 4. Ligar imagem a dado
 
@@ -41,9 +42,9 @@ description: Convenção de imagens e ícones do Misadventures (referência) - a
 - Ícone sem texto → rótulo acessível em pt-BR.
 - Ícone nunca é a única informação.
 
-## 6. Passo a passo para uma imagem nova _(completar na FEAT-02)_
+## 6. Passo a passo para uma imagem nova
 
-1. Guardar o original do autor na pasta de originais.
-2. Gerar a versão do produto.
-3. Acrescentar o id ao catálogo no código e à tabela do §3.
-4. Rodar o teste que confere que todo id do catálogo tem imagem (criado na FEAT-02).
+1. Guardar o original do autor em `assets-src/`.
+2. O autor exporta a versão do produto para `src/assets/<categoria>/<id>.<ext>` (ícone e imagem).
+3. Importar os arquivos no catálogo (ex.: `src/ui/categories.ts`), trocando `art: 'pending'` por `{ icon, image }`, e atualizar a tabela do §3.
+4. Rodar `npx vitest related --run src/ui/CardCategory.test.tsx` (confere que todo id tem ícone e imagem ou está pendente, e que não há `test-` no catálogo de produção).

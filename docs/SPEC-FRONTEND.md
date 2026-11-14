@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.9 · **Data:** 2026-11-14
+> **Versão da spec:** 0.11 · **Data:** 2026-11-14
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -150,6 +150,7 @@ Formato:
 - **D-19 — Faixa de resoluções suportada:** de 1280×720 a 2560×1440; dentro dela o layout se ajusta e não há rolagem horizontal. Os e2e conferem as duas pontas. *(Autor, 2026-11-14.)*
 - **D-20 — Textos dos tooltips no frontend:** o catálogo de termos (id do glossário do CONTRATO §2 → nome e texto explicativo em pt-BR) fica em `src/ui/`. O texto descreve o termo para o jogador; não calcula nem decide regra. Cada texto é aprovado pelo autor na tarefa que o acrescenta. Não muda o contrato. *(Autor, 2026-11-14; alternativa descartada: glossário enviado pelo backend, que exigiria endpoint novo.)*
 - **D-21 — Valores da base visual:** `src/ui/tokens.css` é a fonte única dos tokens (cores do tema escuro, escala de tipografia, espaçamentos, movimento). A fonte raiz acompanha o monitor (`clamp(14px, 0.5rem + 0.5vw, 20px)`) e tudo em `rem` escala junto, o que atende a D-09 sem media queries. Movimento: 120 ms (micro), 250 ms (troca de tela), teto 500 ms, easing `cubic-bezier(0.2, 0, 0, 1)`. Paleta e easing foram propostos na T-05 e o autor pode vetá-los; o teste de contraste lê todos os tokens `--color-*` do arquivo e protege o WCAG AA em qualquer troca ou acréscimo de cor. `--color-border` é só decorativo e fica fora do teste; um contorno informativo (campo, botão) exige token próprio com 3:1. *(T-05, 2026-11-14.)*
+- **D-22 — Imagens do jogo:** originais do autor em `assets-src/` (no Git, nunca editados); as versões do produto são exportadas à mão pelo autor para `src/assets/<categoria>/` (sem lib de conversão). O componente `CardCategory` recebe a entrada do catálogo (rótulo + ícone e imagem, ou `'pending'`); o catálogo de produção `src/ui/categories.ts` começa vazio (as categorias reais chegam na FEAT-04) e os ids `test-…` com SVG ficam em `src/ui/test-assets/`, importados só pelos testes, então nunca entram no release. Arte pendente: moldura neutra no lugar da imagem, sem ícone, rótulo visível. *(Autor, 2026-11-14.)*
 
 **Pendências (decidir antes da tarefa indicada):**
 - **P-02 — Como o jogador vê as vezes dos outros no momento 2** (antes da FEAT-21): proposta: o backend devolve a lista ordenada de eventos do domínio e o frontend anima um por um; no momento 3 só o transporte muda (socket). Registrada também no ROADMAP.
@@ -172,7 +173,7 @@ A T-04 fecha o lado FE da FEAT-01: depois dela a coluna FE vai a `pronto`, aguar
 
 - [x] **T-05 — Tokens, tema escuro e tipografia** (REQ-02; D-09, D-17, D-18, D-19, D-21). Criar o arquivo de tokens em `src/ui/` (cores semânticas do tema escuro, escala de tipografia, espaçamentos relativos ao monitor, durações e easing de movimento); servir o arquivo da fonte de títulos (Lora, fornecida pelo autor) junto com o app; aplicar na rota inicial; teste unitário de contraste de todos os pares de tokens; e2e da área `app` nas duas pontas de resolução. Atualizar `/guia-visual` (§2, §3, §5, §6) com os valores escolhidos. Como verificar: `npm run dev` mostra a rota inicial em tema escuro, título em Lora e status na fonte do sistema.
 - [x] **T-06 — Termo do jogo com destaque e tooltip** (REQ-03; D-20). Componente de termo em `src/ui/` e catálogo de termos tipado por id do glossário (CONTRATO §2). O catálogo começa com os **9 atributos** (README 4.1); os textos dos tooltips são rascunhados a partir do README e **aprovados pelo autor** antes de a tarefa fechar. Tooltip por mouse e por teclado, fecha com Esc, sem cobrir o termo. Como verificar: testes de componente (ainda não há tela que use termos).
-- [ ] **T-07 — Carta com categoria e convenção de imagens** (REQ-04). Componente de categoria de carta em `src/ui/` (ícone + imagem + rótulo, moldura neutra quando a arte está pendente); catálogo de categorias com **ids de teste** (`test-…`, SVG só para testes) — as categorias reais chegam com o modelo das cartas na FEAT-04; teste "todo id tem imagem ou está pendente". Definir com o autor e registrar em `/assets`: pasta dos originais e como as versões do produto são geradas. Como verificar: testes de componente.
+- [x] **T-07 — Carta com categoria e convenção de imagens** (REQ-04). Componente de categoria de carta em `src/ui/` (ícone + imagem + rótulo, moldura neutra quando a arte está pendente); catálogo de categorias com **ids de teste** (`test-…`, SVG só para testes) — as categorias reais chegam com o modelo das cartas na FEAT-04; teste "todo id tem imagem ou está pendente". Definir com o autor e registrar em `/assets`: pasta dos originais e como as versões do produto são geradas. Como verificar: testes de componente.
 
 A T-07 fecha o lado FE da FEAT-02 (o backend não tem alteração nela, ROADMAP `—`).
 
@@ -190,3 +191,4 @@ A T-07 fecha o lado FE da FEAT-02 (o backend não tem alteração nela, ROADMAP 
 | 0.8 | 2026-11-14 | FEAT-02 planejada: REQ-02 a REQ-04, D-17 (só tema escuro), D-18 (tipografia), D-19 (1280×720 a 2560×1440), D-20 (textos dos tooltips no frontend), tarefas T-05 a T-07. |
 | 0.9 | 2026-11-14 | T-05 concluída: D-18 revisada (Lora no lugar da Press Start 2P, pedido do autor), D-21 (valores da base visual em `src/ui/tokens.css`); REQ-02 ajustado à fonte de títulos. |
 | 0.10 | 2026-11-14 | T-06 concluída: componente `Term` e catálogo `src/ui/terms.ts` com os 9 atributos (textos aprovados pelo autor); tooltip abaixo do termo, conferido pela regra de CSS (jsdom não mede layout). |
+| 0.11 | 2026-11-14 | T-07 concluída: D-22 (originais em `assets-src/`, exportação manual para `src/assets/`, catálogo de produção vazio e ids de teste só nos testes); componente `CardCategory`. FE da FEAT-02 pronto. |

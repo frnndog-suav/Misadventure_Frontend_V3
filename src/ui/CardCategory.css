@@ -1,0 +1,35 @@
+/* Categoria de carta (REQ-04). Só tokens (D-21). */
+
+.card-category {
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.card-category-image,
+.card-category-frame {
+  width: 6rem;
+  aspect-ratio: 1;
+  image-rendering: pixelated;
+}
+
+/* Arte pendente: moldura neutra no lugar da imagem. */
+.card-category-frame {
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+}
+
+.card-category-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+}
+
+.card-category-icon {
+  width: 1em;
+  height: 1em;
+  image-rendering: pixelated;
+}
