@@ -32,9 +32,10 @@ O tempo gasto no desenvolvimento fica em [`tempo.html`](tempo.html): um arquivo 
 | 008 | T-05 | [Tokens, tema escuro e tipografia](008-T-05-tokens-tema-e-tipografia.md) | concluída |
 | 009 | T-06 | [Termo do jogo com destaque e tooltip](009-T-06-termo-com-tooltip.md) | concluída |
 | 010 | T-07 | [Carta com categoria e convenção de imagens](010-T-07-carta-com-categoria.md) | concluída |
-| 011 | CONTRATO | [FEAT-03 acordado](011-CONTRATO-feat-03-acordado.md) | aguardando revisão |
+| 011 | CONTRATO | [FEAT-03 acordado](011-CONTRATO-feat-03-acordado.md) | concluída |
 | 012 | SPEC | [FEAT-03 planejada](012-SPEC-feat-03-planejada.md) | concluída |
-| 013 | T-08 | [Cliente da configuração do laboratório](013-T-08-cliente-lab-config.md) | aguardando revisão |
+| 013 | T-08 | [Cliente da configuração do laboratório](013-T-08-cliente-lab-config.md) | concluída |
+| 014 | T-09 | [Rota do laboratório só no dev](014-T-09-rota-lab-so-dev.md) | aguardando revisão |
 
 ## Como replicar
 O que um projeto novo precisa para ter o mesmo sistema:

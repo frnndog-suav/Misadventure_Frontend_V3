@@ -16,7 +16,7 @@ const mocksPattern = {
 const labPattern = {
   group: ['**/lab', '**/lab/**'],
   message:
-    'D-08/Princípio 4 (laboratório só no dev): importar src/lab/ só na rota de dev (src/main.tsx até a T-03).',
+    'D-08/Princípio 4 (laboratório só no dev): importar src/lab/ só no ponto de entrada de dev (src/main.tsx).',
 }
 const socketPattern = {
   group: ['socket.io-client', 'socket.io-client/**'],

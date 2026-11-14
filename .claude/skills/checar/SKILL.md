@@ -12,7 +12,7 @@ Rode nesta ordem e **não pare no primeiro erro** (colete tudo). Comando que ain
 3. `npm run lint`
 4. `npm run format:check`
 5. **/testar** (só os afetados; a suíte inteira só quando o autor pedir ou for infraestrutura)
-6. `npm run build` (apague `dist/` depois)
+6. `npm run test:build` (build de release + busca do laboratório no `dist/`, REQ-05; apague `dist/` depois)
 
 Confira manualmente:
 

@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:e2e": "playwright test --pass-with-no-tests",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test:build": "npm run build && node scripts/check-release-build.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.107.1",

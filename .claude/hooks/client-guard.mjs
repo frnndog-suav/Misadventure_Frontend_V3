@@ -23,7 +23,7 @@ const MESSAGES = {
   'mocks-import':
     'D-08/Princípio 3 (o MSW só devolve fixtures): importar src/mocks/ só no ponto de entrada de dev (src/main.tsx) e nos testes.',
   'lab-import':
-    'D-08/Princípio 4 (laboratório só no dev): importar src/lab/ só na rota de dev (src/main.tsx até a T-03).',
+    'D-08/Princípio 4 (laboratório só no dev): importar src/lab/ só no ponto de entrada de dev (src/main.tsx).',
 }
 
 /** Troca comentários por espaços preservando as quebras de linha. */

@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query'
-import { StrictMode } from 'react'
+import { StrictMode, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { queryClient } from './api/queryClient'
@@ -23,12 +23,21 @@ async function enableMocks(): Promise<void> {
   }
 }
 
-enableMocks().then(() => {
+/** Rotas só de dev: o laboratório (REQ-05, D-07) fica fora do build de release. */
+async function loadDevRoutes(): Promise<ReactNode> {
+  if (import.meta.env.DEV) {
+    const { labRoute } = await import('./lab/labRoute')
+    return labRoute
+  }
+  return null
+}
+
+Promise.all([enableMocks(), loadDevRoutes()]).then(([, devRoutes]) => {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
-          <App />
+          <App devRoutes={devRoutes} />
         </BrowserRouter>
       </QueryClientProvider>
     </StrictMode>,

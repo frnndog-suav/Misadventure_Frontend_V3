@@ -107,6 +107,7 @@ TypeScript 6 (spec D-11), Vite 8, React 19 (com React Compiler), TanStack Query,
 ```
 npm run dev
 npm run build
+npm run test:build         # build de release + laboratório ausente do dist/ (T-09)
 npm run lint
 npm run typecheck          # a partir da T-01
 npm test                   # a partir da T-01

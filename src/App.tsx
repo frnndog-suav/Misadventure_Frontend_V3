@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { useHealth } from './api/health'
 import { ApiError } from './api/http'
@@ -29,10 +30,15 @@ function Home() {
   )
 }
 
-export default function App() {
+/**
+ * `devRoutes`: rotas só de dev (laboratório), entregues por `src/main.tsx`
+ * atrás de `import.meta.env.DEV` — o App não importa `src/lab/` (D-07, D-08).
+ */
+export default function App({ devRoutes }: { devRoutes?: ReactNode }) {
   return (
     <Routes>
       <Route index element={<Home />} />
+      {devRoutes}
     </Routes>
   )
 }
