@@ -20,7 +20,8 @@ Registro de cada etapa do frontend, escrito para que **outra IA consiga replicar
 | 000 | FUND | [Fundação: agentes, skills, specs, roadmap e contrato](000-FUND-fundacao.md) | concluída |
 | 001 | T-01 | [Ferramentas de qualidade](001-T-01-ferramentas-de-qualidade.md) | concluída |
 | 002 | AUDIT | [Vulnerabilidades do npm audit](002-AUDIT-vulnerabilidades-npm.md) | concluída |
-| 003 | T-02 | [Guarda de `src/`](003-T-02-guarda-de-src.md) | aguardando revisão |
+| 003 | T-02 | [Guarda de `src/`](003-T-02-guarda-de-src.md) | concluída |
+| 004 | T-03 | [Esqueleto do app](004-T-03-esqueleto-do-app.md) | aguardando revisão |
 
 ## Como replicar
 O que um projeto novo precisa para ter o mesmo sistema:

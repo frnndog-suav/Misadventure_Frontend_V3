@@ -36,9 +36,9 @@ Junte as listas. **Não rodam nada:** `docs/**`, `*.md`, `.claude/**`, `public/*
 
 `npx playwright test tests/e2e/<área>` para cada área tocada que **existe**:
 
-| Área                                                                | Arquivos que a afetam |
-| ------------------------------------------------------------------- | --------------------- |
-| _(nenhuma ainda; cada tarefa que cria uma área acrescenta a linha)_ |                       |
+| Área | Arquivos que a afetam                                                                                                       |
+| ---- | --------------------------------------------------------------------------------------------------------------------------- |
+| app  | `src/App.tsx`, `src/main.tsx`, `src/index.css`, `index.html`, `vite.config.ts`, `src/mocks/**` (o MSW liga na rota inicial) |
 
 - Um teste e2e alterado roda a si mesmo.
 - Mudança nos tipos de `src/api/`, no cliente ou nos componentes de `src/ui/` afeta todas as áreas.
