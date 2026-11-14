@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.12 · **Data:** 2026-11-14
+> **Versão do contrato:** 0.14 · **Data:** 2026-11-14
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -175,6 +175,17 @@ Base dos nomes no código dos dois lados e dos termos com destaque e tooltip (RE
 **Categorias de inimigo** (`enemyCategory`, README 18.3): Comum `common`, Elite `elite`, Chefe `boss`.
 
 **Comportamento** (`behavior`, README 18.1): Agressivo `aggressive`, Defensivo `defensive`, Suporte `support`, Caçador `hunter`.
+
+### 2.8 Campanha (README 28.1) — FEAT-05
+
+| Termo | Identificador |
+|---|---|
+| Membro do grupo / nome do personagem | `member` / `characterName` |
+| Situação do grupo: sem sessão / em sessão | `status` (`idle`, `inSession`) |
+| Continuar / Encerrar sessão / Abandonar a partida | `startSession` / `endSession` / `abandonParty` |
+| Última gravação do save | `savedAt` |
+
+*(Grupo, save, sessão, host e jogo solo já estão em §2.2.)*
 
 ## 3. Features
 
@@ -527,6 +538,96 @@ Rodam contra o **conteúdo de teste** do backend (coleção `fixture`, nome "Col
 - Quando `GET /catalog/cards/fixture.strength-basic`, então `200` com a mesma carta do 3º cenário.
 - Quando `GET /catalog/cards/fixture.nope`, então `404` com `{ "error": { "code": "CARD_NOT_FOUND", "message": "Carta não encontrada." } }`.
 
+### FEAT-05 — Campanha solo (grupo de 1 e saves) — `acordado`
+
+Regras: README 28.1 (partida e save, salvamento automático, grupos e saves, host, abandonar, encerrar sessão) e 1.3. O jogador sozinho é um **grupo de 1**; o grupo **é** o save. Até a autenticação (FEAT-25), a lista de saves é a de todo o servidor (não há dono). Classe, deck, mapa e dimensão chegam ao `Party` na FEAT-06; ajudantes de IA, na FEAT-20. O salvamento automático no fim de cada vez fica observável na FEAT-08; aqui, todo pedido que muda o grupo e é aceito já devolve o estado gravado.
+
+#### Endpoints
+
+| Método | Rota | Pedido | Resposta | Erros |
+|---|---|---|---|---|
+| POST | `/parties` | `CreatePartyRequest` | `201` `Party` | `400` `PARTY_INVALID` |
+| GET | `/parties` | — | `200` `PartySummary[]` | — |
+| GET | `/parties/:partyId` | — | `200` `Party` | `404` `PARTY_NOT_FOUND` |
+| POST | `/parties/:partyId/session` | — | `200` `Party` | `404` `PARTY_NOT_FOUND` |
+| POST | `/parties/:partyId/session/end` | — | `200` `Party` | `404` `PARTY_NOT_FOUND`, `409` `PARTY_SESSION_NOT_ACTIVE` |
+| DELETE | `/parties/:partyId` | — | `204` (sem corpo) | `404` `PARTY_NOT_FOUND` |
+
+- **Continuar** (`POST …/session`) num grupo que já está `inSession` responde `200` com o grupo sem mudança (ex.: a aba foi fechada sem encerrar a sessão).
+- **Encerrar sessão** grava o save e o deixa `idle` ("pausado para todos", README 28.1).
+- **Abandonar** (`DELETE`) apaga o save inteiro; depois disso, o grupo responde `404`. No solo, o único membro é o host.
+- `GET /parties` ordena do `savedAt` mais recente para o mais antigo (empate: `id` crescente).
+
+#### Tipos
+
+```ts
+type PartyStatus = 'idle' | 'inSession'
+
+/** POST /parties. Espaços nas pontas são removidos antes de validar e gravar. */
+interface CreatePartyRequest {
+  /** Nome do grupo (save), 1–40 caracteres. */
+  name: string
+  /** Nome do personagem do jogador, 1–24 caracteres. */
+  characterName: string
+}
+
+interface PartyMember {
+  id: string
+  characterName: string
+  /** Na FEAT-20 entra `'aiHelper'`. */
+  kind: 'human'
+  isHost: boolean
+}
+
+/** GET /parties/:partyId e respostas das intenções. Cresce a partir da FEAT-06. */
+interface Party {
+  id: string
+  name: string
+  status: PartyStatus
+  members: PartyMember[]
+  /** ISO 8601 UTC. */
+  createdAt: string
+  /** Última gravação do save, ISO 8601 UTC. */
+  savedAt: string
+}
+
+/** Item de GET /parties (tela de saves). */
+interface PartySummary {
+  id: string
+  name: string
+  status: PartyStatus
+  /** Na ordem dos membros. */
+  characterNames: string[]
+  createdAt: string
+  savedAt: string
+}
+
+/** `details` do erro PARTY_INVALID. */
+interface PartyInvalidDetails {
+  fields: {
+    /** `null` só com `invalidBody`. */
+    field: 'name' | 'characterName' | 'members' | null
+    reason: 'invalidBody' | 'required' | 'notString' | 'blank' | 'tooLong' | 'belowMinPlayers'
+  }[]
+}
+```
+
+`invalidBody`: o corpo não é um objeto JSON ou está malformado. `blank`: só espaços. `tooLong`: acima do limite do campo. `belowMinPlayers`: o laboratório exige mais jogadores (`minPlayers`) do que o grupo de 1 tem. Ordem de `fields`: `name`, `characterName`, `members`.
+
+Mensagens: `PARTY_INVALID` "Dados do grupo inválidos."; `PARTY_NOT_FOUND` "Grupo não encontrado."; `PARTY_SESSION_NOT_ACTIVE` "Não há sessão em andamento neste grupo.".
+
+#### Cenários de validação
+
+Partem de nenhum save e do laboratório nos padrões. Os `id` e as datas são gerados pelo backend: compare a forma (string não vazia, ISO 8601 UTC), não o valor.
+
+- Quando `POST /parties` com `{ "name": "Os Teimosos", "characterName": "Lia" }`, então `201` com `name: "Os Teimosos"`, `status: "idle"`, `members` com um único `{ "characterName": "Lia", "kind": "human", "isHost": true }` (e um `id`), e `createdAt` igual a `savedAt`.
+- Quando `POST /parties` com `{ "name": "   ", "characterName": "Um nome com mais de vinte e quatro letras" }`, então `400` com `{ "error": { "code": "PARTY_INVALID", "message": "Dados do grupo inválidos.", "details": { "fields": [{ "field": "name", "reason": "blank" }, { "field": "characterName", "reason": "tooLong" }] } } }`; um `GET /parties` seguinte devolve `[]`.
+- Dado `minPlayers = 2` no laboratório, quando `POST /parties` com `{ "name": "Solo", "characterName": "Lia" }`, então `400` `PARTY_INVALID` com `details.fields = [{ "field": "members", "reason": "belowMinPlayers" }]`.
+- Dado o grupo "Os Teimosos" criado, quando `GET /parties`, então `200` com um item `{ "name": "Os Teimosos", "status": "idle", "characterNames": ["Lia"], … }`; e `GET /parties/<id>` devolve o mesmo `Party` da criação.
+- Dado o grupo `idle`, quando `POST /parties/<id>/session`, então `200` com `status: "inSession"`; repetir o pedido devolve `200` com o mesmo grupo.
+- Dado o grupo `inSession`, quando `POST /parties/<id>/session/end`, então `200` com `status: "idle"` e `savedAt` ≥ o anterior; repetir o pedido devolve `409` com `{ "error": { "code": "PARTY_SESSION_NOT_ACTIVE", "message": "Não há sessão em andamento neste grupo." } }`.
+- Dado o grupo criado, quando `DELETE /parties/<id>`, então `204`; `GET /parties/<id>` seguinte devolve `404` com `{ "error": { "code": "PARTY_NOT_FOUND", "message": "Grupo não encontrado." } }` e `GET /parties` devolve `[]`.
+
 ## 4. Códigos de erro
 
 | Código | Quando acontece | FEAT |
@@ -537,6 +638,9 @@ Rodam contra o **conteúdo de teste** do backend (coleção `fixture`, nome "Col
 | `CATALOG_QUERY_INVALID` | Filtro do catálogo inválido (400), ex.: `type` desconhecido. | FEAT-04 |
 | `COLLECTION_NOT_FOUND` | Coleção inexistente no catálogo (404). | FEAT-04 |
 | `CARD_NOT_FOUND` | Carta inexistente no catálogo (404). | FEAT-04 |
+| `PARTY_INVALID` | Dados de criação do grupo inválidos (400); `details.fields` diz cada campo e o motivo. | FEAT-05 |
+| `PARTY_NOT_FOUND` | Grupo (save) inexistente ou abandonado (404). | FEAT-05 |
+| `PARTY_SESSION_NOT_ACTIVE` | Encerrar sessão num grupo sem sessão em andamento (409). | FEAT-05 |
 
 ## 5. Histórico
 
@@ -554,3 +658,5 @@ Rodam contra o **conteúdo de teste** do backend (coleção `fixture`, nome "Col
 | 0.10 | 2026-11-14 | BE | FEAT-04 proposta: `GET /catalog/collections`, `GET /catalog/collections/:collectionId/cards` (`?type=`), `GET /catalog/cards/:cardId`; tipos `CollectionSummary` e `Card` (6 variantes por `type`); textos de regra como `RuleText` até a FEAT-11; glossário §2.7; códigos `CATALOG_QUERY_INVALID`, `COLLECTION_NOT_FOUND`, `CARD_NOT_FOUND` (§4). |
 | 0.11 | 2026-11-14 | FE | FEAT-04 `acordado` sem mudanças: os 6 `type` cobrem os tipos planejados no frontend (evento aleatório e de combate separados); textos de regra como `RuleText` batem com a decisão do frontend de só exibir texto pronto até a FEAT-11; ofertas de serviço das zonas ficam para as FEATs dos serviços. |
 | 0.12 | 2026-11-14 | BE | FEAT-04 `implementado (BE)`: `GET /catalog/collections`, `GET /catalog/collections/:collectionId/cards` (`?type=`) e `GET /catalog/cards/:cardId` entregues e cobertos por e2e, sem mudança de formato. `?type=` vazio ou repetido também → `CATALOG_QUERY_INVALID`. A ordem das chaves no JSON da carta não é garantida (compare por campo). Catálogo lido de `CONTENT_DIR` no boot; os cenários usam a coleção `fixture` (`CONTENT_DIR=test/fixtures/content`). |
+| 0.13 | 2026-11-14 | BE | FEAT-05 proposta: `POST`/`GET /parties`, `GET`/`DELETE /parties/:partyId`, `POST /parties/:partyId/session` e `/session/end`; tipos `CreatePartyRequest`, `Party`, `PartyMember`, `PartySummary`, `PartyStatus`; glossário §2.8; códigos `PARTY_INVALID`, `PARTY_NOT_FOUND`, `PARTY_SESSION_NOT_ACTIVE` (§4). Lista de saves global até a FEAT-25. |
+| 0.14 | 2026-11-14 | FE | FEAT-05 `acordado` sem mudanças. O FE usa os limites de `CreatePartyRequest` (40 e 24 caracteres) como texto de UI dos erros `tooLong`. |

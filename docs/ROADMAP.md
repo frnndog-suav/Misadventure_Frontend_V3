@@ -1,6 +1,6 @@
 # Misadventures — Roadmap de desenvolvimento
 
-> **Versão:** 0.14 · **Data:** 2026-11-14
+> **Versão:** 0.16 · **Data:** 2026-11-14
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend; o autor copia o arquivo inteiro quando ele muda. Base: README Parte III (III.2 e III.4). As regras estão em [`README.md`](README.md); o que trafega entre os lados, em [`CONTRATO.md`](CONTRATO.md).
 
@@ -55,7 +55,7 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | FEAT | Título | README | FE | BE |
 |---|---|---|---|---|
 | FEAT-04 | Catálogo de cartas e coleções: modelo das cartas, conteúdo de teste, exibição de cada tipo de carta | 3.4, 4.3, 5, 14.1, 18.1, 27 | a fazer | pronto |
-| FEAT-05 | Campanha solo: criar grupo de 1, saves, continuar, salvamento automático, encerrar sessão, abandonar a partida | 28.1 | a fazer | a fazer |
+| FEAT-05 | Campanha solo: criar grupo de 1, saves, continuar, salvamento automático, encerrar sessão, abandonar a partida | 28.1 | em andamento | a fazer |
 | FEAT-06 | Preparação da partida: classe e deck pré-pronto, valores iniciais, montagem do mapa, ordem e cidade inicial | 10.1, 3.5, 4.4, 8, 9 | a fazer | a fazer |
 | FEAT-07 | Mapa e Movimentar | 3.5, 12.2 | a fazer | a fazer |
 | FEAT-08 | A vez: pontos de ação, ações de zona disponíveis, encerrar a vez, rodadas | 11.1, 11.2, 12 | a fazer | a fazer |
@@ -120,3 +120,5 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | 0.12 | 2026-11-14 | FEAT-04: planejada no BE (SPEC-BACKEND v0.10, T-07 a T-09); contrato proposto pelo BE (CONTRATO v0.10); BE `aguardando outro lado`. |
 | 0.13 | 2026-11-14 | FEAT-04: contrato `acordado` pelo FE (CONTRATO v0.11); planejada no FE (SPEC-FRONTEND v0.18, T-11 a T-15); FE `a fazer`; BE sai de `aguardando outro lado` para `a fazer`. |
 | 0.14 | 2026-11-14 | FEAT-04: lado BE `pronto` (T-07 a T-09, SPEC-BACKEND v0.14); CONTRATO v0.12 marca a FEAT-04 `implementado (BE)`. |
+| 0.15 | 2026-11-14 | FEAT-05: planejada no BE (SPEC-BACKEND v0.15, T-10 a T-13); contrato proposto pelo BE (CONTRATO v0.13); BE `aguardando outro lado` (a T-10, só core, não depende do contrato). |
+| 0.16 | 2026-11-14 | FEAT-05: contrato `acordado` pelo FE (CONTRATO v0.14); planejada no FE (SPEC-FRONTEND v0.23); FE `em andamento`; BE sai de `aguardando outro lado` para `a fazer`. |

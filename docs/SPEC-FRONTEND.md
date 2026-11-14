@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.22 · **Data:** 2026-11-14
+> **Versão da spec:** 0.23 · **Data:** 2026-11-14
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -81,6 +81,11 @@ Funções e hooks que as telas usam para ler o estado e enviar intenções. Regr
 | `useResetLabConfig()` | mutação `POST /lab/config/reset`; sucesso atualiza o cache de `useLabConfig` | T-08 |
 | `useCollections()` | consulta `GET /catalog/collections`: `CollectionSummary[]` validado (CONTRATO §3 FEAT-04) | T-11 |
 | `useCards(collectionId, type?)` | consulta `GET /catalog/collections/:collectionId/cards`: `Card[]` completo (união por `type`), filtrado pelo backend | T-11 |
+| `useParties()` | consulta `GET /parties`: `PartySummary[]` validado (CONTRATO §3 FEAT-05) | T-16 |
+| `useCreateParty()` | mutação `POST /parties` com `CreatePartyRequest`: `Party` validado; erro `PARTY_INVALID` com `details.fields` validado | T-16 |
+| `useStartSession(partyId)` | mutação `POST /parties/:partyId/session`: `Party` validado | T-16 |
+| `useEndSession(partyId)` | mutação `POST /parties/:partyId/session/end`: `Party` validado; sucesso invalida `useParties` | T-16 |
+| `useAbandonParty()` | mutação `DELETE /parties/:partyId` (`204`); sucesso ou erro invalida `useParties` | T-16 |
 
 Base comum (T-08): `requestJson(method, path, body?)` em `src/api/http.ts` faz todo pedido; `ApiError` traz `code`, `message` e `details` (ainda `unknown`); `LAB_CONFIG_INVALID` com `details` válido vira `LabConfigInvalidError` (subclasse, com `fields`); com `details` fora do contrato vira erro genérico (falha de validação, REQ-06).
 
@@ -88,8 +93,9 @@ Base comum (T-08): `requestJson(method, path, body?)` em `src/api/http.ts` faz t
 
 | Área | Rota | Telas | FEAT |
 |---|---|---|---|
-| app | `/` | rota inicial (placeholder "Misadventures" até a primeira tela real) + área de status da ponte com o servidor (REQ-01); tema e tipografia da base visual (REQ-02) | FEAT-01, FEAT-02 |
+| app | `/` | rota inicial: menu da campanha e "Seus jogos" com o abandono (REQ-14, REQ-17) + área de status da ponte com o servidor (REQ-01); tema e tipografia da base visual (REQ-02) | FEAT-01, FEAT-02 |
 | lab | `/lab` (só dev, D-07) | laboratório: configuração ajustável do jogo e vitrine de componentes (REQ-05 a REQ-07); catálogo de cartas (REQ-08 a REQ-13) | FEAT-03, FEAT-04 |
+| party | `/novo`, `/grupo/:partyId` | novo jogo (grupo de 1) e grupo em sessão (REQ-15, REQ-16) | FEAT-05 |
 
 Os componentes compartilhados da FEAT-02 (termo do jogo, categoria de carta) ainda não aparecem em nenhuma tela: são verificados por testes de componente até entrarem no laboratório (FEAT-03) e nas telas da FEAT-04.
 
@@ -184,6 +190,38 @@ Regras comuns às cartas (REQ-09 a REQ-13): o texto de flavor aparece só quando
 - **Dado** uma carta `randomEvent` (README 14.1), **quando** exibida, **então** mostra título, requisitos de resolução, "Coisa boa", "Coisa ruim" e, só quando `noEscape` é `true`, "Sem fuga" (com rótulo, não só ícone).
 - **Dado** uma carta `combatEvent` (README 14.1, 18.1), **quando** exibida, **então** mostra título, "Coisa boa", "Coisa ruim", "Sem fuga" como acima e um bloco por inimigo com: "{count}× {name}" (só o nome quando `count` é 1), flavor text, tipos, criatura, categoria, elemento (se houver), vida, os 7 modificadores, Vigor (se houver), habilidades e comportamento.
 
+### REQ-14 — Menu inicial com os jogos salvos
+
+A rota `/` deixa de ser placeholder: mantém o título "Misadventures" e a área de status da ponte (REQ-01) e ganha o menu da campanha (README 28.1; CONTRATO §3 FEAT-05). A lista é a de todo o servidor até a FEAT-25.
+
+- **Dado** a rota `/`, **quando** ela é exibida, **então** mostra o link "Novo jogo" (leva a `/novo`) e a seção "Seus jogos", com área de status própria (papel `status`).
+- **Dado** a consulta `GET /parties` em andamento, **então** a área de status da seção mostra "Carregando jogos…".
+- **Dado** a lista recebida, **então** cada save aparece na ordem recebida como um item com: `name`; os `characterNames` separados por ", "; a situação ("Pausado" para `idle`, "Em sessão" para `inSession`); "Salvo em {data e hora de `savedAt` no fuso do jogador, formato pt-BR, ex.: 14/11/2026 18:30}"; e os botões "Continuar" e "Abandonar". Com a lista vazia, a seção mostra "Nenhum jogo salvo.".
+- **Dado** "Continuar" num save, **quando** clicado, **então** o app vai para `/grupo/:partyId` (REQ-16).
+- **Dado** um erro §1.4, **então** a área de status da seção mostra a `message`; falha de rede ou resposta fora do contrato mostra "Servidor indisponível. Tente novamente.". Nenhuma exceção chega à tela.
+
+### REQ-15 — Novo jogo (grupo de 1)
+
+- **Dado** a rota `/novo`, **quando** exibida, **então** mostra o título "Novo jogo", os campos "Nome do grupo" e "Nome do personagem", o botão "Criar grupo" e o link "Voltar" (leva a `/`).
+- **Dado** os campos, **quando** o jogador clica "Criar grupo", **então** o app envia `POST /parties` com os textos como digitados (o backend remove os espaços das pontas e valida) e, durante o pedido, o botão fica desabilitado e a área de status mostra "Criando grupo…".
+- **Dado** `201`, **então** o app vai para `/grupo/:partyId` do grupo criado (REQ-16).
+- **Dado** `400` `PARTY_INVALID`, **então** cada campo de `details.fields` mostra o texto do seu `reason`, ligado ao campo por `aria-describedby`: `required`, `notString` ou `blank` → "Informe o nome do grupo." / "Informe o nome do personagem."; `tooLong` → "Use até 40 caracteres." (grupo) / "Use até 24 caracteres." (personagem). `members` com `belowMinPlayers` → a área de status mostra "A configuração atual não permite jogar com um grupo de 1."; `invalidBody` → a `message`. Os erros valem até o próximo envio; o que foi digitado continua nos campos.
+- **Dado** outro erro §1.4, falha de rede ou resposta fora do contrato, **então** a área de status mostra a `message` ou "Servidor indisponível. Tente novamente.".
+
+### REQ-16 — Grupo em sessão
+
+- **Dado** a rota `/grupo/:partyId`, **quando** ela abre, **então** o app envia `POST /parties/:partyId/session` (Continuar; repetir num grupo já em sessão não muda nada, CONTRATO §3 FEAT-05) e a área de status mostra "Abrindo o grupo…".
+- **Dado** `200`, **então** a tela mostra o `name` como título, a lista "Membros" com cada `characterName` (o host com " (host)" depois do nome), a situação ("Em sessão" ou "Pausado", do `status` recebido), "Salvo em {data e hora}" (como no REQ-14), o botão "Encerrar sessão" e o texto "A partida começa na próxima etapa do jogo." (placeholder até a FEAT-06).
+- **Dado** "Encerrar sessão", **quando** clicado, **então** o app envia `POST /parties/:partyId/session/end` com o botão desabilitado; com `200`, volta a `/` e a área de status de "Seus jogos" mostra "Sessão encerrada.".
+- **Dado** `404` `PARTY_NOT_FOUND` (ao abrir ou ao encerrar), **então** a área de status mostra a `message` e o link "Voltar ao início"; **dado** `409` `PARTY_SESSION_NOT_ACTIVE` ou outro erro §1.4, mostra a `message`; falha de rede ou resposta fora do contrato, "Servidor indisponível. Tente novamente.".
+
+### REQ-17 — Abandonar a partida
+
+- **Dado** "Abandonar" num save da lista (REQ-14), **quando** clicado, **então** abre um diálogo modal (papel `dialog`) com o título "Abandonar “{name}”?", o texto "O save será apagado para sempre. Não dá para desfazer." e os botões "Abandonar" e "Cancelar"; o foco vai para "Cancelar".
+- **Dado** o diálogo aberto, **quando** o jogador clica "Cancelar" ou aperta Esc, **então** o diálogo fecha sem enviar nada e o foco volta ao botão "Abandonar" do save.
+- **Dado** o diálogo aberto, **quando** o jogador confirma "Abandonar", **então** o app envia `DELETE /parties/:partyId`; com `204`, o diálogo fecha, a lista é consultada de novo e a área de status de "Seus jogos" mostra "Grupo abandonado.".
+- **Dado** `404` `PARTY_NOT_FOUND` ou outro erro §1.4, **então** o diálogo fecha, a lista é consultada de novo e a área de status mostra a `message`; falha de rede ou resposta fora do contrato mostra "Servidor indisponível. Tente novamente.".
+
 Formato:
 
 ### REQ-nn — <nome>
@@ -223,6 +261,7 @@ Formato:
 - **D-29 — Cliente do catálogo (T-11):** o handler do MSW de `GET /catalog/collections/:collectionId/cards` é uma **tabela de cenários**: escolhe a resposta pronta pelo pedido (coleção `fixture` sem `type` → as 6 cartas; `type` conhecido → a lista daquele tipo, escrita à mão; `type` desconhecido → `400 CATALOG_QUERY_INVALID`; outra coleção → `404 COLLECTION_NOT_FOUND`), sem filtrar nem calcular. O schema Zod confere o formato e as faixas numéricas declaradas no contrato; invariantes entre campos (zona `urban` com 4 setas, `attributeKind` × número de atributos, `startEvent` presente, `enemyTypes` sem repetição) ficam com o backend. `useCollections` e `useCards` sem retry (como D-16/D-23). `CATALOG_QUERY_INVALID` fica `ApiError` genérico (a tela só usa a `message`). Fixtures em `src/mocks/catalogFixtures.ts`; só a carta de atributo é cópia exata do contrato, as outras 5 são provisórias até o `implementado (BE)`. *(Autor escolheu a tabela de cenários, 2026-11-14; alternativa descartada: resposta fixa, que deixaria o filtro inerte no dev.)*
 - **D-30 — Cartas de atributo, equipamento e item (T-13):** componentes `AttributeCard`, `EquipmentCard` e `ItemCard` em `src/ui/cards/`, cada um um `article` com o nome como título; partes comuns em `parts.tsx` (moldura com nome, raridade e flavor; listas rotuladas "Atributos", "Modificadores", "Etiquetas", "Classes", "Habilidades", "Efeitos", que somem quando vazias). Os 7 modificadores entram no catálogo de termos (D-20) com textos resumidos do README 7.1; a vitrine do laboratório (REQ-07) segue mostrando só os 9 atributos. Números só formatados em pt-BR (`format.ts`: vírgula decimal, sinal "+"/"−"), sem conta. Encantamento aparece sob o título "Encantamento". *(Autor aprovou os textos dos modificadores como resumo do README 7.1, 2026-11-14.)*
 - **D-31 — Cartas de zona e de evento (T-14):** `ZoneCard`, `RandomEventCard` e `CombatEventCard` em `src/ui/cards/`, no mesmo molde da D-30 (título no lugar do nome; zona e eventos sem raridade, zona sem flavor). Rótulos das ações de zona em `src/ui/labels.ts` (`zoneActionLabels`, CONTRATO §2.5; a linha "Pegar / Continuar / Finalizar missão" vira três rótulos). Efeito de zona escrito "Positivo: …"/"Negativo: …". Eventos: blocos "Coisa boa" e "Coisa ruim", "Sem fuga" como texto. Cada inimigo é uma `section` com título "{count}× {name}" (só o nome quando 1), listas "Tipos", "Modificadores" (os 7, na ordem do §2.3, como termo do jogo) e "Habilidades", e as linhas "Criatura: …", "Categoria: …", "Elemento: …", "Vida {n}", "Vigor {n}", "Comportamento: …". *(T-14, 2026-11-14.)*
+- **D-32 — Campanha solo no frontend (FEAT-05):** primeiras telas de release: `/` (menu e "Seus jogos"), `/novo` e `/grupo/:partyId` (autor, 2026-11-14; alternativa descartada: tudo em `/`, sem link direto nem voltar do navegador). "Continuar" e criar só **navegam** para `/grupo/:partyId`; é a tela do grupo que envia `POST …/session` ao abrir, apoiada no "Continuar" sem efeito num grupo já em sessão (contrato). "Abandonar" fica na lista, com diálogo de confirmação (autor; alternativas descartadas: sem confirmação, ou só dentro do grupo). Encerrar sessão e abandonar voltam à lista com a mensagem de status (autor). Os textos por campo do REQ-15 são do frontend, montados de `reason`; os limites 40/24 vêm do `CreatePartyRequest` do contrato (CONTRATO v0.14), não do README. Data e hora de `savedAt` só formatadas (`Intl.DateTimeFormat('pt-BR')`, fuso do jogador). Consultas e mutações sem retry (como D-16). O MSW não guarda estado (princípio 3): o handler é uma tabela de cenários (como D-29) e a lista não muda depois de criar ou abandonar; o efeito real (lista atualizada, `404` depois do abandono) é conferido contra o backend real. *(FEAT-05, 2026-11-14.)*
 
 **Pendências (decidir antes da tarefa indicada):**
 - **P-02 — Como o jogador vê as vezes dos outros no momento 2** (antes da FEAT-21): proposta: o backend devolve a lista ordenada de eventos do domínio e o frontend anima um por um; no momento 3 só o transporte muda (socket). Registrada também no ROADMAP.
@@ -267,6 +306,15 @@ A T-10 fecha o lado FE da FEAT-03 com MSW; depois, `/retorno-backend` contra o b
 
 A T-15 fecha o lado FE da FEAT-04 com MSW; depois, `/retorno-backend` contra o backend real. Estilo visual das cartas (moldura PSX, raridade): `/visual` depois da T-15, se o autor quiser.
 
+**FEAT-05 — Campanha solo (lado frontend)**
+
+- [ ] **T-16 — Cliente da campanha** (REQ-14 a REQ-17; D-32). Em `src/api/`: schemas Zod de `Party`, `PartyMember`, `PartySummary`, `PartyInvalidDetails`; `requestJson` aceita `204` sem corpo; hooks de 3.4; `PARTY_INVALID` com `details` válido vira erro com `fields`. Em `src/mocks/`: fixtures dos cenários do CONTRATO §3 FEAT-05 e handlers por tabela de cenários. Como verificar: unitários da camada de cliente.
+- [ ] **T-17 — Menu inicial e abandonar** (REQ-14, REQ-17). Lista de saves em `/`, link "Novo jogo", "Continuar", diálogo de abandono, mensagens de status. Como verificar: `npm run dev` (mocks) em `/`; unitários e e2e da área `app`.
+- [ ] **T-18 — Novo jogo** (REQ-15). Formulário em `/novo` com erros por campo. Como verificar: `npm run dev` (mocks) em `/novo`; unitários e e2e da área `party`.
+- [ ] **T-19 — Grupo em sessão** (REQ-16). Tela `/grupo/:partyId` com Continuar ao abrir e "Encerrar sessão". Como verificar: `npm run dev` (mocks), fluxo `/` → "Continuar" → "Encerrar sessão" → `/`; unitários e e2e da área `party`.
+
+A T-19 fecha o lado FE da FEAT-05 com MSW; depois, `/retorno-backend` contra o backend real. O laboratório já tem `minPlayers` (FEAT-03), único valor do Apêndice A que a FEAT usa.
+
 ## 8. Histórico
 
 | Versão | Data | Mudança |
@@ -293,3 +341,4 @@ A T-15 fecha o lado FE da FEAT-04 com MSW; depois, `/retorno-backend` contra o b
 | 0.20 | 2026-11-14 | T-12 concluída: catálogo de produção com os 8 `slot` e as 8 `itemCategory` em arte pendente (D-28); `src/ui/labels.ts` com os rótulos pt-BR de tipo de carta, raridade e §2.7, completos por tipo (`satisfies Record`). |
 | 0.21 | 2026-11-14 | T-13 concluída: cartas de atributo, equipamento e item em `src/ui/cards/`; D-30 (modificadores no catálogo de termos, formatação pt-BR dos números). |
 | 0.22 | 2026-11-14 | T-14 concluída: cartas de zona, evento aleatório e evento de combate em `src/ui/cards/`; D-31 (rótulos das ações de zona, polaridade com texto, bloco por inimigo). |
+| 0.23 | 2026-11-14 | FEAT-05 planejada (CONTRATO v0.14 `acordado`): REQ-14 (menu e saves), REQ-15 (novo jogo), REQ-16 (grupo em sessão), REQ-17 (abandonar), D-32, área `party` e hooks da campanha em 3.4, tarefas T-16 a T-19. |
