@@ -38,7 +38,8 @@ O tempo gasto no desenvolvimento fica em [`tempo.html`](tempo.html): um arquivo 
 | 014 | T-09 | [Rota do laboratório só no dev](014-T-09-rota-lab-so-dev.md) | concluída |
 | 015 | T-10 | [Tela de configuração do laboratório](015-T-10-tela-config-lab.md) | concluída |
 | 016 | RETORNO | [FEAT-03 validada contra o backend real](016-RETORNO-feat-03-validada.md) | concluída |
-| 017 | RETORNO | [FEAT-04 planejada e contrato acordado](017-RETORNO-feat-04-contrato-acordado.md) | aguardando revisão |
+| 017 | RETORNO | [FEAT-04 planejada e contrato acordado](017-RETORNO-feat-04-contrato-acordado.md) | concluída |
+| 018 | T-11 | [Cliente do catálogo](018-T-11-cliente-do-catalogo.md) | aguardando revisão |
 
 ## Como replicar
 O que um projeto novo precisa para ter o mesmo sistema:
