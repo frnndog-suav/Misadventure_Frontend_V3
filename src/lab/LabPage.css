@@ -1,0 +1,42 @@
+/* Laboratório (REQ-06, REQ-07): só layout, com tokens (D-21). Campos e
+   botões mantêm o visual nativo do navegador (ferramenta de dev). */
+
+.lab-config {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: var(--space-4);
+}
+
+.lab-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.lab-hint {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.lab-error {
+  color: var(--color-danger);
+  font-size: var(--text-sm);
+}
+
+.lab-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: var(--space-3);
+}
+
+.lab-terms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.lab-categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+}
