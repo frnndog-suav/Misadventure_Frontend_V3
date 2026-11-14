@@ -4,13 +4,13 @@ Cliente web (depois executável Tauri) do Misadventures, um TCG/RPG cooperativo 
 
 ## Fontes da verdade
 
-| Documento | O que guarda | Onde vive |
-|---|---|---|
-| [`docs/README.md`](docs/README.md) | **Regras do jogo** e requisitos técnicos. Decisões do autor no Apêndice B. | Compartilhado (cópia idêntica no backend) |
-| [`docs/SPEC-FRONTEND.md`](docs/SPEC-FRONTEND.md) | **Comportamento do frontend**: REQ, decisões D, tarefas T, telas. Spec-anchored. | Só no frontend |
-| [`docs/CONTRATO.md`](docs/CONTRATO.md) | **Contrato com o backend**: glossário termo → identificador, convenções, endpoints, eventos, DTOs. | Compartilhado |
-| [`docs/ROADMAP.md`](docs/ROADMAP.md) | **Fases e features** (FEAT-nn) dos dois lados e o protocolo entre os repositórios. | Compartilhado |
-| [`docs/devlog/`](docs/devlog/README.md) | Registro de cada etapa. | Só no frontend |
+| Documento                                        | O que guarda                                                                                       | Onde vive                                 |
+| ------------------------------------------------ | -------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| [`docs/README.md`](docs/README.md)               | **Regras do jogo** e requisitos técnicos. Decisões do autor no Apêndice B.                         | Compartilhado (cópia idêntica no backend) |
+| [`docs/SPEC-FRONTEND.md`](docs/SPEC-FRONTEND.md) | **Comportamento do frontend**: REQ, decisões D, tarefas T, telas. Spec-anchored.                   | Só no frontend                            |
+| [`docs/CONTRATO.md`](docs/CONTRATO.md)           | **Contrato com o backend**: glossário termo → identificador, convenções, endpoints, eventos, DTOs. | Compartilhado                             |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md)             | **Fases e features** (FEAT-nn) dos dois lados e o protocolo entre os repositórios.                 | Compartilhado                             |
+| [`docs/devlog/`](docs/devlog/README.md)          | Registro de cada etapa.                                                                            | Só no frontend                            |
 
 Toda mudança de comportamento começa na spec. Mudança de **regra do jogo** começa no README (Apêndice B). Mudança no que se troca com o backend começa no contrato.
 
@@ -54,6 +54,7 @@ Enquanto isso, aqui: <o que segue com MSW / o que fica bloqueado>
 ```
 
 Mostre o aviso quando:
+
 1. o contrato for criado ou alterado (`/contrato`);
 2. o lado frontend de uma FEAT estiver pronto com MSW e faltar validar contra o backend real (`/retorno-backend`);
 3. o README (regras) ou o ROADMAP mudar (o backend precisa da cópia nova);
@@ -61,20 +62,21 @@ Mostre o aviso quando:
 
 ## Fluxo de trabalho
 
-| Quero… | Use |
-|---|---|
-| Implementar uma tarefa | `/tarefa T-xx` |
-| Mudar um comportamento, ou planejar uma FEAT do roadmap em REQs e tarefas | `/mudar-spec <descrição>` |
-| Criar ou mudar o que se troca com o backend | `/contrato <FEAT-nn ou descrição>` |
-| Aplicar o que o backend respondeu ou validar contra o backend real | `/retorno-backend <resposta colada>` |
-| Conferir a definição de pronto | `/checar` |
-| Rodar os testes afetados (ou `tudo`) | `/testar` |
-| Registrar uma etapa no devlog | `/registrar-etapa` (a `/tarefa` já chama) |
-| Mudar visual, animação, ícone | `/visual <descrição>` (referência: `/guia-visual`, `/assets`; revisão: `/revisar-visual`) |
+| Quero…                                                                    | Use                                                                                       |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| Implementar uma tarefa                                                    | `/tarefa T-xx`                                                                            |
+| Mudar um comportamento, ou planejar uma FEAT do roadmap em REQs e tarefas | `/mudar-spec <descrição>`                                                                 |
+| Criar ou mudar o que se troca com o backend                               | `/contrato <FEAT-nn ou descrição>`                                                        |
+| Aplicar o que o backend respondeu ou validar contra o backend real        | `/retorno-backend <resposta colada>`                                                      |
+| Conferir a definição de pronto                                            | `/checar`                                                                                 |
+| Rodar os testes afetados (ou `tudo`)                                      | `/testar`                                                                                 |
+| Registrar uma etapa no devlog                                             | `/registrar-etapa` (a `/tarefa` já chama)                                                 |
+| Mudar visual, animação, ícone                                             | `/visual <descrição>` (referência: `/guia-visual`, `/assets`; revisão: `/revisar-visual`) |
 
 **Antes de alterar qualquer funcionalidade ou visual**, consulte o índice do devlog e as entradas da área, e rode `git log --oneline -- <arquivos>`, para entender por que o código está como está.
 
 Agentes (`.claude/agents/`):
+
 - `test-writer`: escreve os testes (unitários e e2e) a partir dos critérios, antes da implementação.
 - `client-dev`: camada de cliente (`src/api/`, `src/mocks/`, consultas e cache), até os testes passarem.
 - `ui-dev`: estrutura e comportamento das telas.
@@ -84,7 +86,7 @@ Agentes (`.claude/agents/`):
 
 ## Stack (autorizada)
 
-TypeScript 7, Vite 8, React 19 (com React Compiler), TanStack Query, React Router DOM, Vitest, Playwright, MSW, Prettier, ESLint; Tauri na FEAT-29. Instaladas hoje: React, Vite, TypeScript e ESLint. As outras são instaladas na T-01/T-03 (veja a spec 3.2). Qualquer outra lib: pergunte.
+TypeScript 6 (spec D-11), Vite 8, React 19 (com React Compiler), TanStack Query, React Router DOM, Vitest (+ jsdom e Testing Library, D-12), Playwright, MSW, Prettier, ESLint; Tauri na FEAT-29. Ainda não instaladas: TanStack Query, React Router DOM e MSW (T-03), Tauri (veja a spec 3.2). Qualquer outra lib: pergunte.
 
 ## Convenções
 

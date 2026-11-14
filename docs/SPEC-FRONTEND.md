@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.1 · **Data:** 2026-11-13
+> **Versão da spec:** 0.2 · **Data:** 2026-11-13
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -42,17 +42,17 @@ Em [`CONTRATO.md`](CONTRATO.md) §2, porque os identificadores são compartilhad
 
 | Biblioteca | Situação | Uso |
 |---|---|---|
-| TypeScript ~7.0, Vite ^8.3, React ^19.3 (com React Compiler via Babel) | instaladas | base |
+| TypeScript ~6.0 (D-11), Vite ^8.3, React ^19.3 (com React Compiler via Babel) | instaladas | base |
 | ESLint ^10 + typescript-eslint + react-hooks + react-refresh | instaladas | lint |
-| Prettier | autorizada (D-05), instalar na T-01 | formatação |
-| Vitest | autorizada (README II.3), instalar na T-01 | testes unitários |
-| Playwright | autorizada (README II.3), instalar na T-01 | testes e2e |
+| Prettier ^3.10 | instalada (T-01, D-05) | formatação |
+| Vitest ^5.1 + jsdom ^29 + @testing-library/react ^16 + @testing-library/jest-dom ^7 | instaladas (T-01, D-12) | testes unitários e de componentes |
+| Playwright (@playwright/test ^1.65, Chromium) | instalada (T-01) | testes e2e |
 | TanStack Query | autorizada (README II.2), instalar na T-03 | estado do servidor e cache |
 | React Router DOM | autorizada (README II.2), instalar na T-03 | rotas |
 | MSW | autorizada (D-04), instalar na T-03 | mocks de rede no dev e nos testes |
 | Tauri | autorizada (README II.2), FEAT-29 | executável de PC |
 
-Qualquer outra (inclusive utilitários de teste como `@testing-library/react` ou `jsdom`, e validadores como Zod) **só com autorização**.
+Qualquer outra (inclusive validadores como Zod) **só com autorização**.
 
 **Módulos (pastas criadas na T-03):**
 
@@ -103,6 +103,8 @@ Formato:
 - **D-08 — Guarda de `src/`:** proibidos em `src/`: `Math.random` (sorteio é do backend; animações são determinísticas); `any`; `fetch`, `XMLHttpRequest`, `WebSocket` e `io(` fora de `src/api/`; importar `src/mocks/` fora do ponto de entrada de dev e dos testes; importar `src/lab/` fora da rota de dev. Aplicada pelo hook `.claude/hooks/client-guard.mjs` e pelo ESLint (T-02).
 - **D-09 — PC primeiro:** o layout se ajusta à resolução do monitor (README II.1). A faixa de resoluções suportada é definida no `/guia-visual` (FEAT-02).
 - **D-10 — Variáveis de ambiente (proposta, confirmar na T-03):** `VITE_API_URL` (endereço do backend) e `VITE_USE_MOCKS` (`true` liga o MSW no dev).
+- **D-11 — TypeScript 6.0 em vez do 7.0:** o template veio com TS ~7.0.2, mas o typescript-eslint só suporta até `<6.1` (o `npm run lint` falhava com "typescript-eslint does not support TS 7.0" e o npm recusava instalar libs novas por conflito de peer). Voltou para ~6.0.3. *(Autor, 2026-11-13. Volta para o 7 quando o typescript-eslint suportar.)*
+- **D-12 — Testes de componentes e estilo de formatação:** autorizados `@testing-library/react`, `@testing-library/jest-dom` e `jsdom` (Vitest roda em `jsdom`, setup em `vitest.setup.ts`). Prettier sem ponto e vírgula e com aspas simples (o estilo que o código do template já usava). O Prettier formata também os Markdown fora de `docs/` (`CLAUDE.md`, `.claude/`); `docs/` fica fora para não reformatar o README compartilhado. `test:e2e` usa `--pass-with-no-tests` enquanto não houver e2e. *(Autor, 2026-11-13.)*
 
 **Pendências (decidir antes da tarefa indicada):**
 - **P-01 — Validação dos dados recebidos** (antes da T-03): Zod (lib nova, precisa de autorização; schemas legíveis, menos código) ou validadores escritos à mão (sem lib; mais código para manter).
@@ -114,7 +116,7 @@ Cada tarefa pertence a uma FEAT do [`ROADMAP.md`](ROADMAP.md). As tarefas de uma
 
 **FEAT-01 — Esqueleto técnico (lado frontend)**
 
-- [ ] **T-01 — Ferramentas de qualidade** (D-05). Instalar Prettier, Vitest e Playwright (com o navegador Chromium); criar os scripts `typecheck` (`tsc -b`), `test` (`vitest run`), `test:e2e` (`playwright test`), `format` e `format:check`; configs mínimas; `.prettierignore` sem `docs/`. Antes de instalar, perguntar ao autor se autoriza os utilitários de teste de componentes (`@testing-library/react` e um ambiente DOM). Como verificar: os cinco scripts rodam sem erro num projeto ainda sem testes.
+- [x] **T-01 — Ferramentas de qualidade** (D-05, D-11, D-12). Instalar Prettier, Vitest e Playwright (com o navegador Chromium); criar os scripts `typecheck` (`tsc -b`), `test` (`vitest run`), `test:e2e` (`playwright test`), `format` e `format:check`; configs mínimas; `.prettierignore` sem `docs/`. Antes de instalar, perguntar ao autor se autoriza os utilitários de teste de componentes (`@testing-library/react` e um ambiente DOM). Como verificar: os cinco scripts rodam sem erro num projeto ainda sem testes.
 - [ ] **T-02 — Guarda de `src/`** (D-08). Criar `.claude/hooks/client-guard.mjs` (modo hook pelo stdin e modo `--all`), registrar em `.claude/settings.json` (PostToolUse em Edit/Write) e reproduzir as regras no ESLint sem plugin novo. Como verificar: `node .claude/hooks/client-guard.mjs --all` passa; um arquivo de teste com `Math.random()` em `src/` é bloqueado com a mensagem do princípio; o arquivo é apagado depois.
 - [ ] **T-03 — Esqueleto do app** (D-04, D-07, D-10, P-01). Resolver a P-01; instalar TanStack Query, React Router DOM e MSW; criar as pastas de 3.2; provider de consultas; rota inicial; inicialização do MSW só no dev com `VITE_USE_MOCKS=true`; remover o conteúdo de exemplo do template do Vite. Como verificar: `npm run dev` abre a rota inicial sem o conteúdo do template; com `VITE_USE_MOCKS=true` o console mostra o MSW ativo; `npm run build` não contém código do MSW.
 
@@ -125,3 +127,4 @@ O endpoint mínimo que valida a ponte FE↔BE de ponta a ponta (fecho da FEAT-01
 | Versão | Data | Mudança |
 |---|---|---|
 | 0.1 | 2026-11-13 | Versão inicial (FEAT-00): visão, arquitetura, decisões D-01 a D-10, pendências P-01 e P-02, tarefas T-01 a T-03. |
+| 0.2 | 2026-11-13 | T-01 concluída: D-11 (TypeScript 6.0) e D-12 (libs de teste de componentes e estilo do Prettier); tabela 3.2 atualizada. |

@@ -11,12 +11,15 @@ Pedido: **$ARGUMENTS**
 O contrato é **compartilhado**: a mesma cópia vive nos dois repositórios, e o autor a leva de um lado para o outro (protocolo em `docs/ROADMAP.md` §2). Esta skill escreve a proposta do frontend; quem confirma é o backend.
 
 ## 1. Contexto
+
 1. Leia `docs/CONTRATO.md` §0, §1 e §2 inteiros e a seção da FEAT (se existir).
 2. Leia os REQs e as telas da FEAT na spec (Grep) e as seções do README que ela cita.
 3. Se a seção já está `acordado` ou adiante, a mudança é uma **alteração de contrato acordado**: diga isso ao autor, porque o backend pode ter código pronto.
 
 ## 2. Escrever a proposta
+
 Siga as convenções de §1, sem exceção:
+
 - **O backend manda pronto** o que depende de regra (valores calculados, ações disponíveis, custos, alvos válidos). Se a tela precisa decidir algo, o campo que falta vai no contrato; a regra nunca vai para o frontend.
 - **Tipos** em TypeScript, como vão para o código, com uniões discriminadas por `type`.
 - **Endpoints** na tabela: método, rota, pedido, resposta, erros.
@@ -29,9 +32,11 @@ Siga as convenções de §1, sem exceção:
 Ambiguidade real (o formato muda conforme a resposta) → pergunte com uma opção recomendada. Não invente regra para preencher o formato: se o README não diz, consulte o Apêndice B e, se ainda faltar, pergunte.
 
 ## 3. Mostrar e aguardar aprovação do autor
+
 Mostre o diff do contrato. Diga o que muda para o frontend (tipos em `src/api/`, fixtures em `src/mocks/`, tarefas) e o que o backend vai precisar fazer. Espere.
 
 ## 4. Depois de aprovado
+
 1. Atualize a coluna FE da FEAT no `docs/ROADMAP.md` para `aguardando outro lado`, se o frontend não puder seguir sem a confirmação.
 2. Termine com o **Aviso de backend**:
 
@@ -45,5 +50,6 @@ Enquanto isso, aqui: <o que pode seguir com MSW / o que fica bloqueado até "aco
 ```
 
 ## Regras
+
 - Nunca marque `acordado`, `implementado (BE)` ou `validado` por conta própria: isso só acontece em `/retorno-backend`, com a resposta do backend.
 - Não implemente código nesta skill; o código vem na `/tarefa`.

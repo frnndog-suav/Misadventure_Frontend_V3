@@ -9,6 +9,7 @@ argument-hint: (opcional) arquivos ou descrição
 Escopo: **$ARGUMENTS** (vazio = o diff atual, incluindo arquivos novos). Não edite nada. Leia antes **/guia-visual** e **/assets**.
 
 ## Checklist
+
 1. **Comportamento intacto:** nenhum texto visível, `aria-*`, `role`, ordem de controles, atalho ou fluxo da spec mudou; nenhum teste foi alterado; nenhuma regra do jogo entrou na UI.
 2. **Tokens:** liste as cores soltas novas que deveriam ser token.
 3. **Tipografia:** fonte via token; números tabulares em valores que mudam; nenhuma fonte nova sem autorização.
@@ -22,6 +23,7 @@ Escopo: **$ARGUMENTS** (vazio = o diff atual, incluindo arquivos novos). Não ed
 11. **Rastreabilidade:** decisão durável na spec e no guia; entrada no devlog.
 
 ## Saída
+
 ```
 Veredito: APROVADO | AJUSTES NECESSÁRIOS
 
@@ -34,4 +36,5 @@ Não bloqueantes
 Contraste
 | par (texto / fundo) | razão | ok? |
 ```
+
 Seja curto. Não elogie.

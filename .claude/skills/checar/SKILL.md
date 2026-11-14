@@ -6,6 +6,7 @@ description: Roda a definição de pronto do frontend - guarda de src/, tipos, l
 # /checar — definição de pronto
 
 Rode nesta ordem e **não pare no primeiro erro** (colete tudo). Comando que ainda não existe (antes da T-01/T-02) entra na tabela como "não configurado (T-xx)".
+
 1. `node .claude/hooks/client-guard.mjs --all`
 2. `npm run typecheck`
 3. `npm run lint`
@@ -14,6 +15,7 @@ Rode nesta ordem e **não pare no primeiro erro** (colete tudo). Comando que ain
 6. `npm run build` (apague `dist/` depois)
 
 Confira manualmente:
+
 - **Spec atualizada:** decisões no diff que não estão na spec.
 - **Contrato:** todo tipo, rota ou código de erro usado em `src/api/` e `src/mocks/` existe em `docs/CONTRATO.md`, com a seção da FEAT em `acordado` ou adiante. Fixtures do MSW batem com os cenários da seção.
 - **Sem regra do jogo no frontend:** nenhum cálculo, sorteio ou validação de regra em `src/` (inclusive nos handlers do MSW).
@@ -23,20 +25,21 @@ Confira manualmente:
 - **Devlog:** existe a entrada da tarefa e ela está no índice (pode ser criada depois deste check).
 
 ## Saída
-| Check | Resultado |
-|---|---|
-| guarda | ✅ / ❌ (n violações) / não configurado |
-| tipos | … |
-| lint | … |
-| formatação | … |
-| testes (afetados) | x passando, y falhando |
-| e2e (áreas afetadas) | … / "nenhuma área afetada" |
-| build | … |
-| release sem lab/mocks | … |
-| spec atualizada | … |
-| contrato | … |
-| sem regra do jogo | … |
-| rastreabilidade | … |
-| devlog | … |
+
+| Check                 | Resultado                               |
+| --------------------- | --------------------------------------- |
+| guarda                | ✅ / ❌ (n violações) / não configurado |
+| tipos                 | …                                       |
+| lint                  | …                                       |
+| formatação            | …                                       |
+| testes (afetados)     | x passando, y falhando                  |
+| e2e (áreas afetadas)  | … / "nenhuma área afetada"              |
+| build                 | …                                       |
+| release sem lab/mocks | …                                       |
+| spec atualizada       | …                                       |
+| contrato              | …                                       |
+| sem regra do jogo     | …                                       |
+| rastreabilidade       | …                                       |
+| devlog                | …                                       |
 
 Abaixo, a saída de cada falha (arquivo:linha e mensagem). **Não corrija nada automaticamente**; quem chamou decide (formatar é a exceção segura, se só a formatação falhou).
