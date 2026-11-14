@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.7 · **Data:** 2026-11-14
+> **Versão da spec:** 0.9 · **Data:** 2026-11-14
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -81,7 +81,9 @@ Funções e hooks que as telas usam para ler o estado e enviar intenções. Regr
 
 | Área | Rota | Telas | FEAT |
 |---|---|---|---|
-| app | `/` | rota inicial (placeholder "Misadventures" até a primeira tela real) + área de status da ponte com o servidor (REQ-01) | FEAT-01 |
+| app | `/` | rota inicial (placeholder "Misadventures" até a primeira tela real) + área de status da ponte com o servidor (REQ-01); tema e tipografia da base visual (REQ-02) | FEAT-01, FEAT-02 |
+
+Os componentes compartilhados da FEAT-02 (termo do jogo, categoria de carta) ainda não aparecem em nenhuma tela: são verificados por testes de componente até entrarem no laboratório (FEAT-03) e nas telas da FEAT-04.
 
 ### 3.6 Laboratório
 
@@ -97,6 +99,27 @@ A rota inicial mostra uma **área de status** (elemento com papel acessível `st
 - **Dado** o backend respondendo `200` com `{ "status": "ok", "contractVersion": "0.4" }`, **quando** a rota inicial carrega, **então** a área de status mostra "Servidor conectado · contrato v0.4" (a versão vem de `contractVersion`; nunca fixa no código do frontend).
 - **Dado** o backend respondendo erro no formato do CONTRATO §1.4 (ex.: `500` com `{ "error": { "code": "INTERNAL_ERROR", "message": "Erro inesperado no servidor. Tente novamente." } }`), **quando** a rota inicial carrega, **então** a área de status mostra exatamente a `message` recebida (D-01) e nenhuma exceção chega à tela.
 - **Dado** o servidor inacessível (falha de rede) ou uma resposta que não passa na validação (D-14) — inclusive um erro HTTP cujo corpo não é o envelope §1.4 válido —, **quando** a rota inicial carrega, **então** a área de status mostra "Servidor indisponível. Tente novamente." e nenhuma exceção chega à tela. *(Texto do frontend: falha de conexão não é regra de jogo e não tem `message` do backend; corpo fora do contrato nunca vira texto cru na tela.)*
+
+### REQ-02 — Base visual: tema escuro, contraste, tipografia e resoluções
+
+- **Dado** qualquer par de tokens de texto e fundo definido no arquivo de tokens, **quando** o contraste é calculado, **então** é de pelo menos 4.5:1 (texto comum) ou 3:1 (texto grande, ícones informativos e contorno de foco) (WCAG AA).
+- **Dado** a rota inicial, **quando** ela é exibida, **então** o fundo e o texto usam os tokens do tema escuro, o título "Misadventures" usa a fonte de títulos (Lora) e o texto corrido (área de status) usa a fonte do sistema.
+- **Dado** uma janela de 1280×720 ou de 2560×1440, **quando** a rota inicial é exibida, **então** não existe rolagem horizontal.
+
+### REQ-03 — Termo do jogo com destaque e tooltip
+
+- **Dado** um termo do catálogo de termos (ex.: o atributo Força, id `strength`), **quando** ele aparece num texto, **então** é exibido com o estilo de destaque de termo e com o nome em pt-BR do catálogo.
+- **Dado** um termo destacado, **quando** o jogador passa o mouse sobre ele **ou** o foca pelo teclado, **então** aparece um tooltip com o texto explicativo do catálogo, ligado ao termo por `aria-describedby`.
+- **Dado** o tooltip aberto, **quando** o mouse sai do termo, o foco sai ou o jogador aperta Esc, **então** o tooltip some.
+- **Dado** o tooltip aberto, **então** ele não cobre o termo que o abriu.
+- Um id fora do catálogo é erro de tipo (não compila).
+
+### REQ-04 — Carta com categoria visível
+
+- **Dado** uma carta com categoria, **quando** ela é exibida, **então** mostra juntos o **ícone**, a **imagem** e o **rótulo** em pt-BR da categoria (README II.4).
+- **Dado** uma categoria cuja arte o autor ainda não entregou, **quando** a carta é exibida, **então** no lugar da imagem aparece uma moldura neutra e o rótulo continua visível (a informação nunca depende só da imagem).
+- **Dado** o ícone da categoria ao lado do rótulo, **então** o ícone é decorativo (`alt=""`); a imagem tem texto alternativo com o rótulo da categoria.
+- **Dado** o catálogo de categorias, **quando** os testes rodam, **então** todo id do catálogo tem ícone e imagem (ou está marcado como "arte pendente").
 
 Formato:
 
@@ -122,6 +145,11 @@ Formato:
 - **D-14 — Validação dos dados recebidos com Zod (resolve a P-01):** todo dado do backend entra como `unknown` e passa por um schema Zod antes de virar tipo do contrato (Princípio 2). Zod autorizado e instalado na T-03; schema → tipo num lugar só por inferência. *(Autor, 2026-11-13; alternativa descartada: validadores à mão — sem lib, porém mais código e risco de tipo e validador divergirem.)*
 - **D-15 — MSW pelo plugin `msw/vite`:** o worker do MSW não fica em `public/` — o plugin o serve só no dev e só o emitiria no build se algum bundle importasse `virtual:msw`; a inicialização em `src/main.tsx` fica atrás de `import.meta.env.DEV` + `shouldEnableMocks` (D-10), então o build de release não contém código do MSW (verificado na T-03 com busca no `dist/`). *(T-03, 2026-11-13.)*
 - **D-16 — Consulta de health sem retry automático:** `useHealth` usa `retry: false` — o erro aparece imediatamente na área de status e os testes ficam determinísticos (o padrão do TanStack Query são 3 tentativas com backoff, ~15 s até o estado de erro). Vale só para esta consulta; o padrão das próximas é decidido quando surgirem. *(T-04, 2026-11-14.)*
+- **D-17 — Só tema escuro:** a interface tem um único tema, escuro (menus escuros e texto claro, na linha dos jogos de PS1). Todo estilo é conferido só nele. *(Autor, 2026-11-14; alternativa descartada: escuro e claro, que dobra o trabalho de contraste e testes.)*
+- **D-18 — Tipografia (revisada na T-05):** fonte de títulos **Lora** (serifada, licença OFL, arquivo variável `src/ui/fonts/Lora/Lora-VariableFont_wght.ttf`, pesos 400 a 700) **só em títulos e rótulos curtos**; texto corrido, efeitos de carta e tooltips usam a fonte do sistema. O arquivo é servido junto com o app, sem CDN; só o arquivo referenciado entra no build. *(Autor, 2026-11-14. Primeira escolha, a pixelada Press Start 2P, foi descartada pelo autor ao vê-la: visual ruim. Consequência: a identidade PSX fica nas imagens, ícones e animações, como diz README II.5, e não na tipografia.)*
+- **D-19 — Faixa de resoluções suportada:** de 1280×720 a 2560×1440; dentro dela o layout se ajusta e não há rolagem horizontal. Os e2e conferem as duas pontas. *(Autor, 2026-11-14.)*
+- **D-20 — Textos dos tooltips no frontend:** o catálogo de termos (id do glossário do CONTRATO §2 → nome e texto explicativo em pt-BR) fica em `src/ui/`. O texto descreve o termo para o jogador; não calcula nem decide regra. Cada texto é aprovado pelo autor na tarefa que o acrescenta. Não muda o contrato. *(Autor, 2026-11-14; alternativa descartada: glossário enviado pelo backend, que exigiria endpoint novo.)*
+- **D-21 — Valores da base visual:** `src/ui/tokens.css` é a fonte única dos tokens (cores do tema escuro, escala de tipografia, espaçamentos, movimento). A fonte raiz acompanha o monitor (`clamp(14px, 0.5rem + 0.5vw, 20px)`) e tudo em `rem` escala junto, o que atende a D-09 sem media queries. Movimento: 120 ms (micro), 250 ms (troca de tela), teto 500 ms, easing `cubic-bezier(0.2, 0, 0, 1)`. Paleta e easing foram propostos na T-05 e o autor pode vetá-los; o teste de contraste lê todos os tokens `--color-*` do arquivo e protege o WCAG AA em qualquer troca ou acréscimo de cor. `--color-border` é só decorativo e fica fora do teste; um contorno informativo (campo, botão) exige token próprio com 3:1. *(T-05, 2026-11-14.)*
 
 **Pendências (decidir antes da tarefa indicada):**
 - **P-02 — Como o jogador vê as vezes dos outros no momento 2** (antes da FEAT-21): proposta: o backend devolve a lista ordenada de eventos do domínio e o frontend anima um por um; no momento 3 só o transporte muda (socket). Registrada também no ROADMAP.
@@ -140,6 +168,14 @@ Cada tarefa pertence a uma FEAT do [`ROADMAP.md`](ROADMAP.md). As tarefas de uma
 
 A T-04 fecha o lado FE da FEAT-01: depois dela a coluna FE vai a `pronto`, aguardando a validação contra o backend real (`/retorno-backend`) para `validado`.
 
+**FEAT-02 — Base visual** (só frontend; sem contrato, sem backend)
+
+- [x] **T-05 — Tokens, tema escuro e tipografia** (REQ-02; D-09, D-17, D-18, D-19, D-21). Criar o arquivo de tokens em `src/ui/` (cores semânticas do tema escuro, escala de tipografia, espaçamentos relativos ao monitor, durações e easing de movimento); servir o arquivo da fonte de títulos (Lora, fornecida pelo autor) junto com o app; aplicar na rota inicial; teste unitário de contraste de todos os pares de tokens; e2e da área `app` nas duas pontas de resolução. Atualizar `/guia-visual` (§2, §3, §5, §6) com os valores escolhidos. Como verificar: `npm run dev` mostra a rota inicial em tema escuro, título em Lora e status na fonte do sistema.
+- [ ] **T-06 — Termo do jogo com destaque e tooltip** (REQ-03; D-20). Componente de termo em `src/ui/` e catálogo de termos tipado por id do glossário (CONTRATO §2). O catálogo começa com os **9 atributos** (README 4.1); os textos dos tooltips são rascunhados a partir do README e **aprovados pelo autor** antes de a tarefa fechar. Tooltip por mouse e por teclado, fecha com Esc, sem cobrir o termo. Como verificar: testes de componente (ainda não há tela que use termos).
+- [ ] **T-07 — Carta com categoria e convenção de imagens** (REQ-04). Componente de categoria de carta em `src/ui/` (ícone + imagem + rótulo, moldura neutra quando a arte está pendente); catálogo de categorias com **ids de teste** (`test-…`, SVG só para testes) — as categorias reais chegam com o modelo das cartas na FEAT-04; teste "todo id tem imagem ou está pendente". Definir com o autor e registrar em `/assets`: pasta dos originais e como as versões do produto são geradas. Como verificar: testes de componente.
+
+A T-07 fecha o lado FE da FEAT-02 (o backend não tem alteração nela, ROADMAP `—`).
+
 ## 8. Histórico
 
 | Versão | Data | Mudança |
@@ -151,3 +187,5 @@ A T-04 fecha o lado FE da FEAT-01: depois dela a coluna FE vai a `pronto`, aguar
 | 0.5 | 2026-11-13 | T-03 concluída: D-10 confirmada (`.env.development` com mocks ligados), D-14 (Zod resolve a P-01), D-15 (MSW pelo plugin `msw/vite`, fora do build); tabela 3.2 atualizada; área de e2e `app` criada (3.5). |
 | 0.6 | 2026-11-14 | Fecho da FEAT-01 planejado: REQ-01 (estado da ponte na rota inicial), T-04, `useHealth` em 3.4, `HealthResponse` em 3.3 (CONTRATO v0.4 `acordado`). |
 | 0.7 | 2026-11-14 | T-04 concluída: D-16 (health sem retry); REQ-01 explicita que erro HTTP sem envelope §1.4 válido cai em "Servidor indisponível. Tente novamente.". |
+| 0.8 | 2026-11-14 | FEAT-02 planejada: REQ-02 a REQ-04, D-17 (só tema escuro), D-18 (tipografia), D-19 (1280×720 a 2560×1440), D-20 (textos dos tooltips no frontend), tarefas T-05 a T-07. |
+| 0.9 | 2026-11-14 | T-05 concluída: D-18 revisada (Lora no lugar da Press Start 2P, pedido do autor), D-21 (valores da base visual em `src/ui/tokens.css`); REQ-02 ajustado à fonte de títulos. |

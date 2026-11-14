@@ -1,11 +1,29 @@
-/* Base mínima; os tokens visuais entram com o guia visual (FEAT-02). */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
 
+/* A fonte raiz acompanha a largura do monitor (D-19): ~14px em 1280, 20px em 2560. */
+html {
+  font-size: clamp(14px, 0.5rem + 0.5vw, 20px);
+}
+
 body {
   margin: 0;
-  font-family: system-ui, sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  line-height: 1.5;
+}
+
+main {
+  padding: var(--space-8);
+}
+
+h1 {
+  font-family: var(--font-title);
+  font-size: var(--text-title);
+  line-height: 1.3;
 }

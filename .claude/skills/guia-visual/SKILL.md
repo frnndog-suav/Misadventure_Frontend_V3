@@ -5,7 +5,7 @@ description: Guia visual do Misadventures (referência, não fluxo) - direção 
 
 # /guia-visual
 
-> **Estado (2026-11-13):** só a direção de arte das imagens está definida (README II.5) e os requisitos de interface (README II.4). Tipografia, paleta, tokens, faixa de resoluções e padrões de movimento são definidos com o autor na **FEAT-02**; até lá, os itens marcados _a definir_ não podem ser inventados numa tarefa: pergunte. Valores de verdade ficarão no arquivo de tokens criado na FEAT-02.
+> **Estado (2026-11-14, T-05):** tipografia, paleta, tema, faixa de resoluções e movimento definidos (spec D-17 a D-19, D-21). Valores de verdade: `src/ui/tokens.css` (fonte única; a UI só usa esses tokens). Itens ainda marcados _a definir_ não podem ser inventados numa tarefa: pergunte.
 
 ## 1. Direção de arte
 
@@ -24,14 +24,31 @@ description: Guia visual do Misadventures (referência, não fluxo) - direção 
 
 ## 2. Tipografia
 
-_A definir na FEAT-02:_ família, origem dos arquivos (servidos junto com o app, sem depender de CDN), escala (corpo, interface, títulos, rótulos de carta), números tabulares para valores que mudam (vida, Pico, Vigor, ouro). Fonte nova só com autorização.
+- **Títulos** (`--font-title`, Lora, licença OFL em `src/ui/fonts/Lora/OFL.txt`): **só títulos e rótulos curtos** (spec D-18). Arquivo variável servido com o app, sem CDN. A fonte pixelada foi descartada pelo autor; a identidade PSX fica nas imagens, ícones e animações.
+- **Legível** (`--font-body`, fonte do sistema): texto corrido, efeitos de carta, tooltips, valores.
+- **Escala:** `--text-sm` 0.875rem · `--text-md` 1rem · `--text-lg` 1.25rem · `--text-title` 2rem. A fonte raiz acompanha o monitor (`clamp(14px, 0.5rem + 0.5vw, 20px)`), então tudo em `rem` escala junto.
+- _A definir quando surgirem:_ rótulos de carta e números tabulares para valores que mudam (vida, Pico, Vigor, ouro).
+- Fonte nova só com autorização.
 
 ## 3. Cor e tema
 
-- A UI usa só **tokens semânticos**, nunca cores soltas. _Paleta e tabela token → uso: a definir na FEAT-02._
+- A UI usa só **tokens semânticos**, nunca cores soltas (spec D-17):
+
+| Token                | Uso                                      |
+| -------------------- | ---------------------------------------- |
+| `--color-bg`         | fundo da página                          |
+| `--color-surface`    | painéis, cartas, tooltips                |
+| `--color-border`     | contornos decorativos (não informativos) |
+| `--color-text`       | texto principal                          |
+| `--color-text-muted` | texto secundário                         |
+| `--color-accent`     | destaque dos termos do jogo              |
+| `--color-danger`     | erros e perigo                           |
+| `--color-focus`      | contorno de foco                         |
+
+- Todo token de texto passa 4.5:1 sobre `--color-bg` e `--color-surface`; `--color-focus` passa 3:1 (teste `src/ui/tokens.test.ts` — token de cor novo entra na lista do teste).
 - **Contraste inegociável:** WCAG AA (4.5:1 para texto; 3:1 para texto grande, ícones informativos e contorno de foco).
 - Opacidade não marca estado (derruba o contraste); use um token de "desligado".
-- _Temas suportados (claro/escuro): a definir na FEAT-02._ Todo estilo novo funciona em todos os temas definidos.
+- **Só tema escuro** (spec D-17).
 
 ## 4. Superfícies, cartas e termos
 
@@ -41,7 +58,7 @@ _A definir na FEAT-02:_ família, origem dos arquivos (servidos junto com o app,
 
 ## 5. Movimento
 
-- Durações: micro 80–150 ms; troca de tela 200–350 ms; teto 500 ms. _Easing padrão: a definir na FEAT-02._
+- Durações (spec D-21): `--duration-micro` 120 ms; `--duration-screen` 250 ms; teto `--duration-max` 500 ms. Easing padrão `--easing-standard` (`cubic-bezier(0.2, 0, 0, 1)`).
 - **Nunca bloquear a entrada:** o estado já mudou quando a animação começa; cliques, atalhos, foco e anúncios acessíveis funcionam durante a animação.
 - Só `transform`/`opacity` (exceções justificadas).
 - **Determinismo:** sem aleatório (`Math.random` é proibido em `src/`, spec D-08); keyframes fixos. A animação **reage aos dados que o backend envia**, não recalcula regras.
@@ -50,7 +67,7 @@ _A definir na FEAT-02:_ família, origem dos arquivos (servidos junto com o app,
 
 ## 6. Layout e acessibilidade
 
-- **PC primeiro** (spec D-09): distâncias, tamanhos e margens se ajustam ao monitor. _Faixa de resoluções suportada: a definir na FEAT-02._ Sem rolagem horizontal na faixa suportada.
+- **PC primeiro** (spec D-09): distâncias, tamanhos e margens se ajustam ao monitor. Faixa suportada: **1280×720 a 2560×1440** (spec D-19), conferida nos e2e de `tests/e2e/app/visual.spec.ts`. Sem rolagem horizontal na faixa suportada. Espaçamentos com os tokens `--space-*`.
 - Controles reais (botão, link, campo) operáveis por teclado, com `focus-visible` visível.
 - Tooltips não cobrem o controle que os abriu; rolagem interna focável.
 - Resultados dinâmicos em `aria-live="polite"`.

@@ -27,8 +27,9 @@ O tempo gasto no desenvolvimento fica em [`tempo.html`](tempo.html): um arquivo 
 | 003 | T-02 | [Guarda de `src/`](003-T-02-guarda-de-src.md) | concluída |
 | 004 | T-03 | [Esqueleto do app](004-T-03-esqueleto-do-app.md) | concluída |
 | 005 | CONTRATO | [FEAT-01, endpoint mínimo proposto](005-CONTRATO-feat-01-endpoint-minimo.md) | concluída |
-| 006 | TEMPO | [Registro de tempo de desenvolvimento](006-TEMPO-registro-de-tempo.md) | aguardando revisão |
-| 007 | T-04 | [Consumo do GET /health na rota inicial](007-T-04-consumo-do-health.md) | aguardando revisão |
+| 006 | TEMPO | [Registro de tempo de desenvolvimento](006-TEMPO-registro-de-tempo.md) | concluída |
+| 007 | T-04 | [Consumo do GET /health na rota inicial](007-T-04-consumo-do-health.md) | concluída |
+| 008 | T-05 | [Tokens, tema escuro e tipografia](008-T-05-tokens-tema-e-tipografia.md) | aguardando revisão |
 
 ## Como replicar
 O que um projeto novo precisa para ter o mesmo sistema:
