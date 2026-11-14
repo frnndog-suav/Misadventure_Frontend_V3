@@ -1,8 +1,11 @@
-import type { RequestHandler } from 'msw'
+import { http, HttpResponse, type RequestHandler } from 'msw'
+import { healthFixture } from './fixtures'
 
 /**
  * Handlers do MSW: respondem só fixtures do contrato (Princípio 3).
- * Nenhum endpoint no contrato ainda — a seção da FEAT-01 é definida
- * com /contrato depois da T-03.
+ * O path `*\/health` casa tanto a chamada relativa no dev (VITE_API_URL
+ * vazio, mesma origem) quanto a absoluta nos testes em Node.
  */
-export const handlers: RequestHandler[] = []
+export const handlers: RequestHandler[] = [
+  http.get('*/health', () => HttpResponse.json(healthFixture)),
+]

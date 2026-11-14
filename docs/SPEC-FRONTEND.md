@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.5 · **Data:** 2026-11-13
+> **Versão da spec:** 0.7 · **Data:** 2026-11-14
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -67,17 +67,21 @@ Qualquer outra **só com autorização**.
 
 ### 3.3 Modelo de dados
 
-Os tipos são os do contrato ([`CONTRATO.md`](CONTRATO.md)), transcritos em `src/api/` como uniões discriminadas. Nenhum ainda.
+Os tipos são os do contrato ([`CONTRATO.md`](CONTRATO.md)), transcritos em `src/api/` como uniões discriminadas. Primeiro tipo: `HealthResponse` (CONTRATO §3 FEAT-01), com schema Zod correspondente (D-14), na T-04.
 
 ### 3.4 Camada de cliente (API pública de `src/api/`)
 
-Funções e hooks que as telas usam para ler o estado e enviar intenções. Nenhum ainda. Regra: a tela nunca monta URL, nunca lê resposta crua e nunca decide uma regra; ela consome o que `src/api/` expõe.
+Funções e hooks que as telas usam para ler o estado e enviar intenções. Regra: a tela nunca monta URL, nunca lê resposta crua e nunca decide uma regra; ela consome o que `src/api/` expõe.
+
+| Função/hook | O que entrega | Tarefa |
+|---|---|---|
+| `useHealth()` | consulta `GET /health` e entrega o estado da ponte: carregando, `HealthResponse` validado, erro §1.4 (com `code` e `message`) ou falha de rede/validação | T-04 |
 
 ### 3.5 Telas e áreas de e2e
 
 | Área | Rota | Telas | FEAT |
 |---|---|---|---|
-| app | `/` | rota inicial (placeholder "Misadventures" até a primeira tela real) | FEAT-01 |
+| app | `/` | rota inicial (placeholder "Misadventures" até a primeira tela real) + área de status da ponte com o servidor (REQ-01) | FEAT-01 |
 
 ### 3.6 Laboratório
 
@@ -85,7 +89,14 @@ Requisitos em README II.6. No frontend: existe só no build de dev (D-07); cada 
 
 ## Requisitos
 
-*(nenhum ainda; os REQ-nn nascem quando cada FEAT é planejada com `/mudar-spec`)*
+### REQ-01 — Estado da ponte com o servidor na rota inicial
+
+A rota inicial mostra uma **área de status** (elemento com papel acessível `status`), discreta, abaixo do título. Os textos exatos:
+
+- **Dado** o app aberto na rota inicial, **quando** a consulta `GET /health` está em andamento, **então** a área de status mostra "Conectando ao servidor…".
+- **Dado** o backend respondendo `200` com `{ "status": "ok", "contractVersion": "0.4" }`, **quando** a rota inicial carrega, **então** a área de status mostra "Servidor conectado · contrato v0.4" (a versão vem de `contractVersion`; nunca fixa no código do frontend).
+- **Dado** o backend respondendo erro no formato do CONTRATO §1.4 (ex.: `500` com `{ "error": { "code": "INTERNAL_ERROR", "message": "Erro inesperado no servidor. Tente novamente." } }`), **quando** a rota inicial carrega, **então** a área de status mostra exatamente a `message` recebida (D-01) e nenhuma exceção chega à tela.
+- **Dado** o servidor inacessível (falha de rede) ou uma resposta que não passa na validação (D-14) — inclusive um erro HTTP cujo corpo não é o envelope §1.4 válido —, **quando** a rota inicial carrega, **então** a área de status mostra "Servidor indisponível. Tente novamente." e nenhuma exceção chega à tela. *(Texto do frontend: falha de conexão não é regra de jogo e não tem `message` do backend; corpo fora do contrato nunca vira texto cru na tela.)*
 
 Formato:
 
@@ -110,6 +121,7 @@ Formato:
 
 - **D-14 — Validação dos dados recebidos com Zod (resolve a P-01):** todo dado do backend entra como `unknown` e passa por um schema Zod antes de virar tipo do contrato (Princípio 2). Zod autorizado e instalado na T-03; schema → tipo num lugar só por inferência. *(Autor, 2026-11-13; alternativa descartada: validadores à mão — sem lib, porém mais código e risco de tipo e validador divergirem.)*
 - **D-15 — MSW pelo plugin `msw/vite`:** o worker do MSW não fica em `public/` — o plugin o serve só no dev e só o emitiria no build se algum bundle importasse `virtual:msw`; a inicialização em `src/main.tsx` fica atrás de `import.meta.env.DEV` + `shouldEnableMocks` (D-10), então o build de release não contém código do MSW (verificado na T-03 com busca no `dist/`). *(T-03, 2026-11-13.)*
+- **D-16 — Consulta de health sem retry automático:** `useHealth` usa `retry: false` — o erro aparece imediatamente na área de status e os testes ficam determinísticos (o padrão do TanStack Query são 3 tentativas com backoff, ~15 s até o estado de erro). Vale só para esta consulta; o padrão das próximas é decidido quando surgirem. *(T-04, 2026-11-14.)*
 
 **Pendências (decidir antes da tarefa indicada):**
 - **P-02 — Como o jogador vê as vezes dos outros no momento 2** (antes da FEAT-21): proposta: o backend devolve a lista ordenada de eventos do domínio e o frontend anima um por um; no momento 3 só o transporte muda (socket). Registrada também no ROADMAP.
@@ -124,7 +136,9 @@ Cada tarefa pertence a uma FEAT do [`ROADMAP.md`](ROADMAP.md). As tarefas de uma
 - [x] **T-02 — Guarda de `src/`** (D-08). Criar `.claude/hooks/client-guard.mjs` (modo hook pelo stdin e modo `--all`), registrar em `.claude/settings.json` (PostToolUse em Edit/Write) e reproduzir as regras no ESLint sem plugin novo. Como verificar: `node .claude/hooks/client-guard.mjs --all` passa; um arquivo de teste com `Math.random()` em `src/` é bloqueado com a mensagem do princípio; o arquivo é apagado depois.
 - [x] **T-03 — Esqueleto do app** (D-04, D-07, D-10, P-01). Resolver a P-01; instalar TanStack Query, React Router DOM e MSW; criar as pastas de 3.2; provider de consultas; rota inicial; inicialização do MSW só no dev com `VITE_USE_MOCKS=true`; remover o conteúdo de exemplo do template do Vite. Como verificar: `npm run dev` abre a rota inicial sem o conteúdo do template; com `VITE_USE_MOCKS=true` o console mostra o MSW ativo; `npm run build` não contém código do MSW.
 
-O endpoint mínimo que valida a ponte FE↔BE de ponta a ponta (fecho da FEAT-01) é definido com `/contrato FEAT-01` depois da T-03.
+- [x] **T-04 — Consumo do `GET /health` na rota inicial** (REQ-01; CONTRATO v0.4 §3 FEAT-01; D-01, D-10, D-14). Em `src/api/`: tipo `HealthResponse` + schema Zod, chamada HTTP com base em `VITE_API_URL` que valida a resposta (dado entra como `unknown`) e converte o envelope de erro §1.4, e a consulta `useHealth` (TanStack Query). Em `src/mocks/`: handler de `GET /health` com a fixture dos cenários do contrato. Na rota inicial: a área de status do REQ-01. Como verificar: `npm run dev` (mocks ligados) mostra "Servidor conectado · contrato v0.4"; unitários do REQ-01 e e2e da área `app` passam.
+
+A T-04 fecha o lado FE da FEAT-01: depois dela a coluna FE vai a `pronto`, aguardando a validação contra o backend real (`/retorno-backend`) para `validado`.
 
 ## 8. Histórico
 
@@ -135,3 +149,5 @@ O endpoint mínimo que valida a ponte FE↔BE de ponta a ponta (fecho da FEAT-01
 | 0.3 | 2026-11-13 | D-13: correção do `npm audit` (ESLint ^10.15 e override do `minimatch`). |
 | 0.4 | 2026-11-13 | T-02 concluída: D-08 detalhada (ponto de entrada de dev = `src/main.tsx` até a T-03; testes importam mocks, não lab; imports livres entre mocks/ e lab/). Vitest também inclui `.claude/hooks/**/*.test.ts`. |
 | 0.5 | 2026-11-13 | T-03 concluída: D-10 confirmada (`.env.development` com mocks ligados), D-14 (Zod resolve a P-01), D-15 (MSW pelo plugin `msw/vite`, fora do build); tabela 3.2 atualizada; área de e2e `app` criada (3.5). |
+| 0.6 | 2026-11-14 | Fecho da FEAT-01 planejado: REQ-01 (estado da ponte na rota inicial), T-04, `useHealth` em 3.4, `HealthResponse` em 3.3 (CONTRATO v0.4 `acordado`). |
+| 0.7 | 2026-11-14 | T-04 concluída: D-16 (health sem retry); REQ-01 explicita que erro HTTP sem envelope §1.4 válido cai em "Servidor indisponível. Tente novamente.". |

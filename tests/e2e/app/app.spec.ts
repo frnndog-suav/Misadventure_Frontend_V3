@@ -10,6 +10,15 @@ test('T-03: a rota inicial abre sem o conteúdo do template', async ({
   await expect(page.getByText('Get started')).toHaveCount(0)
 })
 
+test('REQ-01: a área de status mostra o servidor conectado e a versão do contrato', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await expect(page.getByRole('status')).toContainText(
+    'Servidor conectado · contrato v0.4',
+  )
+})
+
 test('T-03: com VITE_USE_MOCKS=true o console mostra o MSW ativo', async ({
   page,
 }) => {

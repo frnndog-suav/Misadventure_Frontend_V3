@@ -1,0 +1,128 @@
+<!doctype html>
+<!--
+  Misadventures — registro de tempo de desenvolvimento (frontend).
+
+  COMO USAR
+  1. Registre cada sessão de trabalho no array SESSOES logo abaixo:
+     { data: 'AAAA-MM-DD', horas: 2.5, etapa: 'T-04', nota: 'o que foi feito' }
+     - horas: número decimal (2.5 = 2h30). Use null se ainda não souber (fica fora do total).
+     - etapa: o ID do devlog (T-xx, CONTRATO, FEAT-nn, 'setup'...).
+  2. Abra este arquivo no navegador (duplo clique) para ver os totais.
+  3. A skill /registrar-etapa acrescenta a sessão de cada etapa aqui.
+
+  As horas pré-preenchidas foram ESTIMADAS pela janela entre o primeiro e o
+  último commit de cada dia, sem descontar pausas — corrija-as.
+-->
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Misadventures — Tempo de desenvolvimento (frontend)</title>
+    <script>
+      // === EDITE AQUI: uma linha por sessão de trabalho ===
+      const SESSOES = [
+        { data: '2026-11-04', horas: 1, etapa: 'setup', nota: 'Commit inicial do repositório (estimado: 1 commit às 19:25) — corrija.' },
+        { data: '2026-11-10', horas: 6, etapa: 'FEAT-00', nota: 'Regras e documentação. Estimado pela janela de commits 18:02–23:55 — corrija.' },
+        { data: '2026-11-12', horas: 14.5, etapa: 'FEAT-00', nota: 'Regras e documentação. Janela 10:01–00:28, sem descontar pausas — corrija.' },
+        { data: '2026-11-13', horas: 11.5, etapa: 'FEAT-00 · T-01 · T-02', nota: 'Fundação (agentes/skills), contrato v0.2, T-01, npm audit, T-02. Janela 10:08–21:47 — corrija.' },
+        { data: '2026-11-14', horas: null, etapa: 'T-03 · CONTRATO · T-04', nota: 'T-03, contrato FEAT-01 (v0.3→v0.4 acordado), spec 0.6, registro de tempo, T-04 — preencha ao fim do dia.' },
+      ]
+      // ====================================================
+    </script>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f6f4ef;
+        --card: #ffffff;
+        --ink: #2b2a26;
+        --muted: #6f6a60;
+        --line: #e2ddd2;
+        --accent: #7a5c2e;
+      }
+      body {
+        margin: 0;
+        padding: 32px 24px 64px;
+        background: var(--bg);
+        color: var(--ink);
+        font: 15px/1.5 system-ui, 'Segoe UI', sans-serif;
+        max-width: 880px;
+        margin-inline: auto;
+      }
+      h1 { font-size: 22px; margin: 0 0 4px; }
+      .sub { color: var(--muted); margin: 0 0 24px; font-size: 13px; }
+      .cards { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 28px; }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 12px 18px;
+        min-width: 150px;
+      }
+      .card b { display: block; font-size: 24px; color: var(--accent); }
+      .card span { font-size: 12px; color: var(--muted); }
+      h2 { font-size: 15px; margin: 28px 0 8px; }
+      table { border-collapse: collapse; width: 100%; background: var(--card); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+      th, td { text-align: left; padding: 8px 12px; border-top: 1px solid var(--line); vertical-align: top; }
+      thead th { border-top: none; background: #efece4; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+      td.num, th.num { text-align: right; white-space: nowrap; }
+      .nota { color: var(--muted); font-size: 13px; }
+      .aviso { color: var(--muted); font-size: 13px; margin-top: 8px; }
+    </style>
+  </head>
+  <body>
+    <h1>Misadventures — Tempo de desenvolvimento</h1>
+    <p class="sub">Frontend · fonte: array <code>SESSOES</code> dentro deste arquivo · edite e recarregue</p>
+    <div class="cards" id="cards"></div>
+    <h2>Horas por etapa</h2>
+    <table><thead><tr><th>Etapa</th><th class="num">Horas</th></tr></thead><tbody id="porEtapa"></tbody></table>
+    <h2>Sessões</h2>
+    <table>
+      <thead><tr><th>Data</th><th>Etapa</th><th class="num">Horas</th><th>Nota</th></tr></thead>
+      <tbody id="sessoes"></tbody>
+    </table>
+    <p class="aviso" id="aviso"></p>
+    <script>
+      const fmtH = (h) => (h === null ? '—' : h.toLocaleString('pt-BR') + ' h')
+      const fmtData = (iso) => {
+        const [a, m, d] = iso.split('-')
+        return d + '/' + m + '/' + a
+      }
+      const ordenadas = [...SESSOES].sort((a, b) => a.data.localeCompare(b.data))
+      const comHoras = ordenadas.filter((s) => s.horas !== null)
+      const total = comHoras.reduce((t, s) => t + s.horas, 0)
+      const dias = new Set(ordenadas.map((s) => s.data))
+      const primeira = ordenadas[0]?.data
+      const ultima = ordenadas[ordenadas.length - 1]?.data
+      const corridos = primeira ? Math.round((new Date(ultima) - new Date(primeira)) / 86400000) + 1 : 0
+
+      document.getElementById('cards').innerHTML = [
+        ['Total registrado', total.toLocaleString('pt-BR') + ' h'],
+        ['Dias trabalhados', dias.size],
+        ['Período', primeira ? fmtData(primeira) + ' → ' + fmtData(ultima) + ' (' + corridos + ' dias corridos)' : '—'],
+        ['Sessões', ordenadas.length],
+      ]
+        .map(([k, v]) => '<div class="card"><b>' + v + '</b><span>' + k + '</span></div>')
+        .join('')
+
+      const porEtapa = new Map()
+      for (const s of comHoras) porEtapa.set(s.etapa, (porEtapa.get(s.etapa) ?? 0) + s.horas)
+      document.getElementById('porEtapa').innerHTML =
+        [...porEtapa.entries()]
+          .map(([e, h]) => '<tr><td>' + e + '</td><td class="num">' + fmtH(h) + '</td></tr>')
+          .join('') || '<tr><td colspan="2">Nenhuma sessão com horas.</td></tr>'
+
+      document.getElementById('sessoes').innerHTML = ordenadas
+        .map(
+          (s) =>
+            '<tr><td>' + fmtData(s.data) + '</td><td>' + s.etapa + '</td><td class="num">' + fmtH(s.horas) +
+            '</td><td class="nota">' + s.nota + '</td></tr>',
+        )
+        .join('')
+
+      const semHoras = ordenadas.length - comHoras.length
+      document.getElementById('aviso').textContent =
+        (semHoras ? semHoras + ' sessão(ões) sem horas (fora do total). ' : '') +
+        'Horas pré-preenchidas foram estimadas pelas janelas de commit — corrija no array SESSOES.'
+    </script>
+  </body>
+</html>

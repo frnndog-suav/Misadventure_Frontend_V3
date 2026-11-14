@@ -1,6 +1,6 @@
 # Misadventures — Roadmap de desenvolvimento
 
-> **Versão:** 0.4 · **Data:** 2026-11-14
+> **Versão:** 0.5 · **Data:** 2026-11-14
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend; o autor copia o arquivo inteiro quando ele muda. Base: README Parte III (III.2 e III.4). As regras estão em [`README.md`](README.md); o que trafega entre os lados, em [`CONTRATO.md`](CONTRATO.md).
 
@@ -46,7 +46,7 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | FEAT | Título | README | FE | BE |
 |---|---|---|---|---|
 | FEAT-00 | Fundação: agentes, skills, specs, devlog, roadmap e contrato (só documentos) | III.1, III.2, III.4 | pronto | pronto |
-| FEAT-01 | Esqueleto técnico. FE: ferramentas, guarda, pastas, MSW. BE: NestJS, Docker Compose (banco + backend), Drizzle, testes. Fecha com um endpoint mínimo que valida a ponte de ponta a ponta. | II.2, II.3 | em andamento | a fazer |
+| FEAT-01 | Esqueleto técnico. FE: ferramentas, guarda, pastas, MSW. BE: NestJS, Docker Compose (banco + backend), Drizzle, testes. Fecha com um endpoint mínimo que valida a ponte de ponta a ponta. | II.2, II.3 | pronto | a fazer |
 | FEAT-02 | Base visual: guia visual PSX, tokens, carta com categoria (ícone, imagem e label), termo do jogo com destaque e tooltip | II.4, II.5 | a fazer | — |
 | FEAT-03 | Esqueleto do laboratório: tela só no dev; BE com os valores ajustáveis numa configuração lida pelas regras | II.6, Apêndice A | a fazer | a fazer |
 
@@ -110,3 +110,4 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | 0.2 | 2026-11-13 | FEAT-00 do backend `pronto`: agentes, skills, spec, devlog e Aviso de frontend; contrato v0.2 (§1 e §2 `acordado`). |
 | 0.3 | 2026-11-14 | FEAT-01: lado FE das ferramentas pronto (T-01 a T-03); contrato da FEAT-01 proposto pelo FE (CONTRATO v0.3, `GET /health`); FE `aguardando outro lado`. |
 | 0.4 | 2026-11-14 | FEAT-01: contrato `acordado` (CONTRATO v0.4, mudanças pedidas pelo BE aceitas pelo FE); FE `em andamento`. |
+| 0.5 | 2026-11-14 | FEAT-01: lado FE `pronto` (T-04, consumo do `GET /health` com MSW); falta `implementado (BE)` e a validação contra o backend real. |
