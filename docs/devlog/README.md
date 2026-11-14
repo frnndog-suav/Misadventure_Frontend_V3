@@ -51,4 +51,5 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 019 | T-12 | [Categorias e rótulos](019-T-12-categorias-e-rotulos.md) | concluída |
 | 020 | T-13 | [Cartas de atributo, equipamento e item](020-T-13-cartas-atributo-equipamento-item.md) | concluída |
 | 021 | T-14 | [Cartas de zona e de evento](021-T-14-cartas-zona-evento.md) | concluída |
-| 022 | T-15 | [Seção Catálogo no laboratório](022-T-15-catalogo-no-laboratorio.md) | aguardando revisão |
+| 022 | T-15 | [Seção Catálogo no laboratório](022-T-15-catalogo-no-laboratorio.md) | concluída |
+| 023 | RETORNO | [FEAT-04 validada contra o backend real](023-RETORNO-feat-04-validada.md) | aguardando revisão |

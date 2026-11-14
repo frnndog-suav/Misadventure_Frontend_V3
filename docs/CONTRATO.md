@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.14 · **Data:** 2026-11-14
+> **Versão do contrato:** 0.15 · **Data:** 2026-11-14
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -316,7 +316,7 @@ Todos partem do laboratório ligado e, salvo indicação, de nenhum ajuste salvo
 - Dado o ajuste `{ "actionPointsPerTurn": 4 }` salvo, quando `POST /lab/config/reset`, então `200` com `values` igual a `defaults`.
 - Dado o laboratório desligado, quando `GET /lab/config`, então `404` com `{ "error": { "code": "NOT_FOUND", "message": "Recurso não encontrado." } }`.
 
-### FEAT-04 — Catálogo de cartas e coleções — `implementado (BE)`
+### FEAT-04 — Catálogo de cartas e coleções — `validado`
 
 Regras: README 3.3, 3.4, 4.3, 5.1, 5.2, 8.6, 14.1, 16.2, 18.1 a 18.3, 24.3 (raridade) e 27. Só leitura: o catálogo é o conteúdo publicado (cartas como dados) e não muda durante a partida.
 
@@ -660,3 +660,4 @@ Partem de nenhum save e do laboratório nos padrões. Os `id` e as datas são ge
 | 0.12 | 2026-11-14 | BE | FEAT-04 `implementado (BE)`: `GET /catalog/collections`, `GET /catalog/collections/:collectionId/cards` (`?type=`) e `GET /catalog/cards/:cardId` entregues e cobertos por e2e, sem mudança de formato. `?type=` vazio ou repetido também → `CATALOG_QUERY_INVALID`. A ordem das chaves no JSON da carta não é garantida (compare por campo). Catálogo lido de `CONTENT_DIR` no boot; os cenários usam a coleção `fixture` (`CONTENT_DIR=test/fixtures/content`). |
 | 0.13 | 2026-11-14 | BE | FEAT-05 proposta: `POST`/`GET /parties`, `GET`/`DELETE /parties/:partyId`, `POST /parties/:partyId/session` e `/session/end`; tipos `CreatePartyRequest`, `Party`, `PartyMember`, `PartySummary`, `PartyStatus`; glossário §2.8; códigos `PARTY_INVALID`, `PARTY_NOT_FOUND`, `PARTY_SESSION_NOT_ACTIVE` (§4). Lista de saves global até a FEAT-25. |
 | 0.14 | 2026-11-14 | FE | FEAT-05 `acordado` sem mudanças. O FE usa os limites de `CreatePartyRequest` (40 e 24 caracteres) como texto de UI dos erros `tooLong`. |
+| 0.15 | 2026-11-14 | FE | FEAT-04 `validado`: os 7 cenários rodaram contra o backend real (`http://localhost:3333`, `CONTENT_DIR=test/fixtures/content`) e passaram; as 6 cartas reais passam no schema do frontend. Também passaram o CORS para `http://localhost:5173` e os e2e da área `lab` com o MSW desligado. As fixtures do MSW passaram a ser cópia exata das cartas do backend. Sem mudança de formato. |

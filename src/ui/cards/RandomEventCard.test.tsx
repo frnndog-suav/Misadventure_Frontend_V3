@@ -12,11 +12,20 @@ describe('RandomEventCard', () => {
     render(<RandomEventCard card={traveler} />)
     const card = screen.getByRole('article', { name: 'Viajante Ferido' })
     const reqs = within(card).getByRole('list', { name: 'Requisitos' })
-    expect(within(reqs).getByRole('listitem')).toHaveTextContent('Sabedoria 2.')
+    expect(within(reqs).getByRole('listitem')).toHaveTextContent(
+      'Possuir uma Poção de Cura.',
+    )
     expect(within(card).getByText('Coisa boa')).toBeVisible()
-    expect(within(card).getByText('Ganhe 1 item.')).toBeVisible()
+    expect(
+      within(card).getByText('O viajante agradece e revela um atalho.'),
+    ).toBeVisible()
     expect(within(card).getByText('Coisa ruim')).toBeVisible()
-    expect(within(card).getByText('Perca 1 de Vida.')).toBeVisible()
+    expect(
+      within(card).getByText('Era uma emboscada; o grupo perde suprimentos.'),
+    ).toBeVisible()
+    expect(
+      within(card).getByText('Um estranho jaz à beira da trilha.'),
+    ).toBeVisible()
   })
 
   it('REQ-13: "Sem fuga" só quando noEscape é true', () => {
@@ -28,7 +37,9 @@ describe('RandomEventCard', () => {
   })
 
   it('REQ-13 (regras comuns): flavor só quando presente', () => {
-    const { unmount } = render(<RandomEventCard card={traveler} />)
+    const { unmount } = render(
+      <RandomEventCard card={{ ...traveler, flavorText: null }} />,
+    )
     expect(screen.queryByText(/Nenhum|—/)).toBeNull()
     unmount()
     render(<RandomEventCard card={{ ...traveler, flavorText: 'Ele geme.' }} />)

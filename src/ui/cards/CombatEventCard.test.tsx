@@ -39,12 +39,21 @@ describe('CombatEventCard', () => {
     render(<CombatEventCard card={wolves} />)
     const card = screen.getByRole('article', { name: 'Lobos Uivantes' })
     expect(within(card).getByText('Coisa boa')).toBeVisible()
-    expect(within(card).getByText('Ganhe 3 de ouro.')).toBeVisible()
+    expect(
+      within(card).getByText('Os lobos fogem e deixam peles para trás.'),
+    ).toBeVisible()
     expect(within(card).getByText('Coisa ruim')).toBeVisible()
-    expect(within(card).getByText('Perca 2 de Vida.')).toBeVisible()
+    expect(
+      within(card).getByText('A matilha fere o grupo antes de recuar.'),
+    ).toBeVisible()
+    expect(
+      within(card).getByText('Uivos ecoam entre as árvores.'),
+    ).toBeVisible()
     expect(within(card).queryByText('Sem fuga')).toBeNull()
 
-    const enemy = within(card).getByRole('region', { name: 'Lobo Cinzento' })
+    const enemy = within(card).getByRole('region', {
+      name: '2× Lobo Cinzento',
+    })
     expect(within(enemy).getByText('Fera')).toBeVisible()
     expect(within(enemy).getByText('Criatura: Lobo')).toBeVisible()
     expect(within(enemy).getByText('Categoria: Comum')).toBeVisible()

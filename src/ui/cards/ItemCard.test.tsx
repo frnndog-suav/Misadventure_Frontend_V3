@@ -12,9 +12,9 @@ describe('ItemCard', () => {
     render(<ItemCard card={potion} />)
     const card = screen.getByRole('article', { name: 'Poção de Cura' })
     expect(within(card).getByText('Consumíveis')).toBeVisible()
-    expect(within(card).getByText('Poção')).toBeVisible()
+    expect(within(card).getByText('poção')).toBeVisible()
     expect(within(card).getByText('Comum')).toBeVisible()
-    expect(within(card).getByText('Recupera 5 de Vida.')).toBeVisible()
+    expect(within(card).getByText('Recupera 5 de vida.')).toBeVisible()
   })
 
   it('REQ-11 (regras comuns): sem etiquetas, efeitos e flavor, nada aparece no lugar', () => {

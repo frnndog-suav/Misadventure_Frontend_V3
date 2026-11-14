@@ -7,10 +7,8 @@ import type {
 import type { ErrorEnvelope } from '../api/http'
 
 /**
- * Fixtures dos cenários do CONTRATO §3 FEAT-04 (v0.11). Só a carta de
- * atributo é cópia exata do contrato; as outras 5 são PROVISÓRIAS (ids e
- * tipos do contrato, conteúdo inventado no formato) e serão trocadas pelas
- * cópias exatas que chegam com o `implementado (BE)`. Nenhuma regra
+ * Fixtures dos cenários do CONTRATO §3 FEAT-04 (v0.11). As 6 cartas são
+ * cópias exatas do conteúdo de teste do backend (coleção `fixture`). Nenhuma regra
  * (Princípio 3).
  */
 
@@ -29,52 +27,70 @@ export const collectionsFixture: CollectionSummary[] = [
   },
 ]
 
-/** Provisória. */
+/** Cópia exata do backend (coleção `fixture`, CONTRATO v0.12). */
 export const bladeOfDuskFixture: Card = {
-  type: 'equipment',
   id: 'fixture.blade-of-dusk',
-  collectionId: 'fixture',
   name: 'Lâmina do Crepúsculo',
-  flavorText: null,
+  flavorText: 'Forjada na hora em que o dia cede à noite.',
   rarity: 'rare',
   slot: 'weapon',
-  tags: ['Espada'],
-  modifiers: [{ modifier: 'attack', value: 3 }],
+  tags: ['espada', 'duas mãos'],
+  modifiers: [
+    {
+      modifier: 'attack',
+      value: 3,
+    },
+    {
+      modifier: 'accuracy',
+      value: 1,
+    },
+  ],
   peakRequirement: null,
   classRestriction: [],
-  blocksShield: false,
+  blocksShield: true,
   abilities: [],
   effects: [],
-  refinement: null,
-  enchantment: null,
+  refinement: {
+    maxLevel: 3,
+    materials: {
+      text: '1 Minério de Ferro por nível.',
+    },
+  },
+  enchantment: {
+    text: 'Encantamento: causa dano sombrio extra.',
+  },
   priceMultiplier: 1,
+  type: 'equipment',
+  collectionId: 'fixture',
 }
 
-/** Provisória. */
+/** Cópia exata do backend (coleção `fixture`, CONTRATO v0.12). */
 export const healingPotionFixture: Card = {
-  type: 'item',
   id: 'fixture.healing-potion',
-  collectionId: 'fixture',
   name: 'Poção de Cura',
   flavorText: null,
   rarity: 'common',
   itemCategory: 'consumable',
-  tags: ['Poção'],
-  effects: [{ text: 'Recupera 5 de Vida.' }],
+  tags: ['poção'],
+  effects: [
+    {
+      text: 'Recupera 5 de vida.',
+    },
+  ],
+  type: 'item',
+  collectionId: 'fixture',
 }
 
-/** Provisória. */
+/** Cópia exata do backend (coleção `fixture`, CONTRATO v0.12). */
 export const howlingWolvesFixture: Card = {
-  type: 'combatEvent',
   id: 'fixture.howling-wolves',
-  collectionId: 'fixture',
   title: 'Lobos Uivantes',
-  flavorText: null,
+  flavorText: 'Uivos ecoam entre as árvores.',
   enemies: [
     {
       name: 'Lobo Cinzento',
       flavorText: null,
-      count: 1,
+      count: 2,
       enemyTypes: ['beast'],
       creature: 'Lobo',
       enemyCategory: 'common',
@@ -83,9 +99,9 @@ export const howlingWolvesFixture: Card = {
       modifiers: {
         attack: 2,
         defense: 1,
-        accuracy: 1,
-        evasion: 1,
-        celerity: 2,
+        accuracy: 2,
+        evasion: 2,
+        celerity: 3,
         piercing: 0,
         reflection: 0,
       },
@@ -94,9 +110,15 @@ export const howlingWolvesFixture: Card = {
       behavior: 'aggressive',
     },
   ],
-  goodOutcome: { text: 'Ganhe 3 de ouro.' },
-  badOutcome: { text: 'Perca 2 de Vida.' },
+  goodOutcome: {
+    text: 'Os lobos fogem e deixam peles para trás.',
+  },
+  badOutcome: {
+    text: 'A matilha fere o grupo antes de recuar.',
+  },
   noEscape: false,
+  type: 'combatEvent',
+  collectionId: 'fixture',
 }
 
 /** Cópia exata do 3º cenário do contrato. */
@@ -112,30 +134,38 @@ export const strengthBasicFixture: Card = {
   effects: [],
 }
 
-/** Provisória. */
+/** Cópia exata do backend (coleção `fixture`, CONTRATO v0.12). */
 export const whisperingGroveFixture: Card = {
-  type: 'zone',
   id: 'fixture.whispering-grove',
-  collectionId: 'fixture',
   title: 'Bosque Sussurrante',
   zoneType: 'forest',
-  location: 'Bosque',
+  location: 'Terras Selvagens',
   connectionArrows: 2,
-  zoneActions: ['startEvent', 'scavenge'],
-  effects: [{ text: 'Esquiva +1 nesta zona.', polarity: 'positive' }],
+  zoneActions: ['startEvent'],
+  effects: [],
+  type: 'zone',
+  collectionId: 'fixture',
 }
 
-/** Provisória. */
+/** Cópia exata do backend (coleção `fixture`, CONTRATO v0.12). */
 export const woundedTravelerFixture: Card = {
-  type: 'randomEvent',
   id: 'fixture.wounded-traveler',
-  collectionId: 'fixture',
   title: 'Viajante Ferido',
-  flavorText: null,
-  requirements: [{ text: 'Sabedoria 2.' }],
-  goodOutcome: { text: 'Ganhe 1 item.' },
-  badOutcome: { text: 'Perca 1 de Vida.' },
+  flavorText: 'Um estranho jaz à beira da trilha.',
+  requirements: [
+    {
+      text: 'Possuir uma Poção de Cura.',
+    },
+  ],
+  goodOutcome: {
+    text: 'O viajante agradece e revela um atalho.',
+  },
+  badOutcome: {
+    text: 'Era uma emboscada; o grupo perde suprimentos.',
+  },
   noEscape: false,
+  type: 'randomEvent',
+  collectionId: 'fixture',
 }
 
 /** GET /catalog/collections/fixture/cards — 6 cartas na ordem de `id`. */

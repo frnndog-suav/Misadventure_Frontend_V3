@@ -5,10 +5,20 @@ import { bladeOfDuskFixture } from '../../mocks/catalogFixtures'
 import { EquipmentCard } from './EquipmentCard'
 
 if (bladeOfDuskFixture.type !== 'equipment') throw new Error('fixture')
-const minimal: EquipmentCardData = bladeOfDuskFixture
+const blade: EquipmentCardData = bladeOfDuskFixture
+
+/** A fixture real sem os campos opcionais (flavor, refino, encantamento…). */
+const minimal: EquipmentCardData = {
+  ...blade,
+  flavorText: null,
+  modifiers: [{ modifier: 'attack', value: 3 }],
+  blocksShield: false,
+  refinement: null,
+  enchantment: null,
+}
 
 const full: EquipmentCardData = {
-  ...minimal,
+  ...blade,
   id: 'test.full',
   name: 'Montante do Rei',
   flavorText: 'Pesa como uma coroa.',
@@ -32,17 +42,16 @@ const full: EquipmentCardData = {
 
 describe('EquipmentCard', () => {
   it('REQ-10: mostra nome, categoria do slot, etiquetas, raridade, modificador principal e preço (fixture)', () => {
-    render(<EquipmentCard card={minimal} />)
+    render(<EquipmentCard card={blade} />)
     const card = screen.getByRole('article', { name: 'Lâmina do Crepúsculo' })
     expect(within(card).getByText('Arma')).toBeVisible()
-    expect(within(card).getByText('Espada')).toBeVisible()
+    expect(within(card).getByText('espada')).toBeVisible()
+    expect(within(card).getByText('duas mãos')).toBeVisible()
     expect(within(card).getByText('Rara')).toBeVisible()
     const mods = within(card).getByRole('list', { name: 'Modificadores' })
-    expect(
-      within(mods)
-        .getAllByRole('listitem')
-        .map((li) => li.textContent),
-    ).toEqual(['+3 Ataque (principal)'])
+    const modItems = within(mods).getAllByRole('listitem')
+    expect(modItems).toHaveLength(2)
+    expect(modItems[0]).toHaveTextContent('+3 Ataque (principal)')
     expect(within(mods).getByText('Ataque')).toHaveClass('term')
     expect(within(card).getByText('Preço ×1')).toBeVisible()
   })

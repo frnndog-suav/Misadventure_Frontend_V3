@@ -12,15 +12,28 @@ describe('ZoneCard', () => {
     render(<ZoneCard card={grove} />)
     const card = screen.getByRole('article', { name: 'Bosque Sussurrante' })
     expect(within(card).getByText('Florestal')).toBeVisible()
-    expect(within(card).getByText('Bosque')).toBeVisible()
+    expect(within(card).getByText('Terras Selvagens')).toBeVisible()
     expect(within(card).getByText('Setas de conexão: 2')).toBeVisible()
     const actions = within(card).getByRole('list', { name: 'Ações de zona' })
     expect(
       within(actions)
         .getAllByRole('listitem')
         .map((li) => li.textContent),
-    ).toEqual(['Iniciar evento', 'Vasculhar'])
-    const effects = within(card).getByRole('list', { name: 'Efeitos' })
+    ).toEqual(['Iniciar evento'])
+    // a fixture real não tem efeitos: a lista não aparece
+    expect(within(card).queryByRole('list', { name: 'Efeitos' })).toBeNull()
+  })
+
+  it('REQ-12: efeito positivo marcado com texto "Positivo"', () => {
+    render(
+      <ZoneCard
+        card={{
+          ...grove,
+          effects: [{ text: 'Esquiva +1 nesta zona.', polarity: 'positive' }],
+        }}
+      />,
+    )
+    const effects = screen.getByRole('list', { name: 'Efeitos' })
     expect(within(effects).getByRole('listitem')).toHaveTextContent(
       'Positivo: Esquiva +1 nesta zona.',
     )
