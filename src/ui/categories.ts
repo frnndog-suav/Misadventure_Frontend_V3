@@ -1,6 +1,8 @@
-// Catálogo de categorias de carta (REQ-04, spec D-22). Ids do glossário do
-// docs/CONTRATO.md §2. Começa vazio: as categorias reais chegam com o modelo
-// das cartas na FEAT-04. Imagens: versões do produto em src/assets/ (/assets).
+// Catálogo de categorias de carta (REQ-04, spec D-22, D-28). Ids e rótulos do
+// glossário do docs/CONTRATO.md §2.7 (`slot` e `itemCategory`). Arte pendente
+// até o autor entregar as imagens. Imagens: versões do produto em src/assets/
+// (/assets).
+import type { EquipmentSlot, ItemCategory } from '../api/catalog'
 
 export type CardCategoryEntry = {
   /** Rótulo em pt-BR. */
@@ -9,6 +11,25 @@ export type CardCategoryEntry = {
   art: { icon: string; image: string } | 'pending'
 }
 
-export const categoryCatalog = {} satisfies Record<string, CardCategoryEntry>
+export const categoryCatalog = {
+  // Equipamento (slot, README 5.1)
+  head: { label: 'Cabeça', art: 'pending' },
+  torso: { label: 'Tronco', art: 'pending' },
+  legs: { label: 'Inferior', art: 'pending' },
+  feet: { label: 'Calçado', art: 'pending' },
+  cape: { label: 'Capa', art: 'pending' },
+  weapon: { label: 'Arma', art: 'pending' },
+  shield: { label: 'Escudo', art: 'pending' },
+  accessory: { label: 'Acessório', art: 'pending' },
+  // Item (itemCategory, README 5.2)
+  consumable: { label: 'Consumíveis', art: 'pending' },
+  material: { label: 'Materiais', art: 'pending' },
+  relic: { label: 'Relíquias', art: 'pending' },
+  tool: { label: 'Ferramentas', art: 'pending' },
+  treasure: { label: 'Tesouros', art: 'pending' },
+  document: { label: 'Documentos', art: 'pending' },
+  booster: { label: 'Boosters', art: 'pending' },
+  special: { label: 'Objetos especiais', art: 'pending' },
+} satisfies Record<EquipmentSlot | ItemCategory, CardCategoryEntry>
 
 export type CardCategoryId = keyof typeof categoryCatalog

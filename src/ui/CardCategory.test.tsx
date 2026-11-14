@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { CardCategory } from './CardCategory'
+import { equipmentSlotSchema, itemCategorySchema } from '../api/catalog'
 import { categoryCatalog, type CardCategoryEntry } from './categories'
 import { testCategoryCatalog } from './test-assets/categories'
 
@@ -53,5 +54,16 @@ describe('CardCategory', () => {
     expect(
       Object.keys(categoryCatalog).filter((id) => id.startsWith('test-')),
     ).toEqual([])
+  })
+
+  it('REQ-04 (D-28): o catálogo de produção tem todo slot e itemCategory com rótulo do glossário e arte pendente', () => {
+    const ids = [...equipmentSlotSchema.options, ...itemCategorySchema.options]
+    expect(Object.keys(categoryCatalog).sort()).toEqual([...ids].sort())
+    const catalog: Record<string, CardCategoryEntry> = categoryCatalog
+    expect(catalog['head']).toEqual({ label: 'Cabeça', art: 'pending' })
+    expect(catalog['special']).toEqual({
+      label: 'Objetos especiais',
+      art: 'pending',
+    })
   })
 })

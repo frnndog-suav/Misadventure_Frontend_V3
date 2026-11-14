@@ -39,7 +39,7 @@ O tempo gasto no desenvolvimento fica em [`tempo.html`](tempo.html): um arquivo 
 | 015 | T-10 | [Tela de configuração do laboratório](015-T-10-tela-config-lab.md) | concluída |
 | 016 | RETORNO | [FEAT-03 validada contra o backend real](016-RETORNO-feat-03-validada.md) | concluída |
 | 017 | RETORNO | [FEAT-04 planejada e contrato acordado](017-RETORNO-feat-04-contrato-acordado.md) | concluída |
-| 018 | T-11 | [Cliente do catálogo](018-T-11-cliente-do-catalogo.md) | aguardando revisão |
+| 018 | T-11 | [Cliente do catálogo](018-T-11-cliente-do-catalogo.md) | concluída |
 
 ## Como replicar
 O que um projeto novo precisa para ter o mesmo sistema:
@@ -48,3 +48,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 3. Incluir literalmente as quatro instruções obrigatórias de README III.1 no `CLAUDE.md` e em todos os agentes de desenvolvimento.
 4. Hook de guarda e regras de lint entram na primeira tarefa de código (aqui, T-02), quando já existe `src/` a proteger.
 5. Registro de tempo: copiar `docs/devlog/tempo.html` com o array `SESSOES` zerado e acrescentar o passo correspondente na skill de registrar etapa. Fica em `docs/`, nunca dentro do app (nenhum painel de desenvolvimento fora do laboratório).
+| 019 | T-12 | [Categorias e rótulos](019-T-12-categorias-e-rotulos.md) | aguardando revisão |

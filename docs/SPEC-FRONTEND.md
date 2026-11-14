@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.19 · **Data:** 2026-11-14
+> **Versão da spec:** 0.20 · **Data:** 2026-11-14
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -258,7 +258,7 @@ A T-10 fecha o lado FE da FEAT-03 com MSW; depois, `/retorno-backend` contra o b
 **FEAT-04 — Catálogo de cartas e coleções** (CONTRATO v0.11 `acordado`)
 
 - [x] **T-11 — Cliente do catálogo** (REQ-08; CONTRATO §3 FEAT-04; D-14, D-27, D-29). Em `src/api/`: os tipos da seção (`CardType`, `CollectionSummary`, `Card` com as 6 variantes por `type`, `Enemy`, `RuleText`, `Ability` e as uniões de §2.7) + schemas Zod; `useCollections()`, `useCards(collectionId, type?)`. Em `src/mocks/`: handlers com as fixtures dos cenários do contrato (coleção `fixture`, 6 cartas, erros `COLLECTION_NOT_FOUND` e `CATALOG_QUERY_INVALID`); as cópias exatas das cartas chegam com o `implementado (BE)` e substituem as provisórias. Fixtures extras só nos testes de componente (sinérgica, aprimorada, equipamento completo, combate com `count` > 1). Como verificar: unitários da camada de cliente.
-- [ ] **T-12 — Categorias e rótulos** (REQ-04; D-28). Ids de `slot` e `itemCategory` no catálogo de produção, com rótulos do §2.7 e arte pendente; mapa de rótulos pt-BR dos demais identificadores do §2.7 (tipos de zona, classes, elementos, inimigo) e de raridade e tipo de carta. Como verificar: teste "todo id tem imagem ou está pendente" e teste de que todo valor de cada união tem rótulo (erro de tipo se faltar).
+- [x] **T-12 — Categorias e rótulos** (REQ-04; D-28). Ids de `slot` e `itemCategory` no catálogo de produção, com rótulos do §2.7 e arte pendente; mapa de rótulos pt-BR dos demais identificadores do §2.7 (tipos de zona, classes, elementos, inimigo) e de raridade e tipo de carta. Como verificar: teste "todo id tem imagem ou está pendente" e teste de que todo valor de cada união tem rótulo (erro de tipo se faltar).
 - [ ] **T-13 — Cartas de atributo, equipamento e item** (REQ-09 a REQ-11). Componentes em `src/ui/cards/`. Como verificar: testes de componente com as fixtures.
 - [ ] **T-14 — Cartas de zona e de evento** (REQ-12, REQ-13). Componentes em `src/ui/cards/`. Como verificar: testes de componente com as fixtures.
 - [ ] **T-15 — Seção "Catálogo" no laboratório** (REQ-08; D-26). Lista por coleção e tipo, carta escolhida exibida com o componente do `kind`, estados de carregamento e erro. Como verificar: `npm run dev` (mocks) em `/lab`; unitários do REQ-08 e e2e da área `lab`.
@@ -288,3 +288,4 @@ A T-15 fecha o lado FE da FEAT-04 com MSW; depois, `/retorno-backend` contra o b
 | 0.17 | 2026-11-14 | FEAT-04 planejada: REQ-08 a REQ-13 (catálogo e os 5 tipos de carta), D-26 (catálogo só no laboratório), D-27 (efeitos como texto pronto), D-28 (categorias reais com arte pendente), hooks do catálogo em 3.4, tarefas T-11 a T-15. |
 | 0.18 | 2026-11-14 | FEAT-04 alinhada ao CONTRATO v0.11 `acordado`: `type` com 6 variantes (filtro com "Evento aleatório" e "Evento de combate" e contagens), lista já traz a carta completa (sai `useCard`), zona mostra o número de setas e sem ofertas de serviço (fora da FEAT), regras comuns de campos ausentes, T-11 e T-12 ajustadas. |
 | 0.19 | 2026-11-14 | T-11 concluída: cliente do catálogo (`useCollections`, `useCards`, schemas Zod das 6 variantes de `Card`); D-29 (handler por tabela de cenários, limites da validação, fixtures provisórias). |
+| 0.20 | 2026-11-14 | T-12 concluída: catálogo de produção com os 8 `slot` e as 8 `itemCategory` em arte pendente (D-28); `src/ui/labels.ts` com os rótulos pt-BR de tipo de carta, raridade e §2.7, completos por tipo (`satisfies Record`). |
