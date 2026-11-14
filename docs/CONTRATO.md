@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.9 · **Data:** 2026-11-14
+> **Versão do contrato:** 0.11 · **Data:** 2026-11-14
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -146,6 +146,36 @@ Base dos nomes no código dos dois lados e dos termos com destaque e tooltip (RE
 | Pico inicial / Vigor inicial (README 7.4) | `initialPeak` / `initialVigor` |
 | Vida base / ouro inicial / mão inicial (README 9.1) | `baseHealth` / `initialGold` / `initialHandSize` |
 
+### 2.7 Catálogo (README 3, 4.3, 5, 8.6, 14, 16, 18, 27) — FEAT-04
+
+| Termo | Identificador |
+|---|---|
+| Catálogo / tipo de carta / texto de regra | `catalog` / `cardType` / `ruleText` |
+| Flavor text / raridade | `flavorText` / `rarity` |
+| Polaridade do efeito de zona (positivo/negativo) | `polarity` (`positive`, `negative`) |
+| Tipo de carta de atributo | `attributeKind` |
+| Categoria de equipamento (slot) / de item | `slot` / `itemCategory` |
+| Requisito de Pico / restrição de classe / bloqueia escudo | `peakRequirement` / `classRestriction` / `blocksShield` |
+| Refino / encantamento / ajuste de preço | `refinement` / `enchantment` / `priceMultiplier` |
+| Requisitos de resolução / Sem fuga | `requirements` / `noEscape` |
+| Tipo / criatura / categoria / comportamento do inimigo | `enemyTypes` / `creature` / `enemyCategory` / `behavior` |
+
+**Tipos de zona** (`zoneType`, README 3.3): Montanhosa `mountainous`, Florestal `forest`, Costeira `coastal`, Lacustre `lacustrine`, Pantanosa `swamp`, Campestre `grassland`, Desértica `desert`, Vulcânica `volcanic`, Fluvial `fluvial`, Subterrânea `underground`, Urbana `urban`, Rural `rural`, Habitada `inhabited`, Fortificada `fortified`, Religiosa `religious`, Industrial `industrial`.
+
+**Categorias de equipamento** (`slot`, README 5.1): Cabeça `head`, Tronco `torso`, Inferior `legs`, Calçado `feet`, Capa `cape`, Arma `weapon`, Escudo `shield`, Acessório `accessory`.
+
+**Categorias de item** (`itemCategory`, README 5.2): Consumíveis `consumable`, Materiais `material`, Relíquias `relic`, Ferramentas `tool`, Tesouros `treasure`, Documentos `document`, Boosters `booster`, Objetos especiais `special`.
+
+**Classes** (`playerClass`, README 8.6): Guerreiro `warrior`, Mago `mage`, Ladino `rogue`, Clérigo `cleric`, Patrulheiro `ranger`, Druida `druid`, Monge `monk`, Bardo `bard`, Alquimista `alchemist`, Artífice `artificer`, Bruxo `warlock`, Feiticeiro `sorcerer`.
+
+**Elementos** (`element`, README 16.2): Terra `earth`, Água `water`, Fogo `fire`, Ar `air`, Gélido `frost`, Elétrico `electric`, Orgânico `organic`, Tóxico `toxic`, Arcano `arcane`, Obscuro `dark`, Celestial `celestial`, Dracônico `draconic`, Cósmico `cosmic`, Sônico `sonic`, Psíquico `psychic`, Sanguíneo `blood`, Espiritual `spiritual`.
+
+**Tipos de inimigo** (`enemyTypes`, README 18.2): Fera `beast`, Humanoide `humanoid`, Morto-vivo `undead`, Espírito `spirit`, Demônio `demon`, Celestial `celestial`, Elemental `elemental`, Constructo `construct`, Dracônico `draconic`, Aberração `aberration`, Planta `plant`.
+
+**Categorias de inimigo** (`enemyCategory`, README 18.3): Comum `common`, Elite `elite`, Chefe `boss`.
+
+**Comportamento** (`behavior`, README 18.1): Agressivo `aggressive`, Defensivo `defensive`, Suporte `support`, Caçador `hunter`.
+
 ## 3. Features
 
 Uma seção por FEAT do roadmap, criada com `/contrato` (no frontend) ou pelo equivalente no backend. Modelo:
@@ -275,6 +305,228 @@ Todos partem do laboratório ligado e, salvo indicação, de nenhum ajuste salvo
 - Dado o ajuste `{ "actionPointsPerTurn": 4 }` salvo, quando `POST /lab/config/reset`, então `200` com `values` igual a `defaults`.
 - Dado o laboratório desligado, quando `GET /lab/config`, então `404` com `{ "error": { "code": "NOT_FOUND", "message": "Recurso não encontrado." } }`.
 
+### FEAT-04 — Catálogo de cartas e coleções — `acordado`
+
+Regras: README 3.3, 3.4, 4.3, 5.1, 5.2, 8.6, 14.1, 16.2, 18.1 a 18.3, 24.3 (raridade) e 27. Só leitura: o catálogo é o conteúdo publicado (cartas como dados) e não muda durante a partida.
+
+**Fora desta FEAT** (entram nas FEATs que os usam): Carta de Dimensão, missões, montarias, conteúdo de boosters, ofertas de serviço das zonas (estoque do mercado, montarias do estábulo, encantamentos do ferreiro), limite de cópias e trava do deck, e o estado da carta na partida (quebrado, "Reparado ×N", refino atual).
+
+**Textos de regra:** efeitos, habilidades, requisitos de evento, coisa boa e coisa ruim chegam nesta FEAT como `RuleText` (texto em pt-BR, só para exibir). A estrutura deles vem na FEAT-11 e troca só o tipo desses campos.
+
+#### Endpoints
+
+| Método | Rota | Pedido | Resposta | Erros |
+|---|---|---|---|---|
+| GET | `/catalog/collections` | — | `200` `CollectionSummary[]` | — |
+| GET | `/catalog/collections/:collectionId/cards` | query opcional `type` = um `CardType` | `200` `Card[]` | `400` `CATALOG_QUERY_INVALID`, `404` `COLLECTION_NOT_FOUND` |
+| GET | `/catalog/cards/:cardId` | — | `200` `Card` | `404` `CARD_NOT_FOUND` |
+
+Listas ordenadas por `id`. O `id` de uma carta tem a forma `<collectionId>.<slug>` e nunca muda depois de publicado (saves vão referenciá-lo).
+
+#### Tipos
+
+```ts
+type CardType = 'zone' | 'attribute' | 'equipment' | 'item' | 'randomEvent' | 'combatEvent'
+
+type Rarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary' // README 24.3
+
+/** README 3.3 */
+type ZoneType =
+  | 'mountainous' | 'forest' | 'coastal' | 'lacustrine' | 'swamp' | 'grassland'
+  | 'desert' | 'volcanic' | 'fluvial' | 'underground' | 'urban' | 'rural'
+  | 'inhabited' | 'fortified' | 'religious' | 'industrial'
+
+/** README 5.1 */
+type EquipmentSlot =
+  | 'head' | 'torso' | 'legs' | 'feet' | 'cape' | 'weapon' | 'shield' | 'accessory'
+
+/** README 5.2 */
+type ItemCategory =
+  | 'consumable' | 'material' | 'relic' | 'tool' | 'treasure' | 'document' | 'booster' | 'special'
+
+/** README 16.2 */
+type Element =
+  | 'earth' | 'water' | 'fire' | 'air' | 'frost' | 'electric' | 'organic' | 'toxic' | 'arcane'
+  | 'dark' | 'celestial' | 'draconic' | 'cosmic' | 'sonic' | 'psychic' | 'blood' | 'spiritual'
+
+/** README 18.2 */
+type EnemyType =
+  | 'beast' | 'humanoid' | 'undead' | 'spirit' | 'demon' | 'celestial'
+  | 'elemental' | 'construct' | 'draconic' | 'aberration' | 'plant'
+
+/** README 18.3 (o chefe final fica na Carta de Dimensão, fora desta FEAT) */
+type EnemyCategory = 'common' | 'elite' | 'boss'
+
+/** README 18.1 / 19.6 */
+type EnemyBehavior = 'aggressive' | 'defensive' | 'support' | 'hunter'
+
+/** README 8.6 */
+type PlayerClass =
+  | 'warrior' | 'mage' | 'rogue' | 'cleric' | 'ranger' | 'druid'
+  | 'monk' | 'bard' | 'alchemist' | 'artificer' | 'warlock' | 'sorcerer'
+
+// Attribute, Modifier e ZoneAction: glossário §2.3 e §2.5.
+
+/** Texto de regra para exibir (pt-BR). Estruturado na FEAT-11. */
+interface RuleText {
+  text: string
+}
+
+interface Ability {
+  name: string
+  text: string
+}
+
+interface CollectionSummary {
+  id: string
+  name: string
+  /** Total de cartas da coleção por tipo (0 quando não há). */
+  cardCounts: Record<CardType, number>
+}
+
+type Card = ZoneCard | AttributeCard | EquipmentCard | ItemCard | RandomEventCard | CombatEventCard
+
+/** README 3.4 */
+interface ZoneCard {
+  type: 'zone'
+  id: string
+  collectionId: string
+  /** Nome próprio, único na coleção. */
+  title: string
+  zoneType: ZoneType
+  /** Local (texto livre, pt-BR), ex.: "Bosque". */
+  location: string
+  /** 1 a 4; zona `urban` sempre 4. */
+  connectionArrows: number
+  /** Sempre tem `startEvent`; `urban` sempre tem `useVault` e `saveRespawnPoint`, e só `urban` tem `saveRespawnPoint`. */
+  zoneActions: ZoneAction[]
+  effects: (RuleText & { polarity: 'positive' | 'negative' })[]
+}
+
+/** README 4.3 */
+interface AttributeCard {
+  type: 'attribute'
+  id: string
+  collectionId: string
+  name: string
+  flavorText: string | null
+  rarity: Rarity
+  /** `basic`/`enhanced`: 1 atributo. `synergy`: 2 a 4 atributos diferentes. Cada um vale 1. */
+  attributeKind: 'basic' | 'synergy' | 'enhanced'
+  attributes: Attribute[]
+  /** Vazio em `basic` e `synergy`; pelo menos 1 em `enhanced`. */
+  effects: RuleText[]
+}
+
+/** README 5.1 */
+interface EquipmentCard {
+  type: 'equipment'
+  id: string
+  collectionId: string
+  name: string
+  flavorText: string | null
+  rarity: Rarity
+  slot: EquipmentSlot
+  tags: string[]
+  /** O primeiro é o modificador principal (usado pelo refino). */
+  modifiers: { modifier: Modifier; value: number }[]
+  peakRequirement: number | null
+  /** Vazio = sem restrição. */
+  classRestriction: PlayerClass[]
+  /** Sempre `false` fora de `weapon`. */
+  blocksShield: boolean
+  abilities: Ability[]
+  effects: RuleText[]
+  /** `null` = não refinável. `maxLevel` de 1 a 10. */
+  refinement: { maxLevel: number; materials: RuleText } | null
+  /** `null` = não encantável. */
+  enchantment: RuleText | null
+  /** ×0,8 a ×1,5. */
+  priceMultiplier: number
+}
+
+/** README 5.2 */
+interface ItemCard {
+  type: 'item'
+  id: string
+  collectionId: string
+  name: string
+  flavorText: string | null
+  rarity: Rarity
+  itemCategory: ItemCategory
+  tags: string[]
+  effects: RuleText[]
+}
+
+/** README 14.1 */
+interface RandomEventCard {
+  type: 'randomEvent'
+  id: string
+  collectionId: string
+  title: string
+  flavorText: string | null
+  /** Pelo menos 1. */
+  requirements: RuleText[]
+  goodOutcome: RuleText
+  badOutcome: RuleText
+  noEscape: boolean
+}
+
+/** README 14.1, 18.1 — o requisito é vencer o combate. */
+interface CombatEventCard {
+  type: 'combatEvent'
+  id: string
+  collectionId: string
+  title: string
+  flavorText: string | null
+  /** Pelo menos 1. */
+  enemies: Enemy[]
+  goodOutcome: RuleText
+  badOutcome: RuleText
+  noEscape: boolean
+}
+
+/** README 18.1 — impresso dentro da carta, não é carta à parte. */
+interface Enemy {
+  name: string
+  flavorText: string | null
+  /** Quantos iguais a este no combate (ex.: "2× Lobo Cinzento"); ≥ 1. */
+  count: number
+  /** 1 ou mais, sem repetição. */
+  enemyTypes: EnemyType[]
+  /** Texto livre, ex.: "Goblin". */
+  creature: string
+  enemyCategory: EnemyCategory
+  element: Element | null
+  /** ≥ 1. */
+  health: number
+  /** Valores finais (o Pico não se aplica), inteiros ≥ 0. */
+  modifiers: Record<Modifier, number>
+  /** `null` = sem Vigor. */
+  vigor: number | null
+  abilities: Ability[]
+  behavior: EnemyBehavior
+}
+
+/** `details` do erro CATALOG_QUERY_INVALID. */
+interface CatalogQueryInvalidDetails {
+  field: 'type'
+  reason: 'unknownCardType'
+}
+```
+
+#### Cenários de validação
+
+Rodam contra o **conteúdo de teste** do backend (coleção `fixture`, nome "Coleção de Teste", `test/fixtures/content/`, uma carta de cada tipo, ids abaixo). A cópia exata de cada carta vai junto no aviso da `implementado (BE)` para as fixtures do MSW.
+
+- Quando `GET /catalog/collections`, então `200` com `[{ "id": "fixture", "name": "Coleção de Teste", "cardCounts": { "zone": 1, "attribute": 1, "equipment": 1, "item": 1, "randomEvent": 1, "combatEvent": 1 } }]`.
+- Quando `GET /catalog/collections/fixture/cards`, então `200` com 6 cartas, nesta ordem de `id`: `fixture.blade-of-dusk` (equipment), `fixture.healing-potion` (item), `fixture.howling-wolves` (combatEvent), `fixture.strength-basic` (attribute), `fixture.whispering-grove` (zone), `fixture.wounded-traveler` (randomEvent).
+- Quando `GET /catalog/collections/fixture/cards?type=attribute`, então `200` com `[{ "type": "attribute", "id": "fixture.strength-basic", "collectionId": "fixture", "name": "Força", "flavorText": null, "rarity": "common", "attributeKind": "basic", "attributes": ["strength"], "effects": [] }]`.
+- Quando `GET /catalog/collections/fixture/cards?type=monster`, então `400` com `{ "error": { "code": "CATALOG_QUERY_INVALID", "message": "Filtro do catálogo inválido.", "details": { "field": "type", "reason": "unknownCardType" } } }`.
+- Quando `GET /catalog/collections/nope/cards`, então `404` com `{ "error": { "code": "COLLECTION_NOT_FOUND", "message": "Coleção não encontrada." } }`.
+- Quando `GET /catalog/cards/fixture.strength-basic`, então `200` com a mesma carta do 3º cenário.
+- Quando `GET /catalog/cards/fixture.nope`, então `404` com `{ "error": { "code": "CARD_NOT_FOUND", "message": "Carta não encontrada." } }`.
+
 ## 4. Códigos de erro
 
 | Código | Quando acontece | FEAT |
@@ -282,6 +534,9 @@ Todos partem do laboratório ligado e, salvo indicação, de nenhum ajuste salvo
 | `NOT_FOUND` | Rota ou recurso inexistente. | FEAT-01 |
 | `INTERNAL_ERROR` | Falha inesperada no servidor (5xx). | FEAT-01 |
 | `LAB_CONFIG_INVALID` | Ajuste do laboratório inválido (400); `details.fields` diz cada chave e o motivo. | FEAT-03 |
+| `CATALOG_QUERY_INVALID` | Filtro do catálogo inválido (400), ex.: `type` desconhecido. | FEAT-04 |
+| `COLLECTION_NOT_FOUND` | Coleção inexistente no catálogo (404). | FEAT-04 |
+| `CARD_NOT_FOUND` | Carta inexistente no catálogo (404). | FEAT-04 |
 
 ## 5. Histórico
 
@@ -296,3 +551,5 @@ Todos partem do laboratório ligado e, salvo indicação, de nenhum ajuste salvo
 | 0.7 | 2026-11-14 | FE | FEAT-03 `acordado` sem mudanças: padrões conferidos com o Apêndice A; erro no formato da §1.4; limites e padrões vêm prontos do backend, o frontend só os exibe e monta o texto a partir de `reason`. |
 | 0.8 | 2026-11-14 | BE | FEAT-03 `implementado (BE)`: `GET`/`PATCH /lab/config` e `POST /lab/config/reset` entregues e cobertos por e2e, sem mudança de formato. Rotas existem só com `LAB_ENABLED=true` (ligado no Compose de dev); desligado, `404` `NOT_FOUND`. JSON malformado no `PATCH` → `LAB_CONFIG_INVALID` com `invalidBody`. Ajustes ficam salvos no banco. |
 | 0.9 | 2026-11-14 | FE | FEAT-03 `validado`: os 6 cenários rodaram contra o backend real (`http://localhost:3333`) e passaram. Também passaram o JSON malformado (`invalidBody`), o `/health` com `0.8`, o CORS para `http://localhost:5173` e os e2e da área `lab` com o MSW desligado. Sem mudança de formato. |
+| 0.10 | 2026-11-14 | BE | FEAT-04 proposta: `GET /catalog/collections`, `GET /catalog/collections/:collectionId/cards` (`?type=`), `GET /catalog/cards/:cardId`; tipos `CollectionSummary` e `Card` (6 variantes por `type`); textos de regra como `RuleText` até a FEAT-11; glossário §2.7; códigos `CATALOG_QUERY_INVALID`, `COLLECTION_NOT_FOUND`, `CARD_NOT_FOUND` (§4). |
+| 0.11 | 2026-11-14 | FE | FEAT-04 `acordado` sem mudanças: os 6 `type` cobrem os tipos planejados no frontend (evento aleatório e de combate separados); textos de regra como `RuleText` batem com a decisão do frontend de só exibir texto pronto até a FEAT-11; ofertas de serviço das zonas ficam para as FEATs dos serviços. |

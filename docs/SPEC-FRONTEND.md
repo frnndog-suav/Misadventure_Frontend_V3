@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.17 · **Data:** 2026-11-14
+> **Versão da spec:** 0.18 · **Data:** 2026-11-14
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -79,9 +79,8 @@ Funções e hooks que as telas usam para ler o estado e enviar intenções. Regr
 | `useLabConfig()` | consulta `GET /lab/config`: carregando, `LabConfig` validado, erro §1.4 ou falha de rede/validação | T-08 |
 | `useUpdateLabConfig()` | mutação `PATCH /lab/config` com `LabConfigPatch`; sucesso atualiza o cache de `useLabConfig` com o `LabConfig` devolvido; erro §1.4 com `details` de `LAB_CONFIG_INVALID` validado | T-08 |
 | `useResetLabConfig()` | mutação `POST /lab/config/reset`; sucesso atualiza o cache de `useLabConfig` | T-08 |
-| `useCollections()` | lista de `Collection` validada (CONTRATO §3 FEAT-04) | T-11 |
-| `useCards(collectionId, kind?)` | resumo das cartas da coleção, filtrado pelo backend | T-11 |
-| `useCard(cardId)` | `Card` completo (união por `kind`) | T-11 |
+| `useCollections()` | consulta `GET /catalog/collections`: `CollectionSummary[]` validado (CONTRATO §3 FEAT-04) | T-11 |
+| `useCards(collectionId, type?)` | consulta `GET /catalog/collections/:collectionId/cards`: `Card[]` completo (união por `type`), filtrado pelo backend | T-11 |
 
 Base comum (T-08): `requestJson(method, path, body?)` em `src/api/http.ts` faz todo pedido; `ApiError` traz `code`, `message` e `details` (ainda `unknown`); `LAB_CONFIG_INVALID` com `details` válido vira `LabConfigInvalidError` (subclasse, com `fields`); com `details` fora do contrato vira erro genérico (falha de validação, REQ-06).
 
@@ -153,36 +152,37 @@ Valores, padrões e limites vêm prontos do backend (CONTRATO §3 FEAT-03); o fr
 
 ### REQ-08 — Catálogo de cartas no laboratório
 
-Tudo vem pronto do backend (CONTRATO §3 FEAT-04); o frontend não filtra por regra, só pede e exibe.
+Tudo vem pronto do backend (CONTRATO §3 FEAT-04); o frontend não filtra por regra, só pede e exibe. Todo rótulo pt-BR de identificador vem do glossário (CONTRATO §2.3, §2.5, §2.7).
 
-- **Dado** a tela do laboratório, **quando** ela é exibida, **então** há uma seção "Catálogo" com uma lista de coleções (nome de cada coleção, em pt-BR, vindo do backend) e um filtro de tipo de carta com as opções "Todos", "Atributo", "Equipamento", "Item", "Zona" e "Evento".
+- **Dado** a tela do laboratório, **quando** ela é exibida, **então** há uma seção "Catálogo" com a lista de coleções (`name` de cada `CollectionSummary`) e um filtro de tipo de carta com as opções "Todos", "Zona", "Atributo", "Equipamento", "Item", "Evento aleatório" e "Evento de combate"; ao lado de cada opção, a quantidade de `cardCounts` da coleção escolhida ("Todos" mostra a soma).
 - **Dado** a consulta das coleções ou das cartas em andamento, **então** a área de status da seção mostra "Carregando catálogo…".
-- **Dado** uma coleção e um tipo escolhidos, **quando** o backend devolve a lista, **então** cada carta aparece como um item com o nome e o rótulo do tipo; com a lista vazia, a seção mostra "Nenhuma carta neste filtro.".
-- **Dado** a lista exibida, **quando** o jogador escolhe uma carta, **então** a carta completa aparece ao lado, no formato do REQ-09 a REQ-13 conforme o `kind`.
-- **Dado** um erro §1.4, **então** a área de status mostra a `message` recebida; **dado** falha de rede ou resposta fora do contrato (inclusive um `kind` desconhecido), mostra "Servidor indisponível. Tente novamente.". Nenhuma exceção chega à tela.
+- **Dado** uma coleção e um tipo escolhidos, **quando** o backend devolve a lista (`GET /catalog/collections/:collectionId/cards`, com `?type=` exceto em "Todos"), **então** cada carta aparece na ordem recebida como um item com o nome (`name`, ou `title` em zona e eventos) e o rótulo do tipo; com a lista vazia, a seção mostra "Nenhuma carta neste filtro.".
+- **Dado** a lista exibida, **quando** o jogador escolhe uma carta, **então** a carta completa aparece ao lado, no formato do REQ-09 a REQ-13 conforme o `type`.
+- **Dado** um erro §1.4 (ex.: `404` `COLLECTION_NOT_FOUND` "Coleção não encontrada."), **então** a área de status mostra a `message` recebida; **dado** falha de rede ou resposta fora do contrato (inclusive um `type` desconhecido), mostra "Servidor indisponível. Tente novamente.". Nenhuma exceção chega à tela.
+
+Regras comuns às cartas (REQ-09 a REQ-13): o texto de flavor aparece só quando não é `null`; listas vazias e campos `null` não aparecem (nada de "—" ou "Nenhum"); os `RuleText` aparecem como vieram (D-27); atributos e modificadores aparecem como termo do jogo (REQ-03).
 
 ### REQ-09 — Carta de atributo
 
-- **Dado** uma carta de atributo (README 4.3), **quando** exibida, **então** mostra o nome, o tipo ("Básica", "Sinérgica" ou "Aprimorada") e cada atributo com seu valor como termo do jogo (REQ-03) (ex.: "1 Carisma", "1 Sabedoria").
-- **Dado** uma carta aprimorada, **então** mostra também o texto do efeito, como veio do backend (D-27).
+- **Dado** uma carta `attribute` (README 4.3), **quando** exibida, **então** mostra nome, raridade, o tipo ("Básica", "Sinérgica" ou "Aprimorada", de `attributeKind`) e cada atributo de `attributes` (cada um vale 1, ex.: "1 Carisma", "1 Sabedoria").
+- **Dado** uma carta aprimorada, **então** mostra também os efeitos.
 
 ### REQ-10 — Carta de equipamento
 
-- **Dado** uma carta de equipamento (README 5.1), **quando** exibida, **então** mostra: nome; categoria (REQ-04); etiquetas; raridade; modificadores na ordem recebida, como termo do jogo, com o primeiro marcado "principal"; e, só quando presentes, requisito de Pico ("Pico {n}"), restrição de classe, "Bloqueia escudo", habilidades, efeitos, refino, encantamentos e ajuste de preço ("×{n}").
-- Campos ausentes não aparecem (nada de "—" ou "Nenhum").
+- **Dado** uma carta `equipment` (README 5.1), **quando** exibida, **então** mostra: nome; categoria de `slot` (REQ-04); etiquetas; raridade; modificadores na ordem recebida, com o primeiro marcado "principal" (ex.: "+12 Ataque (principal)"); ajuste de preço ("Preço ×1,2"); e, só quando presentes, "Pico {n}", restrição de classe (rótulos das classes), "Bloqueia escudo" (só quando `true`), habilidades (nome e texto), efeitos, refino ("Refinável até +{maxLevel}" e os materiais) e encantamento.
 
 ### REQ-11 — Carta de item
 
-- **Dado** uma carta de item (README 5.2), **quando** exibida, **então** mostra nome, categoria (REQ-04), etiquetas, raridade e efeitos (texto do backend, D-27).
+- **Dado** uma carta `item` (README 5.2), **quando** exibida, **então** mostra nome, categoria de `itemCategory` (REQ-04), etiquetas, raridade e efeitos.
 
 ### REQ-12 — Carta de zona
 
-- **Dado** uma carta de zona (README 3.4), **quando** exibida, **então** mostra título, tipo de zona, local, as setas de conexão nas arestas indicadas (cada seta com nome acessível "Conexão: norte/sul/leste/oeste"), as ações de zona (rótulos do glossário §2.5 ou o nome da ação exclusiva vindo do backend), os efeitos marcados "positivo"/"negativo" e, só quando presentes, as ofertas de Mercado, Estábulo e Ferreiro.
+- **Dado** uma carta `zone` (README 3.4), **quando** exibida, **então** mostra título, tipo de zona, local, "Setas de conexão: {n}", as ações de zona (rótulos do glossário §2.5) e os efeitos, cada um marcado "Positivo" ou "Negativo" de `polarity` (com texto, não só cor).
 
-### REQ-13 — Carta de evento
+### REQ-13 — Cartas de evento
 
-- **Dado** uma carta de evento aleatório (README 14.1), **quando** exibida, **então** mostra título, flavor text, requisitos de resolução, "Coisa boa", "Coisa ruim" e, só quando presente, o símbolo "Sem fuga" (com rótulo, não só ícone).
-- **Dado** uma carta de evento de combate (README 18.1), **então** mostra também um bloco por inimigo com nome, flavor text, tipos, criatura, categoria, elemento (se houver), vida, os 7 modificadores como termos, habilidades, energia (se houver) e comportamento.
+- **Dado** uma carta `randomEvent` (README 14.1), **quando** exibida, **então** mostra título, requisitos de resolução, "Coisa boa", "Coisa ruim" e, só quando `noEscape` é `true`, "Sem fuga" (com rótulo, não só ícone).
+- **Dado** uma carta `combatEvent` (README 14.1, 18.1), **quando** exibida, **então** mostra título, "Coisa boa", "Coisa ruim", "Sem fuga" como acima e um bloco por inimigo com: "{count}× {name}" (só o nome quando `count` é 1), flavor text, tipos, criatura, categoria, elemento (se houver), vida, os 7 modificadores, Vigor (se houver), habilidades e comportamento.
 
 Formato:
 
@@ -219,7 +219,7 @@ Formato:
 - **D-25 — Tela do laboratório (T-10):** os campos guardam só o que o jogador digitou; "Salvar" envia as chaves cujo número difere de `values` (o backend valida tudo, inclusive não inteiros). Sucesso (salvar ou restaurar) descarta o digitado e mostra o `values` devolvido. Os erros por campo valem até a próxima ação. A área de status mostra o resultado da última ação. As seções têm os títulos "Configuração" e "Componentes". Os testes da tela ficam em `src/lab/LabPage.test.tsx`. *(T-10, 2026-11-14.)*
 - **D-26 — Catálogo só no laboratório (FEAT-04):** nesta FEAT o catálogo aparece só em `/lab` (dev). Os componentes de carta ficam em `src/ui/cards/` para as telas das FEATs seguintes. *(Autor, 2026-11-14; alternativa descartada: tela de release `/cartas`, que anteciparia menu e navegação.)*
 - **D-27 — Efeitos como texto pronto até a FEAT-11:** efeitos, habilidades, requisitos de resolução e coisa boa/ruim chegam como texto pt-BR pronto do backend; o frontend só exibe. O formato estruturado entra na FEAT-11/12/13 ao lado do texto. *(Autor, 2026-11-14; alternativa descartada: estruturar agora, antecipando a FEAT-11.)*
-- **D-28 — Categorias reais:** as 8 categorias de equipamento (README 5.1) e as 8 de item (README 5.2) entram no catálogo de produção `src/ui/categories.ts` como "arte pendente" (D-22) até o autor entregar as artes. *(FEAT-04, 2026-11-14.)*
+- **D-28 — Categorias reais:** as 8 categorias de equipamento (`slot`, README 5.1) e as 8 de item (`itemCategory`, README 5.2), com os ids e rótulos do CONTRATO §2.7, entram no catálogo de produção `src/ui/categories.ts` como "arte pendente" (D-22) até o autor entregar as artes. *(FEAT-04, 2026-11-14.)*
 
 **Pendências (decidir antes da tarefa indicada):**
 - **P-02 — Como o jogador vê as vezes dos outros no momento 2** (antes da FEAT-21): proposta: o backend devolve a lista ordenada de eventos do domínio e o frontend anima um por um; no momento 3 só o transporte muda (socket). Registrada também no ROADMAP.
@@ -254,10 +254,10 @@ A T-07 fecha o lado FE da FEAT-02 (o backend não tem alteração nela, ROADMAP 
 
 A T-10 fecha o lado FE da FEAT-03 com MSW; depois, `/retorno-backend` contra o backend real.
 
-**FEAT-04 — Catálogo de cartas e coleções** (depende do CONTRATO §3 FEAT-04 `acordado`)
+**FEAT-04 — Catálogo de cartas e coleções** (CONTRATO v0.11 `acordado`)
 
-- [ ] **T-11 — Cliente do catálogo** (REQ-08; CONTRATO §3 FEAT-04; D-14, D-27). Em `src/api/`: tipos `Collection` e `Card` (união discriminada por `kind`: `attribute`, `equipment`, `item`, `zone`, `event`; evento com `eventType` `random`/`combat`) + schemas Zod; `useCollections()`, `useCards(collectionId, kind?)`, `useCard(cardId)`. Em `src/mocks/`: handlers com fixtures — pelo menos uma carta de cada variante (básica, sinérgica, aprimorada, equipamento completo e mínimo, item, zona Urbana com ofertas, evento aleatório com "Sem fuga", evento de combate com 2 inimigos). Como verificar: unitários da camada de cliente.
-- [ ] **T-12 — Categorias reais** (REQ-04; D-28). Ids de categoria de equipamento e item no catálogo de produção, com rótulos pt-BR e arte pendente; termos novos do glossário (tipo de carta, raridade) no catálogo de termos com textos aprovados pelo autor. Como verificar: teste "todo id tem imagem ou está pendente".
+- [ ] **T-11 — Cliente do catálogo** (REQ-08; CONTRATO §3 FEAT-04; D-14, D-27). Em `src/api/`: os tipos da seção (`CardType`, `CollectionSummary`, `Card` com as 6 variantes por `type`, `Enemy`, `RuleText`, `Ability` e as uniões de §2.7) + schemas Zod; `useCollections()`, `useCards(collectionId, type?)`. Em `src/mocks/`: handlers com as fixtures dos cenários do contrato (coleção `fixture`, 6 cartas, erros `COLLECTION_NOT_FOUND` e `CATALOG_QUERY_INVALID`); as cópias exatas das cartas chegam com o `implementado (BE)` e substituem as provisórias. Fixtures extras só nos testes de componente (sinérgica, aprimorada, equipamento completo, combate com `count` > 1). Como verificar: unitários da camada de cliente.
+- [ ] **T-12 — Categorias e rótulos** (REQ-04; D-28). Ids de `slot` e `itemCategory` no catálogo de produção, com rótulos do §2.7 e arte pendente; mapa de rótulos pt-BR dos demais identificadores do §2.7 (tipos de zona, classes, elementos, inimigo) e de raridade e tipo de carta. Como verificar: teste "todo id tem imagem ou está pendente" e teste de que todo valor de cada união tem rótulo (erro de tipo se faltar).
 - [ ] **T-13 — Cartas de atributo, equipamento e item** (REQ-09 a REQ-11). Componentes em `src/ui/cards/`. Como verificar: testes de componente com as fixtures.
 - [ ] **T-14 — Cartas de zona e de evento** (REQ-12, REQ-13). Componentes em `src/ui/cards/`. Como verificar: testes de componente com as fixtures.
 - [ ] **T-15 — Seção "Catálogo" no laboratório** (REQ-08; D-26). Lista por coleção e tipo, carta escolhida exibida com o componente do `kind`, estados de carregamento e erro. Como verificar: `npm run dev` (mocks) em `/lab`; unitários do REQ-08 e e2e da área `lab`.
@@ -285,3 +285,4 @@ A T-15 fecha o lado FE da FEAT-04 com MSW; depois, `/retorno-backend` contra o b
 | 0.15 | 2026-11-14 | T-10 concluída: tela de configuração e vitrine do laboratório; D-25; D-08 e D-22 ajustadas (testes em `src/lab/`, ids de teste usados pela vitrine). FE da FEAT-03 pronto com MSW. |
 | 0.16 | 2026-11-14 | D-10 corrigida: a sobrescrita local no dev é `.env.development.local` (o `.env.development` vence o `.env.local` no Vite). Só texto, sem mudança de comportamento. |
 | 0.17 | 2026-11-14 | FEAT-04 planejada: REQ-08 a REQ-13 (catálogo e os 5 tipos de carta), D-26 (catálogo só no laboratório), D-27 (efeitos como texto pronto), D-28 (categorias reais com arte pendente), hooks do catálogo em 3.4, tarefas T-11 a T-15. |
+| 0.18 | 2026-11-14 | FEAT-04 alinhada ao CONTRATO v0.11 `acordado`: `type` com 6 variantes (filtro com "Evento aleatório" e "Evento de combate" e contagens), lista já traz a carta completa (sai `useCard`), zona mostra o número de setas e sem ofertas de serviço (fora da FEAT), regras comuns de campos ausentes, T-11 e T-12 ajustadas. |
