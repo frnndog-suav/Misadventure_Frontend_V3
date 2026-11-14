@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.4 · **Data:** 2026-11-14
+> **Versão do contrato:** 0.7 · **Data:** 2026-11-14
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -136,6 +136,16 @@ Base dos nomes no código dos dois lados e dos termos com destaque e tooltip (RE
 | Treinar com mentor | `trainWithMentor` |
 | Salvar ponto de respawn | `saveRespawnPoint` |
 
+### 2.6 Laboratório (README II.6, Apêndice A) — FEAT-03
+
+| Termo | Identificador |
+|---|---|
+| Laboratório / configuração do jogo | `lab` / `gameConfig` |
+| Jogadores mínimo / máximo (README 1.3) | `minPlayers` / `maxPlayers` |
+| Pontos de ação por vez (README 11.1) | `actionPointsPerTurn` |
+| Pico inicial / Vigor inicial (README 7.4) | `initialPeak` / `initialVigor` |
+| Vida base / ouro inicial / mão inicial (README 9.1) | `baseHealth` / `initialGold` / `initialHandSize` |
+
 ## 3. Features
 
 Uma seção por FEAT do roadmap, criada com `/contrato` (no frontend) ou pelo equivalente no backend. Modelo:
@@ -152,7 +162,7 @@ Regras: README <seções>
   (os mesmos cenários alimentam as fixtures do MSW e os testes do backend)
 ```
 
-### FEAT-01 — Esqueleto técnico (endpoint mínimo) — `acordado`
+### FEAT-01 — Esqueleto técnico (endpoint mínimo) — `implementado (BE)`
 
 Regras: README II.2, II.3 (requisitos técnicos; nenhuma regra de jogo envolvida).
 
@@ -184,12 +194,94 @@ interface HealthResponse {
 - Dado o backend no ar, quando `GET /health`, então `200` com `{ "status": "ok", "contractVersion": <versão do cabeçalho deste arquivo no momento da validação> }`.
 - Dado o backend no ar, quando `GET /rota-que-nao-existe`, então `404` com `{ "error": { "code": "NOT_FOUND", "message": "Recurso não encontrado." } }`.
 
+### FEAT-03 — Esqueleto do laboratório (configuração ajustável) — `acordado`
+
+Regras: README II.6 e Apêndice A. As rotas só existem com o laboratório ligado; desligado, qualquer `/lab/*` responde `404` `NOT_FOUND`, como uma rota desconhecida (FEAT-01). A checagem de admin (README II.6) entra com a autenticação (FEAT-25).
+
+#### Endpoints
+
+| Método | Rota | Pedido | Resposta | Erros |
+|---|---|---|---|---|
+| GET | `/lab/config` | — | `200` `LabConfig` | `404` `NOT_FOUND` |
+| PATCH | `/lab/config` | `LabConfigPatch` | `200` `LabConfig` | `400` `LAB_CONFIG_INVALID`, `404` `NOT_FOUND` |
+| POST | `/lab/config/reset` | — | `200` `LabConfig` | `404` `NOT_FOUND` |
+
+O `PATCH` é parcial e **tudo ou nada**: se qualquer chave for inválida, nada é salvo. `{}` é aceito e não muda nada. Os ajustes ficam salvos e sobrevivem a um reinício do backend.
+
+#### Tipos
+
+```ts
+/** Valores ajustáveis (Apêndice A). Cada FEAT seguinte acrescenta as suas chaves. */
+interface GameConfigValues {
+  minPlayers: number // README 1.3
+  maxPlayers: number // README 1.3
+  actionPointsPerTurn: number // README 11.1
+  initialPeak: number // README 7.4
+  initialVigor: number // README 7.4
+  baseHealth: number // README 9.1
+  initialGold: number // README 9.1
+  initialHandSize: number // README 9.1
+}
+
+type GameConfigKey = keyof GameConfigValues
+
+/** GET /lab/config, PATCH /lab/config e POST /lab/config/reset. */
+interface LabConfig {
+  /** Valores em vigor. */
+  values: GameConfigValues
+  /** Padrões do Apêndice A. */
+  defaults: GameConfigValues
+  /** Inteiros, inclusivos. */
+  limits: Record<GameConfigKey, { min: number; max: number }>
+}
+
+/** PATCH /lab/config — só as chaves a alterar. */
+type LabConfigPatch = Partial<GameConfigValues>
+
+/** `details` do erro LAB_CONFIG_INVALID. */
+interface LabConfigInvalidDetails {
+  fields: {
+    /** `null` só com `invalidBody`; com `unknownKey`, o nome recebido. */
+    field: string | null
+    reason: 'invalidBody' | 'unknownKey' | 'notInteger' | 'outOfRange' | 'minAboveMax'
+  }[]
+}
+```
+
+`invalidBody`: o corpo não é um objeto JSON ou está malformado. `minAboveMax`: `minPlayers > maxPlayers` depois de aplicar o pedido; lista as duas chaves. O frontend monta o texto para o jogador a partir de `reason` e de `limits`.
+
+Padrões e limites:
+
+| Chave | Padrão | Mínimo–máximo |
+|---|---|---|
+| `minPlayers` | 1 | 1–6 (`minPlayers ≤ maxPlayers`) |
+| `maxPlayers` | 6 | 1–6 |
+| `actionPointsPerTurn` | 3 | 1–10 |
+| `initialPeak` | 10 | 1–1000 |
+| `initialVigor` | 10 | 0–1000 |
+| `baseHealth` | 20 | 1–1000 |
+| `initialGold` | 10 | 0–100000 |
+| `initialHandSize` | 7 | 0–60 |
+
+#### Cenários de validação
+
+Todos partem do laboratório ligado e, salvo indicação, de nenhum ajuste salvo.
+
+- Quando `GET /lab/config`, então `200` com `values` e `defaults` iguais à coluna Padrão e `limits` iguais à coluna Mínimo–máximo.
+- Quando `PATCH /lab/config` com `{ "actionPointsPerTurn": 4 }`, então `200` com `values.actionPointsPerTurn = 4` e as demais chaves no padrão; um `GET /lab/config` seguinte devolve o mesmo `values`.
+- Quando `PATCH /lab/config` com `{ "actionPointsPerTurn": 0, "foo": 1 }`, então `400` com `{ "error": { "code": "LAB_CONFIG_INVALID", "message": "Configuração do laboratório inválida.", "details": { "fields": [{ "field": "actionPointsPerTurn", "reason": "outOfRange" }, { "field": "foo", "reason": "unknownKey" }] } } }`; um `GET` seguinte mostra os padrões.
+- Quando `PATCH /lab/config` com `{ "minPlayers": 5, "maxPlayers": 3 }`, então `400` `LAB_CONFIG_INVALID` com `details.fields = [{ "field": "minPlayers", "reason": "minAboveMax" }, { "field": "maxPlayers", "reason": "minAboveMax" }]`.
+- Quando `PATCH /lab/config` com `{ "initialGold": 2.5 }`, então `400` `LAB_CONFIG_INVALID` com `details.fields = [{ "field": "initialGold", "reason": "notInteger" }]`.
+- Dado o ajuste `{ "actionPointsPerTurn": 4 }` salvo, quando `POST /lab/config/reset`, então `200` com `values` igual a `defaults`.
+- Dado o laboratório desligado, quando `GET /lab/config`, então `404` com `{ "error": { "code": "NOT_FOUND", "message": "Recurso não encontrado." } }`.
+
 ## 4. Códigos de erro
 
 | Código | Quando acontece | FEAT |
 |---|---|---|
 | `NOT_FOUND` | Rota ou recurso inexistente. | FEAT-01 |
 | `INTERNAL_ERROR` | Falha inesperada no servidor (5xx). | FEAT-01 |
+| `LAB_CONFIG_INVALID` | Ajuste do laboratório inválido (400); `details.fields` diz cada chave e o motivo. | FEAT-03 |
 
 ## 5. Histórico
 
@@ -199,3 +291,6 @@ interface HealthResponse {
 | 0.2 | 2026-11-13 | BE | §1 e §2 confirmados sem mudanças → `acordado` (FEAT-00 do backend). |
 | 0.3 | 2026-11-14 | FE | FEAT-01 proposta: `GET /health` (`status` + `contractVersion`, §1.5) e código de erro `NOT_FOUND` (§4). |
 | 0.4 | 2026-11-14 | FE | FEAT-01 `acordado` com as mudanças pedidas pelo BE: `INTERNAL_ERROR` para 5xx (§1.4/§4) e cenário do `/health` sem versão fixa. |
+| 0.5 | 2026-11-14 | BE | FEAT-01 `implementado (BE)`: `GET /health`, `NOT_FOUND` e `INTERNAL_ERROR` entregues e cobertos por e2e. Sem mudança de formato. CORS libera a origem `http://localhost:5173` por padrão (configurável no backend). |
+| 0.6 | 2026-11-14 | BE | FEAT-03 proposta: `GET`/`PATCH /lab/config`, `POST /lab/config/reset`, tipo `LabConfig`, glossário §2.6 e código `LAB_CONFIG_INVALID` (§4). |
+| 0.7 | 2026-11-14 | FE | FEAT-03 `acordado` sem mudanças: padrões conferidos com o Apêndice A; erro no formato da §1.4; limites e padrões vêm prontos do backend, o frontend só os exibe e monta o texto a partir de `reason`. |
