@@ -2,7 +2,7 @@
 
 - **ID:** CONTRATO · **FEAT:** FEAT-01 (Esqueleto técnico) · **Data:** 2026-11-14
 - **Status:** aguardando revisão
-- **Spec:** v0.5 (não alterada) · **Contrato:** v0.2 → **v0.3** · **Roadmap:** v0.2 → **v0.3**
+- **Spec:** v0.5 (não alterada) · **Contrato:** v0.2 → **v0.4** · **Roadmap:** v0.2 → **v0.4**
 
 ## Objetivo
 
@@ -50,3 +50,16 @@ Etapa só de documentos: sem testes afetados, sem build. `git diff --stat`: 2 ar
 ## Commit sugerido
 
 `docs/proposing feat-01 contract with health endpoint`
+
+## Revisão 2026-11-14 — resposta do backend aplicada (v0.4, `acordado`)
+
+O backend revisou a v0.3 e pediu duas mudanças (via `/retorno-backend`, texto colado pelo autor); o FE conferiu as afirmações contra os arquivos, aceitou as duas e, com aprovação do autor (Opção A: gravar aqui para poupar uma viagem — o BE **não** gravou a v0.4 lá, só perguntou se podia), aplicou:
+
+- **`INTERNAL_ERROR` (500) em §4** e na coluna Erros do `GET /health`, mensagem "Erro inesperado no servidor. Tente novamente." Motivo: §1.4 exige `code` da lista de §4 para todo 4xx/5xx, e só existia `NOT_FOUND` — um 500 ficava sem formato. Sem cenário de validação (provocar 500 exigiria endpoint de depuração fora do laboratório); o BE cobre com e2e do filtro de erros.
+- **Cenário do `/health` sem versão fixa:** de `"contractVersion": "0.3"` para "versão do cabeçalho deste arquivo no momento da validação" (a observação em itálico virou a regra), para a fixture do MSW e o teste do BE não desatualizarem a cada versão do contrato.
+- Seção FEAT-01 → **`acordado`** (BE pediu o texto, FE aceitou — os dois lados concordam com o conteúdo). Contrato → **v0.4**; ROADMAP → **v0.4** com FE da FEAT-01 `em andamento`.
+- CORS para `VITE_API_URL`: apontado pelo BE como infra da FEAT-01 lá; não entra no contrato, nada muda aqui.
+
+Impacto no frontend: zero retrabalho (nenhum código da FEAT-01 existia em `src/`). Próximo passo aqui: criar a tarefa do consumo do `/health` (REQ + T via `/mudar-spec`). Novo Aviso de backend dado: levar CONTRATO v0.4 e ROADMAP v0.4 com o recado de **não** gravar a v0.4 lá.
+
+**Commit sugerido (substitui o anterior, se ainda não commitado):** `docs/feat-01 contract agreed with internal error code`
