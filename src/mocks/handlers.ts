@@ -12,6 +12,15 @@ import {
   labConfigDefaultsFixture,
   labConfigUpdatedFixture,
 } from './fixtures'
+import {
+  partiesFixture,
+  partyBelowMinPlayersFixture,
+  partyCreatedFixture,
+  partyIdleFixture,
+  partyInSessionFixture,
+  partyInvalidFieldsFixture,
+  partyNotFoundFixture,
+} from './partyFixtures'
 
 /**
  * GET /catalog/collections/:collectionId/cards: tabela de cenários do
@@ -31,6 +40,39 @@ function catalogCardsScenario(
     return HttpResponse.json(fixtureCardsByTypeFixture[cardType.data])
   }
   return HttpResponse.json(catalogQueryInvalidFixture, { status: 400 })
+}
+
+/**
+ * POST /parties: tabela de cenários do contrato (D-32) — os corpos dos dois
+ * cenários de erro devolvem a fixture de erro; qualquer outro, o grupo
+ * criado de exemplo. Não valida nem guarda estado.
+ */
+async function createPartyScenario(request: Request): Promise<Response> {
+  const body: unknown = await request.json().catch(() => undefined)
+  if (
+    typeof body === 'object' &&
+    body !== null &&
+    'name' in body &&
+    'characterName' in body
+  ) {
+    if (
+      body.name === '   ' &&
+      body.characterName === 'Um nome com mais de vinte e quatro letras'
+    ) {
+      return HttpResponse.json(partyInvalidFieldsFixture, { status: 400 })
+    }
+    if (body.name === 'Solo' && body.characterName === 'Lia') {
+      return HttpResponse.json(partyBelowMinPlayersFixture, { status: 400 })
+    }
+  }
+  return HttpResponse.json(partyCreatedFixture, { status: 201 })
+}
+
+/** Rotas de um grupo: o grupo de exemplo responde, qualquer outro é 404. */
+function knownParty(partyId: unknown, ok: () => Response): Response {
+  return partyId === partyCreatedFixture.id
+    ? ok()
+    : HttpResponse.json(partyNotFoundFixture, { status: 404 })
 }
 
 /**
@@ -55,5 +97,16 @@ export const handlers: RequestHandler[] = [
       String(params.collectionId),
       new URL(request.url).searchParams.get('type'),
     ),
+  ),
+  http.get('*/parties', () => HttpResponse.json(partiesFixture)),
+  http.post('*/parties', ({ request }) => createPartyScenario(request)),
+  http.post('*/parties/:partyId/session', ({ params }) =>
+    knownParty(params.partyId, () => HttpResponse.json(partyInSessionFixture)),
+  ),
+  http.post('*/parties/:partyId/session/end', ({ params }) =>
+    knownParty(params.partyId, () => HttpResponse.json(partyIdleFixture)),
+  ),
+  http.delete('*/parties/:partyId', ({ params }) =>
+    knownParty(params.partyId, () => new HttpResponse(null, { status: 204 })),
   ),
 ]

@@ -39,10 +39,10 @@ export function getJson(path: string): Promise<unknown> {
  * origem); `body`, quando há, vai como JSON. Resposta ok → corpo devolvido
  * como `unknown` (o chamador valida com o schema do contrato, D-14). Erro no
  * formato §1.4 → lança `ApiError`. Qualquer outra falha (rede, corpo fora do
- * envelope) → `Error` genérico.
+ * envelope) → `Error` genérico. `204` (sem corpo) → `undefined`.
  */
 export async function requestJson(
-  method: 'GET' | 'POST' | 'PATCH',
+  method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
   path: string,
   body?: unknown,
 ): Promise<unknown> {
@@ -68,5 +68,6 @@ export async function requestJson(
       `Resposta de erro fora do contrato (§1.4): HTTP ${response.status}`,
     )
   }
+  if (response.status === 204) return undefined
   return response.json()
 }
