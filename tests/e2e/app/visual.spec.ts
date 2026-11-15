@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+// Em `/` a área de status da ponte (REQ-01) vem antes da de "Seus jogos"// (REQ-14): `.first()` escolhe a da ponte.
 
 const viewports = [
   { width: 1280, height: 720 },
@@ -11,7 +12,7 @@ for (const viewport of viewports) {
 
     test('REQ-02: não existe rolagem horizontal', async ({ page }) => {
       await page.goto('/')
-      await expect(page.getByRole('status')).toBeVisible()
+      await expect(page.getByRole('status').first()).toBeVisible()
       const overflow = await page.evaluate(
         () =>
           document.documentElement.scrollWidth -
@@ -47,7 +48,7 @@ test('REQ-02: título com a fonte de títulos (Lora) e status com a fonte do sis
 }) => {
   await page.goto('/')
   const title = page.getByRole('heading', { level: 1, name: 'Misadventures' })
-  const status = page.getByRole('status')
+  const status = page.getByRole('status').first()
   await expect(title).toHaveCSS('font-family', /Lora/)
   const statusFont = await status.evaluate(
     (el) => getComputedStyle(el).fontFamily,

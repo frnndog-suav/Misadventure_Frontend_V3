@@ -19,6 +19,12 @@ import { handlers } from './mocks/handlers'
 
 const server = setupServer(...handlers)
 
+/** Área de status da ponte (REQ-01); "Seus jogos" tem a sua (REQ-14). */
+const healthStatus = () =>
+  screen
+    .getAllByRole('status')
+    .find((el) => !el.closest('section')) as HTMLElement
+
 beforeAll(() => {
   vi.stubEnv('VITE_API_URL', 'http://localhost:3000')
   // MSW 3 renomeou onUnhandledRequest → onUnhandledFrame
@@ -65,9 +71,7 @@ describe('T-03: rota inicial do app', () => {
 describe('REQ-01: estado da ponte com o servidor na rota inicial', () => {
   it('REQ-01: com a consulta em andamento, a área de status mostra "Conectando ao servidor…"', async () => {
     renderApp()
-    expect(screen.getByRole('status')).toHaveTextContent(
-      'Conectando ao servidor…',
-    )
+    expect(healthStatus()).toHaveTextContent('Conectando ao servidor…')
     // deixa a consulta terminar para não vazar entre testes
     await screen.findByText(/Servidor conectado/)
   })
@@ -77,7 +81,7 @@ describe('REQ-01: estado da ponte com o servidor na rota inicial', () => {
     expect(
       await screen.findByText('Servidor conectado · contrato v0.4'),
     ).toBeVisible()
-    expect(screen.getByRole('status')).toHaveTextContent(
+    expect(healthStatus()).toHaveTextContent(
       'Servidor conectado · contrato v0.4',
     )
   })
@@ -104,7 +108,7 @@ describe('REQ-01: estado da ponte com o servidor na rota inicial', () => {
     expect(
       await screen.findByText(internalErrorFixture.error.message),
     ).toBeVisible()
-    expect(screen.getByRole('status')).toHaveTextContent(
+    expect(healthStatus()).toHaveTextContent(
       'Erro inesperado no servidor. Tente novamente.',
     )
   })

@@ -1,7 +1,8 @@
 import type { ReactNode } from 'react'
-import { Route, Routes } from 'react-router-dom'
+import { Link, Route, Routes } from 'react-router-dom'
 import { useHealth } from './api/health'
 import { ApiError } from './api/http'
+import { SavedGames } from './features/home/SavedGames'
 
 /** Área de status da ponte com o servidor (REQ-01). */
 function HealthStatus() {
@@ -26,6 +27,10 @@ function Home() {
     <main>
       <h1>Misadventures</h1>
       <HealthStatus />
+      <nav aria-label="Campanha">
+        <Link to="/novo">Novo jogo</Link>
+      </nav>
+      <SavedGames />
     </main>
   )
 }
