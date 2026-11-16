@@ -1,6 +1,6 @@
 # Misadventures — Roadmap de desenvolvimento
 
-> **Versão:** 0.27 · **Data:** 2026-11-16
+> **Versão:** 0.28 · **Data:** 2026-11-16
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend; o autor copia o arquivo inteiro quando ele muda. Base: README Parte III (III.2 e III.4). As regras estão em [`README.md`](README.md); o que trafega entre os lados, em [`CONTRATO.md`](CONTRATO.md).
 
@@ -56,7 +56,7 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 |---|---|---|---|---|
 | FEAT-04 | Catálogo de cartas e coleções: modelo das cartas, conteúdo de teste, exibição de cada tipo de carta | 3.4, 4.3, 5, 14.1, 18.1, 27 | validado | validado |
 | FEAT-05 | Campanha solo: criar grupo de 1, saves, continuar, salvamento automático, encerrar sessão, abandonar a partida | 28.1 | validado | validado |
-| FEAT-31 | Editor de conteúdo no laboratório (só dev): coleções e cartas dos 6 tipos, rascunho e publicação, validar coleção como dimensão, exportar e importar; o BE grava em arquivos JSON. Cresce com cada FEAT que trouxer conteúdo novo | 27, II.6, 3.5, Apêndice B (T1) | aguardando outro lado | pronto |
+| FEAT-31 | Editor de conteúdo no laboratório (só dev): coleções e cartas dos 6 tipos, rascunho e publicação, validar coleção como dimensão, exportar e importar; o BE grava em arquivos JSON. Cresce com cada FEAT que trouxer conteúdo novo | 27, II.6, 3.5, Apêndice B (T1) | validado | validado |
 | FEAT-06 | Preparação da partida: classe e deck pré-pronto, valores iniciais, montagem do mapa, ordem e cidade inicial | 10.1, 3.5, 4.4, 8, 9 | a fazer | a fazer |
 | FEAT-07 | Mapa e Movimentar | 3.5, 12.2 | a fazer | a fazer |
 | FEAT-08 | A vez: pontos de ação, ações de zona disponíveis, encerrar a vez, rodadas | 11.1, 11.2, 12 | a fazer | a fazer |
@@ -139,3 +139,4 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | 0.25 | 2026-11-16 | Status corrigidos (aviso do FE): FEAT-06 BE `a fazer` (contrato `acordado` na CONTRATO v0.21; tarefas depois das da FEAT-31, SPEC-BACKEND D-45); FEAT-31 FE `em andamento` (T-20 a T-23 feitas). FEAT-31 BE planejada (SPEC-BACKEND v0.21, T-19 a T-21), `a fazer`. |
 | 0.26 | 2026-11-16 | FEAT-31: lado BE `pronto` (T-19 a T-21, SPEC-BACKEND v0.24); CONTRATO v0.23 marca a FEAT-31 `implementado (BE)`. Próximo no BE: FEAT-06 (T-14). |
 | 0.27 | 2026-11-16 | FEAT-31: lado FE `aguardando outro lado` (SPEC-FRONTEND v0.37, T-20 a T-27 feitas com MSW); falta validar contra o backend real (`/retorno-backend`). |
+| 0.28 | 2026-11-16 | FEAT-31 `validado` nas duas colunas (CONTRATO v0.24): cenários com chamadas HTTP e as telas do editor contra o backend real. |

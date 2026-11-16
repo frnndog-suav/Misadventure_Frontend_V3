@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.23 · **Data:** 2026-11-16
+> **Versão do contrato:** 0.24 · **Data:** 2026-11-16
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -700,7 +700,7 @@ Partem de nenhum save e do laboratório nos padrões. Os `id` e as datas são ge
 - Dado o grupo `inSession`, quando `POST /parties/<id>/session/end`, então `200` com `status: "idle"` e `savedAt` ≥ o anterior; repetir o pedido devolve `409` com `{ "error": { "code": "PARTY_SESSION_NOT_ACTIVE", "message": "Não há sessão em andamento neste grupo." } }`.
 - Dado o grupo criado, quando `DELETE /parties/<id>`, então `204`; `GET /parties/<id>` seguinte devolve `404` com `{ "error": { "code": "PARTY_NOT_FOUND", "message": "Grupo não encontrado." } }` e `GET /parties` devolve `[]`.
 
-### FEAT-31 — Editor de conteúdo (coleções e cartas) — `implementado (BE)`
+### FEAT-31 — Editor de conteúdo (coleções e cartas) — `validado`
 
 Regras: README 27, II.6, 3.5 (validação da dimensão; Apêndice B I5 e K7) e Apêndice B **T1** (id imutável depois de publicado; nada usado em saves é excluído). Os formatos das cartas são os da FEAT-04 (`Card` e afins); esta seção só acrescenta o que o editor precisa.
 
@@ -1059,3 +1059,4 @@ Sorteios usam semente aleatória: mapa, mão e rolagens mudam a cada grupo. Comp
 | 0.21 | 2026-11-15 | FE | FEAT-06 `acordado` sem mudanças além das da v0.20. O FE vai alinhar as seções `validado` afetadas (FEAT-03, 04, 05) e a FEAT-31 em tarefas próprias, planejadas com `/mudar-spec`. FEAT-31 continua `proposto (FE)`, aguardando o backend. |
 | 0.22 | 2026-11-15 | BE | FEAT-31 `acordado` sem mudanças de formato. Esclarecimentos: até a FEAT-06, o export traz `classes: []` e o import `classCount: 0` (os cenários os omitem; compare por campo); o `id` de coleção e o `slug` seguem `kebab-case` (sem hífen no início, no fim ou repetido), com a mesma mensagem do cenário; os cenários da FEAT-31 valem para a `fixture` de 6 cartas, e a seção FEAT-06 diz como mudam depois dela. |
 | 0.23 | 2026-11-16 | BE | FEAT-31 `implementado (BE)` (SPEC-BACKEND T-19 a T-21): e2e de cada cenário em `src/infra/http/controllers/*/index.controller.e2e-spec.ts` e conferidos com `curl` contra o backend real. Sem mudança de formato: textos exatos de REQ-47 no cenário de `validate-dimension`; textos fixos novos de `fields[].message` (JSON malformado, `status` desconhecido, parâmetro repetido, `replace` inválido); citação "spec D-38" corrigida para "spec D-49". |
+| 0.24 | 2026-11-16 | FE | FEAT-31 `validado` sem mudança de formato: 17 de 18 cenários com chamadas HTTP contra o backend real (29 conferências; o de laboratório desligado não foi rodado, pede reiniciar o backend) e as telas do editor (validar, exportar, importar, coleções e cartas) com o MSW desligado. |
