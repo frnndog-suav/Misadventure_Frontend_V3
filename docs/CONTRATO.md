@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.22 · **Data:** 2026-11-15
+> **Versão do contrato:** 0.23 · **Data:** 2026-11-16
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -700,7 +700,7 @@ Partem de nenhum save e do laboratório nos padrões. Os `id` e as datas são ge
 - Dado o grupo `inSession`, quando `POST /parties/<id>/session/end`, então `200` com `status: "idle"` e `savedAt` ≥ o anterior; repetir o pedido devolve `409` com `{ "error": { "code": "PARTY_SESSION_NOT_ACTIVE", "message": "Não há sessão em andamento neste grupo." } }`.
 - Dado o grupo criado, quando `DELETE /parties/<id>`, então `204`; `GET /parties/<id>` seguinte devolve `404` com `{ "error": { "code": "PARTY_NOT_FOUND", "message": "Grupo não encontrado." } }` e `GET /parties` devolve `[]`.
 
-### FEAT-31 — Editor de conteúdo (coleções e cartas) — `acordado`
+### FEAT-31 — Editor de conteúdo (coleções e cartas) — `implementado (BE)`
 
 Regras: README 27, II.6, 3.5 (validação da dimensão; Apêndice B I5 e K7) e Apêndice B **T1** (id imutável depois de publicado; nada usado em saves é excluído). Os formatos das cartas são os da FEAT-04 (`Card` e afins); esta seção só acrescenta o que o editor precisa.
 
@@ -710,7 +710,7 @@ Regras: README 27, II.6, 3.5 (validação da dimensão; Apêndice B I5 e K7) e A
 
 **Rascunho e publicação:** cada carta tem `status` `draft` ou `published`. **Mudança no catálogo da FEAT-04 (sem mudança de formato):** `GET /catalog/*` passa a devolver só cartas `published`, e `cardCounts` conta só as publicadas. As cartas que já existem nos arquivos (inclusive as 6 da coleção `fixture`) são `published`. Uma coleção aparece no catálogo mesmo sem cartas publicadas (contagens zeradas).
 
-**Validação:** toda conferência de conteúdo (formato, limites, combinações entre campos do README 3.4, 4.3, 5.1, 5.2, 14.1, 18.1) é do backend, ao salvar **e** ao publicar: um rascunho também precisa estar completo e no formato do `Card` (assim o catálogo nunca recebe carta fora do formato). O texto de cada erro vem pronto em pt-BR (spec D-38).
+**Validação:** toda conferência de conteúdo (formato, limites, combinações entre campos do README 3.4, 4.3, 5.1, 5.2, 14.1, 18.1) é do backend, ao salvar **e** ao publicar: um rascunho também precisa estar completo e no formato do `Card` (assim o catálogo nunca recebe carta fora do formato). O texto de cada erro vem pronto em pt-BR (spec D-49).
 
 #### Endpoints
 
@@ -812,13 +812,13 @@ interface ContentInvalidDetails {
   fields: {
     /** Caminho do campo no corpo enviado, com pontos e índices: "name", "modifiers.1.value", "enemies.0.health", "cards.3.card.name"; "" = o corpo inteiro (JSON malformado ou não objeto); nos filtros da lista, o nome do parâmetro ("type", "status"). */
     path: string
-    /** Texto pt-BR pronto para mostrar ao lado do campo (spec D-38). */
+    /** Texto pt-BR pronto para mostrar ao lado do campo (spec D-49). */
     message: string
   }[]
 }
 ```
 
-Mensagens (`message` do §1.4): `CONTENT_INVALID` "Conteúdo inválido."; `CONTENT_ID_TAKEN` "Este identificador já está em uso."; `CONTENT_IN_USE` "Este conteúdo é usado por algum save e não pode ser apagado."; `CONTENT_LOCKED` "O identificador de uma carta publicada não pode mudar.". Os textos de `fields[].message` são do backend; os dos cenários abaixo são os esperados.
+Mensagens (`message` do §1.4): `CONTENT_INVALID` "Conteúdo inválido."; `CONTENT_ID_TAKEN` "Este identificador já está em uso."; `CONTENT_IN_USE` "Este conteúdo é usado por algum save e não pode ser apagado."; `CONTENT_LOCKED` "O identificador de uma carta publicada não pode mudar.". Os textos de `fields[].message` são do backend; os dos cenários abaixo são os esperados. Outros textos fixos: JSON malformado → path `""`, "Envie um objeto JSON."; filtro `status` desconhecido → "Situação desconhecida."; parâmetro repetido na lista → "Informe a busca uma vez só."; `replace` diferente de `true`/`false` → "Use true ou false.".
 
 **`CONTENT_IN_USE`:** até a FEAT-06 nenhum save referencia cartas, então o erro existe no formato mas não tem cenário; o cenário entra na FEAT-06.
 
@@ -838,7 +838,7 @@ Partem do laboratório ligado e de um `CONTENT_DIR` com só a coleção `fixture
 - Dado `bosque.forca-bruta`, quando `POST /lab/content/cards/bosque.forca-bruta/duplicate`, então `201` com `status: "draft"` e `card.id = "bosque.forca-bruta-copia"` (demais campos iguais).
 - Dado a cópia, quando `GET /lab/content/collections/bosque/cards?status=draft`, então `200` com `[{ "id": "bosque.forca-bruta-copia", "type": "attribute", "name": "Força Bruta", "status": "draft" }]`; com `?q=bruta` → as duas cartas; com `?type=monster` → `400` `CONTENT_INVALID` com `details.fields = [{ "path": "type", "message": "Tipo de carta desconhecido." }]`.
 - Dado a cópia, quando `DELETE /lab/content/cards/bosque.forca-bruta-copia`, então `204`; um `GET` seguinte → `404` `CARD_NOT_FOUND`.
-- Quando `POST /lab/content/collections/fixture/validate-dimension`, então `200` com `{ "valid": false, "problems": ["A coleção precisa de pelo menos 1 zona Urbana publicada."] }` (a única zona da `fixture` não é Urbana; os textos exatos de cada problema são do backend e entram aqui no `implementado (BE)`).
+- Quando `POST /lab/content/collections/fixture/validate-dimension`, então `200` com `{ "valid": false, "problems": ["A coleção precisa de pelo menos 1 zona Urbana publicada."] }` (a única zona da `fixture` não é Urbana). Textos exatos, nesta ordem: "A coleção precisa de pelo menos 1 zona Urbana publicada."; "As zonas publicadas têm N setas; são precisas pelo menos M (2 × (zonas − 1))." (N e M calculados).
 - Dado `bosque` com `bosque.forca-bruta` publicada, quando `GET /lab/content/collections/bosque/export`, então `200` com `{ "formatVersion": 1, "collection": { "id": "bosque", "name": "Bosque Antigo", "description": "Coleção de teste do editor." }, "cards": [{ "status": "published", "card": { … } }] }`.
 - Dado esse export guardado, quando `POST /lab/content/import` com ele, então `409` `CONTENT_ID_TAKEN` com `details.fields = [{ "path": "collection.id", "message": "Já existe uma coleção com este identificador." }]`; com `?replace=true` → `201` com `{ "collectionId": "bosque", "cardCount": 1 }`; depois de `DELETE /lab/content/collections/bosque` (`204`), o import sem `replace` → `201` com o mesmo resultado.
 - Quando `POST /lab/content/import` com `{}`, então `400` `CONTENT_INVALID` com `details.fields` contendo `{ "path": "formatVersion", "message": "Versão do arquivo não suportada." }`; nada é gravado.
@@ -1058,3 +1058,4 @@ Sorteios usam semente aleatória: mapa, mão e rolagens mudam a cada grupo. Comp
 | 0.20 | 2026-11-15 | BE | FEAT-06 (`proposto (BE)`) com os dois pedidos do FE aceitos: (1) `CollectionExport.classes` e `ImportResult.classCount` definidos uma vez só, na seção FEAT-31 (a FEAT-06 só os preenche); (2) `DIMENSION_INVALID` responde `409` em vez de `500` (conflito com o conteúdo publicado, não falha do servidor; `422` recusado porque o corpo do pedido está correto). |
 | 0.21 | 2026-11-15 | FE | FEAT-06 `acordado` sem mudanças além das da v0.20. O FE vai alinhar as seções `validado` afetadas (FEAT-03, 04, 05) e a FEAT-31 em tarefas próprias, planejadas com `/mudar-spec`. FEAT-31 continua `proposto (FE)`, aguardando o backend. |
 | 0.22 | 2026-11-15 | BE | FEAT-31 `acordado` sem mudanças de formato. Esclarecimentos: até a FEAT-06, o export traz `classes: []` e o import `classCount: 0` (os cenários os omitem; compare por campo); o `id` de coleção e o `slug` seguem `kebab-case` (sem hífen no início, no fim ou repetido), com a mesma mensagem do cenário; os cenários da FEAT-31 valem para a `fixture` de 6 cartas, e a seção FEAT-06 diz como mudam depois dela. |
+| 0.23 | 2026-11-16 | BE | FEAT-31 `implementado (BE)` (SPEC-BACKEND T-19 a T-21): e2e de cada cenário em `src/infra/http/controllers/*/index.controller.e2e-spec.ts` e conferidos com `curl` contra o backend real. Sem mudança de formato: textos exatos de REQ-47 no cenário de `validate-dimension`; textos fixos novos de `fields[].message` (JSON malformado, `status` desconhecido, parâmetro repetido, `replace` inválido); citação "spec D-38" corrigida para "spec D-49". |
