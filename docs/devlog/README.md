@@ -57,3 +57,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 025 | T-17 | [Menu inicial e abandonar](025-T-17-menu-inicial-e-abandonar.md) | concluída |
 | 026 | T-18 | [Novo jogo](026-T-18-novo-jogo.md) | concluída |
 | 027 | T-19 | [Grupo em sessão](027-T-19-grupo-em-sessao.md) | aguardando revisão |
+| 028 | RETORNO | [FEAT-05 validada contra o backend real](028-RETORNO-feat-05-validada.md) | aguardando revisão |

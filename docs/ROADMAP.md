@@ -1,6 +1,6 @@
 # Misadventures — Roadmap de desenvolvimento
 
-> **Versão:** 0.20 · **Data:** 2026-11-15
+> **Versão:** 0.21 · **Data:** 2026-11-15
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend; o autor copia o arquivo inteiro quando ele muda. Base: README Parte III (III.2 e III.4). As regras estão em [`README.md`](README.md); o que trafega entre os lados, em [`CONTRATO.md`](CONTRATO.md).
 
@@ -55,7 +55,7 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | FEAT | Título | README | FE | BE |
 |---|---|---|---|---|
 | FEAT-04 | Catálogo de cartas e coleções: modelo das cartas, conteúdo de teste, exibição de cada tipo de carta | 3.4, 4.3, 5, 14.1, 18.1, 27 | validado | validado |
-| FEAT-05 | Campanha solo: criar grupo de 1, saves, continuar, salvamento automático, encerrar sessão, abandonar a partida | 28.1 | pronto | pronto |
+| FEAT-05 | Campanha solo: criar grupo de 1, saves, continuar, salvamento automático, encerrar sessão, abandonar a partida | 28.1 | validado | validado |
 | FEAT-06 | Preparação da partida: classe e deck pré-pronto, valores iniciais, montagem do mapa, ordem e cidade inicial | 10.1, 3.5, 4.4, 8, 9 | a fazer | a fazer |
 | FEAT-07 | Mapa e Movimentar | 3.5, 12.2 | a fazer | a fazer |
 | FEAT-08 | A vez: pontos de ação, ações de zona disponíveis, encerrar a vez, rodadas | 11.1, 11.2, 12 | a fazer | a fazer |
@@ -126,3 +126,4 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | 0.18 | 2026-11-14 | FEAT-04 `validado` nas duas colunas (CONTRATO v0.15): cenários e e2e da área `lab` contra o backend real. |
 | 0.19 | 2026-11-15 | FEAT-05: lado BE `pronto` (T-10 a T-13, SPEC-BACKEND v0.19); CONTRATO v0.16 marca a FEAT-05 `implementado (BE)`. |
 | 0.20 | 2026-11-15 | FEAT-05: lado FE `pronto` com MSW (SPEC-FRONTEND v0.28, T-16 a T-19). Os 7 cenários já passaram com curl contra o backend real; falta conferir as telas contra ele (`/retorno-backend`). |
+| 0.21 | 2026-11-15 | FEAT-05 `validado` nas duas colunas (CONTRATO v0.17): cenários com `curl` e as telas da campanha contra o backend real. |

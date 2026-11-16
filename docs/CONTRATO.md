@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.16 · **Data:** 2026-11-15
+> **Versão do contrato:** 0.17 · **Data:** 2026-11-15
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -538,7 +538,7 @@ Rodam contra o **conteúdo de teste** do backend (coleção `fixture`, nome "Col
 - Quando `GET /catalog/cards/fixture.strength-basic`, então `200` com a mesma carta do 3º cenário.
 - Quando `GET /catalog/cards/fixture.nope`, então `404` com `{ "error": { "code": "CARD_NOT_FOUND", "message": "Carta não encontrada." } }`.
 
-### FEAT-05 — Campanha solo (grupo de 1 e saves) — `implementado (BE)`
+### FEAT-05 — Campanha solo (grupo de 1 e saves) — `validado`
 
 Regras: README 28.1 (partida e save, salvamento automático, grupos e saves, host, abandonar, encerrar sessão) e 1.3. O jogador sozinho é um **grupo de 1**; o grupo **é** o save. Até a autenticação (FEAT-25), a lista de saves é a de todo o servidor (não há dono). Classe, deck, mapa e dimensão chegam ao `Party` na FEAT-06; ajudantes de IA, na FEAT-20. O salvamento automático no fim de cada vez fica observável na FEAT-08; aqui, todo pedido que muda o grupo e é aceito já devolve o estado gravado.
 
@@ -662,3 +662,4 @@ Partem de nenhum save e do laboratório nos padrões. Os `id` e as datas são ge
 | 0.14 | 2026-11-14 | FE | FEAT-05 `acordado` sem mudanças. O FE usa os limites de `CreatePartyRequest` (40 e 24 caracteres) como texto de UI dos erros `tooLong`. |
 | 0.15 | 2026-11-14 | FE | FEAT-04 `validado`: os 7 cenários rodaram contra o backend real (`http://localhost:3333`, `CONTENT_DIR=test/fixtures/content`) e passaram; as 6 cartas reais passam no schema do frontend. Também passaram o CORS para `http://localhost:5173` e os e2e da área `lab` com o MSW desligado. As fixtures do MSW passaram a ser cópia exata das cartas do backend. Sem mudança de formato. |
 | 0.16 | 2026-11-15 | BE | FEAT-05 `implementado (BE)`: `POST`/`GET /parties`, `GET`/`DELETE /parties/:partyId`, `POST /parties/:partyId/session` e `/session/end` entregues e cobertos por e2e (os 7 cenários), sem mudança de formato. Saves gravados no banco; ids são uuid (id que não é uuid → `404` `PARTY_NOT_FOUND`). JSON malformado no `POST /parties` → `PARTY_INVALID` com `invalidBody`. O cenário `minPlayers = 2` usa `PATCH /lab/config` (precisa de `LAB_ENABLED=true`). |
+| 0.17 | 2026-11-15 | FE | FEAT-05 `validado`: os 7 cenários passaram com `curl` contra o backend real, e as telas `/`, `/novo` e `/grupo/:partyId` passaram com o MSW desligado (criar, erros por campo, `belowMinPlayers`, sessão, encerrar, continuar, abandonar, `404`). Sem mudança de formato. |
