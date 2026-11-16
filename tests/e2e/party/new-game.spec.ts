@@ -15,8 +15,42 @@ test.describe('REQ-15: novo jogo (MSW)', () => {
       .getByRole('textbox', { name: 'Nome do grupo' })
       .fill('Os Teimosos')
     await page.getByRole('textbox', { name: 'Nome do personagem' }).fill('Lia')
+    await page.getByRole('radio', { name: /^Guerreiro/ }).check()
     await page.getByRole('button', { name: 'Criar grupo' }).click()
     await expect(page).toHaveURL(/\/grupo\/party-os-teimosos$/)
+  })
+
+  test('REQ-29: escolha da classe mostra detalhes; sem classe pede uma', async ({
+    page,
+  }) => {
+    await page.goto('/novo')
+    const group = page.getByRole('radiogroup', { name: 'Classe' })
+    await expect(group.getByRole('radio')).toHaveCount(2)
+
+    await page
+      .getByRole('textbox', { name: 'Nome do grupo' })
+      .fill('Os Teimosos')
+    await page.getByRole('textbox', { name: 'Nome do personagem' }).fill('Lia')
+    await page.getByRole('button', { name: 'Criar grupo' }).click()
+    await expect(group).toHaveAccessibleDescription('Escolha uma classe.')
+
+    await page.getByRole('radio', { name: /^Ladino/ }).check()
+    await expect(
+      page
+        .getByRole('list', { name: 'Modificadores base' })
+        .getByRole('listitem'),
+    ).toHaveText([
+      '5 Ataque',
+      '2 Defesa',
+      '46 Precisão',
+      '22 Esquiva',
+      '12 Celeridade',
+      '0 Perfuração',
+      '0 Reflexão',
+    ])
+    await expect(
+      page.getByRole('list', { name: 'Deck pré-pronto' }).getByRole('listitem'),
+    ).toHaveText(['40× Destreza', '20× Força'])
   })
 
   test('REQ-15: erros por campo e aviso de grupo de 1', async ({ page }) => {

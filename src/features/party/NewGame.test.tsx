@@ -17,6 +17,7 @@ import App from '../../App'
 import { internalErrorFixture } from '../../mocks/fixtures'
 import { handlers } from '../../mocks/handlers'
 import {
+  dimensionInvalidFixture,
   partyCreatedFixture,
   partyInvalidFieldsFixture,
 } from '../../mocks/partyFixtures'
@@ -84,6 +85,179 @@ function invalid(fields: { field: string | null; reason: string }[]) {
   )
 }
 
+const classGroup = () => screen.getByRole('radiogroup', { name: 'Classe' })
+
+describe('REQ-29: escolha da classe', () => {
+  it('REQ-29: grupo "Classe" depois de "Nome do personagem", uma opção por classe na ordem recebida, nenhuma escolhida', async () => {
+    renderNewGame()
+    const rogue = await screen.findByRole('radio', {
+      name: 'Ladino (Destreza)',
+    })
+    const warrior = screen.getByRole('radio', {
+      name: 'Guerreiro (Força, Resistência)',
+    })
+    const radios = screen.getAllByRole('radio')
+    expect(radios).toEqual([rogue, warrior])
+    expect(rogue).not.toBeChecked()
+    expect(warrior).not.toBeChecked()
+    expect(
+      characterField().compareDocumentPosition(classGroup()) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('REQ-29: durante a consulta mostra "Carregando classes…"', () => {
+    renderNewGame()
+    expect(status()).toHaveTextContent('Carregando classes…')
+  })
+
+  it('REQ-29: lista vazia mostra "Nenhuma classe publicada."', async () => {
+    server.use(http.get('*/catalog/classes', () => HttpResponse.json([])))
+    renderNewGame()
+    expect(
+      await screen.findByText('Nenhuma classe publicada.'),
+    ).toBeInTheDocument()
+    expect(screen.queryAllByRole('radio')).toHaveLength(0)
+  })
+
+  it('REQ-29: classe escolhida mostra "Modificadores base" e "Deck pré-pronto"', async () => {
+    renderNewGame()
+    fireEvent.click(
+      await screen.findByRole('radio', {
+        name: 'Guerreiro (Força, Resistência)',
+      }),
+    )
+    const modifiers = screen.getByRole('list', { name: 'Modificadores base' })
+    expect(
+      Array.from(modifiers.querySelectorAll('li')).map((li) => li.textContent),
+    ).toEqual([
+      '6 Ataque',
+      '5 Defesa',
+      '45 Precisão',
+      '15 Esquiva',
+      '8 Celeridade',
+      '0 Perfuração',
+      '0 Reflexão',
+    ])
+    const deck = screen.getByRole('list', { name: 'Deck pré-pronto' })
+    await waitFor(() =>
+      expect(
+        Array.from(deck.querySelectorAll('li')).map((li) => li.textContent),
+      ).toEqual(['30× Resistência', '30× Força']),
+    )
+  })
+
+  it('REQ-29: sem classe escolhida não mostra as listas', async () => {
+    renderNewGame()
+    await screen.findByRole('radio', { name: 'Ladino (Destreza)' })
+    expect(
+      screen.queryByRole('list', { name: 'Modificadores base' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('list', { name: 'Deck pré-pronto' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('REQ-29: "Criar grupo" leva playerClass da classe escolhida', async () => {
+    let body: unknown
+    server.use(
+      http.post('*/parties', async ({ request }) => {
+        body = await request.json()
+        return HttpResponse.json(partyCreatedFixture, { status: 201 })
+      }),
+    )
+    renderNewGame()
+    fill('Os Teimosos', 'Lia')
+    fireEvent.click(
+      await screen.findByRole('radio', { name: 'Ladino (Destreza)' }),
+    )
+    fireEvent.click(createButton())
+    await waitFor(() =>
+      expect(body).toEqual({
+        name: 'Os Teimosos',
+        characterName: 'Lia',
+        playerClass: 'rogue',
+      }),
+    )
+  })
+
+  it('REQ-29: sem escolha, o handler padrão responde required e o grupo mostra "Escolha uma classe."', async () => {
+    renderNewGame()
+    fill('Os Teimosos', 'Lia')
+    await screen.findByRole('radio', { name: 'Ladino (Destreza)' })
+    fireEvent.click(createButton())
+    await waitFor(() =>
+      expect(classGroup()).toHaveAccessibleDescription('Escolha uma classe.'),
+    )
+  })
+
+  it('REQ-29: unknownClass mostra "Esta classe não está mais disponível."', async () => {
+    server.use(
+      http.post('*/parties', () =>
+        invalid([{ field: 'playerClass', reason: 'unknownClass' }]),
+      ),
+    )
+    renderNewGame()
+    fill('a', 'b')
+    fireEvent.click(
+      await screen.findByRole('radio', { name: 'Ladino (Destreza)' }),
+    )
+    fireEvent.click(createButton())
+    await waitFor(() =>
+      expect(classGroup()).toHaveAccessibleDescription(
+        'Esta classe não está mais disponível.',
+      ),
+    )
+  })
+
+  it('REQ-29: DIMENSION_INVALID mostra a message e a lista "Problemas"; o que foi digitado e escolhido continua', async () => {
+    server.use(
+      http.post('*/parties', () =>
+        HttpResponse.json(dimensionInvalidFixture, { status: 409 }),
+      ),
+    )
+    renderNewGame()
+    fill('Os Teimosos', 'Lia')
+    const rogue = await screen.findByRole('radio', {
+      name: 'Ladino (Destreza)',
+    })
+    fireEvent.click(rogue)
+    fireEvent.click(createButton())
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(dimensionInvalidFixture.error.message),
+    )
+    const problems = screen.getByRole('list', { name: 'Problemas' })
+    expect(
+      Array.from(problems.querySelectorAll('li')).map((li) => li.textContent),
+    ).toEqual(dimensionInvalidFixture.error.details.problems)
+    expect(nameField()).toHaveValue('Os Teimosos')
+    expect(characterField()).toHaveValue('Lia')
+    expect(rogue).toBeChecked()
+  })
+
+  it('REQ-29: erro na consulta das classes mostra a message', async () => {
+    server.use(
+      http.get('*/catalog/classes', () =>
+        HttpResponse.json(internalErrorFixture, { status: 500 }),
+      ),
+    )
+    renderNewGame()
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(internalErrorFixture.error.message),
+    )
+  })
+
+  it('REQ-29: falha de rede nas classes mostra "Servidor indisponível. Tente novamente."', async () => {
+    server.use(http.get('*/catalog/classes', () => HttpResponse.error()))
+    renderNewGame()
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(
+        'Servidor indisponível. Tente novamente.',
+      ),
+    )
+  })
+})
+
 describe('REQ-15: novo jogo', () => {
   it('REQ-15: /novo mostra título, campos, botão e "Voltar" para /', () => {
     renderNewGame()
@@ -125,6 +299,7 @@ describe('REQ-15: novo jogo', () => {
   it('REQ-15: com 201 vai para /grupo/:partyId do grupo criado', async () => {
     renderNewGame()
     fill('Os Teimosos', 'Lia')
+    fireEvent.click(await screen.findByRole('radio', { name: /^Guerreiro/ }))
     fireEvent.click(createButton())
     await waitFor(() =>
       expect(screen.getByTestId('location')).toHaveTextContent(

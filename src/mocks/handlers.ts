@@ -45,6 +45,7 @@ import {
 import {
   partiesFixture,
   partyBelowMinPlayersFixture,
+  partyClassRequiredFixture,
   partyCreatedFixture,
   partyIdleFixture,
   partyInSessionFixture,
@@ -95,16 +96,14 @@ async function createPartyScenario(request: Request): Promise<Response> {
     if (body.name === 'Solo' && body.characterName === 'Lia') {
       return HttpResponse.json(partyBelowMinPlayersFixture, { status: 400 })
     }
-    // Cenário da FEAT-06 com classe não publicada. O de corpo sem classe
-    // (`required`) entra na T-30, junto com a escolha de classe: antes dela
-    // a tela "Novo jogo" ainda não envia `playerClass`.
-    if (
-      body.name === 'Os Teimosos' &&
-      body.characterName === 'Lia' &&
-      'playerClass' in body &&
-      body.playerClass === 'mage'
-    ) {
-      return HttpResponse.json(partyUnknownClassFixture, { status: 400 })
+    // Cenários da FEAT-06: corpo sem classe e classe não publicada.
+    if (body.name === 'Os Teimosos' && body.characterName === 'Lia') {
+      if (!('playerClass' in body)) {
+        return HttpResponse.json(partyClassRequiredFixture, { status: 400 })
+      }
+      if (body.playerClass === 'mage') {
+        return HttpResponse.json(partyUnknownClassFixture, { status: 400 })
+      }
     }
   }
   return HttpResponse.json(partyCreatedFixture, { status: 201 })
