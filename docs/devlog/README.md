@@ -65,4 +65,5 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 033 | T-23 | [Formulário de carta: base, zona e atributo](033-T-23-formulario-de-carta.md) | concluída |
 | 034 | T-24 | [Formulários de equipamento e item](034-T-24-formularios-equipamento-item.md) | concluída |
 | 035 | T-25 | [Formulários de evento aleatório e de combate](035-T-25-formularios-de-evento.md) | concluída |
-| 036 | T-26 | [Publicar, duplicar e excluir carta](036-T-26-publicar-duplicar-excluir.md) | aguardando revisão |
+| 036 | T-26 | [Publicar, duplicar e excluir carta](036-T-26-publicar-duplicar-excluir.md) | concluída |
+| 037 | T-27 | [Validar como dimensão, exportar e importar](037-T-27-validar-exportar-importar.md) | aguardando revisão |

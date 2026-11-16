@@ -73,3 +73,66 @@ test('REQ-24: alterações não salvas na coleção pedem confirmação ao sair'
     page.getByRole('heading', { level: 1, name: 'Laboratório' }),
   ).toBeVisible()
 })
+
+test('REQ-25: valida a coleção como dimensão e lista os problemas (MSW)', async ({
+  page,
+}) => {
+  await page.goto('/lab/editor')
+  const section = page.getByRole('region', { name: 'Coleções' })
+  await page.getByRole('button', { name: /Coleção de Teste/ }).click()
+  await page.getByRole('button', { name: 'Validar como dimensão' }).click()
+  await expect(section.getByRole('status')).toHaveText(
+    'A coleção não forma uma dimensão válida.',
+  )
+  await expect(
+    section.getByRole('list', { name: 'Problemas' }).getByRole('listitem'),
+  ).toHaveText(['A coleção precisa de pelo menos 1 zona Urbana publicada.'])
+})
+
+test('REQ-26: exporta a coleção para {id}.json (MSW)', async ({ page }) => {
+  await page.goto('/lab/editor')
+  await page.getByRole('button', { name: /Coleção de Teste/ }).click()
+  const download = page.waitForEvent('download')
+  await page.getByRole('button', { name: 'Exportar' }).click()
+  expect((await download).suggestedFilename()).toBe('fixture.json')
+  await expect(
+    page.getByRole('region', { name: 'Coleções' }).getByRole('status'),
+  ).toHaveText('Coleção exportada.')
+})
+
+test('REQ-26: importa coleção; erros de arquivo e de conteúdo (MSW)', async ({
+  page,
+}) => {
+  await page.goto('/lab/editor')
+  const section = page.getByRole('region', { name: 'Coleções' })
+  const status = section.getByRole('status')
+  const input = page.getByLabel('Importar coleção')
+
+  await input.setInputFiles({
+    name: 'ruim.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from('{isto não é json'),
+  })
+  await expect(status).toHaveText('O arquivo não é um JSON válido.')
+
+  await input.setInputFiles({
+    name: 'vazio.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from('{}'),
+  })
+  await expect(
+    section.getByRole('list', { name: 'Problemas' }).getByRole('listitem'),
+  ).toHaveText(['formatVersion: Versão do arquivo não suportada.'])
+
+  await input.setInputFiles({
+    name: 'bosque.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(
+      JSON.stringify({ collection: { id: 'novo' }, cards: [] }),
+    ),
+  })
+  await expect(status).toHaveText('Coleção importada: 1 cartas.')
+  await expect(
+    page.getByRole('heading', { name: 'Bosque Antigo' }),
+  ).toBeVisible()
+})

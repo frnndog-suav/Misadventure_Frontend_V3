@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type ChangeEvent, type FormEvent } from 'react'
 import type { CardType, Rarity } from '../../api/catalog'
 import {
   ContentInvalidError,
@@ -6,7 +6,10 @@ import {
   useDeleteCollection,
   useEditorCollection,
   useEditorCollections,
+  useExportCollection,
+  useImportCollection,
   useUpdateCollection,
+  useValidateDimension,
   type CollectionInput,
   type EditorCollection,
 } from '../../api/editor'
@@ -14,6 +17,7 @@ import { ApiError } from '../../api/http'
 import { cardTypeLabels, rarityLabels } from '../../ui/labels'
 import { CardsSection } from './CardsSection'
 import { ConfirmDialog } from './ConfirmDialog'
+import { downloadJson } from './downloadJson'
 import { useUnsavedGuard } from './useUnsavedGuard'
 
 const unavailable = 'Servidor indisponível. Tente novamente.'
@@ -42,10 +46,14 @@ function CollectionPanel({
   collection,
   onEdit,
   onDelete,
+  onValidate,
+  onExport,
 }: {
   collection: EditorCollection
   onEdit: () => void
   onDelete: () => void
+  onValidate: () => void
+  onExport: () => void
 }) {
   return (
     <div>
@@ -71,11 +79,17 @@ function CollectionPanel({
       <button type="button" onClick={onDelete}>
         Excluir coleção
       </button>
+      <button type="button" onClick={onValidate}>
+        Validar como dimensão
+      </button>
+      <button type="button" onClick={onExport}>
+        Exportar
+      </button>
     </div>
   )
 }
 
-/** Seção "Coleções" do editor (REQ-19; REQ-24 na parte de coleção). */
+/** Seção "Coleções" do editor (REQ-19, REQ-25, REQ-26; REQ-24 na parte de coleção). */
 export function CollectionsSection() {
   const collections = useEditorCollections()
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -83,6 +97,12 @@ export function CollectionsSection() {
   const create = useCreateCollection()
   const update = useUpdateCollection()
   const remove = useDeleteCollection()
+  const validate = useValidateDimension()
+  const exportCollection = useExportCollection()
+  const importCollection = useImportCollection()
+
+  const [problems, setProblems] = useState<string[]>([])
+  const [replace, setReplace] = useState(false)
 
   const [mode, setMode] = useState<FormMode>(null)
   const [initial, setInitial] = useState<CollectionInput>(emptyValues)
@@ -119,7 +139,82 @@ export function CollectionsSection() {
       setSelectedId(id)
       setMode(null)
       setMessage('')
+      setProblems([])
     })
+  }
+
+  function validateSelected(): void {
+    if (selectedId === null) return
+    setMessage('')
+    setProblems([])
+    validate.mutate(selectedId, {
+      onSuccess: (result) => {
+        if (result.valid) {
+          setMessage('A coleção forma uma dimensão válida.')
+        } else {
+          setMessage('A coleção não forma uma dimensão válida.')
+          setProblems(result.problems)
+        }
+      },
+      onError: (error) => setMessage(errorText(error)),
+    })
+  }
+
+  function exportSelected(): void {
+    if (selectedId === null) return
+    const id = selectedId
+    setMessage('')
+    setProblems([])
+    exportCollection.mutate(id, {
+      onSuccess: (data) => {
+        downloadJson(`${id}.json`, data)
+        setMessage('Coleção exportada.')
+      },
+      onError: (error) => setMessage(errorText(error)),
+    })
+  }
+
+  /** Lê o arquivo e envia o conteúdo como está; o backend valida (REQ-26). */
+  async function importFile(file: File): Promise<void> {
+    setMessage('')
+    setProblems([])
+    let content: unknown
+    try {
+      content = JSON.parse(await file.text())
+    } catch {
+      setMessage('O arquivo não é um JSON válido.')
+      return
+    }
+    importCollection.mutate(
+      { content, replace },
+      {
+        onSuccess: (result) => {
+          setSelectedId(result.collectionId)
+          setMode(null)
+          setMessage(`Coleção importada: ${result.cardCount} cartas.`)
+        },
+        onError: (error) => {
+          setMessage(errorText(error))
+          if (
+            error instanceof ContentInvalidError &&
+            error.code === 'CONTENT_INVALID'
+          ) {
+            setProblems(
+              error.fields.map((f) =>
+                f.path === '' ? f.message : `${f.path}: ${f.message}`,
+              ),
+            )
+          }
+        },
+      },
+    )
+  }
+
+  function onFileChosen(event: ChangeEvent<HTMLInputElement>): void {
+    const file = event.target.files?.[0]
+    // Limpa o campo para poder escolher o mesmo arquivo de novo.
+    event.target.value = ''
+    if (file) guard(() => void importFile(file))
   }
 
   function onSubmit(event: FormEvent): void {
@@ -168,7 +263,8 @@ export function CollectionsSection() {
 
   let status = message
   if (!status) {
-    if (collections.isPending) status = 'Carregando coleções…'
+    if (validate.isPending) status = 'Validando…'
+    else if (collections.isPending) status = 'Carregando coleções…'
     else if (collections.isError) status = errorText(collections.error)
     else if (selected.isError) status = errorText(selected.error)
   }
@@ -184,6 +280,32 @@ export function CollectionsSection() {
         >
           Nova coleção
         </button>
+        <label>
+          Importar coleção
+          <input
+            type="file"
+            accept=".json,application/json"
+            onChange={onFileChosen}
+          />
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={replace}
+            onChange={(event) => setReplace(event.target.checked)}
+          />
+          Substituir se já existir
+        </label>
+        {problems.length > 0 && (
+          <div>
+            <h3 id="editor-problems-title">Problemas</h3>
+            <ul aria-labelledby="editor-problems-title">
+              {problems.map((problem, index) => (
+                <li key={index}>{problem}</li>
+              ))}
+            </ul>
+          </div>
+        )}
         {collections.isSuccess &&
           (collections.data.length === 0 ? (
             <p>Nenhuma coleção ainda.</p>
@@ -226,6 +348,8 @@ export function CollectionsSection() {
                 setConfirmingDelete(true)
               })
             }
+            onValidate={validateSelected}
+            onExport={exportSelected}
           />
         )}
         {mode !== null && (
