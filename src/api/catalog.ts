@@ -1,4 +1,8 @@
-import { useQuery, type UseQueryResult } from '@tanstack/react-query'
+import {
+  useQueries,
+  useQuery,
+  type UseQueryResult,
+} from '@tanstack/react-query'
 import { z } from 'zod'
 import { getJson } from './http'
 
@@ -439,9 +443,8 @@ export function useClasses(): UseQueryResult<ClassDefinition[], Error> {
   })
 }
 
-/** Uma carta do catálogo; cache por id, sem novo pedido (D-48). */
-export function useCatalogCard(cardId: string): UseQueryResult<Card, Error> {
-  return useQuery({
+function catalogCardQuery(cardId: string) {
+  return {
     queryKey: ['catalog', 'card', cardId],
     queryFn: async () =>
       cardSchema.parse(
@@ -449,5 +452,36 @@ export function useCatalogCard(cardId: string): UseQueryResult<Card, Error> {
       ),
     retry: false,
     staleTime: Infinity,
+  } as const
+}
+
+/** Uma carta do catálogo; cache por id, sem novo pedido (D-48). */
+export function useCatalogCard(cardId: string): UseQueryResult<Card, Error> {
+  return useQuery(catalogCardQuery(cardId))
+}
+
+export interface CatalogCards {
+  /** Cartas já recebidas, por id. */
+  cards: ReadonlyMap<string, Card>
+  isPending: boolean
+  /** Primeiro erro entre as consultas, se houver. */
+  error: Error | null
+}
+
+/** Várias cartas: uma consulta por id distinto, no mesmo cache (D-48, D-51). */
+export function useCatalogCards(cardIds: readonly string[]): CatalogCards {
+  return useQueries({
+    queries: [...new Set(cardIds)].map(catalogCardQuery),
+    combine: (results) => {
+      const cards = new Map<string, Card>()
+      for (const r of results) {
+        if (r.data !== undefined) cards.set(r.data.id, r.data)
+      }
+      return {
+        cards,
+        isPending: results.some((r) => r.isPending),
+        error: results.find((r) => r.error !== null)?.error ?? null,
+      }
+    },
   })
 }

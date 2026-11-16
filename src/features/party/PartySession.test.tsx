@@ -35,7 +35,10 @@ beforeAll(() => {
   vi.stubEnv('TZ', 'America/Sao_Paulo')
   server.listen({ onUnhandledFrame: 'error' })
 })
-afterEach(() => server.resetHandlers())
+afterEach(() => {
+  server.resetHandlers()
+  server.events.removeAllListeners()
+})
 afterAll(() => {
   server.close()
   vi.unstubAllEnvs()
@@ -98,9 +101,9 @@ describe('REQ-16: grupo em sessão', () => {
     expect(screen.getByText('Salvo em 14/11/2026 18:30')).toBeInTheDocument()
     expect(endButton()).toBeEnabled()
     expect(
-      screen.getByText('A partida começa na próxima etapa do jogo.'),
-    ).toBeInTheDocument()
-    expect(status()).toHaveTextContent('')
+      screen.queryByText('A partida começa na próxima etapa do jogo.'),
+    ).not.toBeInTheDocument()
+    await waitFor(() => expect(status()).toHaveTextContent(''))
   })
 
   it('REQ-16: situação "Pausado" vem do status recebido', async () => {
@@ -229,6 +232,190 @@ describe('REQ-16: grupo em sessão', () => {
     renderParty()
     await screen.findByRole('heading', { level: 1, name: 'Os Teimosos' })
     fireEvent.click(endButton())
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(
+        'Servidor indisponível. Tente novamente.',
+      ),
+    )
+  })
+})
+
+describe('REQ-30: partida preparada na tela do grupo', () => {
+  const lia = partyInSessionFixture.members[0]
+
+  it('REQ-30: mostra dimensão, cidade inicial e "Ordem dos jogadores" na ordem recebida; "Membros" continua', async () => {
+    const second = {
+      ...lia,
+      id: 'member-bo',
+      characterName: 'Bo',
+      isHost: false,
+    }
+    server.use(
+      http.post('*/parties/:partyId/session', () =>
+        HttpResponse.json({
+          ...partyInSessionFixture,
+          members: [lia, second],
+          turnOrder: [second.id, lia.id],
+        }),
+      ),
+    )
+    renderParty()
+    expect(
+      await screen.findByText('Dimensão: Dimensão de Teste'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText('Cidade inicial: Porto Cinzento'),
+    ).toBeInTheDocument()
+    const order = screen.getByRole('list', { name: 'Ordem dos jogadores' })
+    expect(
+      within(order)
+        .getAllByRole('listitem')
+        .map((li) => li.textContent),
+    ).toEqual(['Bo', 'Lia'])
+    expect(
+      within(screen.getByRole('list', { name: 'Membros' })).getAllByRole(
+        'listitem',
+      ),
+    ).toHaveLength(2)
+  })
+
+  it('REQ-30: a seção do membro mostra classe com trava, números recebidos, modificadores, zonas e contagens', async () => {
+    renderParty()
+    const section = await screen.findByRole('region', { name: 'Lia' })
+    await within(section).findByText('Zona atual: Porto Cinzento')
+    expect(
+      within(section).getByText('Classe: Guerreiro (trava cumprida)'),
+    ).toBeInTheDocument()
+    expect(within(section).getByText('Vida 22/22')).toBeInTheDocument()
+    expect(within(section).getByText('Vida base 20')).toBeInTheDocument()
+    expect(within(section).getByText('Pico 10')).toBeInTheDocument()
+    expect(within(section).getByText('Vigor 10')).toBeInTheDocument()
+    expect(within(section).getByText('Ouro 10')).toBeInTheDocument()
+    expect(
+      within(within(section).getByRole('list', { name: 'Modificadores' }))
+        .getAllByRole('listitem')
+        .map((li) => li.textContent),
+    ).toEqual([
+      '6 Ataque',
+      '5 Defesa',
+      '45 Precisão',
+      '15 Esquiva',
+      '8 Celeridade',
+      '0 Perfuração',
+      '0 Reflexão',
+    ])
+    expect(
+      within(section).getByText('Ponto de respawn: Porto Cinzento'),
+    ).toBeInTheDocument()
+    expect(
+      within(section).getByText('Deck de atributos: 53 cartas'),
+    ).toBeInTheDocument()
+    expect(
+      within(section).getByText('Descarte de atributos: 0 cartas'),
+    ).toBeInTheDocument()
+  })
+
+  it('REQ-30: "(trava não cumprida)" conforme deckLockMet', async () => {
+    server.use(
+      http.post('*/parties/:partyId/session', () =>
+        HttpResponse.json({
+          ...partyInSessionFixture,
+          members: [
+            {
+              ...lia,
+              player: {
+                ...lia.player,
+                playerClasses: [{ playerClass: 'warrior', deckLockMet: false }],
+              },
+            },
+          ],
+        }),
+      ),
+    )
+    renderParty()
+    expect(
+      await screen.findByText('Classe: Guerreiro (trava não cumprida)'),
+    ).toBeInTheDocument()
+  })
+
+  it('REQ-30: "Mão (7)" mostra cada carta completa na ordem recebida, repetidas repetidas, uma consulta por id distinto', async () => {
+    const asked: string[] = []
+    server.events.on('request:start', ({ request }) => {
+      const match = /\/catalog\/cards\/([^/?]+)$/.exec(
+        new URL(request.url).pathname,
+      )
+      if (match) asked.push(decodeURIComponent(match[1]))
+    })
+    renderParty()
+    const hand = await screen.findByRole('region', { name: 'Mão (7)' })
+    await waitFor(() =>
+      expect(within(hand).getAllByRole('article')).toHaveLength(7),
+    )
+    expect(
+      within(hand)
+        .getAllByRole('article')
+        .map((card) => within(card).getByRole('heading').textContent),
+    ).toEqual([
+      'Força',
+      'Resistência',
+      'Força',
+      'Força',
+      'Resistência',
+      'Resistência',
+      'Força',
+    ])
+    expect(new Set(asked).size).toBe(asked.length)
+  })
+
+  it('REQ-30: com os nomes ainda não recebidos, mostra "Carregando a partida…"', async () => {
+    let release: () => void = () => {}
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    server.use(
+      http.get('*/catalog/classes', async () => {
+        await gate
+        return HttpResponse.json([])
+      }),
+    )
+    renderParty()
+    await screen.findByRole('heading', { level: 1, name: 'Os Teimosos' })
+    expect(status()).toHaveTextContent('Carregando a partida…')
+    release()
+    await waitFor(() => expect(status()).toHaveTextContent(''))
+  })
+
+  it('REQ-30: com as cartas ainda não recebidas, mostra "Carregando a partida…" e "Mão (7)" com a contagem recebida', async () => {
+    let release: () => void = () => {}
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    server.use(
+      http.get('*/catalog/cards/:cardId', async () => {
+        await gate
+        return HttpResponse.json(internalErrorFixture, { status: 500 })
+      }),
+    )
+    renderParty()
+    expect(
+      await screen.findByRole('region', { name: 'Mão (7)' }),
+    ).toBeInTheDocument()
+    expect(status()).toHaveTextContent('Carregando a partida…')
+    expect(screen.getByText('Dimensão: …')).toBeInTheDocument()
+    release()
+  })
+
+  it('REQ-30: erro na consulta de uma carta mostra a message', async () => {
+    server.use(
+      http.get('*/catalog/cards/:cardId', () =>
+        HttpResponse.json(internalErrorFixture, { status: 500 }),
+      ),
+    )
+    renderParty()
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(internalErrorFixture.error.message),
+    )
+  })
+
+  it('REQ-30: falha de rede nas classes mostra "Servidor indisponível. Tente novamente."', async () => {
+    server.use(http.get('*/catalog/classes', () => HttpResponse.error()))
+    renderParty()
     await waitFor(() =>
       expect(status()).toHaveTextContent(
         'Servidor indisponível. Tente novamente.',
