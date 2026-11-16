@@ -78,3 +78,32 @@ test('REQ-08: o Catálogo filtra por tipo e mostra a carta escolhida (MSW)', asy
     section.getByRole('article', { name: 'Bosque Sussurrante' }),
   ).toBeVisible()
 })
+
+test('REQ-27: a configuração mostra os campos da FEAT-06 (MSW)', async ({
+  page,
+}) => {
+  await page.goto('/lab')
+  const region = page.getByRole('region', { name: 'Configuração' })
+  await expect(
+    region.getByRole('spinbutton', { name: 'Tamanho mínimo da build' }),
+  ).toBeVisible()
+  await expect(
+    region.getByRole('spinbutton', { name: 'Reflexão padrão' }),
+  ).toBeVisible()
+})
+
+test('REQ-28: o filtro "Dimensão" mostra a Carta de Dimensão (MSW)', async ({
+  page,
+}) => {
+  await page.goto('/lab')
+  const section = page.getByRole('region', { name: 'Catálogo' })
+  await section.getByRole('radio', { name: 'Dimensão (1)' }).check()
+  const list = section.getByRole('list', { name: 'Cartas' })
+  await expect(list.getByRole('button')).toHaveCount(1)
+  await list
+    .getByRole('button', { name: 'Dimensão de Teste · Dimensão' })
+    .click()
+  const card = section.getByRole('article', { name: 'Dimensão de Teste' })
+  await expect(card.getByText('Ordem de lançamento 1')).toBeVisible()
+  await expect(card.getByText('Zona de chegada: Porto Cinzento')).toBeVisible()
+})

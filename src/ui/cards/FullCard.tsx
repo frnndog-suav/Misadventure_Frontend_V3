@@ -1,6 +1,7 @@
 import type { Card } from '../../api/catalog'
 import { AttributeCard } from './AttributeCard'
 import { CombatEventCard } from './CombatEventCard'
+import { DimensionCard } from './DimensionCard'
 import { EquipmentCard } from './EquipmentCard'
 import { ItemCard } from './ItemCard'
 import { RandomEventCard } from './RandomEventCard'
@@ -22,8 +23,7 @@ export function FullCard({ card }: { card: Card }) {
     case 'combatEvent':
       return <CombatEventCard card={card} />
     case 'dimension':
-      // O componente da Carta de Dimensão (REQ-28) entra na T-29.
-      return null
+      return <DimensionCard card={card} />
     default: {
       const _exhaustive: never = card
       return _exhaustive

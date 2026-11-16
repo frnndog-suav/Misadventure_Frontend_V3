@@ -79,6 +79,18 @@ const labels = [
   ['baseHealth', 'Vida base'],
   ['initialGold', 'Ouro inicial'],
   ['initialHandSize', 'Mão inicial'],
+  // FEAT-06 (REQ-27)
+  ['minDeckSize', 'Tamanho mínimo da build'],
+  ['lockOneEssential', 'Trava (classe com 1 essencial)'],
+  ['lockTwoEssentials', 'Trava (classe com 2 essenciais)'],
+  ['mapMaxAttempts', 'Tentativas do gerador de mapa'],
+  ['defaultAttack', 'Ataque padrão'],
+  ['defaultDefense', 'Defesa padrão'],
+  ['defaultAccuracy', 'Precisão padrão'],
+  ['defaultEvasion', 'Esquiva padrão'],
+  ['defaultCelerity', 'Celeridade padrão'],
+  ['defaultPiercing', 'Perfuração padrão'],
+  ['defaultReflection', 'Reflexão padrão'],
 ] as const
 
 async function loaded(): Promise<void> {
@@ -120,6 +132,16 @@ describe('REQ-06: configuração ajustável do jogo', () => {
       'Padrão: 3 · Mín. 1 · Máx. 10',
     )
     expect(screen.getByText('Padrão: 3 · Mín. 1 · Máx. 10')).toBeVisible()
+  })
+
+  it('REQ-27: os 11 campos da FEAT-06 vêm depois dos 8 do REQ-06, nesta ordem, com padrão e limites', async () => {
+    renderLab()
+    await loaded()
+    const region = screen.getByRole('region', { name: 'Configuração' })
+    const names = within(region)
+      .getAllByRole('spinbutton')
+      .map((input) => (input as HTMLInputElement).labels?.[0]?.textContent)
+    expect(names).toEqual(labels.map(([, label]) => label))
   })
 
   it('REQ-06: "Salvar" fica desabilitado sem campo alterado e com campo vazio', async () => {

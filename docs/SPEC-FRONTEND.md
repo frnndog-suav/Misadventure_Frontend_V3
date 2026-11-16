@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.39 · **Data:** 2026-11-16
+> **Versão da spec:** 0.40 · **Data:** 2026-11-16
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -486,7 +486,7 @@ A T-27 fecha o lado FE da FEAT-31 com MSW; depois, `/retorno-backend` contra o b
 **FEAT-06 — Preparação da partida (lado frontend)** (CONTRATO v0.21 §3 FEAT-06 `acordado`; altera as seções `validado` FEAT-03, 04, 05 e 31)
 
 - [x] **T-28 — Alinhar o cliente ao contrato da FEAT-06** (REQ-27 a REQ-30; D-48). Em `src/api/`: schemas das 11 chaves novas de `GameConfigValues`; `DimensionCard`, `arrowLayout` e `dimension` em `CardType`/`cardCounts`; `ClassDefinition`; `CreatePartyRequest.playerClass`; `Party.dimension`, `turnOrder`, `PartyMember.player` (`PlayerState`, `PartyDimension`, `MapZone`, `Crossing`); `PartyInvalidDetails` com `playerClass`/`unknownClass`; `DIMENSION_INVALID` vira `DimensionInvalidError` (com `problems`); hooks novos `useClasses()` e `useCatalogCard(cardId)`. Em `src/mocks/`: fixtures da `fixture` com 12 cartas, as 2 classes, o `Party` preparado e os cenários de erro. Como verificar: unitários da camada de cliente; os testes das FEAT-03/04/05 que dependem das fixtures continuam passando.
-- [ ] **T-29 — Alinhar laboratório e catálogo** (REQ-27, REQ-28). 11 campos novos na configuração; opção "Dimensão" no filtro; componente `DimensionCard` em `src/ui/cards/`; forma das setas na carta de zona. Inclui o teste dos rótulos e da ordem dos 11 campos (já no `LabPage` desde a T-28, D-49) e troca o `null` de `FullCard` pelo componente. Como verificar: `npm run dev` (mocks) em `/lab`; unitários e e2e da área `lab`.
+- [x] **T-29 — Alinhar laboratório e catálogo** (REQ-27, REQ-28). 11 campos novos na configuração; opção "Dimensão" no filtro; componente `DimensionCard` em `src/ui/cards/`; forma das setas na carta de zona. Inclui o teste dos rótulos e da ordem dos 11 campos (já no `LabPage` desde a T-28, D-49) e troca o `null` de `FullCard` pelo componente. Como verificar: `npm run dev` (mocks) em `/lab`; unitários e e2e da área `lab`.
 - [ ] **T-30 — Alinhar o novo jogo: escolha de classe** (REQ-29). Acrescenta ao handler padrão do MSW o cenário `required` (corpo "Os Teimosos"/"Lia" sem `playerClass`), adiado na T-28 (D-49). Como verificar: `npm run dev` (mocks) em `/novo`; unitários e e2e da área `party`.
 - [ ] **T-31 — Alinhar a tela do grupo: partida preparada** (REQ-30). Como verificar: `npm run dev` (mocks), fluxo `/novo` → `/grupo/:partyId`; unitários e e2e da área `party`.
 - [ ] **T-32 — Cliente do editor: classes e Carta de Dimensão** (REQ-31 a REQ-33). Em `src/api/editor.ts`: `CardInput` com `dimension` e `arrowLayout`; `EditorClass`, `EditorClassSummary`, `ClassInput`; `CollectionExport.classes` tipado; hooks `useEditorClasses(collectionId)`, `useEditorClass(playerClass)`, `useCreateClass`, `useSaveClass`, `usePublishClass`, `useDeleteClass`; `CLASS_NOT_FOUND`, `CONTENT_REFERENCED` como `ApiError`. Em `src/mocks/`: cenários das classes do contrato; `validate-dimension` da `fixture` passa a `{ valid: true, problems: [] }` e o exemplo inválido vai para o `bosque` (adiado na T-28, D-49). Como verificar: unitários da camada de cliente.
@@ -538,3 +538,4 @@ A T-34 fecha o lado FE da FEAT-06 com MSW; depois, `/retorno-backend` contra o b
 | 0.37 | 2026-11-16 | T-27 concluída: validar como dimensão, exportar e importar coleção no editor; D-47. Lado FE da FEAT-31 pronto (falta validar contra o backend real). |
 | 0.38 | 2026-11-16 | FEAT-06 planejada (CONTRATO v0.21 `acordado`): REQ-27 a REQ-33 (laboratório, catálogo, escolha de classe, partida preparada, editor com Carta de Dimensão e classes), D-48 (escolhas do autor), REQ-16 aponta para o REQ-30, área `party`/`editor` e hooks novos em 3.4, tarefas T-28 a T-34. |
 | 0.39 | 2026-11-16 | T-28 concluída: cliente alinhado ao contrato da FEAT-06; D-49 (estado intermediário até T-29, T-30, T-32 e T-33); textos das T-29, T-30, T-32 e T-33 ajustados. |
+| 0.40 | 2026-11-16 | T-29 concluída: `DimensionCard` no catálogo e no `FullCard`, forma das setas na carta de zona, testes dos 11 campos (REQ-27) e do filtro "Dimensão" (REQ-28). |

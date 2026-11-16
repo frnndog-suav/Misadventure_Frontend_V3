@@ -60,6 +60,26 @@ describe('ZoneCard', () => {
     ])
   })
 
+  it('REQ-28: depois de "Setas de conexão", "Setas opostas" (straight)', () => {
+    render(<ZoneCard card={grove} />)
+    const card = screen.getByRole('article', { name: 'Bosque Sussurrante' })
+    const texts = within(card)
+      .getAllByRole('paragraph')
+      .map((p) => p.textContent)
+    const i = texts.indexOf('Setas de conexão: 2')
+    expect(texts[i + 1]).toBe('Setas opostas')
+  })
+
+  it('REQ-28: "Setas vizinhas" (corner)', () => {
+    render(<ZoneCard card={{ ...grove, arrowLayout: 'corner' }} />)
+    expect(screen.getByText('Setas vizinhas')).toBeVisible()
+  })
+
+  it('REQ-28: arrowLayout null não mostra forma', () => {
+    render(<ZoneCard card={{ ...grove, arrowLayout: null }} />)
+    expect(screen.queryByText(/Setas (opostas|vizinhas)/)).toBeNull()
+  })
+
   it('REQ-12 (regras comuns): sem ações e efeitos, as listas não aparecem', () => {
     render(<ZoneCard card={{ ...grove, zoneActions: [], effects: [] }} />)
     expect(screen.queryByRole('list', { name: 'Ações de zona' })).toBeNull()
