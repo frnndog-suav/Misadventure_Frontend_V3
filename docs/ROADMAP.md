@@ -1,6 +1,6 @@
 # Misadventures — Roadmap de desenvolvimento
 
-> **Versão:** 0.21 · **Data:** 2026-11-15
+> **Versão:** 0.22 · **Data:** 2026-11-15
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend; o autor copia o arquivo inteiro quando ele muda. Base: README Parte III (III.2 e III.4). As regras estão em [`README.md`](README.md); o que trafega entre os lados, em [`CONTRATO.md`](CONTRATO.md).
 
@@ -89,7 +89,10 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | FEAT-26 | Tempo real com Socket.IO: grupo com vários humanos, início de sessão, host | II.2, 28.1, 11.4 | a fazer | a fazer |
 | FEAT-27 | Relógios da vez e jogador ausente | 11.3 | a fazer | a fazer |
 | FEAT-28 | Desconexão e IA que assume o personagem | 28.1 | a fazer | a fazer |
+| FEAT-30 | Acabamento visual da interface: layout de jogo para PC em todas as telas, componentes e estados, tratamento PSX, artes e ícones do autor (feita **antes** da FEAT-29) | II.1, II.4, II.5 | a fazer | — |
 | FEAT-29 | Executável Tauri (cliente do servidor remoto) | II.2 | a fazer | — |
+
+**FEAT-30 (decisão do autor, 2026-11-15):** até lá, as tarefas cuidam de funcionalidade e comportamento, com a base visual da FEAT-02 (tokens e fontes) e sem passada de layout. A FEAT-30 vem depois de todas as FEATs funcionais e antes do executável (FEAT-29), para que ele já saia com o visual final. O que ela precisa (pesquisa de diretrizes, perguntas ao autor, lista de artes) está em `.claude/skills/guia-visual/SKILL.md` §8, no frontend.
 
 ### Depois do jogo funcional
 
@@ -127,3 +130,4 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | 0.19 | 2026-11-15 | FEAT-05: lado BE `pronto` (T-10 a T-13, SPEC-BACKEND v0.19); CONTRATO v0.16 marca a FEAT-05 `implementado (BE)`. |
 | 0.20 | 2026-11-15 | FEAT-05: lado FE `pronto` com MSW (SPEC-FRONTEND v0.28, T-16 a T-19). Os 7 cenários já passaram com curl contra o backend real; falta conferir as telas contra ele (`/retorno-backend`). |
 | 0.21 | 2026-11-15 | FEAT-05 `validado` nas duas colunas (CONTRATO v0.17): cenários com `curl` e as telas da campanha contra o backend real. |
+| 0.22 | 2026-11-15 | FEAT-30 (acabamento visual da interface, só FE) criada pelo autor: vem depois de todas as FEATs funcionais e antes da FEAT-29. |

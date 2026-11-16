@@ -58,3 +58,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 026 | T-18 | [Novo jogo](026-T-18-novo-jogo.md) | concluída |
 | 027 | T-19 | [Grupo em sessão](027-T-19-grupo-em-sessao.md) | aguardando revisão |
 | 028 | RETORNO | [FEAT-05 validada contra o backend real](028-RETORNO-feat-05-validada.md) | aguardando revisão |
+| 029 | FUND | [FEAT-30: acabamento visual](029-FUND-feat-30-acabamento-visual.md) | concluída |

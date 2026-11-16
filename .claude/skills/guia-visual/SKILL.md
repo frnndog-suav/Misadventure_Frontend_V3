@@ -5,7 +5,7 @@ description: Guia visual do Misadventures (referência, não fluxo) - direção 
 
 # /guia-visual
 
-> **Estado (2026-11-14, T-05):** tipografia, paleta, tema, faixa de resoluções e movimento definidos (spec D-17 a D-19, D-21). Valores de verdade: `src/ui/tokens.css` (fonte única; a UI só usa esses tokens). Itens ainda marcados _a definir_ não podem ser inventados numa tarefa: pergunte.
+> **Estado (2026-11-14, T-05):** tipografia, paleta, tema, faixa de resoluções e movimento definidos (spec D-17 a D-19, D-21). Valores de verdade: `src/ui/tokens.css` (fonte única; a UI só usa esses tokens). Itens ainda marcados _a definir_ não podem ser inventados numa tarefa: pergunte. **Layout e acabamento ficam para a FEAT-30 (§8).**
 
 ## 1. Direção de arte
 
@@ -78,3 +78,29 @@ description: Guia visual do Misadventures (referência, não fluxo) - direção 
 - Índice do devlog e as entradas da área; `git log --oneline -- <arquivos>`.
 - Decisões da spec que regem as telas afetadas.
 - Decisão de design durável (paleta, fonte, tokens, padrão de animação, convenção de ícones) vira `D-xx` na spec e atualiza este guia.
+
+## 8. FEAT-30 — Acabamento visual (pendente)
+
+**Até a FEAT-30, nenhuma tarefa faz passada de layout** (decisão do autor, 2026-11-15; ROADMAP v0.22). As telas usam só os tokens e a estrutura semântica; layout, componentes e tratamento PSX ficam para a FEAT-30, que vem depois de todas as FEATs funcionais e antes da FEAT-29. Os itens "a definir" deste guia são resolvidos nela. Fluxo: `/mudar-spec` para planejar a FEAT-30, depois uma `/visual` por tela.
+
+**Diretrizes pesquisadas (2026-11-15), a transformar em regras deste guia:**
+
+- **Zonas de tela:** informação persistente nas bordas e cantos, centro livre para a ação, informação de contexto só quando necessária. Cada elemento fica sempre no mesmo lugar. HUD mínimo: inventário, mapa e diário ficam sob demanda. PC permite mais densidade que console, sem poluir. Fontes: [Abratabia, HUD](https://abratabia.com/game-ui-design/hud-design.php), [RocketBrush](https://rocketbrush.com/blog/designing-practical-and-pretty-hud-in-video-games), [7 erros de HUD](https://bootcamp.uxdesign.cc/7-obvious-beginner-mistakes-with-your-games-hud-from-a-ui-ux-art-director-d852e255184a).
+- **Jogo de cartas:** mão em leque na borda de baixo; contadores de mão e deck sempre visíveis; o mais importante primeiro na carta; cartas jogadas com o mesmo formato das da mão; controles refletem só as ações disponíveis (vindas do backend); nada importante só na visão periférica. Fontes: [Gwent](https://www.gamepressure.com/gwent-the-witcher-card-game/user-interface/z79e5d), [CrowdControl](https://crowdcontrol-network.gitbook.io/crowdcontrol-learn/design-guidelines/game-board), [contraste em CCG](https://gamedeveloper.com/design/contrast-and-user-focus-in-ui-design-for-an-online-ccg).
+- **Menus:** menus densos podem ser lidos com calma; o HUD tem que ser entendido num olhar. Abas para 3–7 seções equivalentes, barra lateral para muitas. Fonte: [Unity, UI/UX basics](https://unity.com/blog/video-game-ui-ux-basics).
+- **Acessibilidade de jogo:** texto nunca embutido em imagem (exceto o logo); 4.5:1 e 3:1 de contraste (já valem aqui); "texto grande" a partir de ~36 px em 1080p; considerar um modo de alto contraste (7:1) e o ajuste do tamanho do texto. Fontes: [Xbox Accessibility Guidelines](https://learn.microsoft.com/en-us/gaming/accessibility/guidelines), [Game Accessibility Guidelines](https://gameaccessibilityguidelines.com/basic/).
+
+**Perguntas ao autor no início da FEAT-30** (com a recomendação):
+
+1. Clima e tom (recomendação: fantasia com humor, aventura desastrada, pelo nome do jogo).
+2. Dois ou três jogos de referência de interface.
+3. Material das molduras e painéis (pergaminho, madeira, pedra, metal, couro…).
+4. Paleta: manter o tema escuro? Cor de destaque desejada ou proibida?
+5. Menu inicial (recomendação: ilustração em tela cheia, logo e menu em coluna à esquerda, "Seus jogos" num painel ao lado).
+6. Pixelização das artes (recomendação: pixel visível, escala inteira sem suavização).
+
+**Artes e ícones a pedir ao autor** (PNG com transparência, tamanho nativo baixo; molduras com a largura da borda fixa do 9-slice). A lista cresce com as telas das FEATs até lá:
+
+- Estrutura: logo; fundo do menu inicial (16:9); fundo das telas secundárias; moldura e textura de painel (9-slice); botão em 4 estados (normal, hover, pressionado, desabilitado) ou só a moldura; moldura de diálogo.
+- Ícones da interface (24–32 px): novo jogo, continuar, abandonar, encerrar sessão, voltar; host, em sessão, pausado, salvo; aviso, erro, sucesso; carregando (4–8 quadros); retrato padrão de personagem.
+- Cartas: moldura por tipo e verso; ícones dos 8 `slot` e das 8 `itemCategory` (hoje em arte pendente); raridade, elemento e atributos (vida, Pico, Vigor, ouro, pontos de ação).
