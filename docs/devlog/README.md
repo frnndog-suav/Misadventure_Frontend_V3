@@ -52,10 +52,11 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 020 | T-13 | [Cartas de atributo, equipamento e item](020-T-13-cartas-atributo-equipamento-item.md) | concluída |
 | 021 | T-14 | [Cartas de zona e de evento](021-T-14-cartas-zona-evento.md) | concluída |
 | 022 | T-15 | [Seção Catálogo no laboratório](022-T-15-catalogo-no-laboratorio.md) | concluída |
-| 023 | RETORNO | [FEAT-04 validada contra o backend real](023-RETORNO-feat-04-validada.md) | aguardando revisão |
+| 023 | RETORNO | [FEAT-04 validada contra o backend real](023-RETORNO-feat-04-validada.md) | concluída |
 | 024 | T-16 | [Cliente da campanha](024-T-16-cliente-da-campanha.md) | concluída |
 | 025 | T-17 | [Menu inicial e abandonar](025-T-17-menu-inicial-e-abandonar.md) | concluída |
 | 026 | T-18 | [Novo jogo](026-T-18-novo-jogo.md) | concluída |
-| 027 | T-19 | [Grupo em sessão](027-T-19-grupo-em-sessao.md) | aguardando revisão |
-| 028 | RETORNO | [FEAT-05 validada contra o backend real](028-RETORNO-feat-05-validada.md) | aguardando revisão |
+| 027 | T-19 | [Grupo em sessão](027-T-19-grupo-em-sessao.md) | concluída |
+| 028 | RETORNO | [FEAT-05 validada contra o backend real](028-RETORNO-feat-05-validada.md) | concluída |
 | 029 | FUND | [FEAT-30: acabamento visual](029-FUND-feat-30-acabamento-visual.md) | concluída |
+| 030 | T-20 | [Cliente do editor](030-T-20-cliente-do-editor.md) | aguardando revisão |

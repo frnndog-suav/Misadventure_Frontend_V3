@@ -42,7 +42,7 @@ export function getJson(path: string): Promise<unknown> {
  * envelope) → `Error` genérico. `204` (sem corpo) → `undefined`.
  */
 export async function requestJson(
-  method: 'GET' | 'POST' | 'PATCH' | 'DELETE',
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   path: string,
   body?: unknown,
 ): Promise<unknown> {

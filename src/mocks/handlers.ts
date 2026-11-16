@@ -7,6 +7,34 @@ import {
   fixtureCardsByTypeFixture,
   fixtureCardsFixture,
 } from './catalogFixtures'
+import type { EditorCard, EditorCollection } from '../api/editor'
+import {
+  bosqueCardsDraftFixture,
+  bosqueCardsSearchFixture,
+  bosqueCollectionFixture,
+  bosqueExportFixture,
+  bosqueRenamedFixture,
+  cardNotFoundFixture,
+  collectionIdTakenFixture,
+  collectionInvalidFixture,
+  contentLockedFixture,
+  editorCollectionsFixture,
+  fixtureCardSummariesFixture,
+  fixtureCollectionFixture,
+  fixtureDimensionFixture,
+  fixtureEditorCardsFixture,
+  fixtureExportFixture,
+  forcaBrutaCopyFixture,
+  forcaBrutaDraftFixture,
+  forcaBrutaPublishedFixture,
+  forcaBrutaRenamedFixture,
+  forcaDraftFixture,
+  forcaSorteInvalidFixture,
+  importIdTakenFixture,
+  importInvalidFixture,
+  importResultFixture,
+  unknownCardTypeFixture,
+} from './editorFixtures'
 import {
   healthFixture,
   labConfigDefaultsFixture,
@@ -75,6 +103,217 @@ function knownParty(partyId: unknown, ok: () => Response): Response {
     : HttpResponse.json(partyNotFoundFixture, { status: 404 })
 }
 
+/** Lê o corpo JSON do pedido como `unknown` (inválido → `undefined`). */
+async function jsonBody(request: Request): Promise<unknown> {
+  return request.json().catch(() => undefined)
+}
+
+function field(body: unknown, key: string): unknown {
+  return typeof body === 'object' && body !== null && key in body
+    ? (body as Record<string, unknown>)[key]
+    : undefined
+}
+
+const notFound = {
+  collection: () =>
+    HttpResponse.json(collectionNotFoundFixture, { status: 404 }),
+  card: () => HttpResponse.json(cardNotFoundFixture, { status: 404 }),
+}
+
+/** Coleções que o editor conhece nos cenários (D-40). */
+const editorCollections: Record<string, EditorCollection> = {
+  fixture: fixtureCollectionFixture,
+  bosque: bosqueRenamedFixture,
+}
+
+/** Cartas que o editor conhece nos cenários (D-40). */
+const editorCards: Record<string, EditorCard> = Object.fromEntries(
+  [
+    ...fixtureEditorCardsFixture,
+    forcaDraftFixture,
+    forcaBrutaRenamedFixture,
+    forcaBrutaCopyFixture,
+  ].map((entry) => [entry.card.id, entry]),
+)
+
+/** POST /lab/content/collections: erro só nos corpos dos cenários. */
+async function createCollectionScenario(request: Request): Promise<Response> {
+  const id = field(await jsonBody(request), 'id')
+  if (id === 'Bosque X') {
+    return HttpResponse.json(collectionInvalidFixture, { status: 400 })
+  }
+  if (id === 'fixture') {
+    return HttpResponse.json(collectionIdTakenFixture, { status: 409 })
+  }
+  return HttpResponse.json(bosqueCollectionFixture, { status: 201 })
+}
+
+/** GET …/:collectionId/cards: listas prontas pelo pedido, sem filtrar. */
+function editorCardsScenario(collectionId: string, url: URL): Response {
+  const type = url.searchParams.get('type')
+  if (type !== null && !cardTypeSchema.safeParse(type).success) {
+    return HttpResponse.json(unknownCardTypeFixture, { status: 400 })
+  }
+  if (collectionId === 'fixture') {
+    return HttpResponse.json(fixtureCardSummariesFixture)
+  }
+  if (collectionId === 'bosque') {
+    return HttpResponse.json(
+      url.searchParams.get('status') === 'draft'
+        ? bosqueCardsDraftFixture
+        : bosqueCardsSearchFixture,
+    )
+  }
+  return notFound.collection()
+}
+
+/** POST …/:collectionId/cards: "forca-sorte" é o cenário de erro. */
+async function createCardScenario(
+  collectionId: string,
+  request: Request,
+): Promise<Response> {
+  if (!Object.hasOwn(editorCollections, collectionId))
+    return notFound.collection()
+  if (field(await jsonBody(request), 'slug') === 'forca-sorte') {
+    return HttpResponse.json(forcaSorteInvalidFixture, { status: 400 })
+  }
+  return HttpResponse.json(forcaDraftFixture, { status: 201 })
+}
+
+/** PUT /lab/content/cards/:cardId: cenários de renomear e de publicada. */
+async function saveCardScenario(
+  cardId: string,
+  request: Request,
+): Promise<Response> {
+  const current = editorCards[cardId]
+  if (current === undefined) return notFound.card()
+  const body = await jsonBody(request)
+  if (cardId === 'bosque.forca')
+    return HttpResponse.json(forcaBrutaDraftFixture)
+  if (cardId === 'bosque.forca-bruta') {
+    if (field(body, 'slug') === 'outra') {
+      return HttpResponse.json(contentLockedFixture, { status: 409 })
+    }
+    return HttpResponse.json(
+      field(body, 'name') === 'Força Bruta'
+        ? forcaBrutaRenamedFixture
+        : forcaBrutaPublishedFixture,
+    )
+  }
+  return HttpResponse.json(current)
+}
+
+/** POST /lab/content/import: cenários do contrato pelo corpo e pelo `replace`. */
+async function importScenario(request: Request): Promise<Response> {
+  const body = await jsonBody(request)
+  // Cenário do contrato: corpo `{}` (sem validar outros corpos).
+  if (
+    typeof body === 'object' &&
+    body !== null &&
+    Object.keys(body).length === 0
+  ) {
+    return HttpResponse.json(importInvalidFixture, { status: 400 })
+  }
+  const replace = new URL(request.url).searchParams.get('replace') === 'true'
+  const collectionId = field(field(body, 'collection'), 'id')
+  if (
+    !replace &&
+    typeof collectionId === 'string' &&
+    Object.hasOwn(editorCollections, collectionId)
+  ) {
+    return HttpResponse.json(importIdTakenFixture, { status: 409 })
+  }
+  return HttpResponse.json(importResultFixture, { status: 201 })
+}
+
+function knownCollection(
+  collectionId: unknown,
+  ok: (id: string) => Response,
+): Response {
+  return typeof collectionId === 'string' &&
+    Object.hasOwn(editorCollections, collectionId)
+    ? ok(collectionId)
+    : notFound.collection()
+}
+
+function knownCard(cardId: unknown, ok: (id: string) => Response): Response {
+  return typeof cardId === 'string' && Object.hasOwn(editorCards, cardId)
+    ? ok(cardId)
+    : notFound.card()
+}
+
+/** Editor de conteúdo (FEAT-31): tabela de cenários, sem estado (D-29, D-40). */
+const editorHandlers: RequestHandler[] = [
+  http.get('*/lab/content/collections', () =>
+    HttpResponse.json(editorCollectionsFixture),
+  ),
+  http.post('*/lab/content/collections', ({ request }) =>
+    createCollectionScenario(request),
+  ),
+  http.get('*/lab/content/collections/:collectionId', ({ params }) =>
+    knownCollection(params.collectionId, (id) =>
+      HttpResponse.json(editorCollections[id]),
+    ),
+  ),
+  http.patch('*/lab/content/collections/:collectionId', ({ params }) =>
+    knownCollection(params.collectionId, (id) =>
+      HttpResponse.json(editorCollections[id]),
+    ),
+  ),
+  http.delete('*/lab/content/collections/:collectionId', ({ params }) =>
+    knownCollection(
+      params.collectionId,
+      () => new HttpResponse(null, { status: 204 }),
+    ),
+  ),
+  http.post(
+    '*/lab/content/collections/:collectionId/validate-dimension',
+    ({ params }) =>
+      knownCollection(params.collectionId, () =>
+        HttpResponse.json(fixtureDimensionFixture),
+      ),
+  ),
+  http.get('*/lab/content/collections/:collectionId/export', ({ params }) =>
+    knownCollection(params.collectionId, (id) =>
+      HttpResponse.json(
+        id === 'fixture' ? fixtureExportFixture : bosqueExportFixture,
+      ),
+    ),
+  ),
+  http.post('*/lab/content/import', ({ request }) => importScenario(request)),
+  http.get(
+    '*/lab/content/collections/:collectionId/cards',
+    ({ params, request }) =>
+      editorCardsScenario(String(params.collectionId), new URL(request.url)),
+  ),
+  http.post(
+    '*/lab/content/collections/:collectionId/cards',
+    ({ params, request }) =>
+      createCardScenario(String(params.collectionId), request),
+  ),
+  http.get('*/lab/content/cards/:cardId', ({ params }) =>
+    knownCard(params.cardId, (id) => HttpResponse.json(editorCards[id])),
+  ),
+  http.put('*/lab/content/cards/:cardId', ({ params, request }) =>
+    saveCardScenario(String(params.cardId), request),
+  ),
+  http.post('*/lab/content/cards/:cardId/publish', ({ params }) =>
+    knownCard(params.cardId, (id) =>
+      HttpResponse.json(
+        id.startsWith('bosque.') ? forcaBrutaPublishedFixture : editorCards[id],
+      ),
+    ),
+  ),
+  http.post('*/lab/content/cards/:cardId/duplicate', ({ params }) =>
+    knownCard(params.cardId, () =>
+      HttpResponse.json(forcaBrutaCopyFixture, { status: 201 }),
+    ),
+  ),
+  http.delete('*/lab/content/cards/:cardId', ({ params }) =>
+    knownCard(params.cardId, () => new HttpResponse(null, { status: 204 })),
+  ),
+]
+
 /**
  * Handlers do MSW: respondem só fixtures do contrato (Princípio 3) — a
  * resposta é fixa (o catálogo de cartas escolhe a fixture do cenário pelo
@@ -109,4 +348,5 @@ export const handlers: RequestHandler[] = [
   http.delete('*/parties/:partyId', ({ params }) =>
     knownParty(params.partyId, () => new HttpResponse(null, { status: 204 })),
   ),
+  ...editorHandlers,
 ]
