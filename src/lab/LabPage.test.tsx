@@ -8,6 +8,7 @@ import {
 } from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
+import { MemoryRouter } from 'react-router-dom'
 import {
   afterAll,
   afterEach,
@@ -53,10 +54,21 @@ beforeEach(() => {
 function renderLab(): void {
   render(
     <QueryClientProvider client={queryClient}>
-      <LabPage />
+      <MemoryRouter initialEntries={['/lab']}>
+        <LabPage />
+      </MemoryRouter>
     </QueryClientProvider>,
   )
 }
+
+describe('REQ-18: link do editor', () => {
+  it('REQ-18: /lab tem o link "Editor de conteúdo" para /lab/editor', () => {
+    renderLab()
+    expect(
+      screen.getByRole('link', { name: 'Editor de conteúdo' }),
+    ).toHaveAttribute('href', '/lab/editor')
+  })
+})
 
 const labels = [
   ['minPlayers', 'Jogadores (mínimo)'],

@@ -4,8 +4,11 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
 const DIST = 'dist'
-// Marcas de src/lab/: o título da tela e o caminho da rota.
+// Marcas de src/lab/: os títulos das telas (laboratório e editor, REQ-18) e o
+// caminho da rota.
 const MARKS = [
+  'Editor de conteúdo',
+  'Editor de conte\\u00fado',
   'Laboratório',
   'Laborat\u00f3rio',
   '"/lab"',

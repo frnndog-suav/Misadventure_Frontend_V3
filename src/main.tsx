@@ -1,7 +1,7 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { StrictMode, type ReactNode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { queryClient } from './api/queryClient'
 import App from './App'
 import './ui/tokens.css'
@@ -33,12 +33,15 @@ async function loadDevRoutes(): Promise<ReactNode> {
 }
 
 Promise.all([enableMocks(), loadDevRoutes()]).then(([, devRoutes]) => {
+  // Roteador de dados (D-41): permite o `useBlocker` do editor (REQ-24).
+  // Uma rota '*' monta o App, que segue com as próprias `<Routes>`.
+  const router = createBrowserRouter([
+    { path: '*', element: <App devRoutes={devRoutes} /> },
+  ])
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
       <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <App devRoutes={devRoutes} />
-        </BrowserRouter>
+        <RouterProvider router={router} />
       </QueryClientProvider>
     </StrictMode>,
   )

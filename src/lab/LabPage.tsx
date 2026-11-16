@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { ApiError } from '../api/http'
 import {
   LabConfigInvalidError,
@@ -204,6 +205,9 @@ export default function LabPage() {
   return (
     <main>
       <h1>Laboratório</h1>
+      <nav aria-label="Ferramentas">
+        <Link to="/lab/editor">Editor de conteúdo</Link>
+      </nav>
       <LabConfigSection />
       <ComponentsSection />
       <CatalogSection />

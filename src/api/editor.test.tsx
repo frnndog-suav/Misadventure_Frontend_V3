@@ -183,6 +183,14 @@ describe('REQ-19: coleções', () => {
     expect(result.current.data).toEqual(fixtureCollectionFixture)
   })
 
+  it('REQ-19: useEditorCollection(null) não consulta (nenhuma coleção escolhida)', () => {
+    const { result } = renderHook(() => useEditorCollection(null), {
+      wrapper,
+    })
+    expect(result.current.fetchStatus).toBe('idle')
+    expect(result.current.isPending).toBe(true)
+  })
+
   it('REQ-19: coleção desconhecida → 404 COLLECTION_NOT_FOUND', async () => {
     const { result } = renderHook(() => useEditorCollection('nope'), {
       wrapper,

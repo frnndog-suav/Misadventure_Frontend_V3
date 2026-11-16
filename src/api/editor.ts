@@ -207,8 +207,9 @@ export function useEditorCollections(): UseQueryResult<
   })
 }
 
+/** `null`: nenhuma coleção escolhida, a consulta fica parada. */
 export function useEditorCollection(
-  collectionId: string,
+  collectionId: string | null,
 ): UseQueryResult<EditorCollection, Error> {
   return useQuery({
     queryKey: [...editorKey, 'collection', collectionId],
@@ -216,8 +217,9 @@ export function useEditorCollection(
       contentRequest(
         editorCollectionSchema,
         'GET',
-        collectionPath(collectionId),
+        collectionPath(collectionId ?? ''),
       ),
+    enabled: collectionId !== null,
     retry: false,
   })
 }
