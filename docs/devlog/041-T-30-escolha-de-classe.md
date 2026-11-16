@@ -22,6 +22,10 @@ Deixar o jogador escolher a classe no "Novo jogo", mostrar os modificadores base
 
 `npm run dev` com `VITE_USE_MOCKS=true`, `/novo`: rádios "Ladino (Destreza)" e "Guerreiro (Força, Resistência)"; "Os Teimosos"/"Lia" sem classe → "Escolha uma classe."; com "Guerreiro" → `/grupo/party-os-teimosos`.
 
+## Revisão
+
+spec-reviewer: aprovado, sem bloqueantes. Ajustes feitos: teste de que "Modificadores base" fica abaixo do grupo "Classe"; itens das listas localizados por papel (`listitem`). Pendente para a FEAT-30: espaços extras do termo no nome acessível do rádio no Chromium.
+
 ## Checks
 
 Guarda, `typecheck`, `lint`, `format:check`: ok. Unitários afetados: 307 passaram (14 arquivos). E2E `party`: 6 passaram. `test:build`: ok.

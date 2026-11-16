@@ -1,5 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import {
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
 import { setupServer } from 'msw/node'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
@@ -129,7 +135,14 @@ describe('REQ-29: escolha da classe', () => {
     )
     const modifiers = screen.getByRole('list', { name: 'Modificadores base' })
     expect(
-      Array.from(modifiers.querySelectorAll('li')).map((li) => li.textContent),
+      classGroup().compareDocumentPosition(modifiers) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(classGroup()).not.toContainElement(modifiers)
+    expect(
+      within(modifiers)
+        .getAllByRole('listitem')
+        .map((li) => li.textContent),
     ).toEqual([
       '6 Ataque',
       '5 Defesa',
@@ -142,7 +155,9 @@ describe('REQ-29: escolha da classe', () => {
     const deck = screen.getByRole('list', { name: 'Deck pré-pronto' })
     await waitFor(() =>
       expect(
-        Array.from(deck.querySelectorAll('li')).map((li) => li.textContent),
+        within(deck)
+          .getAllByRole('listitem')
+          .map((li) => li.textContent),
       ).toEqual(['30× Resistência', '30× Força']),
     )
   })
@@ -228,7 +243,9 @@ describe('REQ-29: escolha da classe', () => {
     )
     const problems = screen.getByRole('list', { name: 'Problemas' })
     expect(
-      Array.from(problems.querySelectorAll('li')).map((li) => li.textContent),
+      within(problems)
+        .getAllByRole('listitem')
+        .map((li) => li.textContent),
     ).toEqual(dimensionInvalidFixture.error.details.problems)
     expect(nameField()).toHaveValue('Os Teimosos')
     expect(characterField()).toHaveValue('Lia')
