@@ -90,9 +90,15 @@ export function CollectionsSection() {
   const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [message, setMessage] = useState('')
 
-  const dirty =
+  const [cardDirty, setCardDirty] = useState(false)
+
+  const collectionDirty =
     mode !== null && fieldKeys.some((key) => values[key] !== initial[key])
-  const { guard, dialog } = useUnsavedGuard(dirty, 'desta coleção')
+  // Uma guarda só para coleção e carta: o roteador aceita um bloqueio (D-43).
+  const { guard, dialog } = useUnsavedGuard(
+    collectionDirty || cardDirty,
+    collectionDirty ? 'desta coleção' : 'desta carta',
+  )
 
   const submit = mode === 'edit' ? update : create
   const fieldErrors =
@@ -275,7 +281,12 @@ export function CollectionsSection() {
         {dialog}
       </section>
       {selectedId !== null && selected.isSuccess && (
-        <CardsSection key={selectedId} collectionId={selectedId} />
+        <CardsSection
+          key={selectedId}
+          collectionId={selectedId}
+          guard={guard}
+          onDirtyChange={setCardDirty}
+        />
       )}
     </>
   )

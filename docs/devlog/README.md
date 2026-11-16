@@ -61,4 +61,5 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 029 | FUND | [FEAT-30: acabamento visual](029-FUND-feat-30-acabamento-visual.md) | concluída |
 | 030 | T-20 | [Cliente do editor](030-T-20-cliente-do-editor.md) | concluída |
 | 031 | T-21 | [Rota do editor e coleções](031-T-21-editor-colecoes.md) | concluída |
-| 032 | T-22 | [Lista de cartas](032-T-22-lista-de-cartas.md) | aguardando revisão |
+| 032 | T-22 | [Lista de cartas](032-T-22-lista-de-cartas.md) | concluída |
+| 033 | T-23 | [Formulário de carta: base, zona e atributo](033-T-23-formulario-de-carta.md) | aguardando revisão |

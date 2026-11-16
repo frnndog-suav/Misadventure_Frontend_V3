@@ -8,12 +8,7 @@ import {
   type CollectionSummary,
 } from '../api/catalog'
 import { ApiError } from '../api/http'
-import { AttributeCard } from '../ui/cards/AttributeCard'
-import { CombatEventCard } from '../ui/cards/CombatEventCard'
-import { EquipmentCard } from '../ui/cards/EquipmentCard'
-import { ItemCard } from '../ui/cards/ItemCard'
-import { RandomEventCard } from '../ui/cards/RandomEventCard'
-import { ZoneCard } from '../ui/cards/ZoneCard'
+import { FullCard } from '../ui/cards/FullCard'
 import { cardTypeLabels } from '../ui/labels'
 
 const unavailable = 'Servidor indisponível. Tente novamente.'
@@ -35,28 +30,6 @@ function cardName(card: Card): string {
     case 'equipment':
     case 'item':
       return card.name
-    default: {
-      const _exhaustive: never = card
-      return _exhaustive
-    }
-  }
-}
-
-/** Carta completa no componente do seu `type` (REQ-09 a REQ-13). */
-function FullCard({ card }: { card: Card }) {
-  switch (card.type) {
-    case 'zone':
-      return <ZoneCard card={card} />
-    case 'attribute':
-      return <AttributeCard card={card} />
-    case 'equipment':
-      return <EquipmentCard card={card} />
-    case 'item':
-      return <ItemCard card={card} />
-    case 'randomEvent':
-      return <RandomEventCard card={card} />
-    case 'combatEvent':
-      return <CombatEventCard card={card} />
     default: {
       const _exhaustive: never = card
       return _exhaustive
