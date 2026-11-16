@@ -12,6 +12,7 @@ import {
 } from '../../api/editor'
 import { ApiError } from '../../api/http'
 import { cardTypeLabels, rarityLabels } from '../../ui/labels'
+import { CardsSection } from './CardsSection'
 import { ConfirmDialog } from './ConfirmDialog'
 import { useUnsavedGuard } from './useUnsavedGuard'
 
@@ -167,110 +168,115 @@ export function CollectionsSection() {
   }
 
   return (
-    <section aria-labelledby="editor-collections-title">
-      <h2 id="editor-collections-title">Coleções</h2>
-      <p role="status">{status}</p>
-      <button
-        type="button"
-        onClick={() => guard(() => openForm('new', emptyValues))}
-      >
-        Nova coleção
-      </button>
-      {collections.isSuccess &&
-        (collections.data.length === 0 ? (
-          <p>Nenhuma coleção ainda.</p>
-        ) : (
-          <ul aria-label="Coleções">
-            {collections.data.map((collection) => (
-              <li key={collection.id}>
-                <button
-                  type="button"
-                  aria-pressed={collection.id === selectedId}
-                  onClick={() => choose(collection.id)}
-                >
-                  <strong>{collection.name}</strong>{' '}
-                  <code>{collection.id}</code>{' '}
-                  <span>
-                    {collection.publishedCount} publicadas ·{' '}
-                    {collection.draftCount} rascunhos
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        ))}
-      {selected.isSuccess && selectedId !== null && (
-        <CollectionPanel
-          collection={selected.data}
-          onEdit={() =>
-            guard(() =>
-              openForm('edit', {
-                id: selected.data.id,
-                name: selected.data.name,
-                description: selected.data.description,
-              }),
-            )
-          }
-          onDelete={() =>
-            guard(() => {
-              setMode(null)
-              setMessage('')
-              setConfirmingDelete(true)
-            })
-          }
-        />
-      )}
-      {mode !== null && (
-        <form
-          noValidate
-          aria-label={mode === 'new' ? 'Nova coleção' : 'Editar coleção'}
-          onSubmit={onSubmit}
+    <>
+      <section aria-labelledby="editor-collections-title">
+        <h2 id="editor-collections-title">Coleções</h2>
+        <p role="status">{status}</p>
+        <button
+          type="button"
+          onClick={() => guard(() => openForm('new', emptyValues))}
         >
-          {fieldKeys.map((key) => {
-            const errors = fieldErrors.filter((f) => f.path === key)
-            const inputId = `collection-${key}`
-            const errorId = `${inputId}-error`
-            const props = {
-              id: inputId,
-              value: values[key],
-              readOnly: key === 'id' && mode === 'edit',
-              'aria-describedby': errors.length > 0 ? errorId : undefined,
-              onChange: (event: { target: { value: string } }) =>
-                setValues({ ...values, [key]: event.target.value }),
+          Nova coleção
+        </button>
+        {collections.isSuccess &&
+          (collections.data.length === 0 ? (
+            <p>Nenhuma coleção ainda.</p>
+          ) : (
+            <ul aria-label="Coleções">
+              {collections.data.map((collection) => (
+                <li key={collection.id}>
+                  <button
+                    type="button"
+                    aria-pressed={collection.id === selectedId}
+                    onClick={() => choose(collection.id)}
+                  >
+                    <strong>{collection.name}</strong>{' '}
+                    <code>{collection.id}</code>{' '}
+                    <span>
+                      {collection.publishedCount} publicadas ·{' '}
+                      {collection.draftCount} rascunhos
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ))}
+        {selected.isSuccess && selectedId !== null && (
+          <CollectionPanel
+            collection={selected.data}
+            onEdit={() =>
+              guard(() =>
+                openForm('edit', {
+                  id: selected.data.id,
+                  name: selected.data.name,
+                  description: selected.data.description,
+                }),
+              )
             }
-            return (
-              <div key={key}>
-                <label htmlFor={inputId}>{fieldLabels[key]}</label>
-                {key === 'description' ? (
-                  <textarea {...props} />
-                ) : (
-                  <input type="text" {...props} />
-                )}
-                {errors.length > 0 && (
-                  <p id={errorId}>{errors.map((f) => f.message).join(' ')}</p>
-                )}
-              </div>
-            )
-          })}
-          <button type="submit" disabled={submit.isPending}>
-            {mode === 'new' ? 'Criar coleção' : 'Salvar coleção'}
-          </button>
-          <button type="button" onClick={() => setMode(null)}>
-            Cancelar
-          </button>
-        </form>
+            onDelete={() =>
+              guard(() => {
+                setMode(null)
+                setMessage('')
+                setConfirmingDelete(true)
+              })
+            }
+          />
+        )}
+        {mode !== null && (
+          <form
+            noValidate
+            aria-label={mode === 'new' ? 'Nova coleção' : 'Editar coleção'}
+            onSubmit={onSubmit}
+          >
+            {fieldKeys.map((key) => {
+              const errors = fieldErrors.filter((f) => f.path === key)
+              const inputId = `collection-${key}`
+              const errorId = `${inputId}-error`
+              const props = {
+                id: inputId,
+                value: values[key],
+                readOnly: key === 'id' && mode === 'edit',
+                'aria-describedby': errors.length > 0 ? errorId : undefined,
+                onChange: (event: { target: { value: string } }) =>
+                  setValues({ ...values, [key]: event.target.value }),
+              }
+              return (
+                <div key={key}>
+                  <label htmlFor={inputId}>{fieldLabels[key]}</label>
+                  {key === 'description' ? (
+                    <textarea {...props} />
+                  ) : (
+                    <input type="text" {...props} />
+                  )}
+                  {errors.length > 0 && (
+                    <p id={errorId}>{errors.map((f) => f.message).join(' ')}</p>
+                  )}
+                </div>
+              )
+            })}
+            <button type="submit" disabled={submit.isPending}>
+              {mode === 'new' ? 'Criar coleção' : 'Salvar coleção'}
+            </button>
+            <button type="button" onClick={() => setMode(null)}>
+              Cancelar
+            </button>
+          </form>
+        )}
+        {confirmingDelete && selected.isSuccess && (
+          <ConfirmDialog
+            title={`Excluir “${selected.data.name}”?`}
+            text="A coleção e todas as cartas dela serão apagadas. Não dá para desfazer."
+            confirmLabel="Excluir"
+            cancelLabel="Cancelar"
+            onConfirm={confirmDelete}
+            onCancel={() => setConfirmingDelete(false)}
+          />
+        )}
+        {dialog}
+      </section>
+      {selectedId !== null && selected.isSuccess && (
+        <CardsSection key={selectedId} collectionId={selectedId} />
       )}
-      {confirmingDelete && selected.isSuccess && (
-        <ConfirmDialog
-          title={`Excluir “${selected.data.name}”?`}
-          text="A coleção e todas as cartas dela serão apagadas. Não dá para desfazer."
-          confirmLabel="Excluir"
-          cancelLabel="Cancelar"
-          onConfirm={confirmDelete}
-          onCancel={() => setConfirmingDelete(false)}
-        />
-      )}
-      {dialog}
-    </section>
+    </>
   )
 }

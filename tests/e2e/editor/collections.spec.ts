@@ -35,7 +35,7 @@ test('REQ-19: escolhe, cria e exclui coleção (MSW)', async ({ page }) => {
   )
 
   await page.getByLabel('Identificador').fill('bosque')
-  await page.getByLabel('Nome').fill('Bosque Sombrio')
+  await page.getByLabel('Nome', { exact: true }).fill('Bosque Sombrio')
   await page.getByRole('button', { name: 'Criar coleção' }).click()
   await expect(status).toHaveText('Coleção criada.')
   await expect(
@@ -55,7 +55,7 @@ test('REQ-24: alterações não salvas na coleção pedem confirmação ao sair'
   await page.getByRole('link', { name: 'Editor de conteúdo' }).click()
   await page.getByRole('button', { name: /Coleção de Teste/ }).click()
   await page.getByRole('button', { name: 'Editar coleção' }).click()
-  await page.getByLabel('Nome').fill('Mudou')
+  await page.getByLabel('Nome', { exact: true }).fill('Mudou')
 
   await page.goBack()
   const dialog = page.getByRole('dialog', { name: 'Descartar alterações?' })

@@ -19,7 +19,9 @@ import {
   it,
   vi,
 } from 'vitest'
+import { fixtureCardSummariesFixture } from '../../mocks/editorFixtures'
 import { internalErrorFixture } from '../../mocks/fixtures'
+import { cardTypeLabels } from '../../ui/labels'
 import { handlers } from '../../mocks/handlers'
 import { EditorPage } from './EditorPage'
 
@@ -523,5 +525,179 @@ describe('REQ-24: alterações não salvas na coleção', () => {
     const event = new Event('beforeunload', { cancelable: true })
     window.dispatchEvent(event)
     expect(event.defaultPrevented).toBe(false)
+  })
+})
+
+describe('REQ-20: cartas da coleção', () => {
+  const cardsUrl = '*/lab/content/collections/:collectionId/cards'
+  const cards = () => screen.getByRole('region', { name: 'Cartas' })
+  const cardsStatus = () => within(cards()).getByRole('status')
+  const statusLabel = { draft: 'Rascunho', published: 'Publicada' } as const
+
+  /** Guarda a query string de cada pedido da lista e responde a fixture. */
+  function recordQueries(): string[] {
+    const queries: string[] = []
+    server.use(
+      http.get(cardsUrl, ({ request }) => {
+        queries.push(new URL(request.url).search)
+        return HttpResponse.json(fixtureCardSummariesFixture)
+      }),
+    )
+    return queries
+  }
+
+  it('REQ-20: sem coleção escolhida não há seção "Cartas"', async () => {
+    renderEditor()
+    await fixtureButton()
+    expect(
+      screen.queryByRole('region', { name: 'Cartas' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('REQ-20: filtros, "Carregando cartas…" e cada carta na ordem recebida', async () => {
+    renderEditor()
+    await chooseFixture()
+    expect(cardsStatus()).toHaveTextContent('Carregando cartas…')
+    const typeGroup = within(cards()).getByRole('radiogroup', {
+      name: 'Tipo de carta',
+    })
+    expect(
+      within(typeGroup)
+        .getAllByRole('radio')
+        .map((r) => r.closest('label')?.textContent),
+    ).toEqual([
+      'Todos',
+      'Zona',
+      'Atributo',
+      'Equipamento',
+      'Item',
+      'Evento aleatório',
+      'Evento de combate',
+    ])
+    const statusGroup = within(cards()).getByRole('radiogroup', {
+      name: 'Situação',
+    })
+    expect(
+      within(statusGroup)
+        .getAllByRole('radio')
+        .map((r) => r.closest('label')?.textContent),
+    ).toEqual(['Todas', 'Rascunho', 'Publicada'])
+    expect(
+      within(cards()).getByRole('searchbox', { name: 'Buscar por nome' }),
+    ).toBeInTheDocument()
+
+    const list = await within(cards()).findByRole('list', { name: 'Cartas' })
+    expect(
+      within(list)
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual(
+      fixtureCardSummariesFixture.map(
+        (s) =>
+          `${s.name} · ${cardTypeLabels[s.type]} · ${statusLabel[s.status]}`,
+      ),
+    )
+    expect(cardsStatus()).toHaveTextContent('')
+  })
+
+  it('REQ-20: cada filtro consulta o backend com o valor escolhido', async () => {
+    const queries = recordQueries()
+    renderEditor()
+    await chooseFixture()
+    await waitFor(() => expect(queries).toEqual(['']))
+    fireEvent.click(within(cards()).getByRole('radio', { name: 'Atributo' }))
+    await waitFor(() => expect(queries.at(-1)).toBe('?type=attribute'))
+    fireEvent.click(within(cards()).getByRole('radio', { name: 'Rascunho' }))
+    await waitFor(() =>
+      expect(queries.at(-1)).toBe('?type=attribute&status=draft'),
+    )
+    fireEvent.click(within(cards()).getByRole('radio', { name: 'Todos' }))
+    fireEvent.click(within(cards()).getByRole('radio', { name: 'Todas' }))
+    expect(within(cards()).getByRole('radio', { name: 'Todas' })).toBeChecked()
+    // a combinação sem filtros já está no cache; nenhum pedido novo é exigido
+    expect(queries[0]).toBe('')
+  })
+
+  it('REQ-20: a busca consulta ao parar de digitar', async () => {
+    const queries = recordQueries()
+    renderEditor()
+    await chooseFixture()
+    await waitFor(() => expect(queries).toEqual(['']))
+    fireEvent.change(
+      within(cards()).getByRole('searchbox', { name: 'Buscar por nome' }),
+      { target: { value: 'bru' } },
+    )
+    expect(queries).toEqual([''])
+    await waitFor(() => expect(queries.at(-1)).toBe('?q=bru'))
+  })
+
+  it('REQ-20: Enter na busca consulta na hora', async () => {
+    const queries = recordQueries()
+    renderEditor()
+    await chooseFixture()
+    await waitFor(() => expect(queries).toEqual(['']))
+    const search = within(cards()).getByRole('searchbox', {
+      name: 'Buscar por nome',
+    })
+    fireEvent.change(search, { target: { value: 'for' } })
+    fireEvent.submit(search)
+    await waitFor(() => expect(queries.at(-1)).toBe('?q=for'))
+  })
+
+  it('REQ-20: lista vazia mostra "Nenhuma carta neste filtro."', async () => {
+    server.use(http.get(cardsUrl, () => HttpResponse.json([])))
+    renderEditor()
+    await chooseFixture()
+    expect(
+      await within(cards()).findByText('Nenhuma carta neste filtro.'),
+    ).toBeInTheDocument()
+  })
+
+  it('REQ-20: erro §1.4 mostra a message', async () => {
+    server.use(
+      http.get(cardsUrl, () =>
+        HttpResponse.json(internalErrorFixture, { status: 500 }),
+      ),
+    )
+    renderEditor()
+    await chooseFixture()
+    await waitFor(() =>
+      expect(cardsStatus()).toHaveTextContent(
+        internalErrorFixture.error.message,
+      ),
+    )
+  })
+
+  it('REQ-20: escolher uma carta a marca como escolhida', async () => {
+    renderEditor()
+    await chooseFixture()
+    const list = await within(cards()).findByRole('list', { name: 'Cartas' })
+    const [first, second] = within(list).getAllByRole('button')
+    expect(first).toHaveAttribute('aria-pressed', 'false')
+    fireEvent.click(first)
+    expect(first).toHaveAttribute('aria-pressed', 'true')
+    expect(second).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('REQ-20: "Nova carta" oferece os 6 tipos; escolher um fecha a escolha e desmarca a carta', async () => {
+    renderEditor()
+    await chooseFixture()
+    const list = await within(cards()).findByRole('list', { name: 'Cartas' })
+    const first = within(list).getAllByRole('button')[0]
+    fireEvent.click(first)
+    fireEvent.click(within(cards()).getByRole('button', { name: 'Nova carta' }))
+    const picker = within(cards()).getByRole('group', {
+      name: 'Tipo da nova carta',
+    })
+    expect(
+      within(picker)
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual(Object.values(cardTypeLabels))
+    fireEvent.click(within(picker).getByRole('button', { name: 'Zona' }))
+    expect(
+      within(cards()).queryByRole('group', { name: 'Tipo da nova carta' }),
+    ).not.toBeInTheDocument()
+    expect(first).toHaveAttribute('aria-pressed', 'false')
   })
 })

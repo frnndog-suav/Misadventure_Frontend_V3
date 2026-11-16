@@ -60,4 +60,5 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 028 | RETORNO | [FEAT-05 validada contra o backend real](028-RETORNO-feat-05-validada.md) | concluída |
 | 029 | FUND | [FEAT-30: acabamento visual](029-FUND-feat-30-acabamento-visual.md) | concluída |
 | 030 | T-20 | [Cliente do editor](030-T-20-cliente-do-editor.md) | concluída |
-| 031 | T-21 | [Rota do editor e coleções](031-T-21-editor-colecoes.md) | aguardando revisão |
+| 031 | T-21 | [Rota do editor e coleções](031-T-21-editor-colecoes.md) | concluída |
+| 032 | T-22 | [Lista de cartas](032-T-22-lista-de-cartas.md) | aguardando revisão |
