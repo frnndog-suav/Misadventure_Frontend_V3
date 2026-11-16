@@ -1,6 +1,6 @@
 # Misadventures — Roadmap de desenvolvimento
 
-> **Versão:** 0.24 · **Data:** 2026-11-15
+> **Versão:** 0.25 · **Data:** 2026-11-16
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend; o autor copia o arquivo inteiro quando ele muda. Base: README Parte III (III.2 e III.4). As regras estão em [`README.md`](README.md); o que trafega entre os lados, em [`CONTRATO.md`](CONTRATO.md).
 
@@ -56,8 +56,8 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 |---|---|---|---|---|
 | FEAT-04 | Catálogo de cartas e coleções: modelo das cartas, conteúdo de teste, exibição de cada tipo de carta | 3.4, 4.3, 5, 14.1, 18.1, 27 | validado | validado |
 | FEAT-05 | Campanha solo: criar grupo de 1, saves, continuar, salvamento automático, encerrar sessão, abandonar a partida | 28.1 | validado | validado |
-| FEAT-31 | Editor de conteúdo no laboratório (só dev): coleções e cartas dos 6 tipos, rascunho e publicação, validar coleção como dimensão, exportar e importar; o BE grava em arquivos JSON. Cresce com cada FEAT que trouxer conteúdo novo | 27, II.6, 3.5, Apêndice B (T1) | a fazer | a fazer |
-| FEAT-06 | Preparação da partida: classe e deck pré-pronto, valores iniciais, montagem do mapa, ordem e cidade inicial | 10.1, 3.5, 4.4, 8, 9 | a fazer | aguardando outro lado |
+| FEAT-31 | Editor de conteúdo no laboratório (só dev): coleções e cartas dos 6 tipos, rascunho e publicação, validar coleção como dimensão, exportar e importar; o BE grava em arquivos JSON. Cresce com cada FEAT que trouxer conteúdo novo | 27, II.6, 3.5, Apêndice B (T1) | em andamento | a fazer |
+| FEAT-06 | Preparação da partida: classe e deck pré-pronto, valores iniciais, montagem do mapa, ordem e cidade inicial | 10.1, 3.5, 4.4, 8, 9 | a fazer | a fazer |
 | FEAT-07 | Mapa e Movimentar | 3.5, 12.2 | a fazer | a fazer |
 | FEAT-08 | A vez: pontos de ação, ações de zona disponíveis, encerrar a vez, rodadas | 11.1, 11.2, 12 | a fazer | a fazer |
 | FEAT-09 | Deck de atributos: mão, Recuperar, Ajustar deck, build e trava | 4, 8.2, 12.5 | a fazer | a fazer |
@@ -136,3 +136,4 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | 0.22 | 2026-11-15 | FEAT-30 (acabamento visual da interface, só FE) criada pelo autor: vem depois de todas as FEATs funcionais e antes da FEAT-29. |
 | 0.23 | 2026-11-15 | FEAT-31 (editor de conteúdo no laboratório, só dev) criada pelo autor, logo depois da FEAT-05; planejada no FE (SPEC-FRONTEND v0.29, T-20 a T-27); contrato a propor. |
 | 0.24 | 2026-11-15 | FEAT-06: planejada no BE (SPEC-BACKEND v0.20, T-14 a T-18); contrato proposto pelo BE (CONTRATO v0.19), que também altera tipos e cenários das FEAT-03, 04, 05 e 31 e põe no editor as classes e a Carta de Dimensão (decisão do autor); BE `aguardando outro lado`. Nota da FEAT-31: a FEAT-06 acrescenta classes, Carta de Dimensão e forma das setas; a FEAT-19 só acrescenta os campos de conclusão. Mescla com a v0.23 do FE, editada em paralelo. |
+| 0.25 | 2026-11-16 | Status corrigidos (aviso do FE): FEAT-06 BE `a fazer` (contrato `acordado` na CONTRATO v0.21; tarefas depois das da FEAT-31, SPEC-BACKEND D-45); FEAT-31 FE `em andamento` (T-20 a T-23 feitas). FEAT-31 BE planejada (SPEC-BACKEND v0.21, T-19 a T-21), `a fazer`. |
