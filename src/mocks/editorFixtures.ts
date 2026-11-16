@@ -25,6 +25,7 @@ const zeroCardCounts = {
   item: 0,
   randomEvent: 0,
   combatEvent: 0,
+  dimension: 0,
 }
 
 const zeroRarityCounts = {
@@ -41,7 +42,7 @@ export const editorCollectionsFixture: EditorCollectionSummary[] = [
     id: 'fixture',
     name: 'Coleção de Teste',
     description: '',
-    publishedCount: 6,
+    publishedCount: 12,
     draftCount: 0,
   },
 ]
@@ -49,15 +50,18 @@ export const editorCollectionsFixture: EditorCollectionSummary[] = [
 /** GET /lab/content/collections/fixture. */
 export const fixtureCollectionFixture: EditorCollection = {
   ...editorCollectionsFixture[0],
+  // Contagens da FEAT-06 (CONTRATO v0.21); raridades das 5 cartas que têm
+  // raridade (3 atributos e o item comuns, o equipamento raro).
   cardCounts: {
-    zone: 1,
-    attribute: 1,
+    zone: 4,
+    attribute: 3,
     equipment: 1,
     item: 1,
     randomEvent: 1,
     combatEvent: 1,
+    dimension: 1,
   },
-  rarityCounts: { ...zeroRarityCounts, common: 2, rare: 1 },
+  rarityCounts: { ...zeroRarityCounts, common: 4, rare: 1 },
   tags: ['duas mãos', 'espada', 'poção'],
 }
 
@@ -204,7 +208,7 @@ export const forcaBrutaCopyFixture: EditorCard = {
   card: forca('forca-bruta-copia', 'Força Bruta'),
 }
 
-/** As 6 cartas da `fixture`, publicadas. */
+/** As 12 cartas da `fixture`, publicadas. */
 export const fixtureEditorCardsFixture: EditorCard[] = fixtureCardsFixture.map(
   (card) => ({ status: 'published', card }),
 )

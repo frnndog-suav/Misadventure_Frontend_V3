@@ -93,7 +93,7 @@ describe('REQ-19: lista de coleções', () => {
     const button = await fixtureButton()
     expect(button).toHaveTextContent('Coleção de Teste')
     expect(button).toHaveTextContent('fixture')
-    expect(button).toHaveTextContent('6 publicadas · 0 rascunhos')
+    expect(button).toHaveTextContent('12 publicadas · 0 rascunhos')
     expect(button).toHaveAttribute('aria-pressed', 'false')
     expect(status()).toHaveTextContent('')
   })
@@ -133,10 +133,10 @@ describe('REQ-19: lista de coleções', () => {
     fireEvent.click(button)
     expect(button).toHaveAttribute('aria-pressed', 'true')
     const byType = await screen.findByRole('list', { name: 'Por tipo' })
-    expect(within(byType).getByText('Zona: 1')).toBeInTheDocument()
+    expect(within(byType).getByText('Zona: 4')).toBeInTheDocument()
     expect(within(byType).getByText('Evento de combate: 1')).toBeInTheDocument()
     const byRarity = screen.getByRole('list', { name: 'Por raridade' })
-    expect(within(byRarity).getByText('Comum: 2')).toBeInTheDocument()
+    expect(within(byRarity).getByText('Comum: 4')).toBeInTheDocument()
     expect(within(byRarity).getByText('Rara: 1')).toBeInTheDocument()
     expect(within(byRarity).getByText('Lendária: 0')).toBeInTheDocument()
   })
@@ -194,6 +194,7 @@ describe('REQ-19: criar coleção', () => {
               item: 0,
               randomEvent: 0,
               combatEvent: 0,
+              dimension: 0,
             },
             rarityCounts: {
               common: 0,
@@ -283,18 +284,19 @@ describe('REQ-19: editar coleção', () => {
           id: 'fixture',
           name: 'Coleção Nova',
           description: '',
-          publishedCount: 6,
+          publishedCount: 12,
           draftCount: 0,
           cardCounts: {
-            zone: 1,
-            attribute: 1,
+            zone: 4,
+            attribute: 3,
             equipment: 1,
             item: 1,
             randomEvent: 1,
             combatEvent: 1,
+            dimension: 1,
           },
           rarityCounts: {
-            common: 2,
+            common: 4,
             uncommon: 0,
             rare: 1,
             epic: 0,
@@ -573,6 +575,7 @@ describe('REQ-20: cartas da coleção', () => {
       'Item',
       'Evento aleatório',
       'Evento de combate',
+      'Dimensão',
     ])
     const statusGroup = within(cards()).getByRole('radiogroup', {
       name: 'Situação',
@@ -693,7 +696,10 @@ describe('REQ-20: cartas da coleção', () => {
       within(picker)
         .getAllByRole('button')
         .map((b) => b.textContent),
-    ).toEqual(Object.values(cardTypeLabels))
+    ).toEqual(
+      // A Dimensão entra em "Nova carta" com o formulário dela (T-33).
+      Object.values(cardTypeLabels).filter((label) => label !== 'Dimensão'),
+    )
     fireEvent.click(within(picker).getByRole('button', { name: 'Zona' }))
     expect(
       within(cards()).queryByRole('group', { name: 'Tipo da nova carta' }),

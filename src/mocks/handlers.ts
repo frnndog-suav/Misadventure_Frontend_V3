@@ -1,12 +1,14 @@
 import { http, HttpResponse, type RequestHandler } from 'msw'
 import { cardTypeSchema } from '../api/catalog'
 import {
+  catalogCardNotFoundFixture,
   catalogQueryInvalidFixture,
   collectionNotFoundFixture,
   collectionsFixture,
   fixtureCardsByTypeFixture,
   fixtureCardsFixture,
 } from './catalogFixtures'
+import { classesFixture } from './classFixtures'
 import type { EditorCard, EditorCollection } from '../api/editor'
 import {
   bosqueCardsDraftFixture,
@@ -48,6 +50,7 @@ import {
   partyInSessionFixture,
   partyInvalidFieldsFixture,
   partyNotFoundFixture,
+  partyUnknownClassFixture,
 } from './partyFixtures'
 
 /**
@@ -92,8 +95,27 @@ async function createPartyScenario(request: Request): Promise<Response> {
     if (body.name === 'Solo' && body.characterName === 'Lia') {
       return HttpResponse.json(partyBelowMinPlayersFixture, { status: 400 })
     }
+    // Cenário da FEAT-06 com classe não publicada. O de corpo sem classe
+    // (`required`) entra na T-30, junto com a escolha de classe: antes dela
+    // a tela "Novo jogo" ainda não envia `playerClass`.
+    if (
+      body.name === 'Os Teimosos' &&
+      body.characterName === 'Lia' &&
+      'playerClass' in body &&
+      body.playerClass === 'mage'
+    ) {
+      return HttpResponse.json(partyUnknownClassFixture, { status: 400 })
+    }
   }
   return HttpResponse.json(partyCreatedFixture, { status: 201 })
+}
+
+/** GET /catalog/cards/:cardId: as cartas da `fixture`; qualquer outra é 404. */
+function catalogCardScenario(cardId: string): Response {
+  const card = fixtureCardsFixture.find((entry) => entry.id === cardId)
+  return card === undefined
+    ? HttpResponse.json(catalogCardNotFoundFixture, { status: 404 })
+    : HttpResponse.json(card)
 }
 
 /** Rotas de um grupo: o grupo de exemplo responde, qualquer outro é 404. */
@@ -337,6 +359,10 @@ export const handlers: RequestHandler[] = [
       new URL(request.url).searchParams.get('type'),
     ),
   ),
+  http.get('*/catalog/cards/:cardId', ({ params }) =>
+    catalogCardScenario(String(params.cardId)),
+  ),
+  http.get('*/catalog/classes', () => HttpResponse.json(classesFixture)),
   http.get('*/parties', () => HttpResponse.json(partiesFixture)),
   http.post('*/parties', ({ request }) => createPartyScenario(request)),
   http.post('*/parties/:partyId/session', ({ params }) =>

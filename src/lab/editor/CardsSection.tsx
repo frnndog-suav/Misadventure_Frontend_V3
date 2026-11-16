@@ -10,7 +10,12 @@ import {
 import { ApiError } from '../../api/http'
 import { cardTypeLabels } from '../../ui/labels'
 import { CardForm } from './CardForm'
-import { emptyForm, formFromCard } from './cardFormValues'
+import {
+  emptyForm,
+  formFromCard,
+  hasForm,
+  type FormCardType,
+} from './cardFormValues'
 
 const unavailable = 'Servidor indisponível. Tente novamente.'
 
@@ -23,11 +28,15 @@ const statusLabels = {
 } satisfies Record<ContentStatus, string>
 
 const cardTypes = Object.keys(cardTypeLabels) as CardType[]
+/** "Nova carta": a Dimensão entra com o formulário dela (T-33). */
+const newCardTypes = cardTypes.filter(
+  (type): type is FormCardType => type !== 'dimension',
+)
 const statuses = Object.keys(statusLabels) as ContentStatus[]
 
 /** Carta escolhida ou tipo da carta nova (D-42). */
 type Selection =
-  null | { kind: 'card'; cardId: string } | { kind: 'new'; type: CardType }
+  null | { kind: 'card'; cardId: string } | { kind: 'new'; type: FormCardType }
 
 /** O que o formulário abre: a escolha ou a cópia devolvida pelo backend (REQ-23). */
 type Opened = Selection | { kind: 'copy'; copy: EditorCard }
@@ -57,6 +66,7 @@ function SavedCardForm({ cardId, ...props }: FormProps & { cardId: string }) {
       </section>
     )
   }
+  if (!hasForm(data.card)) return null
   const values = formFromCard(data.card)
   return (
     <CardForm
@@ -90,6 +100,7 @@ function OpenedForm({
         />
       )
     case 'copy':
+      if (!hasForm(opened.copy.card)) return null
       return (
         <CardForm
           {...props}
@@ -240,7 +251,7 @@ export function CardsSection({
       </button>
       {picking && (
         <div role="group" aria-label="Tipo da nova carta">
-          {cardTypes.map((value) => (
+          {newCardTypes.map((value) => (
             <button
               key={value}
               type="button"

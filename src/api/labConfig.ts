@@ -25,6 +25,18 @@ export const gameConfigValuesSchema = z.object({
   baseHealth: gameConfigInt,
   initialGold: gameConfigInt,
   initialHandSize: gameConfigInt,
+  // FEAT-06
+  minDeckSize: gameConfigInt,
+  lockOneEssential: gameConfigInt,
+  lockTwoEssentials: gameConfigInt,
+  mapMaxAttempts: gameConfigInt,
+  defaultAttack: gameConfigInt,
+  defaultDefense: gameConfigInt,
+  defaultAccuracy: gameConfigInt,
+  defaultEvasion: gameConfigInt,
+  defaultCelerity: gameConfigInt,
+  defaultPiercing: gameConfigInt,
+  defaultReflection: gameConfigInt,
 })
 
 export type GameConfigValues = z.infer<typeof gameConfigValuesSchema>
@@ -44,6 +56,17 @@ export const labConfigSchema = z.object({
     baseHealth: limitSchema,
     initialGold: limitSchema,
     initialHandSize: limitSchema,
+    minDeckSize: limitSchema,
+    lockOneEssential: limitSchema,
+    lockTwoEssentials: limitSchema,
+    mapMaxAttempts: limitSchema,
+    defaultAttack: limitSchema,
+    defaultDefense: limitSchema,
+    defaultAccuracy: limitSchema,
+    defaultEvasion: limitSchema,
+    defaultCelerity: limitSchema,
+    defaultPiercing: limitSchema,
+    defaultReflection: limitSchema,
   }) satisfies z.ZodType<Record<GameConfigKey, { min: number; max: number }>>,
 })
 

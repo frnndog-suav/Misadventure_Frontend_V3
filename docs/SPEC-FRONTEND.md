@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.37 · **Data:** 2026-11-16
+> **Versão da spec:** 0.39 · **Data:** 2026-11-16
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -86,6 +86,9 @@ Funções e hooks que as telas usam para ler o estado e enviar intenções. Regr
 | `useStartSession(partyId)` | mutação `POST /parties/:partyId/session`: `Party` validado | T-16 |
 | `useEndSession(partyId)` | mutação `POST /parties/:partyId/session/end`: `Party` validado; sucesso invalida `useParties` | T-16 |
 | `useAbandonParty()` | mutação `DELETE /parties/:partyId` (`204`); sucesso ou erro invalida `useParties` | T-16 |
+| `useClasses()` | consulta `GET /catalog/classes`: `ClassDefinition[]` validado (CONTRATO §3 FEAT-06) | T-28 |
+| `useCatalogCard(cardId)` | consulta `GET /catalog/cards/:cardId`: `Card` validado; cache por id (D-48) | T-28 |
+| Classes no editor, em `src/api/editor.ts` | `useEditorClasses(collectionId)`, `useEditorClass(playerClass)`, `useCreateClass`, `useSaveClass`, `usePublishClass`, `useDeleteClass`, sob a chave `['editor']` (D-40) | T-32 |
 | Editor de conteúdo (FEAT-31), em `src/api/editor.ts` | consultas `useEditorCollections()`, `useEditorCollection(collectionId | null)` (`null`: consulta parada, T-21), `useEditorCards(collectionId, { type?, status?, q? })`, `useEditorCard(cardId)`; mutações `useCreateCollection`, `useUpdateCollection` (`{ collectionId, patch }`), `useDeleteCollection`, `useValidateDimension`, `useExportCollection`, `useImportCollection` (`{ content, replace }`), `useCreateCard` (`{ collectionId, input }`), `useSaveCard` (`{ cardId, input }`), `usePublishCard`, `useDuplicateCard`, `useDeleteCard`. `CONTENT_INVALID` e `CONTENT_ID_TAKEN` com `details` válido viram `ContentInvalidError` (com `code` e `fields`) (D-40) | T-20 |
 
 Base comum (T-08): `requestJson(method, path, body?)` em `src/api/http.ts` faz todo pedido; `ApiError` traz `code`, `message` e `details` (ainda `unknown`); `LAB_CONFIG_INVALID` com `details` válido vira `LabConfigInvalidError` (subclasse, com `fields`); com `details` fora do contrato vira erro genérico (falha de validação, REQ-06).
@@ -95,9 +98,9 @@ Base comum (T-08): `requestJson(method, path, body?)` em `src/api/http.ts` faz t
 | Área | Rota | Telas | FEAT |
 |---|---|---|---|
 | app | `/` | rota inicial: menu da campanha e "Seus jogos" com o abandono (REQ-14, REQ-17) + área de status da ponte com o servidor (REQ-01); tema e tipografia da base visual (REQ-02) | FEAT-01, FEAT-02 |
-| lab | `/lab` (só dev, D-07) | laboratório: configuração ajustável do jogo e vitrine de componentes (REQ-05 a REQ-07); catálogo de cartas (REQ-08 a REQ-13) | FEAT-03, FEAT-04 |
-| party | `/novo`, `/grupo/:partyId` | novo jogo (grupo de 1) e grupo em sessão (REQ-15, REQ-16) | FEAT-05 |
-| editor | `/lab/editor` (só dev, D-07) | editor de conteúdo: coleções e cartas (REQ-18 a REQ-26) | FEAT-31 |
+| lab | `/lab` (só dev, D-07) | laboratório: configuração ajustável do jogo e vitrine de componentes (REQ-05 a REQ-07); catálogo de cartas (REQ-08 a REQ-13); valores e cartas da FEAT-06 (REQ-27, REQ-28) | FEAT-03, FEAT-04, FEAT-06 |
+| party | `/novo`, `/grupo/:partyId` | novo jogo (grupo de 1) com escolha de classe e grupo em sessão com a partida preparada (REQ-15, REQ-16, REQ-29, REQ-30) | FEAT-05, FEAT-06 |
+| editor | `/lab/editor` (só dev, D-07) | editor de conteúdo: coleções, cartas e classes (REQ-18 a REQ-26, REQ-31 a REQ-33) | FEAT-31, FEAT-06 |
 
 Os componentes compartilhados da FEAT-02 (termo do jogo, categoria de carta) ainda não aparecem em nenhuma tela: são verificados por testes de componente até entrarem no laboratório (FEAT-03) e nas telas da FEAT-04.
 
@@ -213,7 +216,7 @@ A rota `/` deixa de ser placeholder: mantém o título "Misadventures" e a área
 ### REQ-16 — Grupo em sessão
 
 - **Dado** a rota `/grupo/:partyId`, **quando** ela abre, **então** o app envia `POST /parties/:partyId/session` (Continuar; repetir num grupo já em sessão não muda nada, CONTRATO §3 FEAT-05) e a área de status mostra "Abrindo o grupo…".
-- **Dado** `200`, **então** a tela mostra o `name` como título, a lista "Membros" com cada `characterName` (o host com " (host)" depois do nome), a situação ("Em sessão" ou "Pausado", do `status` recebido), "Salvo em {data e hora}" (como no REQ-14), o botão "Encerrar sessão" e o texto "A partida começa na próxima etapa do jogo." (placeholder até a FEAT-06).
+- **Dado** `200`, **então** a tela mostra o `name` como título, a lista "Membros" com cada `characterName` (o host com " (host)" depois do nome), a situação ("Em sessão" ou "Pausado", do `status` recebido), "Salvo em {data e hora}" (como no REQ-14), o botão "Encerrar sessão" e o estado da partida do REQ-30 (FEAT-06; antes dela, o texto "A partida começa na próxima etapa do jogo.").
 - **Dado** "Encerrar sessão", **quando** clicado, **então** o app envia `POST /parties/:partyId/session/end` com o botão desabilitado; com `200`, volta a `/` e a área de status de "Seus jogos" mostra "Sessão encerrada.".
 - **Dado** `404` `PARTY_NOT_FOUND` (ao abrir ou ao encerrar), **então** a área de status mostra a `message` e o link "Voltar ao início"; **dado** `409` `PARTY_SESSION_NOT_ACTIVE` ou outro erro §1.4, mostra a `message`; falha de rede ou resposta fora do contrato, "Servidor indisponível. Tente novamente.".
 
@@ -294,6 +297,68 @@ Campos e formatos são os do `Card` do CONTRATO §3 FEAT-04 (mais os da FEAT-31)
 - **Dado** um arquivo que não é JSON, **então** nada é enviado e a área de status mostra "O arquivo não é um JSON válido.".
 - **Dado** `CONTENT_INVALID` na importação, **então** a área de status mostra a `message` e a lista "Problemas" com cada campo e texto recebido (D-38); nada é importado.
 
+### Preparação da partida (FEAT-06)
+
+O backend prepara a partida inteira dentro do `POST /parties` (CONTRATO §3 FEAT-06): dimensão, mapa, ordem, cidade inicial, deck pré-pronto embaralhado, mão e valores iniciais (README 10.1, 9.1). O frontend só deixa escolher a classe e mostra o resultado. Nenhum valor da partida é calculado na tela (D-48).
+
+### REQ-27 — Valores da preparação no laboratório
+
+Alinha o REQ-06 aos 11 valores novos (CONTRATO §3 FEAT-03, chaves "FEAT-06"). O comportamento dos campos é o do REQ-06.
+
+- **Dado** o `LabConfig` com as chaves da FEAT-06, **quando** a seção "Configuração" carrega, **então**, depois dos 8 campos do REQ-06 e nesta ordem, aparecem: "Tamanho mínimo da build", "Trava (classe com 1 essencial)", "Trava (classe com 2 essenciais)", "Tentativas do gerador de mapa", "Ataque padrão", "Defesa padrão", "Precisão padrão", "Esquiva padrão", "Celeridade padrão", "Perfuração padrão" e "Reflexão padrão", cada um com "Padrão: … · Mín. … · Máx. …".
+
+### REQ-28 — Carta de Dimensão e forma das setas no catálogo
+
+- **Dado** a seção "Catálogo" (REQ-08), **então** o filtro de tipo ganha a opção "Dimensão", depois de "Evento de combate", com a quantidade de `cardCounts.dimension`.
+- **Dado** uma carta `dimension` (README 3.2), **quando** exibida, **então** mostra nome, flavor (se houver), "Ordem de lançamento {releaseOrder}", "Zona de chegada: {arrivalZoneTitle}" (com `null`: "Zona de chegada: sorteada entre as Urbanas sem efeito negativo") e os efeitos.
+- **Dado** uma carta `zone` com `arrowLayout` (REQ-12), **então** depois de "Setas de conexão: {n}" aparece "Setas opostas" (`straight`) ou "Setas vizinhas" (`corner`); com `null`, nada.
+
+### REQ-29 — Escolha da classe no novo jogo
+
+Alinha o REQ-15. Classes vêm de `GET /catalog/classes`, já só as publicadas.
+
+- **Dado** a rota `/novo`, **então**, depois de "Nome do personagem", há o grupo de rádios "Classe" com uma opção por classe, na ordem recebida, rotulada "{name}" seguido dos atributos essenciais como termo do jogo (REQ-03); nenhuma vem escolhida. Durante a consulta, a área de status mostra "Carregando classes…"; com a lista vazia, o grupo mostra "Nenhuma classe publicada.".
+- **Dado** uma classe escolhida, **então** abaixo do grupo aparecem a lista "Modificadores base" (os 7, na ordem do glossário §2.3, como termo do jogo com o valor recebido) e a lista "Deck pré-pronto", um item "{copies}× {nome da carta}" por entrada de `starterDeck`, na ordem recebida (nome de `GET /catalog/cards/:cardId`).
+- **Dado** "Criar grupo", **então** o `POST /parties` leva `playerClass` da classe escolhida; sem escolha, o corpo vai sem `playerClass` (o backend responde `required`).
+- **Dado** `400` `PARTY_INVALID` com `playerClass`, **então** o grupo "Classe" mostra, ligado por `aria-describedby`: `required` → "Escolha uma classe."; `unknownClass` → "Esta classe não está mais disponível.".
+- **Dado** `409` `DIMENSION_INVALID`, **então** a área de status mostra a `message` e, abaixo dela, a lista "Problemas" com cada texto de `details.problems`, na ordem recebida; o que foi digitado e escolhido continua.
+- **Dado** erro na consulta das classes, **então** a área de status mostra a `message` ou "Servidor indisponível. Tente novamente.".
+
+### REQ-30 — Partida preparada na tela do grupo
+
+Alinha o REQ-16: sai o texto "A partida começa na próxima etapa do jogo." e entra o estado da partida. O desenho do mapa e o movimento são da FEAT-07 (D-48).
+
+- **Dado** o `200` do `POST …/session` (REQ-16), **então**, além do título, da situação, de "Salvo em" e de "Encerrar sessão", a tela mostra "Dimensão: {name da Carta de Dimensão}", "Cidade inicial: {title da zona `startingCityZoneId`}" e a lista "Ordem dos jogadores", com o `characterName` de cada id de `turnOrder`, na ordem recebida. A lista "Membros" do REQ-16 continua.
+- **Dado** cada membro, **então** há uma seção com o título "{characterName}" e: "Classe: {name}" para cada item de `playerClasses`, seguido de "(trava cumprida)" ou "(trava não cumprida)" conforme `deckLockMet`; "Vida {health}/{maxHealth}"; "Vida base {baseHealth}"; "Pico {peak}"; "Vigor {vigor}"; "Ouro {gold}"; a lista "Modificadores" (os 7 de `modifiers`, na ordem do glossário, como termo do jogo); "Zona atual: {title}"; "Ponto de respawn: {title}"; "Deck de atributos: {attributeDeckCount} cartas"; "Descarte de atributos: {attributeDiscardPileCount} cartas"; e a seção "Mão ({quantidade})" com cada carta de `hand`, na ordem recebida (repetidas aparecem repetidas), pelo componente do REQ-09. Todos os números são os recebidos.
+- **Dado** os nomes ainda não recebidos (classes de `GET /catalog/classes`, cartas de `GET /catalog/cards/:cardId`), **então** a área de status mostra "Carregando a partida…"; **dado** erro nessas consultas, mostra a `message` ou "Servidor indisponível. Tente novamente.". Nenhuma exceção chega à tela.
+
+### REQ-31 — Carta de Dimensão e forma das setas no editor
+
+Alinha o REQ-20 ao REQ-22. Regras comuns do editor (acima) valem.
+
+- **Dado** os filtros e o "Nova carta" do REQ-20 e as contagens do REQ-19, **então** o tipo "Dimensão" aparece depois de "Evento de combate".
+- **Dado** o formulário de uma carta `dimension`, **então** tem "Nome", "Texto de ambientação", "Ordem de lançamento" (número), "Zona de chegada" (título de zona; vazio = `null`, sorteada) e "Efeitos" (lista de textos); a pré-visualização usa o componente do REQ-28.
+- **Dado** o formulário de zona, **então** depois de "Setas de conexão" há a seleção "Forma das setas" com "Não se aplica" (`null`), "Opostas" (`straight`) e "Vizinhas" (`corner`); o formulário não confere a combinação com o número de setas (o backend confere, D-38).
+- **Dado** "Validar como dimensão" (REQ-25), **então** o comportamento não muda: os problemas da Carta de Dimensão chegam prontos na mesma lista.
+
+### REQ-32 — Classes no editor
+
+- **Dado** uma coleção escolhida, **então** há uma seção "Classes" com a lista recebida, cada classe um botão "{name} · {Rascunho|Publicada}"; com a lista vazia, "Nenhuma classe nesta coleção."; durante a consulta, "Carregando classes…"; e o botão "Nova classe".
+- **Dado** "Nova classe" ou uma classe da lista, **então** abre o formulário de classe: "Classe" (seleção com os rótulos de §2.4; somente leitura numa classe publicada, Apêndice B T1), "Nome", "Atributos essenciais" (lista de seleções "Atributo essencial {n}"), "Modificadores base" (os 7, número cada) e "Deck pré-pronto" (lista; cada item com "Carta {n}" — id da carta, com sugestão das cartas de atributo da coleção — e "Cópias {n}"). Listas com "Adicionar", "Remover", "Subir" e "Descer" (REQ-21).
+- **Dado** texto obrigatório em branco, seleção não feita ou número inválido, **então** "Salvar classe" fica desabilitado (formato, como a D-43).
+- **Dado** "Salvar classe", **então** o app cria ou salva a classe; com sucesso, o formulário mostra a classe devolvida, a lista é consultada de novo e a área de status mostra "Classe salva."; `CONTENT_INVALID` e `CONTENT_ID_TAKEN` aparecem por campo como no REQ-21.
+- **Dado** uma classe em rascunho, salva e sem alterações, **quando** o autor clica "Publicar classe", **então** abre o diálogo "Publicar “{name}”?" com "Depois de publicada, a classe pode ser escolhida em novos jogos e o identificador não pode mais mudar." e "Publicar"/"Cancelar"; com sucesso, "Classe publicada."; com `CONTENT_INVALID`, os erros aparecem como no REQ-21 e a classe continua em rascunho.
+- **Dado** uma classe salva, **quando** o autor clica "Excluir classe", **então** abre o diálogo "Excluir “{name}”?" com "A classe será apagada. Não dá para desfazer." e "Excluir"/"Cancelar"; com sucesso, o formulário fecha e a área de status mostra "Classe excluída."; com `CONTENT_IN_USE`, a `message` e nada é apagado.
+- **Dado** o formulário de classe com alterações não salvas, **então** vale o REQ-24 (texto "As alterações desta classe ainda não foram salvas."), também ao escolher outra classe ou "Nova classe".
+- **Dado** excluir ou renomear uma carta de atributo do deck pré-pronto de uma classe (REQ-21, REQ-23), **então** o `409` `CONTENT_REFERENCED` mostra a `message` na área de status do formulário de carta e nada muda.
+
+### REQ-33 — Exportar e importar com classes
+
+Alinha o REQ-26.
+
+- **Dado** "Exportar", **então** o arquivo traz também as `classes` recebidas (o schema não as descarta, D-40).
+- **Dado** uma importação com sucesso, **então** a área de status mostra "Coleção importada: {cardCount} cartas e {classCount} classes.".
+
 Formato:
 
 ### REQ-nn — <nome>
@@ -350,6 +415,8 @@ Formato:
 - **D-45 — Formulários de evento aleatório e de combate (T-25):** no molde da D-43, os seis tipos têm formulário (sai o `hasForm`). Comuns aos dois eventos: "Título", "Texto de ambientação" (em branco = `null`), "Coisa boa", "Coisa ruim" (textos obrigatórios; caminhos `goodOutcome.text` e `badOutcome.text`) e a caixa "Sem fuga". Evento aleatório: "Requisitos", itens "Requisito {n}" (caminho `requirements.{n}.text`). Evento de combate: lista "Inimigos"; os campos de cada inimigo levam o sufixo " do inimigo {n}" para nomes acessíveis únicos ("Nome do inimigo 1", "Quantidade…", grupo "Tipos…" em caixas na ordem do glossário, "Criatura…", "Categoria…", "Elemento…" com a opção vazia "Sem elemento" = `null`, "Vida…", os 7 modificadores com o nome do glossário (D-30), "Vigor…" (vazio = `null`), lista "Habilidades…" com "Nome da habilidade {j} do inimigo {n}" e "Texto da habilidade {j} do inimigo {n}", "Comportamento…"); caminhos `enemies.{n}.<campo>` e `enemies.{n}.modifiers.<modificador>`. Inimigo novo começa com quantidade "1" e modificadores "0"; o resto vazio. Formato que desabilita "Salvar rascunho": texto obrigatório em branco (título, coisa boa, coisa ruim, requisito, nome e criatura do inimigo, nome ou texto de habilidade), seleção não feita (categoria, comportamento) ou número inválido (quantidade, vida, modificadores, vigor preenchido). Listas vazias (requisitos, inimigos, tipos) não bloqueiam: o mínimo de 1 é regra do contrato e vem do backend (D-38); a pré-visualização mostra o aviso enquanto a carta não passa no schema. *(T-25, 2026-11-16.)*
 - **D-46 — Publicar, duplicar e excluir no formulário (T-26):** "Publicar", "Duplicar" e "Excluir carta" ficam no formulário de carta, depois de "Salvar rascunho", sempre visíveis; numa carta ainda não salva ficam desabilitados, e todos os botões de envio ficam desabilitados enquanto um pedido está em curso. O "{nome}" dos diálogos é o "Nome" (ou "Título", em zona e eventos) da última versão salva. Os diálogos usam o `ConfirmDialog` do editor (foco inicial em "Cancelar", Esc cancela). "Duplicar" abre a cópia direto da resposta do backend, sem novo `GET`, e não pergunta por alterações não salvas (o REQ-24 não lista "Duplicar"; alterações não salvas da carta de origem se perdem). "Carta excluída." aparece na área de status da seção "Cartas", porque o formulário fecha; some ao abrir outra carta ou "Nova carta". Erros de publicar e de excluir (`CONTENT_INVALID`, `CONTENT_IN_USE` e outros do §1.4) aparecem na área de status do formulário, como no salvar. *(T-26, 2026-11-16.)*
 - **D-47 — Validar, exportar e importar na seção "Coleções" (T-27):** "Validar como dimensão" e "Exportar" ficam no painel da coleção escolhida, depois de "Excluir coleção"; "Importar coleção" (campo de arquivo `.json`) e a caixa "Substituir se já existir" ficam logo abaixo de "Nova coleção", sempre visíveis. A lista "Problemas" fica sob a área de status e some a cada nova validação, exportação, importação ou troca de coleção; na importação com `CONTENT_INVALID` cada item é "{campo}: {texto}" (só o texto, se o caminho for vazio); com `CONTENT_ID_TAKEN` só a `message` aparece na área de status. O arquivo exportado é o JSON recebido e validado pelo schema do contrato, com recuo de 2 espaços. Importar com alterações não salvas pergunta antes (a importação troca a coleção escolhida, o que descartaria o formulário; o REQ-24 não lista "Importar"). *(Motivo: evitar perder digitação em silêncio; vantagem: coerente com a escolha de outra coleção; desvantagem: o diálogo aparece depois de o arquivo ser escolhido.)*$
+- **D-48 — Preparação da partida (FEAT-06):** (1) a tela do grupo mostra do mapa só a dimensão e a cidade inicial; o mapa (zonas, setas, travessias) chega validado no `Party`, mas o desenho é da FEAT-07 (autor, 2026-11-16; alternativa descartada: lista textual do mapa, descartável na FEAT-07); (2) a classe é escolhida por rádios com o detalhe da escolhida (modificadores base e deck pré-pronto), sem pré-escolha (autor; alternativas descartadas: só nomes; caixa de seleção); (3) a mão aparece com as cartas completas do REQ-09 (autor; alternativa descartada: só nomes, que adiaria o visual da mão para a FEAT-09); (4) nomes de cartas e classes vêm do catálogo (`GET /catalog/cards/:cardId`, uma consulta por id distinto, cacheada; `GET /catalog/classes`); (5) os textos por `reason` de `playerClass` são do frontend, como a D-32; os de `DIMENSION_INVALID` vêm prontos do backend (D-38); (6) o MSW segue sem estado (D-29, D-34): o `Party` de exemplo é a cópia do cenário do contrato com uma mão e um mapa fixos. *(Planejamento da FEAT-06, 2026-11-16.)*
+- **D-49 — Cliente da FEAT-06 e estado intermediário (T-28):** schemas e fixtures do CONTRATO v0.21 §3 FEAT-06 em `src/api/` (`catalog.ts`: `dimensionCardSchema`, `arrowLayout`, `classDefinitionSchema`, `modifierValuesSchema`, `useClasses`, `useCatalogCard` com `staleTime: Infinity`; `parties.ts`: `PlayerState`, `PartyDimension`, `DimensionInvalidError` com `problems` e `dimensionCardId`; `labConfig.ts`: 11 chaves). `CreatePartyRequest.playerClass` é opcional no tipo porque o REQ-29 manda o corpo sem ele quando nada foi escolhido. O schema não confere atributos essenciais repetidos (regra do backend). Fixtures: só a Carta de Dimensão e a classe `warrior` são cópias do contrato; as outras 5 cartas novas e a `rogue` são provisórias até o `implementado (BE)` (como a D-29). **Estado intermediário até as tarefas indicadas** (autor, 2026-11-16: "só o mínimo para compilar"): os 11 rótulos do REQ-27 e o rótulo "Dimensão" já aparecem (testes na T-29); `FullCard` devolve `null` para a Carta de Dimensão (T-29); no editor, a Carta de Dimensão é escolhida sem formulário e fica fora de "Nova carta", e a zona guarda o `arrowLayout` recebido sem mostrá-lo, carta nova com `null` (T-33); o handler padrão não tem o cenário `required` (T-30), para o "Novo jogo" seguir criando grupo no dev; `validate-dimension` da `fixture` continua o resultado antigo (T-32). Testes e e2e que fixavam os dados antigos do contrato (6 cartas, contagens, corpo da zona) foram alinhados aos novos. *(T-28, 2026-11-16.)*
 
 **Pendências (decidir antes da tarefa indicada):**
 - **P-02 — Como o jogador vê as vezes dos outros no momento 2** (antes da FEAT-21): proposta: o backend devolve a lista ordenada de eventos do domínio e o frontend anima um por um; no momento 3 só o transporte muda (socket). Registrada também no ROADMAP.
@@ -416,6 +483,18 @@ A T-19 fecha o lado FE da FEAT-05 com MSW; depois, `/retorno-backend` contra o b
 
 A T-27 fecha o lado FE da FEAT-31 com MSW; depois, `/retorno-backend` contra o backend real. A FEAT não usa valores do Apêndice A.
 
+**FEAT-06 — Preparação da partida (lado frontend)** (CONTRATO v0.21 §3 FEAT-06 `acordado`; altera as seções `validado` FEAT-03, 04, 05 e 31)
+
+- [x] **T-28 — Alinhar o cliente ao contrato da FEAT-06** (REQ-27 a REQ-30; D-48). Em `src/api/`: schemas das 11 chaves novas de `GameConfigValues`; `DimensionCard`, `arrowLayout` e `dimension` em `CardType`/`cardCounts`; `ClassDefinition`; `CreatePartyRequest.playerClass`; `Party.dimension`, `turnOrder`, `PartyMember.player` (`PlayerState`, `PartyDimension`, `MapZone`, `Crossing`); `PartyInvalidDetails` com `playerClass`/`unknownClass`; `DIMENSION_INVALID` vira `DimensionInvalidError` (com `problems`); hooks novos `useClasses()` e `useCatalogCard(cardId)`. Em `src/mocks/`: fixtures da `fixture` com 12 cartas, as 2 classes, o `Party` preparado e os cenários de erro. Como verificar: unitários da camada de cliente; os testes das FEAT-03/04/05 que dependem das fixtures continuam passando.
+- [ ] **T-29 — Alinhar laboratório e catálogo** (REQ-27, REQ-28). 11 campos novos na configuração; opção "Dimensão" no filtro; componente `DimensionCard` em `src/ui/cards/`; forma das setas na carta de zona. Inclui o teste dos rótulos e da ordem dos 11 campos (já no `LabPage` desde a T-28, D-49) e troca o `null` de `FullCard` pelo componente. Como verificar: `npm run dev` (mocks) em `/lab`; unitários e e2e da área `lab`.
+- [ ] **T-30 — Alinhar o novo jogo: escolha de classe** (REQ-29). Acrescenta ao handler padrão do MSW o cenário `required` (corpo "Os Teimosos"/"Lia" sem `playerClass`), adiado na T-28 (D-49). Como verificar: `npm run dev` (mocks) em `/novo`; unitários e e2e da área `party`.
+- [ ] **T-31 — Alinhar a tela do grupo: partida preparada** (REQ-30). Como verificar: `npm run dev` (mocks), fluxo `/novo` → `/grupo/:partyId`; unitários e e2e da área `party`.
+- [ ] **T-32 — Cliente do editor: classes e Carta de Dimensão** (REQ-31 a REQ-33). Em `src/api/editor.ts`: `CardInput` com `dimension` e `arrowLayout`; `EditorClass`, `EditorClassSummary`, `ClassInput`; `CollectionExport.classes` tipado; hooks `useEditorClasses(collectionId)`, `useEditorClass(playerClass)`, `useCreateClass`, `useSaveClass`, `usePublishClass`, `useDeleteClass`; `CLASS_NOT_FOUND`, `CONTENT_REFERENCED` como `ApiError`. Em `src/mocks/`: cenários das classes do contrato; `validate-dimension` da `fixture` passa a `{ valid: true, problems: [] }` e o exemplo inválido vai para o `bosque` (adiado na T-28, D-49). Como verificar: unitários da camada de cliente.
+- [ ] **T-33 — Alinhar o editor: Carta de Dimensão e forma das setas** (REQ-31). Tira o `hasForm` e o filtro de "Nova carta" da T-28 (D-49), com teste de abrir a Carta de Dimensão. Como verificar: unitários e e2e da área `editor`.
+- [ ] **T-34 — Classes no editor** (REQ-32, REQ-33). Seção "Classes", formulário, publicar, excluir, guarda de alterações, `CONTENT_REFERENCED`, mensagem de importação. Como verificar: unitários e e2e da área `editor`.
+
+A T-34 fecha o lado FE da FEAT-06 com MSW; depois, `/retorno-backend` contra o backend real (quando o BE estiver `pronto`). Valores do Apêndice A que a FEAT usa: os 11 novos do REQ-27 (laboratório) e os já existentes `baseHealth`, `initialPeak`, `initialVigor`, `initialGold`, `initialHandSize`.
+
 ## 8. Histórico
 
 | Versão | Data | Mudança |
@@ -457,3 +536,5 @@ A T-27 fecha o lado FE da FEAT-31 com MSW; depois, `/retorno-backend` contra o b
 | 0.35 | 2026-11-16 | T-25 concluída: formulários de evento aleatório e de combate (lista de inimigos); todos os tipos têm formulário; D-45. |
 | 0.36 | 2026-11-16 | T-26 concluída: publicar, duplicar e excluir carta no editor; D-46. |
 | 0.37 | 2026-11-16 | T-27 concluída: validar como dimensão, exportar e importar coleção no editor; D-47. Lado FE da FEAT-31 pronto (falta validar contra o backend real). |
+| 0.38 | 2026-11-16 | FEAT-06 planejada (CONTRATO v0.21 `acordado`): REQ-27 a REQ-33 (laboratório, catálogo, escolha de classe, partida preparada, editor com Carta de Dimensão e classes), D-48 (escolhas do autor), REQ-16 aponta para o REQ-30, área `party`/`editor` e hooks novos em 3.4, tarefas T-28 a T-34. |
+| 0.39 | 2026-11-16 | T-28 concluída: cliente alinhado ao contrato da FEAT-06; D-49 (estado intermediário até T-29, T-30, T-32 e T-33); textos das T-29, T-30, T-32 e T-33 ajustados. |

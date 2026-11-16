@@ -27,27 +27,34 @@ export const notFoundFixture: ErrorEnvelope = {
 }
 
 /** GET /lab/config sem ajuste salvo (tabela Padrão / Mínimo–máximo). */
+const defaultValues: LabConfig['values'] = {
+  minPlayers: 1,
+  maxPlayers: 6,
+  actionPointsPerTurn: 3,
+  initialPeak: 10,
+  initialVigor: 10,
+  baseHealth: 20,
+  initialGold: 10,
+  initialHandSize: 7,
+  // FEAT-06 (CONTRATO v0.21)
+  minDeckSize: 60,
+  lockOneEssential: 18,
+  lockTwoEssentials: 10,
+  mapMaxAttempts: 1000,
+  defaultAttack: 5,
+  defaultDefense: 3,
+  defaultAccuracy: 50,
+  defaultEvasion: 20,
+  defaultCelerity: 10,
+  defaultPiercing: 0,
+  defaultReflection: 0,
+}
+
+const modifierDefaultLimit = { min: 0, max: 1000 }
+
 export const labConfigDefaultsFixture: LabConfig = {
-  values: {
-    minPlayers: 1,
-    maxPlayers: 6,
-    actionPointsPerTurn: 3,
-    initialPeak: 10,
-    initialVigor: 10,
-    baseHealth: 20,
-    initialGold: 10,
-    initialHandSize: 7,
-  },
-  defaults: {
-    minPlayers: 1,
-    maxPlayers: 6,
-    actionPointsPerTurn: 3,
-    initialPeak: 10,
-    initialVigor: 10,
-    baseHealth: 20,
-    initialGold: 10,
-    initialHandSize: 7,
-  },
+  values: defaultValues,
+  defaults: { ...defaultValues },
   limits: {
     minPlayers: { min: 1, max: 6 },
     maxPlayers: { min: 1, max: 6 },
@@ -57,6 +64,17 @@ export const labConfigDefaultsFixture: LabConfig = {
     baseHealth: { min: 1, max: 1000 },
     initialGold: { min: 0, max: 100000 },
     initialHandSize: { min: 0, max: 60 },
+    minDeckSize: { min: 1, max: 200 },
+    lockOneEssential: { min: 0, max: 200 },
+    lockTwoEssentials: { min: 0, max: 200 },
+    mapMaxAttempts: { min: 1, max: 100000 },
+    defaultAttack: modifierDefaultLimit,
+    defaultDefense: modifierDefaultLimit,
+    defaultAccuracy: modifierDefaultLimit,
+    defaultEvasion: modifierDefaultLimit,
+    defaultCelerity: modifierDefaultLimit,
+    defaultPiercing: modifierDefaultLimit,
+    defaultReflection: modifierDefaultLimit,
   },
 }
 

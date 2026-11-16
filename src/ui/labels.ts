@@ -22,6 +22,7 @@ export const cardTypeLabels = {
   item: 'Item',
   randomEvent: 'Evento aleatório',
   combatEvent: 'Evento de combate',
+  dimension: 'Dimensão',
 } satisfies Record<CardType, string>
 
 /** Tipo da carta de atributo (CONTRATO §2, README 4.3). */

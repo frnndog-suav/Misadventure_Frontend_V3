@@ -3,7 +3,6 @@ import {
   type Attribute,
   type AttributeCard,
   type Card,
-  type CardType,
   type Element,
   type Enemy,
   type EnemyBehavior,
@@ -31,6 +30,18 @@ import {
  * confere formato (número, texto obrigatório, seleção feita), nunca regra.
  */
 
+/**
+ * Tipos com formulário. A Carta de Dimensão (FEAT-06) ganha formulário na
+ * T-33; até lá ela só é escolhida na lista, sem formulário (como os eventos
+ * antes da T-25, D-42).
+ */
+export type FormCard = Exclude<Card, { type: 'dimension' }>
+export type FormCardType = FormCard['type']
+
+export function hasForm(card: Card): card is FormCard {
+  return card.type !== 'dimension'
+}
+
 type Polarity = ZoneCard['effects'][number]['polarity']
 type AttributeKind = AttributeCard['attributeKind']
 
@@ -41,6 +52,8 @@ export interface ZoneForm {
   zoneType: ZoneType | ''
   location: string
   connectionArrows: string
+  /** Guardada do jeito que veio; a seleção "Forma das setas" entra na T-33. */
+  arrowLayout: ZoneCard['arrowLayout']
   zoneActions: ZoneAction[]
   effects: { text: string; polarity: Polarity }[]
 }
@@ -162,7 +175,7 @@ export function emptyEnemy(): EnemyForm {
   }
 }
 
-export function emptyForm(type: CardType): CardForm {
+export function emptyForm(type: FormCardType): CardForm {
   switch (type) {
     case 'zone':
       return {
@@ -172,6 +185,7 @@ export function emptyForm(type: CardType): CardForm {
         zoneType: '',
         location: '',
         connectionArrows: '',
+        arrowLayout: null,
         zoneActions: [],
         effects: [],
       }
@@ -261,7 +275,7 @@ const numberText = (value: number | null): string =>
   value === null ? '' : String(value)
 
 /** Valores de uma carta recebida. */
-export function formFromCard(card: Card): CardForm {
+export function formFromCard(card: FormCard): CardForm {
   switch (card.type) {
     case 'zone':
       return {
@@ -271,6 +285,7 @@ export function formFromCard(card: Card): CardForm {
         zoneType: card.zoneType,
         location: card.location,
         connectionArrows: String(card.connectionArrows),
+        arrowLayout: card.arrowLayout,
         zoneActions: zoneActionOrder.filter((a) =>
           card.zoneActions.includes(a),
         ),
@@ -455,6 +470,7 @@ export function toInput(form: CardForm): CardInput | null {
         zoneType: form.zoneType,
         location: form.location,
         connectionArrows: arrows,
+        arrowLayout: form.arrowLayout,
         zoneActions: form.zoneActions,
         effects: form.effects,
       }

@@ -56,6 +56,7 @@ export const editorCollectionSchema = editorCollectionSummarySchema.extend({
     item: count,
     randomEvent: count,
     combatEvent: count,
+    dimension: count,
   }) satisfies z.ZodType<Record<CardType, number>>,
   rarityCounts: z.object({
     common: count,

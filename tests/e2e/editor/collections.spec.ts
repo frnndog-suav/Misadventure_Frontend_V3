@@ -23,7 +23,7 @@ test('REQ-19: escolhe, cria e exclui coleção (MSW)', async ({ page }) => {
 
   await page.getByRole('button', { name: /Coleção de Teste/ }).click()
   await expect(
-    page.getByRole('list', { name: 'Por tipo' }).getByText('Zona: 1'),
+    page.getByRole('list', { name: 'Por tipo' }).getByText('Zona: 4'),
   ).toBeVisible()
 
   await page.getByRole('button', { name: 'Nova coleção' }).click()

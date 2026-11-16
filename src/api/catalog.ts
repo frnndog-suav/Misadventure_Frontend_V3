@@ -16,6 +16,7 @@ export const cardTypeSchema = z.enum([
   'item',
   'randomEvent',
   'combatEvent',
+  'dimension',
 ])
 export type CardType = z.infer<typeof cardTypeSchema>
 
@@ -212,6 +213,7 @@ export const collectionSummarySchema = z.object({
     item: countByCardType,
     randomEvent: countByCardType,
     combatEvent: countByCardType,
+    dimension: countByCardType,
   }) satisfies z.ZodType<Record<CardType, number>>,
 })
 export type CollectionSummary = z.infer<typeof collectionSummarySchema>
@@ -219,6 +221,17 @@ export type CollectionSummary = z.infer<typeof collectionSummarySchema>
 const cardBase = { id: z.string(), collectionId: z.string() }
 const flavorText = z.string().nullable()
 const nonNegativeInt = z.number().int().min(0)
+
+/** Os 7 modificadores, inteiros ≥ 0. */
+export const modifierValuesSchema = z.object({
+  attack: nonNegativeInt,
+  defense: nonNegativeInt,
+  accuracy: nonNegativeInt,
+  evasion: nonNegativeInt,
+  celerity: nonNegativeInt,
+  piercing: nonNegativeInt,
+  reflection: nonNegativeInt,
+}) satisfies z.ZodType<Record<Modifier, number>>
 
 /** README 3.4 */
 export const zoneCardSchema = z.object({
@@ -228,6 +241,8 @@ export const zoneCardSchema = z.object({
   zoneType: zoneTypeSchema,
   location: z.string(),
   connectionArrows: z.number().int().min(1).max(4),
+  /** FEAT-06: só com 2 setas; `null` nos outros casos (o backend confere). */
+  arrowLayout: z.enum(['straight', 'corner']).nullable(),
   zoneActions: z.array(zoneActionSchema),
   effects: z.array(
     ruleTextSchema.extend({ polarity: z.enum(['positive', 'negative']) }),
@@ -305,15 +320,7 @@ export const enemySchema = z.object({
   enemyCategory: enemyCategorySchema,
   element: elementSchema.nullable(),
   health: z.number().int().min(1),
-  modifiers: z.object({
-    attack: nonNegativeInt,
-    defense: nonNegativeInt,
-    accuracy: nonNegativeInt,
-    evasion: nonNegativeInt,
-    celerity: nonNegativeInt,
-    piercing: nonNegativeInt,
-    reflection: nonNegativeInt,
-  }) satisfies z.ZodType<Record<Modifier, number>>,
+  modifiers: modifierValuesSchema,
   vigor: z.number().nullable(),
   abilities: z.array(abilitySchema),
   behavior: enemyBehaviorSchema,
@@ -332,6 +339,18 @@ export const combatEventCardSchema = z.object({
   noEscape: z.boolean(),
 })
 
+/** README 3.2 (FEAT-06). Conclusão e chefe final entram na FEAT-19. */
+export const dimensionCardSchema = z.object({
+  type: z.literal('dimension'),
+  ...cardBase,
+  name: z.string(),
+  flavorText,
+  releaseOrder: z.number().int().min(1),
+  /** `null` = sorteada pelo backend entre as `urban` sem efeito negativo. */
+  arrivalZoneTitle: z.string().nullable(),
+  effects: z.array(ruleTextSchema),
+})
+
 export const cardSchema = z.discriminatedUnion('type', [
   zoneCardSchema,
   attributeCardSchema,
@@ -339,6 +358,7 @@ export const cardSchema = z.discriminatedUnion('type', [
   itemCardSchema,
   randomEventCardSchema,
   combatEventCardSchema,
+  dimensionCardSchema,
 ])
 export type Card = z.infer<typeof cardSchema>
 export type ZoneCard = z.infer<typeof zoneCardSchema>
@@ -347,6 +367,20 @@ export type EquipmentCard = z.infer<typeof equipmentCardSchema>
 export type ItemCard = z.infer<typeof itemCardSchema>
 export type RandomEventCard = z.infer<typeof randomEventCardSchema>
 export type CombatEventCard = z.infer<typeof combatEventCardSchema>
+export type DimensionCard = z.infer<typeof dimensionCardSchema>
+
+/** GET /catalog/classes — README 8.6, 8.7, 4.4 (FEAT-06). */
+export const classDefinitionSchema = z.object({
+  playerClass: playerClassSchema,
+  collectionId: z.string(),
+  name: z.string(),
+  essentialAttributes: z.array(attributeSchema).min(1).max(2),
+  baseModifiers: modifierValuesSchema,
+  starterDeck: z.array(
+    z.object({ cardId: z.string(), copies: z.number().int().min(1) }),
+  ),
+})
+export type ClassDefinition = z.infer<typeof classDefinitionSchema>
 
 /** `details` do erro CATALOG_QUERY_INVALID (a tela mostra só a `message`). */
 export interface CatalogQueryInvalidDetails {
@@ -392,5 +426,28 @@ export function useCards(
     queryKey: ['catalog', 'cards', collectionId, type ?? 'all'],
     queryFn: () => getCards(collectionId, type),
     retry: false,
+  })
+}
+
+/** Classes publicadas, na ordem recebida (REQ-29). */
+export function useClasses(): UseQueryResult<ClassDefinition[], Error> {
+  return useQuery({
+    queryKey: ['catalog', 'classes'],
+    queryFn: async () =>
+      z.array(classDefinitionSchema).parse(await getJson('/catalog/classes')),
+    retry: false,
+  })
+}
+
+/** Uma carta do catálogo; cache por id, sem novo pedido (D-48). */
+export function useCatalogCard(cardId: string): UseQueryResult<Card, Error> {
+  return useQuery({
+    queryKey: ['catalog', 'card', cardId],
+    queryFn: async () =>
+      cardSchema.parse(
+        await getJson(`/catalog/cards/${encodeURIComponent(cardId)}`),
+      ),
+    retry: false,
+    staleTime: Infinity,
   })
 }

@@ -52,11 +52,18 @@ const status = () => screen.getByRole('status')
 const cardsUrl = '*/catalog/collections/:collectionId/cards'
 const unavailable = 'Servidor indisponível. Tente novamente.'
 
+/** As 12 cartas da `fixture` (CONTRATO §3 FEAT-04, contagens da FEAT-06). */
 const expectedOrder = [
   'Lâmina do Crepúsculo · Equipamento',
+  'Destreza · Atributo',
+  'Resistência · Atributo',
+  'Porto Cinzento · Zona',
   'Poção de Cura · Item',
   'Lobos Uivantes · Evento de combate',
+  'Mina Velha · Zona',
+  'Curva de Pedra · Zona',
   'Força · Atributo',
+  'Dimensão de Teste · Dimensão',
   'Bosque Sussurrante · Zona',
   'Viajante Ferido · Evento aleatório',
 ]
@@ -84,16 +91,17 @@ describe('CatalogSection', () => {
       .getAllByRole('radio')
       .map((r) => r.closest('label')?.textContent)
     expect(options).toEqual([
-      'Todos (6)',
-      'Zona (1)',
-      'Atributo (1)',
+      'Todos (12)',
+      'Zona (4)',
+      'Atributo (3)',
       'Equipamento (1)',
       'Item (1)',
       'Evento aleatório (1)',
       'Evento de combate (1)',
+      'Dimensão (1)',
     ])
     expect(
-      within(filter).getByRole('radio', { name: 'Todos (6)' }),
+      within(filter).getByRole('radio', { name: 'Todos (12)' }),
     ).toBeChecked()
   })
 
@@ -112,11 +120,11 @@ describe('CatalogSection', () => {
     })
     renderCatalog()
     await cardButtons()
-    fireEvent.click(screen.getByRole('radio', { name: 'Zona (1)' }))
+    fireEvent.click(screen.getByRole('radio', { name: 'Zona (4)' }))
     expect(
-      await screen.findByRole('button', { name: 'Bosque Sussurrante · Zona' }),
+      await screen.findByRole('button', { name: 'Porto Cinzento · Zona' }),
     ).toBeInTheDocument()
-    expect(await cardButtons()).toHaveLength(1)
+    expect(await cardButtons()).toHaveLength(4)
     expect(requested).toEqual([null, 'zone'])
     server.events.removeAllListeners()
   })
@@ -129,7 +137,12 @@ describe('CatalogSection', () => {
     ).toBeInTheDocument()
   })
 
-  it.each(fixtureCardsFixture.map((card, i) => [expectedOrder[i], card]))(
+  // A Carta de Dimensão ganha componente na T-29 (REQ-28).
+  it.each(
+    fixtureCardsFixture
+      .map((card, i) => [expectedOrder[i], card] as const)
+      .filter(([, card]) => card.type !== 'dimension'),
+  )(
     'REQ-08: escolher "%s" mostra a carta completa no formato do seu tipo',
     async (label) => {
       renderCatalog()

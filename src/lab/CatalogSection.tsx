@@ -29,6 +29,7 @@ function cardName(card: Card): string {
     case 'attribute':
     case 'equipment':
     case 'item':
+    case 'dimension':
       return card.name
     default: {
       const _exhaustive: never = card

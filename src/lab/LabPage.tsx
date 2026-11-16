@@ -28,6 +28,18 @@ const fieldLabels: Record<GameConfigKey, string> = {
   baseHealth: 'Vida base',
   initialGold: 'Ouro inicial',
   initialHandSize: 'Mão inicial',
+  // FEAT-06 (REQ-27)
+  minDeckSize: 'Tamanho mínimo da build',
+  lockOneEssential: 'Trava (classe com 1 essencial)',
+  lockTwoEssentials: 'Trava (classe com 2 essenciais)',
+  mapMaxAttempts: 'Tentativas do gerador de mapa',
+  defaultAttack: 'Ataque padrão',
+  defaultDefense: 'Defesa padrão',
+  defaultAccuracy: 'Precisão padrão',
+  defaultEvasion: 'Esquiva padrão',
+  defaultCelerity: 'Celeridade padrão',
+  defaultPiercing: 'Perfuração padrão',
+  defaultReflection: 'Reflexão padrão',
 }
 
 const fieldKeys = Object.keys(fieldLabels) as GameConfigKey[]

@@ -52,6 +52,7 @@ import {
   emptyEnemy,
   enemyTypeOrder,
   formFromCard,
+  hasForm,
   inputToCard,
   modifierOrder,
   sameForm,
@@ -1225,6 +1226,7 @@ export function CardForm({
       : cardSchema.safeParse(inputToCard(input, collectionId)).data
 
   function show(result: EditorCard, text: string): void {
+    if (!hasForm(result.card)) return
     const next = formFromCard(result.card)
     setInitial(next)
     setValues(next)

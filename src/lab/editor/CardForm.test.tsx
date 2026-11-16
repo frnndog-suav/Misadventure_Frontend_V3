@@ -313,6 +313,7 @@ describe('REQ-21: salvar', () => {
       zoneType: 'urban',
       location: 'Cidade',
       connectionArrows: 4,
+      arrowLayout: null,
       zoneActions: ['recover', 'visitMarket'],
       effects: [{ text: 'Neblina.', polarity: 'negative' }],
     })

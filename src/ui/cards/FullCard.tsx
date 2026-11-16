@@ -21,6 +21,9 @@ export function FullCard({ card }: { card: Card }) {
       return <RandomEventCard card={card} />
     case 'combatEvent':
       return <CombatEventCard card={card} />
+    case 'dimension':
+      // O componente da Carta de Dimensão (REQ-28) entra na T-29.
+      return null
     default: {
       const _exhaustive: never = card
       return _exhaustive
