@@ -526,3 +526,366 @@ describe('REQ-24: alterações não salvas na carta', () => {
     expect(event.defaultPrevented).toBe(true)
   })
 })
+
+describe('REQ-21: equipamento', () => {
+  const group = (name: string) => within(form()).getByRole('group', { name })
+
+  async function newEquipment(): Promise<void> {
+    renderEditor()
+    await newCard('Equipamento')
+  }
+
+  /** Preenche o mínimo de formato de um equipamento novo. */
+  function fillEspada(): void {
+    type('Identificador', 'espada')
+    type('Nome', 'Espada')
+    fireEvent.change(field('Raridade'), { target: { value: 'common' } })
+    fireEvent.change(field('Slot'), { target: { value: 'weapon' } })
+  }
+
+  it('REQ-21: equipamento da lista abre o formulário com os valores recebidos', async () => {
+    renderEditor()
+    await openCard('Lâmina do Crepúsculo · Equipamento · Publicada')
+    expect(field('Identificador')).toHaveValue('blade-of-dusk')
+    expect(field('Nome')).toHaveValue('Lâmina do Crepúsculo')
+    expect(field('Texto de ambientação')).toHaveValue(
+      'Forjada na hora em que o dia cede à noite.',
+    )
+    expect(field('Raridade')).toHaveValue('rare')
+    expect(field('Slot')).toHaveValue('weapon')
+    expect(field('Etiqueta 1')).toHaveValue('espada')
+    expect(field('Etiqueta 2')).toHaveValue('duas mãos')
+    expect(field('Modificador 1')).toHaveValue('attack')
+    expect(field('Valor do modificador 1')).toHaveValue('3')
+    expect(field('Modificador 2')).toHaveValue('accuracy')
+    expect(field('Valor do modificador 2')).toHaveValue('1')
+    expect(field('Pico mínimo')).toHaveValue('')
+    expect(field('Bloqueia escudo')).toBeChecked()
+    expect(field('Refino')).toBeChecked()
+    expect(field('Nível máximo')).toHaveValue('3')
+    expect(field('Materiais')).toHaveValue('1 Minério de Ferro por nível.')
+    expect(field('Encantamento')).toBeChecked()
+    expect(field('Texto do encantamento')).toHaveValue(
+      'Encantamento: causa dano sombrio extra.',
+    )
+    expect(field('Ajuste de preço')).toHaveValue('1')
+  })
+
+  it('REQ-21: o primeiro modificador é o principal e "Descer" troca a ordem', async () => {
+    renderEditor()
+    await openCard('Lâmina do Crepúsculo · Equipamento · Publicada')
+    const modifiers = group('Modificadores')
+    const items = within(modifiers).getAllByRole('listitem')
+    expect(within(items[0]).getByText('Principal')).toBeInTheDocument()
+    expect(within(items[1]).queryByText('Principal')).not.toBeInTheDocument()
+    fireEvent.click(within(items[0]).getByRole('button', { name: 'Descer' }))
+    expect(field('Modificador 1')).toHaveValue('accuracy')
+    expect(field('Modificador 2')).toHaveValue('attack')
+    expect(
+      within(within(modifiers).getAllByRole('listitem')[0]).getByText(
+        'Principal',
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it('REQ-21: "Etiquetas" sugere as etiquetas já usadas na coleção (do backend)', async () => {
+    renderEditor()
+    await openCard('Lâmina do Crepúsculo · Equipamento · Publicada')
+    await waitFor(() => {
+      const listId = field('Etiqueta 1').getAttribute('list')
+      expect(listId).toBeTruthy()
+      const options = Array.from(
+        document.querySelectorAll(`datalist[id="${listId}"] option`),
+      ).map((option) => option.getAttribute('value'))
+      expect(options).toEqual(['duas mãos', 'espada', 'poção'])
+    })
+  })
+
+  it('REQ-21: "Restrição de classe" são caixas de marcar com os rótulos das classes', async () => {
+    await newEquipment()
+    const classes = group('Restrição de classe')
+    expect(within(classes).getAllByRole('checkbox')).toHaveLength(12)
+    expect(
+      within(classes).getByRole('checkbox', { name: 'Guerreiro' }),
+    ).not.toBeChecked()
+    fireEvent.click(within(classes).getByRole('checkbox', { name: 'Mago' }))
+    expect(
+      within(classes).getByRole('checkbox', { name: 'Mago' }),
+    ).toBeChecked()
+  })
+
+  it('REQ-21: "Nova carta" de equipamento abre o formulário vazio e só salva com o formato completo', async () => {
+    await newEquipment()
+    expect(within(form()).getByText('Situação: Rascunho')).toBeInTheDocument()
+    expect(field('Ajuste de preço')).toHaveValue('1')
+    expect(field('Refino')).not.toBeChecked()
+    expect(field('Encantamento')).not.toBeChecked()
+    expect(saveButton()).toBeDisabled()
+    fillEspada()
+    expect(saveButton()).toBeEnabled()
+    type('Ajuste de preço', 'caro')
+    expect(saveButton()).toBeDisabled()
+    type('Ajuste de preço', '1.2')
+    expect(saveButton()).toBeEnabled()
+    type('Pico mínimo', 'alto')
+    expect(saveButton()).toBeDisabled()
+    type('Pico mínimo', '')
+    expect(saveButton()).toBeEnabled()
+  })
+
+  it('REQ-21: "Refino" ligado mostra "Nível máximo" e "Materiais" e exige os dois; desligado, não aparecem', async () => {
+    await newEquipment()
+    fillEspada()
+    expect(within(form()).queryByLabelText('Nível máximo')).toBeNull()
+    expect(within(form()).queryByLabelText('Materiais')).toBeNull()
+    fireEvent.click(field('Refino'))
+    expect(saveButton()).toBeDisabled()
+    type('Nível máximo', '3')
+    expect(saveButton()).toBeDisabled()
+    type('Materiais', 'Minério')
+    expect(saveButton()).toBeEnabled()
+    type('Nível máximo', 'três')
+    expect(saveButton()).toBeDisabled()
+    fireEvent.click(field('Refino'))
+    expect(saveButton()).toBeEnabled()
+  })
+
+  it('REQ-21: "Encantamento" ligado mostra o texto e o exige', async () => {
+    await newEquipment()
+    fillEspada()
+    expect(within(form()).queryByLabelText('Texto do encantamento')).toBeNull()
+    fireEvent.click(field('Encantamento'))
+    expect(saveButton()).toBeDisabled()
+    type('Texto do encantamento', 'Brilha.')
+    expect(saveButton()).toBeEnabled()
+  })
+
+  it('REQ-21: listas de equipamento exigem texto e valor em formato', async () => {
+    await newEquipment()
+    fillEspada()
+    fireEvent.click(
+      within(group('Modificadores')).getByRole('button', { name: 'Adicionar' }),
+    )
+    expect(saveButton()).toBeDisabled()
+    fireEvent.change(field('Modificador 1'), { target: { value: 'attack' } })
+    type('Valor do modificador 1', 'x')
+    expect(saveButton()).toBeDisabled()
+    type('Valor do modificador 1', '2')
+    expect(saveButton()).toBeEnabled()
+    fireEvent.click(
+      within(group('Habilidades')).getByRole('button', { name: 'Adicionar' }),
+    )
+    expect(saveButton()).toBeDisabled()
+    type('Nome da habilidade 1', 'Golpe')
+    type('Texto da habilidade 1', 'Bate forte.')
+    expect(saveButton()).toBeEnabled()
+    fireEvent.click(
+      within(group('Etiquetas')).getByRole('button', { name: 'Adicionar' }),
+    )
+    expect(saveButton()).toBeDisabled()
+    type('Etiqueta 1', 'espada')
+    fireEvent.click(
+      within(group('Efeitos')).getByRole('button', { name: 'Adicionar' }),
+    )
+    expect(saveButton()).toBeDisabled()
+    type('Efeito 1', 'Sangra.')
+    expect(saveButton()).toBeEnabled()
+  })
+
+  it('REQ-21: "Salvar rascunho" envia o corpo do equipamento (vazios e desligados viram null)', async () => {
+    const bodies = recordBodies()
+    await newEquipment()
+    fillEspada()
+    fireEvent.click(saveButton())
+    await waitFor(() =>
+      expect(formStatus()).toHaveTextContent('Rascunho salvo.'),
+    )
+    expect(bodies).toHaveLength(1)
+    expect(bodies[0].method).toBe('POST')
+    expect(bodies[0].body).toEqual({
+      slug: 'espada',
+      type: 'equipment',
+      name: 'Espada',
+      flavorText: null,
+      rarity: 'common',
+      slot: 'weapon',
+      tags: [],
+      modifiers: [],
+      peakRequirement: null,
+      classRestriction: [],
+      blocksShield: false,
+      abilities: [],
+      effects: [],
+      refinement: null,
+      enchantment: null,
+      priceMultiplier: 1,
+    })
+  })
+
+  it('REQ-21: o corpo leva refino, encantamento, pico, classes e listas', async () => {
+    const bodies = recordBodies()
+    await newEquipment()
+    fillEspada()
+    type('Pico mínimo', '2')
+    fireEvent.click(
+      within(group('Restrição de classe')).getByRole('checkbox', {
+        name: 'Mago',
+      }),
+    )
+    fireEvent.click(
+      within(group('Restrição de classe')).getByRole('checkbox', {
+        name: 'Guerreiro',
+      }),
+    )
+    fireEvent.click(field('Bloqueia escudo'))
+    fireEvent.click(field('Refino'))
+    type('Nível máximo', '3')
+    type('Materiais', 'Minério')
+    fireEvent.click(field('Encantamento'))
+    type('Texto do encantamento', 'Brilha.')
+    type('Ajuste de preço', '1.5')
+    fireEvent.click(
+      within(group('Modificadores')).getByRole('button', { name: 'Adicionar' }),
+    )
+    fireEvent.change(field('Modificador 1'), { target: { value: 'defense' } })
+    type('Valor do modificador 1', '2')
+    fireEvent.click(saveButton())
+    await waitFor(() =>
+      expect(formStatus()).toHaveTextContent('Rascunho salvo.'),
+    )
+    expect(bodies[0].body).toMatchObject({
+      peakRequirement: 2,
+      classRestriction: ['warrior', 'mage'],
+      blocksShield: true,
+      refinement: { maxLevel: 3, materials: { text: 'Minério' } },
+      enchantment: { text: 'Brilha.' },
+      priceMultiplier: 1.5,
+      modifiers: [{ modifier: 'defense', value: 2 }],
+    })
+  })
+
+  it('REQ-22: a pré-visualização mostra o equipamento quando o formato fecha', async () => {
+    await newEquipment()
+    expect(preview()).toHaveTextContent(
+      'Preencha os campos obrigatórios para ver a carta.',
+    )
+    fillEspada()
+    expect(
+      within(preview()).getByRole('article', { name: 'Espada' }),
+    ).toBeInTheDocument()
+  })
+
+  it('REQ-21: erro em item de lista aparece no campo certo (2º modificador)', async () => {
+    server.use(
+      http.put(cardUrl, () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: 'CONTENT_INVALID',
+              message: 'Conteúdo inválido.',
+              details: {
+                fields: [
+                  {
+                    path: 'modifiers.1.value',
+                    message: 'O valor do modificador deve ser inteiro.',
+                  },
+                ],
+              },
+            },
+          },
+          { status: 400 },
+        ),
+      ),
+    )
+    renderEditor()
+    await openCard('Lâmina do Crepúsculo · Equipamento · Publicada')
+    fireEvent.click(saveButton())
+    await waitFor(() =>
+      expect(formStatus()).toHaveTextContent('Conteúdo inválido.'),
+    )
+    expect(field('Valor do modificador 2')).toHaveAccessibleDescription(
+      'O valor do modificador deve ser inteiro.',
+    )
+    expect(field('Valor do modificador 1')).not.toHaveAccessibleDescription()
+    expect(field('Valor do modificador 2')).toHaveValue('1')
+  })
+})
+
+describe('REQ-21: item', () => {
+  async function newItem(): Promise<void> {
+    renderEditor()
+    await newCard('Item')
+  }
+
+  it('REQ-21: item da lista abre o formulário com os valores recebidos', async () => {
+    renderEditor()
+    await openCard('Poção de Cura · Item · Publicada')
+    expect(field('Identificador')).toHaveValue('healing-potion')
+    expect(field('Nome')).toHaveValue('Poção de Cura')
+    expect(field('Raridade')).toHaveValue('common')
+    expect(field('Categoria')).toHaveValue('consumable')
+    expect(field('Etiqueta 1')).toHaveValue('poção')
+    expect(field('Efeito 1')).toHaveValue('Recupera 5 de vida.')
+  })
+
+  it('REQ-21: "Nova carta" de item só salva com o formato completo e envia o corpo', async () => {
+    const bodies = recordBodies()
+    await newItem()
+    expect(saveButton()).toBeDisabled()
+    type('Identificador', 'pocao')
+    type('Nome', 'Poção')
+    fireEvent.change(field('Raridade'), { target: { value: 'common' } })
+    expect(saveButton()).toBeDisabled()
+    fireEvent.change(field('Categoria'), { target: { value: 'consumable' } })
+    expect(saveButton()).toBeEnabled()
+    expect(
+      within(preview()).getByRole('article', { name: 'Poção' }),
+    ).toBeInTheDocument()
+    fireEvent.click(saveButton())
+    await waitFor(() =>
+      expect(formStatus()).toHaveTextContent('Rascunho salvo.'),
+    )
+    expect(bodies[0].body).toEqual({
+      slug: 'pocao',
+      type: 'item',
+      name: 'Poção',
+      flavorText: null,
+      rarity: 'common',
+      itemCategory: 'consumable',
+      tags: [],
+      effects: [],
+    })
+  })
+
+  it('REQ-21: erro de campo do item aparece abaixo do campo', async () => {
+    server.use(
+      http.post(cardsUrl, () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: 'CONTENT_INVALID',
+              message: 'Conteúdo inválido.',
+              details: {
+                fields: [
+                  { path: 'itemCategory', message: 'Categoria inválida.' },
+                ],
+              },
+            },
+          },
+          { status: 400 },
+        ),
+      ),
+    )
+    await newItem()
+    type('Identificador', 'pocao')
+    type('Nome', 'Poção')
+    fireEvent.change(field('Raridade'), { target: { value: 'common' } })
+    fireEvent.change(field('Categoria'), { target: { value: 'booster' } })
+    fireEvent.click(saveButton())
+    await waitFor(() =>
+      expect(field('Categoria')).toHaveAccessibleDescription(
+        'Categoria inválida.',
+      ),
+    )
+  })
+})

@@ -3,13 +3,17 @@ import type {
   AttributeCard,
   Card,
   CardType,
+  EquipmentSlot,
+  ItemCategory,
+  Modifier,
+  PlayerClass,
   Rarity,
   ZoneAction,
   ZoneCard,
   ZoneType,
 } from '../../api/catalog'
 import type { CardInput } from '../../api/editor'
-import { zoneActionLabels } from '../../ui/labels'
+import { playerClassLabels, zoneActionLabels } from '../../ui/labels'
 
 /**
  * Valores do formulário de carta (REQ-21, D-43). Números ficam como texto e
@@ -42,13 +46,50 @@ export interface AttributeForm {
   effects: string[]
 }
 
-export type CardForm = ZoneForm | AttributeForm
+export interface EquipmentForm {
+  type: 'equipment'
+  slug: string
+  name: string
+  flavorText: string
+  rarity: Rarity | ''
+  slot: EquipmentSlot | ''
+  tags: string[]
+  modifiers: { modifier: Modifier | ''; value: string }[]
+  peakRequirement: string
+  classRestriction: PlayerClass[]
+  blocksShield: boolean
+  abilities: { name: string; text: string }[]
+  effects: string[]
+  /** Desligado = não refinável; o que foi digitado fica guardado. */
+  refinement: { enabled: boolean; maxLevel: string; materials: string }
+  /** Desligado = não encantável. */
+  enchantment: { enabled: boolean; text: string }
+  priceMultiplier: string
+}
 
-/** Tipos com formulário; os demais chegam na T-24 e na T-25 (D-43). */
+export interface ItemForm {
+  type: 'item'
+  slug: string
+  name: string
+  flavorText: string
+  rarity: Rarity | ''
+  itemCategory: ItemCategory | ''
+  tags: string[]
+  effects: string[]
+}
+
+export type CardForm = ZoneForm | AttributeForm | EquipmentForm | ItemForm
+
+/** Tipos com formulário; os eventos chegam na T-25 (D-43). */
 export type FormCardType = CardForm['type']
 
 export function hasForm(type: CardType): type is FormCardType {
-  return type === 'zone' || type === 'attribute'
+  return (
+    type === 'zone' ||
+    type === 'attribute' ||
+    type === 'equipment' ||
+    type === 'item'
+  )
 }
 
 export function emptyForm(type: FormCardType): CardForm {
@@ -75,6 +116,36 @@ export function emptyForm(type: FormCardType): CardForm {
         attributes: [],
         effects: [],
       }
+    case 'equipment':
+      return {
+        type,
+        slug: '',
+        name: '',
+        flavorText: '',
+        rarity: '',
+        slot: '',
+        tags: [],
+        modifiers: [],
+        peakRequirement: '',
+        classRestriction: [],
+        blocksShield: false,
+        abilities: [],
+        effects: [],
+        refinement: { enabled: false, maxLevel: '', materials: '' },
+        enchantment: { enabled: false, text: '' },
+        priceMultiplier: '1',
+      }
+    case 'item':
+      return {
+        type,
+        slug: '',
+        name: '',
+        flavorText: '',
+        rarity: '',
+        itemCategory: '',
+        tags: [],
+        effects: [],
+      }
     default: {
       const _exhaustive: never = type
       return _exhaustive
@@ -84,6 +155,9 @@ export function emptyForm(type: FormCardType): CardForm {
 
 /** Ações na ordem do glossário (CONTRATO §2.5). */
 export const zoneActionOrder = Object.keys(zoneActionLabels) as ZoneAction[]
+
+/** Classes na ordem do glossário (CONTRATO §2.4). */
+export const classOrder = Object.keys(playerClassLabels) as PlayerClass[]
 
 /** `id` = `<collectionId>.<slug>` (CONTRATO §3 FEAT-31). */
 function slugOf(card: Card): string {
@@ -119,7 +193,51 @@ export function formFromCard(card: Card): CardForm | null {
         effects: card.effects.map((e) => e.text),
       }
     case 'equipment':
+      return {
+        type: 'equipment',
+        slug: slugOf(card),
+        name: card.name,
+        flavorText: card.flavorText ?? '',
+        rarity: card.rarity,
+        slot: card.slot,
+        tags: [...card.tags],
+        modifiers: card.modifiers.map(({ modifier, value }) => ({
+          modifier,
+          value: String(value),
+        })),
+        peakRequirement:
+          card.peakRequirement === null ? '' : String(card.peakRequirement),
+        classRestriction: classOrder.filter((c) =>
+          card.classRestriction.includes(c),
+        ),
+        blocksShield: card.blocksShield,
+        abilities: card.abilities.map(({ name, text }) => ({ name, text })),
+        effects: card.effects.map((e) => e.text),
+        refinement:
+          card.refinement === null
+            ? { enabled: false, maxLevel: '', materials: '' }
+            : {
+                enabled: true,
+                maxLevel: String(card.refinement.maxLevel),
+                materials: card.refinement.materials.text,
+              },
+        enchantment:
+          card.enchantment === null
+            ? { enabled: false, text: '' }
+            : { enabled: true, text: card.enchantment.text },
+        priceMultiplier: String(card.priceMultiplier),
+      }
     case 'item':
+      return {
+        type: 'item',
+        slug: slugOf(card),
+        name: card.name,
+        flavorText: card.flavorText ?? '',
+        rarity: card.rarity,
+        itemCategory: card.itemCategory,
+        tags: [...card.tags],
+        effects: card.effects.map((e) => e.text),
+      }
     case 'randomEvent':
     case 'combatEvent':
       return null
@@ -191,6 +309,76 @@ export function toInput(form: CardForm): CardInput | null {
         rarity: form.rarity,
         attributeKind: form.attributeKind,
         attributes,
+        effects: form.effects.map((text) => ({ text })),
+      }
+    }
+    case 'equipment': {
+      const modifiers: { modifier: Modifier; value: number }[] = []
+      for (const entry of form.modifiers) {
+        const value = parseNumber(entry.value)
+        if (entry.modifier === '' || value === null) return null
+        modifiers.push({ modifier: entry.modifier, value })
+      }
+      const peak = parseNumber(form.peakRequirement)
+      const price = parseNumber(form.priceMultiplier)
+      const maxLevel = parseNumber(form.refinement.maxLevel)
+      if (
+        !filled(form.slug) ||
+        !filled(form.name) ||
+        form.rarity === '' ||
+        form.slot === '' ||
+        !form.tags.every(filled) ||
+        (filled(form.peakRequirement) && peak === null) ||
+        price === null ||
+        !form.abilities.every((a) => filled(a.name) && filled(a.text)) ||
+        !form.effects.every(filled) ||
+        (form.refinement.enabled &&
+          (maxLevel === null || !filled(form.refinement.materials))) ||
+        (form.enchantment.enabled && !filled(form.enchantment.text))
+      )
+        return null
+      return {
+        slug: form.slug,
+        type: 'equipment',
+        name: form.name,
+        flavorText: filled(form.flavorText) ? form.flavorText : null,
+        rarity: form.rarity,
+        slot: form.slot,
+        tags: form.tags,
+        modifiers,
+        peakRequirement: peak,
+        classRestriction: form.classRestriction,
+        blocksShield: form.blocksShield,
+        abilities: form.abilities,
+        effects: form.effects.map((text) => ({ text })),
+        refinement:
+          form.refinement.enabled && maxLevel !== null
+            ? { maxLevel, materials: { text: form.refinement.materials } }
+            : null,
+        enchantment: form.enchantment.enabled
+          ? { text: form.enchantment.text }
+          : null,
+        priceMultiplier: price,
+      }
+    }
+    case 'item': {
+      if (
+        !filled(form.slug) ||
+        !filled(form.name) ||
+        form.rarity === '' ||
+        form.itemCategory === '' ||
+        !form.tags.every(filled) ||
+        !form.effects.every(filled)
+      )
+        return null
+      return {
+        slug: form.slug,
+        type: 'item',
+        name: form.name,
+        flavorText: filled(form.flavorText) ? form.flavorText : null,
+        rarity: form.rarity,
+        itemCategory: form.itemCategory,
+        tags: form.tags,
         effects: form.effects.map((text) => ({ text })),
       }
     }

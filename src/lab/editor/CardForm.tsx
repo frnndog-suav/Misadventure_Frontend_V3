@@ -8,6 +8,9 @@ import {
 import {
   attributeSchema,
   cardSchema,
+  equipmentSlotSchema,
+  itemCategorySchema,
+  modifierSchema,
   raritySchema,
   zoneTypeSchema,
   type Attribute,
@@ -16,6 +19,7 @@ import {
 import {
   ContentInvalidError,
   useCreateCard,
+  useEditorCollection,
   useSaveCard,
   type ContentInvalidDetails,
   type ContentStatus,
@@ -23,14 +27,17 @@ import {
 } from '../../api/editor'
 import { ApiError } from '../../api/http'
 import { FullCard } from '../../ui/cards/FullCard'
+import { categoryCatalog } from '../../ui/categories'
 import {
   attributeKindLabels,
+  playerClassLabels,
   rarityLabels,
   zoneActionLabels,
   zoneTypeLabels,
 } from '../../ui/labels'
 import { termCatalog } from '../../ui/terms'
 import {
+  classOrder,
   formFromCard,
   inputToCard,
   sameForm,
@@ -38,6 +45,8 @@ import {
   zoneActionOrder,
   type AttributeForm,
   type CardForm as CardFormValues,
+  type EquipmentForm,
+  type ItemForm,
   type ZoneForm,
 } from './cardFormValues'
 
@@ -81,6 +90,7 @@ function TextField({
   errors,
   multiline = false,
   readOnly = false,
+  list,
 }: {
   label: string
   path: string
@@ -89,12 +99,15 @@ function TextField({
   errors: Errors
   multiline?: boolean
   readOnly?: boolean
+  /** `id` de um `datalist` com sugestões. */
+  list?: string
 }) {
   const id = useId()
   const props = {
     id,
     value,
     readOnly,
+    list,
     'aria-describedby': errors.describedBy(path),
     onChange: (event: { target: { value: string } }) =>
       onChange(event.target.value),
@@ -415,21 +428,417 @@ function AttributeFields({
   )
 }
 
+function CheckboxField({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string
+  checked: boolean
+  onChange: (checked: boolean) => void
+}) {
+  return (
+    <label>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(event) => onChange(event.target.checked)}
+      />
+      {label}
+    </label>
+  )
+}
+
+/** Lista de textos ("Efeito {n}"); com `list`, cada campo sugere do `datalist`. */
+function TextListField({
+  label,
+  itemLabel,
+  path,
+  items,
+  onChange,
+  errors,
+  list,
+}: {
+  label: string
+  itemLabel: string
+  path: string
+  items: readonly string[]
+  onChange: (items: string[]) => void
+  errors: Errors
+  list?: string
+}) {
+  return (
+    <ListField
+      label={label}
+      path={path}
+      items={items}
+      onChange={onChange}
+      newItem={() => ''}
+      errors={errors}
+      renderItem={(text, index, setText) => (
+        <TextField
+          label={`${itemLabel} ${index + 1}`}
+          path={`${path}.${index}${path === 'effects' ? '.text' : ''}`}
+          value={text}
+          onChange={setText}
+          errors={errors}
+          list={list}
+        />
+      )}
+    />
+  )
+}
+
+/** "Etiquetas" com as etiquetas já usadas na coleção como sugestão (REQ-21). */
+function TagsField({
+  values,
+  set,
+  suggestions,
+  errors,
+}: {
+  values: string[]
+  set: (tags: string[]) => void
+  suggestions: readonly string[]
+  errors: Errors
+}) {
+  const listId = useId()
+  return (
+    <>
+      <datalist id={listId}>
+        {suggestions.map((tag) => (
+          <option key={tag} value={tag} />
+        ))}
+      </datalist>
+      <TextListField
+        label="Etiquetas"
+        itemLabel="Etiqueta"
+        path="tags"
+        items={values}
+        onChange={set}
+        errors={errors}
+        list={listId}
+      />
+    </>
+  )
+}
+
+const slotOptions = options(
+  equipmentSlotSchema.options,
+  Object.fromEntries(
+    equipmentSlotSchema.options.map((s) => [s, categoryCatalog[s].label]),
+  ) as Record<(typeof equipmentSlotSchema.options)[number], string>,
+)
+const itemCategoryOptions = options(
+  itemCategorySchema.options,
+  Object.fromEntries(
+    itemCategorySchema.options.map((c) => [c, categoryCatalog[c].label]),
+  ) as Record<(typeof itemCategorySchema.options)[number], string>,
+)
+const modifierOptions = options(
+  modifierSchema.options,
+  Object.fromEntries(
+    modifierSchema.options.map((m) => [m, termCatalog[m].name]),
+  ) as Record<(typeof modifierSchema.options)[number], string>,
+)
+
+function EquipmentFields({
+  values,
+  set,
+  errors,
+  tags,
+}: {
+  values: EquipmentForm
+  set: (values: EquipmentForm) => void
+  errors: Errors
+  tags: readonly string[]
+}) {
+  return (
+    <>
+      <TextField
+        label="Nome"
+        path="name"
+        value={values.name}
+        onChange={(name) => set({ ...values, name })}
+        errors={errors}
+      />
+      <TextField
+        label="Texto de ambientação"
+        path="flavorText"
+        value={values.flavorText}
+        onChange={(flavorText) => set({ ...values, flavorText })}
+        errors={errors}
+        multiline
+      />
+      <SelectField
+        label="Raridade"
+        path="rarity"
+        value={values.rarity}
+        options={rarityOptions}
+        onChange={(rarity) => set({ ...values, rarity })}
+        errors={errors}
+      />
+      <SelectField
+        label="Slot"
+        path="slot"
+        value={values.slot}
+        options={slotOptions}
+        onChange={(slot) => set({ ...values, slot })}
+        errors={errors}
+      />
+      <TagsField
+        values={values.tags}
+        set={(next) => set({ ...values, tags: next })}
+        suggestions={tags}
+        errors={errors}
+      />
+      <ListField
+        label="Modificadores"
+        path="modifiers"
+        items={values.modifiers}
+        onChange={(modifiers) => set({ ...values, modifiers })}
+        newItem={() => ({ modifier: '' as const, value: '' })}
+        errors={errors}
+        renderItem={(entry, index, setEntry) => (
+          <>
+            {index === 0 && <span>Principal</span>}
+            <SelectField
+              label={`Modificador ${index + 1}`}
+              path={`modifiers.${index}.modifier`}
+              value={entry.modifier}
+              options={modifierOptions}
+              onChange={(modifier) => setEntry({ ...entry, modifier })}
+              errors={errors}
+            />
+            <TextField
+              label={`Valor do modificador ${index + 1}`}
+              path={`modifiers.${index}.value`}
+              value={entry.value}
+              onChange={(value) => setEntry({ ...entry, value })}
+              errors={errors}
+            />
+          </>
+        )}
+      />
+      <TextField
+        label="Pico mínimo"
+        path="peakRequirement"
+        value={values.peakRequirement}
+        onChange={(peakRequirement) => set({ ...values, peakRequirement })}
+        errors={errors}
+      />
+      <fieldset aria-describedby={errors.describedBy('classRestriction')}>
+        <legend>Restrição de classe</legend>
+        {errors.errorText('classRestriction')}
+        {classOrder.map((playerClass) => (
+          <CheckboxField
+            key={playerClass}
+            label={playerClassLabels[playerClass]}
+            checked={values.classRestriction.includes(playerClass)}
+            onChange={(checked) =>
+              set({
+                ...values,
+                classRestriction: classOrder.filter((c) =>
+                  c === playerClass
+                    ? checked
+                    : values.classRestriction.includes(c),
+                ),
+              })
+            }
+          />
+        ))}
+      </fieldset>
+      <CheckboxField
+        label="Bloqueia escudo"
+        checked={values.blocksShield}
+        onChange={(blocksShield) => set({ ...values, blocksShield })}
+      />
+      <ListField
+        label="Habilidades"
+        path="abilities"
+        items={values.abilities}
+        onChange={(abilities) => set({ ...values, abilities })}
+        newItem={() => ({ name: '', text: '' })}
+        errors={errors}
+        renderItem={(ability, index, setAbility) => (
+          <>
+            <TextField
+              label={`Nome da habilidade ${index + 1}`}
+              path={`abilities.${index}.name`}
+              value={ability.name}
+              onChange={(name) => setAbility({ ...ability, name })}
+              errors={errors}
+            />
+            <TextField
+              label={`Texto da habilidade ${index + 1}`}
+              path={`abilities.${index}.text`}
+              value={ability.text}
+              onChange={(text) => setAbility({ ...ability, text })}
+              errors={errors}
+            />
+          </>
+        )}
+      />
+      <TextListField
+        label="Efeitos"
+        itemLabel="Efeito"
+        path="effects"
+        items={values.effects}
+        onChange={(effects) => set({ ...values, effects })}
+        errors={errors}
+      />
+      <CheckboxField
+        label="Refino"
+        checked={values.refinement.enabled}
+        onChange={(enabled) =>
+          set({ ...values, refinement: { ...values.refinement, enabled } })
+        }
+      />
+      {values.refinement.enabled && (
+        <>
+          <TextField
+            label="Nível máximo"
+            path="refinement.maxLevel"
+            value={values.refinement.maxLevel}
+            onChange={(maxLevel) =>
+              set({ ...values, refinement: { ...values.refinement, maxLevel } })
+            }
+            errors={errors}
+          />
+          <TextField
+            label="Materiais"
+            path="refinement.materials.text"
+            value={values.refinement.materials}
+            onChange={(materials) =>
+              set({
+                ...values,
+                refinement: { ...values.refinement, materials },
+              })
+            }
+            errors={errors}
+          />
+        </>
+      )}
+      <CheckboxField
+        label="Encantamento"
+        checked={values.enchantment.enabled}
+        onChange={(enabled) =>
+          set({ ...values, enchantment: { ...values.enchantment, enabled } })
+        }
+      />
+      {values.enchantment.enabled && (
+        <TextField
+          label="Texto do encantamento"
+          path="enchantment.text"
+          value={values.enchantment.text}
+          onChange={(text) =>
+            set({ ...values, enchantment: { ...values.enchantment, text } })
+          }
+          errors={errors}
+        />
+      )}
+      <TextField
+        label="Ajuste de preço"
+        path="priceMultiplier"
+        value={values.priceMultiplier}
+        onChange={(priceMultiplier) => set({ ...values, priceMultiplier })}
+        errors={errors}
+      />
+    </>
+  )
+}
+
+function ItemFields({
+  values,
+  set,
+  errors,
+  tags,
+}: {
+  values: ItemForm
+  set: (values: ItemForm) => void
+  errors: Errors
+  tags: readonly string[]
+}) {
+  return (
+    <>
+      <TextField
+        label="Nome"
+        path="name"
+        value={values.name}
+        onChange={(name) => set({ ...values, name })}
+        errors={errors}
+      />
+      <TextField
+        label="Texto de ambientação"
+        path="flavorText"
+        value={values.flavorText}
+        onChange={(flavorText) => set({ ...values, flavorText })}
+        errors={errors}
+        multiline
+      />
+      <SelectField
+        label="Raridade"
+        path="rarity"
+        value={values.rarity}
+        options={rarityOptions}
+        onChange={(rarity) => set({ ...values, rarity })}
+        errors={errors}
+      />
+      <SelectField
+        label="Categoria"
+        path="itemCategory"
+        value={values.itemCategory}
+        options={itemCategoryOptions}
+        onChange={(itemCategory) => set({ ...values, itemCategory })}
+        errors={errors}
+      />
+      <TagsField
+        values={values.tags}
+        set={(next) => set({ ...values, tags: next })}
+        suggestions={tags}
+        errors={errors}
+      />
+      <TextListField
+        label="Efeitos"
+        itemLabel="Efeito"
+        path="effects"
+        items={values.effects}
+        onChange={(effects) => set({ ...values, effects })}
+        errors={errors}
+      />
+    </>
+  )
+}
+
 /** Campos do tipo da carta (REQ-21). */
 function TypeFields({
   values,
   set,
   errors,
+  tags,
 }: {
   values: CardFormValues
   set: (values: CardFormValues) => void
   errors: Errors
+  tags: readonly string[]
 }) {
   switch (values.type) {
     case 'zone':
       return <ZoneFields values={values} set={set} errors={errors} />
     case 'attribute':
       return <AttributeFields values={values} set={set} errors={errors} />
+    case 'equipment':
+      return (
+        <EquipmentFields
+          values={values}
+          set={set}
+          errors={errors}
+          tags={tags}
+        />
+      )
+    case 'item':
+      return (
+        <ItemFields values={values} set={set} errors={errors} tags={tags} />
+      )
     default: {
       const _exhaustive: never = values
       return _exhaustive
@@ -470,6 +879,8 @@ export function CardForm({
   const create = useCreateCard()
   const save = useSaveCard()
   const errors = useFieldErrors(fieldErrors)
+  // sugestões de etiqueta: a consulta já existe para a seção "Coleções" (cache)
+  const tags = useEditorCollection(collectionId).data?.tags ?? []
 
   const dirty = !sameForm(values, initial)
   useEffect(() => onDirtyChange(dirty), [dirty, onDirtyChange])
@@ -528,7 +939,12 @@ export function CardForm({
           />
           <p>{`Id: ${collectionId}.${values.slug}`}</p>
           <p>{`Situação: ${statusLabels[status]}`}</p>
-          <TypeFields values={values} set={setValues} errors={errors} />
+          <TypeFields
+            values={values}
+            set={setValues}
+            errors={errors}
+            tags={tags}
+          />
           <button
             type="submit"
             disabled={input === null || create.isPending || save.isPending}
