@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { ApiError } from '../../api/http'
 import {
   useAbandonParty,
@@ -7,6 +7,7 @@ import {
   type PartyStatus,
   type PartySummary,
 } from '../../api/parties'
+import { formatSavedAt } from '../../ui/formatSavedAt'
 
 /** Erro → texto da área de status (D-01): `message` do §1.4 ou genérico. */
 function errorText(error: Error | null): string {
@@ -20,13 +21,14 @@ const statusLabel: Record<PartyStatus, string> = {
   inSession: 'Em sessão',
 }
 
-const dateFormat = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short' })
-const timeFormat = new Intl.DateTimeFormat('pt-BR', { timeStyle: 'short' })
-
-/** "14/11/2026 18:30" no fuso do jogador (D-32: só formatação). */
-function formatSavedAt(iso: string): string {
-  const date = new Date(iso)
-  return `${dateFormat.format(date)} ${timeFormat.format(date)}`
+/** Mensagem deixada por outra tela ao voltar a `/` (D-37). */
+function messageFrom(state: unknown): string {
+  return typeof state === 'object' &&
+    state !== null &&
+    'message' in state &&
+    typeof state.message === 'string'
+    ? state.message
+    : ''
 }
 
 interface AbandonDialogProps {
@@ -69,8 +71,9 @@ export function SavedGames() {
   const parties = useParties()
   const abandon = useAbandonParty()
   const navigate = useNavigate()
+  const location = useLocation()
   const [confirming, setConfirming] = useState<PartySummary | null>(null)
-  const [message, setMessage] = useState('')
+  const [message, setMessage] = useState(() => messageFrom(location.state))
   const abandonButtons = useRef(new Map<string, HTMLButtonElement>())
 
   function closeDialog(): void {

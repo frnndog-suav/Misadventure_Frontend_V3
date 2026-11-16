@@ -4,6 +4,7 @@ import { useHealth } from './api/health'
 import { ApiError } from './api/http'
 import { SavedGames } from './features/home/SavedGames'
 import { NewGame } from './features/party/NewGame'
+import { PartySession } from './features/party/PartySession'
 
 /** Área de status da ponte com o servidor (REQ-01). */
 function HealthStatus() {
@@ -45,6 +46,7 @@ export default function App({ devRoutes }: { devRoutes?: ReactNode }) {
     <Routes>
       <Route index element={<Home />} />
       <Route path="novo" element={<NewGame />} />
+      <Route path="grupo/:partyId" element={<PartySession />} />
       {devRoutes}
     </Routes>
   )

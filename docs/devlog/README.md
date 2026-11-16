@@ -56,3 +56,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 024 | T-16 | [Cliente da campanha](024-T-16-cliente-da-campanha.md) | concluída |
 | 025 | T-17 | [Menu inicial e abandonar](025-T-17-menu-inicial-e-abandonar.md) | concluída |
 | 026 | T-18 | [Novo jogo](026-T-18-novo-jogo.md) | concluída |
+| 027 | T-19 | [Grupo em sessão](027-T-19-grupo-em-sessao.md) | aguardando revisão |
