@@ -416,9 +416,9 @@ export function formFromCard(card: Card): CardForm {
   }
 }
 
-const filled = (text: string): boolean => text.trim() !== ''
+export const filled = (text: string): boolean => text.trim() !== ''
 
-function parseNumber(text: string): number | null {
+export function parseNumber(text: string): number | null {
   if (!filled(text)) return null
   const value = Number(text.trim())
   return Number.isFinite(value) ? value : null

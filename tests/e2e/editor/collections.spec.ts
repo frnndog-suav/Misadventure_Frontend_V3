@@ -129,7 +129,7 @@ test('REQ-26: importa coleção; erros de arquivo e de conteúdo (MSW)', async (
       JSON.stringify({ collection: { id: 'novo' }, cards: [] }),
     ),
   })
-  await expect(status).toHaveText('Coleção importada: 1 cartas.')
+  await expect(status).toHaveText('Coleção importada: 1 cartas e 0 classes.')
   await expect(
     page.getByRole('heading', { name: 'Bosque Antigo' }),
   ).toBeVisible()

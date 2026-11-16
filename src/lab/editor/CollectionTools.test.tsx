@@ -233,6 +233,18 @@ describe('REQ-26: exportar coleção', () => {
     expect(JSON.parse(await created[0].text())).toEqual(fixtureExportFixture)
   })
 
+  it('REQ-33: o arquivo exportado traz as classes recebidas', async () => {
+    const { created } = stubDownload()
+    await chooseFixture()
+    fireEvent.click(screen.getByRole('button', { name: 'Exportar' }))
+    await waitFor(() =>
+      expect(status()).toHaveTextContent('Coleção exportada.'),
+    )
+    const file: unknown = JSON.parse(await created[0].text())
+    expect(file).toMatchObject({ classes: fixtureExportFixture.classes })
+    expect(fixtureExportFixture.classes).toHaveLength(2)
+  })
+
   it('REQ-26: erro §1.4 na exportação mostra a message e não baixa', async () => {
     const { downloads } = stubDownload()
     server.use(
@@ -268,7 +280,7 @@ describe('REQ-26: importar coleção', () => {
     ).not.toBeChecked()
   })
 
-  it('REQ-26: envia o conteúdo como está, escolhe a coleção importada e mostra "Coleção importada: {n} cartas."', async () => {
+  it('REQ-33: envia o conteúdo como está, escolhe a coleção importada e mostra "Coleção importada: {cardCount} cartas e {classCount} classes."', async () => {
     let received: unknown
     let replace: string | null = 'não chamou'
     let listCalls = 0
@@ -289,7 +301,9 @@ describe('REQ-26: importar coleção', () => {
     const raw = { qualquer: 'coisa', formatVersion: 99 }
     chooseFile(jsonFile(JSON.stringify(raw)))
     await waitFor(() =>
-      expect(status()).toHaveTextContent('Coleção importada: 1 cartas.'),
+      expect(status()).toHaveTextContent(
+        'Coleção importada: 1 cartas e 0 classes.',
+      ),
     )
     expect(received).toEqual(raw)
     expect(replace).toBeNull()
@@ -313,7 +327,9 @@ describe('REQ-26: importar coleção', () => {
     )
     chooseFile(jsonFile(JSON.stringify(bosqueExportFixture)))
     await waitFor(() =>
-      expect(status()).toHaveTextContent('Coleção importada: 1 cartas.'),
+      expect(status()).toHaveTextContent(
+        'Coleção importada: 1 cartas e 0 classes.',
+      ),
     )
     expect(replace).toBe('true')
   })

@@ -16,6 +16,7 @@ import {
 import { ApiError } from '../../api/http'
 import { cardTypeLabels, rarityLabels } from '../../ui/labels'
 import { CardsSection } from './CardsSection'
+import { ClassesSection } from './ClassesSection'
 import { ConfirmDialog } from './ConfirmDialog'
 import { downloadJson } from './downloadJson'
 import { useUnsavedGuard } from './useUnsavedGuard'
@@ -111,13 +112,18 @@ export function CollectionsSection() {
   const [message, setMessage] = useState('')
 
   const [cardDirty, setCardDirty] = useState(false)
+  const [classDirty, setClassDirty] = useState(false)
 
   const collectionDirty =
     mode !== null && fieldKeys.some((key) => values[key] !== initial[key])
-  // Uma guarda só para coleção e carta: o roteador aceita um bloqueio (D-43).
+  // Uma guarda só para coleção, carta e classe: o roteador aceita um bloqueio (D-43).
   const { guard, dialog } = useUnsavedGuard(
-    collectionDirty || cardDirty,
-    collectionDirty ? 'desta coleção' : 'desta carta',
+    collectionDirty || cardDirty || classDirty,
+    collectionDirty
+      ? 'desta coleção'
+      : cardDirty
+        ? 'desta carta'
+        : 'desta classe',
   )
 
   const submit = mode === 'edit' ? update : create
@@ -191,7 +197,9 @@ export function CollectionsSection() {
         onSuccess: (result) => {
           setSelectedId(result.collectionId)
           setMode(null)
-          setMessage(`Coleção importada: ${result.cardCount} cartas.`)
+          setMessage(
+            `Coleção importada: ${result.cardCount} cartas e ${result.classCount} classes.`,
+          )
         },
         onError: (error) => {
           setMessage(errorText(error))
@@ -410,6 +418,14 @@ export function CollectionsSection() {
           collectionId={selectedId}
           guard={guard}
           onDirtyChange={setCardDirty}
+        />
+      )}
+      {selectedId !== null && selected.isSuccess && (
+        <ClassesSection
+          key={`classes-${selectedId}`}
+          collectionId={selectedId}
+          guard={guard}
+          onDirtyChange={setClassDirty}
         />
       )}
     </>

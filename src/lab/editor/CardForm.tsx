@@ -6,7 +6,6 @@ import {
   type ReactNode,
 } from 'react'
 import {
-  attributeSchema,
   cardSchema,
   elementSchema,
   enemyBehaviorSchema,
@@ -27,7 +26,6 @@ import {
   useEditorCollection,
   usePublishCard,
   useSaveCard,
-  type ContentInvalidDetails,
   type ContentStatus,
   type EditorCard,
 } from '../../api/editor'
@@ -47,6 +45,13 @@ import {
 } from '../../ui/labels'
 import { termCatalog } from '../../ui/terms'
 import { ConfirmDialog } from './ConfirmDialog'
+import {
+  attributeOptions,
+  options,
+  useFieldErrors,
+  type Errors,
+  type FieldErrors,
+} from './formHelpers'
 import {
   classOrder,
   emptyEnemy,
@@ -77,30 +82,7 @@ const statusLabels = {
 
 const polarityLabels = { positive: 'Positivo', negative: 'Negativo' } as const
 
-type FieldErrors = ContentInvalidDetails['fields']
-
-/**
- * Liga os textos de erro de `details.fields` ao campo do mesmo caminho
- * (D-38): `describedBy(path)` vai no campo, `errorText(path)` logo abaixo.
- */
-function useFieldErrors(fields: FieldErrors) {
-  const base = useId()
-  const idOf = (path: string) => `${base}-${path.replaceAll('.', '-')}-error`
-  const messages = (path: string) =>
-    fields.filter((f) => f.path === path).map((f) => f.message)
-  return {
-    describedBy: (path: string) =>
-      messages(path).length > 0 ? idOf(path) : undefined,
-    errorText: (path: string): ReactNode => {
-      const list = messages(path)
-      return list.length > 0 ? <p id={idOf(path)}>{list.join(' ')}</p> : null
-    },
-  }
-}
-
-type Errors = ReturnType<typeof useFieldErrors>
-
-function TextField({
+export function TextField({
   label,
   path,
   value,
@@ -139,7 +121,7 @@ function TextField({
   )
 }
 
-function SelectField<T extends string>({
+export function SelectField<T extends string>({
   label,
   path,
   value,
@@ -147,6 +129,7 @@ function SelectField<T extends string>({
   onChange,
   errors,
   emptyLabel = 'Escolha…',
+  disabled = false,
 }: {
   label: string
   path: string
@@ -156,6 +139,8 @@ function SelectField<T extends string>({
   errors: Errors
   /** Texto da opção vazia (ex.: "Sem elemento" quando vazio vira `null`). */
   emptyLabel?: string
+  /** Seleção somente leitura (o `select` não tem `readOnly`). */
+  disabled?: boolean
 }) {
   const id = useId()
   return (
@@ -164,6 +149,7 @@ function SelectField<T extends string>({
       <select
         id={id}
         value={value}
+        disabled={disabled}
         aria-describedby={errors.describedBy(path)}
         onChange={(event) => {
           const next = options.find((o) => o.value === event.target.value)
@@ -183,7 +169,7 @@ function SelectField<T extends string>({
 }
 
 /** Lista com "Adicionar", "Remover", "Subir" e "Descer" (REQ-21). */
-function ListField<T>({
+export function ListField<T>({
   label,
   path,
   items,
@@ -248,13 +234,6 @@ function ListField<T>({
   )
 }
 
-function options<T extends string>(
-  values: readonly T[],
-  labels: Record<T, string>,
-): { value: T; label: string }[] {
-  return values.map((value) => ({ value, label: labels[value] }))
-}
-
 const polarityOptions = options(
   Object.keys(polarityLabels) as (keyof typeof polarityLabels)[],
   polarityLabels,
@@ -269,12 +248,6 @@ const arrowLayoutOptions = options(['straight', 'corner'] as const, {
 const attributeKindOptions = options(
   Object.keys(attributeKindLabels) as AttributeCard['attributeKind'][],
   attributeKindLabels,
-)
-const attributeOptions = options(
-  attributeSchema.options,
-  Object.fromEntries(
-    attributeSchema.options.map((a) => [a, termCatalog[a].name]),
-  ) as Record<Attribute, string>,
 )
 
 function ZoneFields({

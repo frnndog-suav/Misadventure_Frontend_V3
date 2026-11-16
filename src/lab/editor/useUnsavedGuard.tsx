@@ -10,7 +10,7 @@ import { ConfirmDialog } from './ConfirmDialog'
  */
 export function useUnsavedGuard(
   dirty: boolean,
-  subject: 'desta carta' | 'desta coleção',
+  subject: 'desta carta' | 'desta coleção' | 'desta classe',
 ): { guard: (action: () => void) => void; dialog: ReactNode } {
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
