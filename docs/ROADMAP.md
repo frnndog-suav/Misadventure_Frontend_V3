@@ -1,6 +1,6 @@
 # Misadventures — Roadmap de desenvolvimento
 
-> **Versão:** 0.22 · **Data:** 2026-11-15
+> **Versão:** 0.23 · **Data:** 2026-11-15
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend; o autor copia o arquivo inteiro quando ele muda. Base: README Parte III (III.2 e III.4). As regras estão em [`README.md`](README.md); o que trafega entre os lados, em [`CONTRATO.md`](CONTRATO.md).
 
@@ -56,6 +56,7 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 |---|---|---|---|---|
 | FEAT-04 | Catálogo de cartas e coleções: modelo das cartas, conteúdo de teste, exibição de cada tipo de carta | 3.4, 4.3, 5, 14.1, 18.1, 27 | validado | validado |
 | FEAT-05 | Campanha solo: criar grupo de 1, saves, continuar, salvamento automático, encerrar sessão, abandonar a partida | 28.1 | validado | validado |
+| FEAT-31 | Editor de conteúdo no laboratório (só dev): coleções e cartas dos 6 tipos, rascunho e publicação, validar coleção como dimensão, exportar e importar; o BE grava em arquivos JSON. Cresce com cada FEAT que trouxer conteúdo novo | 27, II.6, 3.5, Apêndice B (T1) | a fazer | a fazer |
 | FEAT-06 | Preparação da partida: classe e deck pré-pronto, valores iniciais, montagem do mapa, ordem e cidade inicial | 10.1, 3.5, 4.4, 8, 9 | a fazer | a fazer |
 | FEAT-07 | Mapa e Movimentar | 3.5, 12.2 | a fazer | a fazer |
 | FEAT-08 | A vez: pontos de ação, ações de zona disponíveis, encerrar a vez, rodadas | 11.1, 11.2, 12 | a fazer | a fazer |
@@ -94,6 +95,8 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 
 **FEAT-30 (decisão do autor, 2026-11-15):** até lá, as tarefas cuidam de funcionalidade e comportamento, com a base visual da FEAT-02 (tokens e fontes) e sem passada de layout. A FEAT-30 vem depois de todas as FEATs funcionais e antes do executável (FEAT-29), para que ele já saia com o visual final. O que ela precisa (pesquisa de diretrizes, perguntas ao autor, lista de artes) está em `.claude/skills/guia-visual/SKILL.md` §8, no frontend.
 
+**FEAT-31 (decisão do autor, 2026-11-15):** vem logo depois da FEAT-05, para o autor criar conteúdo de teste desde a FEAT-06. Como o laboratório, o editor cresce junto: cada FEAT que trouxer conteúdo novo (FEAT-11 efeitos estruturados, FEAT-15 missões, FEAT-16 boosters e estoque, FEAT-17 encantamentos, FEAT-18 montarias, FEAT-19 Carta de Dimensão) acrescenta os campos dela ao editor.
+
 ### Depois do jogo funcional
 
 - **Manual de regras para jogadores** (README III.4, Etapa 2): só quando todas as regras estiverem fechadas e validadas.
@@ -131,3 +134,4 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | 0.20 | 2026-11-15 | FEAT-05: lado FE `pronto` com MSW (SPEC-FRONTEND v0.28, T-16 a T-19). Os 7 cenários já passaram com curl contra o backend real; falta conferir as telas contra ele (`/retorno-backend`). |
 | 0.21 | 2026-11-15 | FEAT-05 `validado` nas duas colunas (CONTRATO v0.17): cenários com `curl` e as telas da campanha contra o backend real. |
 | 0.22 | 2026-11-15 | FEAT-30 (acabamento visual da interface, só FE) criada pelo autor: vem depois de todas as FEATs funcionais e antes da FEAT-29. |
+| 0.23 | 2026-11-15 | FEAT-31 (editor de conteúdo no laboratório, só dev) criada pelo autor, logo depois da FEAT-05; planejada no FE (SPEC-FRONTEND v0.29, T-20 a T-27); contrato a propor. |

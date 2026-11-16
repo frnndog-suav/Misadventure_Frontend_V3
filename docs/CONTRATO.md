@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.17 · **Data:** 2026-11-15
+> **Versão do contrato:** 0.18 · **Data:** 2026-11-15
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -186,6 +186,17 @@ Base dos nomes no código dos dois lados e dos termos com destaque e tooltip (RE
 | Última gravação do save | `savedAt` |
 
 *(Grupo, save, sessão, host e jogo solo já estão em §2.2.)*
+
+### 2.9 Editor de conteúdo (README 27, II.6) — FEAT-31
+
+| Termo | Identificador |
+|---|---|
+| Editor de conteúdo | `contentEditor` (rotas `/lab/content`) |
+| Rascunho / publicada / situação | `draft` / `published` / `status` (`ContentStatus`) |
+| Identificador (slug) da carta | `slug` |
+| Publicar / duplicar | `publish` / `duplicate` |
+| Validar como dimensão / problemas | `validateDimension` / `problems` |
+| Exportar / importar / substituir | `export` / `import` / `replace` |
 
 ## 3. Features
 
@@ -628,6 +639,147 @@ Partem de nenhum save e do laboratório nos padrões. Os `id` e as datas são ge
 - Dado o grupo `inSession`, quando `POST /parties/<id>/session/end`, então `200` com `status: "idle"` e `savedAt` ≥ o anterior; repetir o pedido devolve `409` com `{ "error": { "code": "PARTY_SESSION_NOT_ACTIVE", "message": "Não há sessão em andamento neste grupo." } }`.
 - Dado o grupo criado, quando `DELETE /parties/<id>`, então `204`; `GET /parties/<id>` seguinte devolve `404` com `{ "error": { "code": "PARTY_NOT_FOUND", "message": "Grupo não encontrado." } }` e `GET /parties` devolve `[]`.
 
+### FEAT-31 — Editor de conteúdo (coleções e cartas) — `proposto (FE)`
+
+Regras: README 27, II.6, 3.5 (validação da dimensão; Apêndice B I5 e K7) e Apêndice B **T1** (id imutável depois de publicado; nada usado em saves é excluído). Os formatos das cartas são os da FEAT-04 (`Card` e afins); esta seção só acrescenta o que o editor precisa.
+
+**Acesso:** como na FEAT-03, as rotas `/lab/content/*` só existem com o laboratório ligado; desligado, `404` `NOT_FOUND`. Admin entra na FEAT-25.
+
+**Gravação:** o backend grava o conteúdo em **arquivos JSON** no diretório de conteúdo (`CONTENT_DIR`), versionáveis no git. O formato dos arquivos é do backend; o que trafega é o desta seção.
+
+**Rascunho e publicação:** cada carta tem `status` `draft` ou `published`. **Mudança no catálogo da FEAT-04 (sem mudança de formato):** `GET /catalog/*` passa a devolver só cartas `published`, e `cardCounts` conta só as publicadas. As cartas que já existem nos arquivos (inclusive as 6 da coleção `fixture`) são `published`. Uma coleção aparece no catálogo mesmo sem cartas publicadas (contagens zeradas).
+
+**Validação:** toda conferência de conteúdo (formato, limites, combinações entre campos do README 3.4, 4.3, 5.1, 5.2, 14.1, 18.1) é do backend, ao salvar **e** ao publicar: um rascunho também precisa estar completo e no formato do `Card` (assim o catálogo nunca recebe carta fora do formato). O texto de cada erro vem pronto em pt-BR (spec D-38).
+
+#### Endpoints
+
+| Método | Rota | Pedido | Resposta | Erros |
+|---|---|---|---|---|
+| GET | `/lab/content/collections` | — | `200` `EditorCollectionSummary[]` | — |
+| POST | `/lab/content/collections` | `CollectionInput` | `201` `EditorCollection` | `400` `CONTENT_INVALID`, `409` `CONTENT_ID_TAKEN` |
+| GET | `/lab/content/collections/:collectionId` | — | `200` `EditorCollection` | `404` `COLLECTION_NOT_FOUND` |
+| PATCH | `/lab/content/collections/:collectionId` | `CollectionPatch` | `200` `EditorCollection` | `400` `CONTENT_INVALID`, `404` `COLLECTION_NOT_FOUND` |
+| DELETE | `/lab/content/collections/:collectionId` | — | `204` | `404` `COLLECTION_NOT_FOUND`, `409` `CONTENT_IN_USE` |
+| POST | `/lab/content/collections/:collectionId/validate-dimension` | — | `200` `DimensionValidation` | `404` `COLLECTION_NOT_FOUND` |
+| GET | `/lab/content/collections/:collectionId/export` | — | `200` `CollectionExport` | `404` `COLLECTION_NOT_FOUND` |
+| POST | `/lab/content/import` | query opcional `replace` = `true`/`false` (padrão `false`); corpo `CollectionExport` | `201` `ImportResult` | `400` `CONTENT_INVALID`, `409` `CONTENT_ID_TAKEN`, `409` `CONTENT_IN_USE` |
+| GET | `/lab/content/collections/:collectionId/cards` | query opcionais `type` (`CardType`), `status` (`ContentStatus`), `q` (texto; busca no nome/título, sem diferenciar maiúsculas e acentos) | `200` `EditorCardSummary[]` | `400` `CONTENT_INVALID`, `404` `COLLECTION_NOT_FOUND` |
+| POST | `/lab/content/collections/:collectionId/cards` | `CardInput` | `201` `EditorCard` (`draft`) | `400` `CONTENT_INVALID`, `404` `COLLECTION_NOT_FOUND`, `409` `CONTENT_ID_TAKEN` |
+| GET | `/lab/content/cards/:cardId` | — | `200` `EditorCard` | `404` `CARD_NOT_FOUND` |
+| PUT | `/lab/content/cards/:cardId` | `CardInput` (substitui a carta inteira) | `200` `EditorCard` | `400` `CONTENT_INVALID`, `404` `CARD_NOT_FOUND`, `409` `CONTENT_ID_TAKEN`, `409` `CONTENT_LOCKED` |
+| POST | `/lab/content/cards/:cardId/publish` | — | `200` `EditorCard` (`published`) | `400` `CONTENT_INVALID`, `404` `CARD_NOT_FOUND` |
+| POST | `/lab/content/cards/:cardId/duplicate` | — | `201` `EditorCard` (`draft`, id novo) | `404` `CARD_NOT_FOUND` |
+| DELETE | `/lab/content/cards/:cardId` | — | `204` | `404` `CARD_NOT_FOUND`, `409` `CONTENT_IN_USE` |
+
+Listas ordenadas por `id`. `PUT` num rascunho com outro `slug` **renomeia** a carta (o `id` devolvido é o novo; o antigo deixa de existir); numa carta `published`, outro `slug` → `409` `CONTENT_LOCKED`. Publicar uma carta já publicada devolve `200` sem mudança. `duplicate` escolhe o slug `<slug>-copia` (ou `-copia-2`, `-copia-3`… se ocupado). Editar uma carta `published` grava direto e ela continua `published`.
+
+#### Tipos
+
+```ts
+type ContentStatus = 'draft' | 'published'
+
+interface CollectionInput {
+  /** Slug: letras minúsculas, números e hífens. Imutável (Apêndice B, T1). */
+  id: string
+  name: string
+  description: string
+}
+
+/** Só o que muda; o `id` nunca muda. */
+interface CollectionPatch {
+  name?: string
+  description?: string
+}
+
+interface EditorCollectionSummary {
+  id: string
+  name: string
+  description: string
+  publishedCount: number
+  draftCount: number
+}
+
+interface EditorCollection extends EditorCollectionSummary {
+  /** Todas as cartas (rascunhos e publicadas), por tipo e por raridade; 0 quando não há. Zona e eventos não têm raridade e não entram em `rarityCounts`. */
+  cardCounts: Record<CardType, number>
+  rarityCounts: Record<Rarity, number>
+  /** Etiquetas (`tags`) já usadas em equipamentos e itens da coleção, sem repetição, em ordem alfabética (sugestão do formulário). */
+  tags: string[]
+}
+
+/** O `Card` da FEAT-04 sem `id` e `collectionId` (o backend monta `<collectionId>.<slug>`), mais o `slug`. */
+type CardInput = DistributiveOmit<Card, 'id' | 'collectionId'> & { slug: string }
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never
+
+interface EditorCard {
+  status: ContentStatus
+  card: Card
+}
+
+interface EditorCardSummary {
+  id: string
+  type: CardType
+  /** `name`, ou `title` em zona e eventos. */
+  name: string
+  status: ContentStatus
+}
+
+/** Só cartas `published` entram (README 3.5). */
+interface DimensionValidation {
+  valid: boolean
+  /** Textos pt-BR prontos; vazio quando `valid`. */
+  problems: string[]
+}
+
+interface CollectionExport {
+  formatVersion: 1
+  collection: CollectionInput
+  cards: EditorCard[]
+}
+
+interface ImportResult {
+  collectionId: string
+  cardCount: number
+}
+
+/** `details` de CONTENT_INVALID e CONTENT_ID_TAKEN. */
+interface ContentInvalidDetails {
+  fields: {
+    /** Caminho do campo no corpo enviado, com pontos e índices: "name", "modifiers.1.value", "enemies.0.health", "cards.3.card.name"; "" = o corpo inteiro (JSON malformado ou não objeto); nos filtros da lista, o nome do parâmetro ("type", "status"). */
+    path: string
+    /** Texto pt-BR pronto para mostrar ao lado do campo (spec D-38). */
+    message: string
+  }[]
+}
+```
+
+Mensagens (`message` do §1.4): `CONTENT_INVALID` "Conteúdo inválido."; `CONTENT_ID_TAKEN` "Este identificador já está em uso."; `CONTENT_IN_USE` "Este conteúdo é usado por algum save e não pode ser apagado."; `CONTENT_LOCKED` "O identificador de uma carta publicada não pode mudar.". Os textos de `fields[].message` são do backend; os dos cenários abaixo são os esperados.
+
+**`CONTENT_IN_USE`:** até a FEAT-06 nenhum save referencia cartas, então o erro existe no formato mas não tem cenário; o cenário entra na FEAT-06.
+
+#### Cenários de validação
+
+Partem do laboratório ligado e de um `CONTENT_DIR` com só a coleção `fixture` da FEAT-04 (6 cartas `published`, `description` `""`).
+
+- Quando `GET /lab/content/collections`, então `200` com `[{ "id": "fixture", "name": "Coleção de Teste", "description": "", "publishedCount": 6, "draftCount": 0 }]`.
+- Quando `GET /lab/content/collections/fixture`, então `200` com o resumo acima mais `cardCounts` 1 em cada tipo, `rarityCounts` só com as raridades das 3 cartas de atributo, equipamento e item (as demais 0) e `tags` com as etiquetas de `fixture.blade-of-dusk` e `fixture.healing-potion`, sem repetição e em ordem alfabética.
+- Quando `POST /lab/content/collections` com `{ "id": "bosque", "name": "Bosque Sombrio", "description": "Coleção de teste do editor." }`, então `201` com `{ "id": "bosque", "name": "Bosque Sombrio", "description": "Coleção de teste do editor.", "publishedCount": 0, "draftCount": 0, "cardCounts": { todos 0 }, "rarityCounts": { todos 0 }, "tags": [] }`; repetir o pedido → `409` com `{ "error": { "code": "CONTENT_ID_TAKEN", "message": "Este identificador já está em uso.", "details": { "fields": [{ "path": "id", "message": "Já existe uma coleção com este identificador." }] } } }`.
+- Quando `POST /lab/content/collections` com `{ "id": "Bosque X", "name": " ", "description": "" }`, então `400` com `{ "error": { "code": "CONTENT_INVALID", "message": "Conteúdo inválido.", "details": { "fields": [{ "path": "id", "message": "Use só letras minúsculas, números e hífens." }, { "path": "name", "message": "Informe o nome." }] } } }`.
+- Dado `bosque`, quando `PATCH /lab/content/collections/bosque` com `{ "name": "Bosque Antigo" }`, então `200` com `name: "Bosque Antigo"` e o mesmo `id`.
+- Dado `bosque`, quando `POST /lab/content/collections/bosque/cards` com `{ "slug": "forca", "type": "attribute", "name": "Força", "flavorText": null, "rarity": "common", "attributeKind": "basic", "attributes": ["strength"], "effects": [] }`, então `201` com `{ "status": "draft", "card": { "type": "attribute", "id": "bosque.forca", "collectionId": "bosque", "name": "Força", "flavorText": null, "rarity": "common", "attributeKind": "basic", "attributes": ["strength"], "effects": [] } }`; `GET /catalog/collections/bosque/cards` devolve `[]` (rascunho fora do catálogo).
+- Dado `bosque`, quando `POST /lab/content/collections/bosque/cards` com o corpo anterior trocando `slug` por `"forca-sorte"` e `attributes` por `["strength", "luck"]`, então `400` `CONTENT_INVALID` com `details.fields = [{ "path": "attributes", "message": "Carta básica tem exatamente 1 atributo." }]`.
+- Dado `bosque.forca` em rascunho, quando `PUT /lab/content/cards/bosque.forca` com o mesmo corpo e `"slug": "forca-bruta"`, então `200` com `card.id = "bosque.forca-bruta"`; `GET /lab/content/cards/bosque.forca` seguinte → `404` `CARD_NOT_FOUND`.
+- Dado `bosque.forca-bruta` em rascunho, quando `POST /lab/content/cards/bosque.forca-bruta/publish`, então `200` com `status: "published"`; `GET /catalog/cards/bosque.forca-bruta` → `200` com a carta; `PUT` com `"slug": "outra"` → `409` com `{ "error": { "code": "CONTENT_LOCKED", "message": "O identificador de uma carta publicada não pode mudar." } }`; `PUT` com o mesmo slug e `"name": "Força Bruta"` → `200`, continua `published`.
+- Dado `bosque.forca-bruta`, quando `POST /lab/content/cards/bosque.forca-bruta/duplicate`, então `201` com `status: "draft"` e `card.id = "bosque.forca-bruta-copia"` (demais campos iguais).
+- Dado a cópia, quando `GET /lab/content/collections/bosque/cards?status=draft`, então `200` com `[{ "id": "bosque.forca-bruta-copia", "type": "attribute", "name": "Força Bruta", "status": "draft" }]`; com `?q=bruta` → as duas cartas; com `?type=monster` → `400` `CONTENT_INVALID` com `details.fields = [{ "path": "type", "message": "Tipo de carta desconhecido." }]`.
+- Dado a cópia, quando `DELETE /lab/content/cards/bosque.forca-bruta-copia`, então `204`; um `GET` seguinte → `404` `CARD_NOT_FOUND`.
+- Quando `POST /lab/content/collections/fixture/validate-dimension`, então `200` com `{ "valid": false, "problems": ["A coleção precisa de pelo menos 1 zona Urbana publicada."] }` (a única zona da `fixture` não é Urbana; os textos exatos de cada problema são do backend e entram aqui no `implementado (BE)`).
+- Dado `bosque` com `bosque.forca-bruta` publicada, quando `GET /lab/content/collections/bosque/export`, então `200` com `{ "formatVersion": 1, "collection": { "id": "bosque", "name": "Bosque Antigo", "description": "Coleção de teste do editor." }, "cards": [{ "status": "published", "card": { … } }] }`.
+- Dado esse export guardado, quando `POST /lab/content/import` com ele, então `409` `CONTENT_ID_TAKEN` com `details.fields = [{ "path": "collection.id", "message": "Já existe uma coleção com este identificador." }]`; com `?replace=true` → `201` com `{ "collectionId": "bosque", "cardCount": 1 }`; depois de `DELETE /lab/content/collections/bosque` (`204`), o import sem `replace` → `201` com o mesmo resultado.
+- Quando `POST /lab/content/import` com `{}`, então `400` `CONTENT_INVALID` com `details.fields` contendo `{ "path": "formatVersion", "message": "Versão do arquivo não suportada." }`; nada é gravado.
+- Quando `GET /lab/content/collections/nope`, então `404` com `{ "error": { "code": "COLLECTION_NOT_FOUND", "message": "Coleção não encontrada." } }`.
+- Dado o laboratório desligado, quando `GET /lab/content/collections`, então `404` `NOT_FOUND`.
+
 ## 4. Códigos de erro
 
 | Código | Quando acontece | FEAT |
@@ -641,6 +793,10 @@ Partem de nenhum save e do laboratório nos padrões. Os `id` e as datas são ge
 | `PARTY_INVALID` | Dados de criação do grupo inválidos (400); `details.fields` diz cada campo e o motivo. | FEAT-05 |
 | `PARTY_NOT_FOUND` | Grupo (save) inexistente ou abandonado (404). | FEAT-05 |
 | `PARTY_SESSION_NOT_ACTIVE` | Encerrar sessão num grupo sem sessão em andamento (409). | FEAT-05 |
+| `CONTENT_INVALID` | Coleção, carta, filtro ou arquivo de importação inválido (400); `details.fields` traz o caminho e o texto pronto de cada problema. | FEAT-31 |
+| `CONTENT_ID_TAKEN` | Identificador de coleção ou carta já usado (409); `details.fields` como em `CONTENT_INVALID`. | FEAT-31 |
+| `CONTENT_IN_USE` | Excluir ou substituir conteúdo usado por algum save (409). | FEAT-31 |
+| `CONTENT_LOCKED` | Mudar o identificador de uma carta publicada (409). | FEAT-31 |
 
 ## 5. Histórico
 
@@ -663,3 +819,4 @@ Partem de nenhum save e do laboratório nos padrões. Os `id` e as datas são ge
 | 0.15 | 2026-11-14 | FE | FEAT-04 `validado`: os 7 cenários rodaram contra o backend real (`http://localhost:3333`, `CONTENT_DIR=test/fixtures/content`) e passaram; as 6 cartas reais passam no schema do frontend. Também passaram o CORS para `http://localhost:5173` e os e2e da área `lab` com o MSW desligado. As fixtures do MSW passaram a ser cópia exata das cartas do backend. Sem mudança de formato. |
 | 0.16 | 2026-11-15 | BE | FEAT-05 `implementado (BE)`: `POST`/`GET /parties`, `GET`/`DELETE /parties/:partyId`, `POST /parties/:partyId/session` e `/session/end` entregues e cobertos por e2e (os 7 cenários), sem mudança de formato. Saves gravados no banco; ids são uuid (id que não é uuid → `404` `PARTY_NOT_FOUND`). JSON malformado no `POST /parties` → `PARTY_INVALID` com `invalidBody`. O cenário `minPlayers = 2` usa `PATCH /lab/config` (precisa de `LAB_ENABLED=true`). |
 | 0.17 | 2026-11-15 | FE | FEAT-05 `validado`: os 7 cenários passaram com `curl` contra o backend real, e as telas `/`, `/novo` e `/grupo/:partyId` passaram com o MSW desligado (criar, erros por campo, `belowMinPlayers`, sessão, encerrar, continuar, abandonar, `404`). Sem mudança de formato. |
+| 0.18 | 2026-11-15 | FE | FEAT-31 proposta (editor de conteúdo, README B.19 T1): rotas `/lab/content/*` (coleções, cartas, publicar, duplicar, validar como dimensão, exportar, importar); tipos `ContentStatus`, `CollectionInput`, `CollectionPatch`, `EditorCollectionSummary`, `EditorCollection`, `CardInput`, `EditorCard`, `EditorCardSummary`, `DimensionValidation`, `CollectionExport`, `ImportResult`, `ContentInvalidDetails`; glossário §2.9; códigos `CONTENT_INVALID`, `CONTENT_ID_TAKEN`, `CONTENT_IN_USE`, `CONTENT_LOCKED` (§4). Muda o comportamento do catálogo da FEAT-04 (só cartas `published`), sem mudar o formato. |

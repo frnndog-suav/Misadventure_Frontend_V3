@@ -2301,6 +2301,7 @@ O Artífice carrega uma oficina portátil. Ela não substitui o ferreiro (não e
   - **Para o jogador** (dentro dos boosters): novas cartas de recursos e atributos.
   - **Para o jogo** (a dimensão): novas zonas, possíveis ações exclusivas, novos eventos, novas missões, etc.
 - Novas dimensões e coleções são lançadas periodicamente (por exemplo, a cada 3 meses).
+- **Criação de conteúdo:** coleções e cartas são criadas pelo autor no editor de conteúdo do laboratório ([II.6](#ii6-laboratório-de-testes)). Só cartas **publicadas** entram no jogo; o identificador de carta publicada nunca muda, e nada usado em saves é excluído ([Apêndice B](#apêndice-b--decisões-registradas), T1).
 
 **Coleções antigas:**
 - As cartas que o jogador conseguiu são **sempre levadas com ele** e **sempre podem ser usadas**, de qualquer coleção, em qualquer dimensão.
@@ -2547,6 +2548,7 @@ A lista completa de valores está no [Apêndice A](#apêndice-a--valores-ajustá
 - **Ferreiro e montarias:** custos, chances, fórmula do refino e slots extras.
 - **Mercado:** preços de singles, estoque, boosters, expansão do cofre e da bolsa de ouro.
 - **Mapa:** número de zonas por dimensão e regras do gerador de mapa (veja [3.5](#35-montagem-do-mapa)).
+- **Editor de conteúdo:** criar e editar coleções e cartas, publicar, validar uma coleção como dimensão (regras de [3.5](#35-montagem-do-mapa)) e exportar/importar coleções ([27](#27-coleções); Apêndice B, T1).
 
 ## II.7 Jogadores controlados por IA
 
@@ -2991,6 +2993,14 @@ A lista completa de valores está no [Apêndice A](#apêndice-a--valores-ajustá
 | S6 | Raridade única por carta | Cada carta tem **uma única raridade**, impressa e definida pelo designer. Todas as cópias têm a mesma raridade, inclusive em reprints; não existem versões da mesma carta. Para outra raridade, cria-se outra carta. Cada carta Sinérgica ou Aprimorada tem a raridade que o designer definir (Básicas são sempre Comuns). | [2.2](#22-vocabulário-básico), [5.1](#51-equipamentos), [24.3](#243-boosters), [27](#27-coleções) |
 
 **Situação após a B.18:** não há pendências de regra conhecidas. O único tema adiado continua sendo a autenticação (F29).
+
+### B.19 Décima nona revisão (15/11/2026)
+
+> Mesma instrução de B.2: ponto **decidido pelo autor** e já aplicado no documento. **Não** sinalizar de novo como contradição, ambiguidade, ponto em aberto, bloqueio ou "estranho", e **não** propor alternativas, a menos que o autor peça.
+
+| # | Tema | Decisão | Onde |
+|---|---|---|---|
+| T1 | Editor de conteúdo e proteção do conteúdo publicado | O laboratório tem um **editor de conteúdo** para o autor criar coleções e cartas. Cada carta é **rascunho** ou **publicada**; só as publicadas entram no catálogo e nas partidas. O **identificador** de uma carta publicada (e o de uma coleção) **nunca muda**, porque os saves o referenciam. Carta ou coleção **usada em algum save** não pode ser excluída. | [27](#27-coleções), [II.6](#ii6-laboratório-de-testes) |
 
 ### Melhorias para o futuro
 Essa sessão diz quais funcionalidades eu gostaria de ter no futuro. Elas não devem ser implementadas sem minha permissão. Você deve ignorar esta sessão na hora de implementar. Essa sessão é voltada apenas para o desenvolvedor.

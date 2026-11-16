@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.28 · **Data:** 2026-11-15
+> **Versão da spec:** 0.29 · **Data:** 2026-11-15
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -86,6 +86,7 @@ Funções e hooks que as telas usam para ler o estado e enviar intenções. Regr
 | `useStartSession(partyId)` | mutação `POST /parties/:partyId/session`: `Party` validado | T-16 |
 | `useEndSession(partyId)` | mutação `POST /parties/:partyId/session/end`: `Party` validado; sucesso invalida `useParties` | T-16 |
 | `useAbandonParty()` | mutação `DELETE /parties/:partyId` (`204`); sucesso ou erro invalida `useParties` | T-16 |
+| Editor de conteúdo (FEAT-31) | consultas e mutações de `/lab/content/*`: coleções (listar, criar, editar, excluir, validar como dimensão, exportar, importar) e cartas (listar com filtros, ler, criar, salvar, publicar, duplicar, excluir); erro `CONTENT_INVALID` com `details.fields` validado. Nomes e formatos definidos pelo CONTRATO §3 FEAT-31 (a criar com `/contrato FEAT-31`) | T-20 |
 
 Base comum (T-08): `requestJson(method, path, body?)` em `src/api/http.ts` faz todo pedido; `ApiError` traz `code`, `message` e `details` (ainda `unknown`); `LAB_CONFIG_INVALID` com `details` válido vira `LabConfigInvalidError` (subclasse, com `fields`); com `details` fora do contrato vira erro genérico (falha de validação, REQ-06).
 
@@ -96,6 +97,7 @@ Base comum (T-08): `requestJson(method, path, body?)` em `src/api/http.ts` faz t
 | app | `/` | rota inicial: menu da campanha e "Seus jogos" com o abandono (REQ-14, REQ-17) + área de status da ponte com o servidor (REQ-01); tema e tipografia da base visual (REQ-02) | FEAT-01, FEAT-02 |
 | lab | `/lab` (só dev, D-07) | laboratório: configuração ajustável do jogo e vitrine de componentes (REQ-05 a REQ-07); catálogo de cartas (REQ-08 a REQ-13) | FEAT-03, FEAT-04 |
 | party | `/novo`, `/grupo/:partyId` | novo jogo (grupo de 1) e grupo em sessão (REQ-15, REQ-16) | FEAT-05 |
+| editor | `/lab/editor` (só dev, D-07) | editor de conteúdo: coleções e cartas (REQ-18 a REQ-26) | FEAT-31 |
 
 Os componentes compartilhados da FEAT-02 (termo do jogo, categoria de carta) ainda não aparecem em nenhuma tela: são verificados por testes de componente até entrarem no laboratório (FEAT-03) e nas telas da FEAT-04.
 
@@ -222,6 +224,76 @@ A rota `/` deixa de ser placeholder: mantém o título "Misadventures" e a área
 - **Dado** o diálogo aberto, **quando** o jogador confirma "Abandonar", **então** o app envia `DELETE /parties/:partyId`; com `204`, o diálogo fecha, a lista é consultada de novo e a área de status de "Seus jogos" mostra "Grupo abandonado.".
 - **Dado** `404` `PARTY_NOT_FOUND` ou outro erro §1.4, **então** o diálogo fecha, a lista é consultada de novo e a área de status mostra a `message`; falha de rede ou resposta fora do contrato mostra "Servidor indisponível. Tente novamente.".
 
+### Editor de conteúdo (FEAT-31)
+
+Ferramenta do autor para criar coleções e cartas (README 27, II.6; Apêndice B, T1). O backend grava, valida e decide tudo (CONTRATO §3 FEAT-31); o frontend só edita, envia e mostra. Regras comuns do REQ-18 ao REQ-26: rótulos pt-BR de identificadores vêm do glossário (CONTRATO §2); cada seção tem a própria área de status (papel `status`); qualquer erro §1.4 sem tratamento próprio mostra a `message`, e falha de rede ou resposta fora do contrato mostra "Servidor indisponível. Tente novamente."; nenhuma exceção chega à tela; durante um envio, o botão que o disparou fica desabilitado.
+
+### REQ-18 — Editor só no dev
+
+- **Dado** o build de dev, **quando** o autor abre `/lab`, **então** há um link "Editor de conteúdo" que leva a `/lab/editor`, onde a tela tem o título "Editor de conteúdo" e um link "Voltar ao laboratório".
+- **Dado** o build de release, **quando** o `dist/` é inspecionado, **então** não contém o código nem a rota do editor (teste de build, D-07, D-24).
+
+### REQ-19 — Coleções
+
+- **Dado** a tela do editor, **quando** ela é exibida, **então** há uma seção "Coleções" com a lista recebida do backend; cada coleção aparece com `name`, o identificador e "{p} publicadas · {r} rascunhos" (contagens prontas do backend); com a lista vazia, "Nenhuma coleção ainda.". Durante a consulta, a área de status mostra "Carregando coleções…".
+- **Dado** a coleção escolhida, **então** um painel mostra as contagens prontas do backend por tipo de carta (rótulos do REQ-08) e por raridade ("Comum", "Incomum", "Rara", "Épica", "Lendária").
+- **Dado** "Nova coleção", **quando** clicado, **então** aparece um formulário com "Identificador", "Nome" e "Descrição" e os botões "Criar coleção" e "Cancelar"; com sucesso, a coleção nova aparece escolhida e a área de status mostra "Coleção criada.".
+- **Dado** "Editar coleção", **então** o mesmo formulário aparece com os valores atuais e o campo "Identificador" somente leitura (Apêndice B, T1), com o botão "Salvar coleção"; com sucesso, "Coleção salva.".
+- **Dado** `CONTENT_INVALID` ou `CONTENT_ID_TAKEN`, **então** cada campo listado mostra o texto recebido (D-38), ligado ao campo por `aria-describedby`, e o que foi digitado continua nos campos.
+- **Dado** "Excluir coleção", **quando** clicado, **então** abre um diálogo (como o do REQ-17) com o título "Excluir “{name}”?", o texto "A coleção e todas as cartas dela serão apagadas. Não dá para desfazer." e os botões "Excluir" e "Cancelar"; confirmado com sucesso, a lista é consultada de novo e a área de status mostra "Coleção excluída."; com `409` `CONTENT_IN_USE`, mostra a `message` e nada é apagado.
+
+### REQ-20 — Cartas da coleção
+
+- **Dado** uma coleção escolhida, **então** há uma seção "Cartas" com os filtros "Tipo de carta" (opções do REQ-08), "Situação" ("Todas", "Rascunho", "Publicada") e o campo de busca "Buscar por nome"; cada mudança de filtro (a busca, ao parar de digitar ou apertar Enter) consulta o backend, que filtra (D-39).
+- **Dado** a lista recebida, **então** cada carta aparece na ordem recebida como um botão "{nome} · {tipo} · {Rascunho|Publicada}" (nome = `name`, ou `title` em zona e eventos); com a lista vazia, "Nenhuma carta neste filtro.". Durante a consulta, "Carregando cartas…".
+- **Dado** "Nova carta", **quando** clicado, **então** o autor escolhe o tipo entre os 6 do REQ-08 e abre o formulário vazio daquele tipo (REQ-21), em rascunho e ainda não salvo.
+- **Dado** uma carta da lista, **quando** escolhida, **então** abre o formulário dela com os valores recebidos (REQ-21).
+
+### REQ-21 — Formulário de carta
+
+Campos e formatos são os do `Card` do CONTRATO §3 FEAT-04 (mais os da FEAT-31); o formulário não aplica limite nem combinação de regra (o backend confere).
+
+- **Dado** qualquer tipo, **então** o formulário tem "Identificador" (o slug; ao lado, "Id: {collectionId}.{slug}" só montado como texto), a situação ("Rascunho" ou "Publicada") e, conforme o tipo, os campos abaixo, com o rótulo pt-BR de cada valor:
+  - **Zona:** "Título", "Tipo de zona" (seleção), "Local", "Setas de conexão" (número), "Ações de zona" (caixas de marcar, rótulos §2.5), "Efeitos" (lista; cada item com texto e "Positivo"/"Negativo").
+  - **Atributo:** "Nome", "Texto de ambientação", "Raridade", "Tipo" ("Básica", "Sinérgica", "Aprimorada"), "Atributos" (lista de seleções), "Efeitos" (lista de textos).
+  - **Equipamento:** "Nome", "Texto de ambientação", "Raridade", "Slot", "Etiquetas" (lista de textos, com sugestão das etiquetas já usadas na coleção, recebidas do backend), "Modificadores" (lista de modificador + valor; o primeiro marcado "principal"), "Pico mínimo" (vazio = sem requisito), "Restrição de classe" (caixas de marcar), "Bloqueia escudo", "Habilidades" (lista de nome + texto), "Efeitos", "Refino" (desligado = não refinável; ligado: "Nível máximo" e "Materiais"), "Encantamento" (desligado = não encantável; ligado: texto), "Ajuste de preço" (número decimal).
+  - **Item:** "Nome", "Texto de ambientação", "Raridade", "Categoria", "Etiquetas", "Efeitos".
+  - **Evento aleatório:** "Título", "Texto de ambientação", "Requisitos" (lista de textos), "Coisa boa", "Coisa ruim", "Sem fuga".
+  - **Evento de combate:** "Título", "Texto de ambientação", "Inimigos" (lista; cada um com "Nome", "Texto de ambientação", "Quantidade", "Tipos" (caixas de marcar), "Criatura", "Categoria", "Elemento" (vazio = sem elemento), "Vida", os 7 modificadores, "Vigor" (vazio = sem Vigor), "Habilidades", "Comportamento"), "Coisa boa", "Coisa ruim", "Sem fuga".
+- **Dado** uma lista do formulário, **então** há "Adicionar" no fim e, em cada item, "Remover", "Subir" e "Descer" (a ordem é enviada como está; em "Modificadores", o primeiro é o principal).
+- **Dado** um campo numérico com texto que não é número, ou um campo de texto obrigatório vazio, **então** "Salvar rascunho" fica desabilitado (formato, não regra, como a D-23).
+- **Dado** "Salvar rascunho", **quando** clicado, **então** o app cria (carta nova) ou salva (carta existente) com os valores do formulário; com sucesso, o formulário mostra a carta devolvida, a lista é consultada de novo e a área de status mostra "Rascunho salvo." (ou "Carta salva." numa carta publicada, D-39).
+- **Dado** `400` `CONTENT_INVALID` ou `409` `CONTENT_ID_TAKEN`, **então** a área de status mostra a `message`, o que foi digitado continua e cada campo de `details.fields` (inclusive dentro de listas, ex.: o valor do 2º modificador) mostra o texto recebido (D-38), ligado ao campo por `aria-describedby`, até o próximo envio.
+- **Dado** uma carta publicada, **então** "Identificador" fica somente leitura (Apêndice B, T1).
+
+### REQ-22 — Pré-visualização
+
+- **Dado** o formulário aberto, **então** ao lado aparece a seção "Pré-visualização" com a carta montada dos valores atuais, pelos mesmos componentes do catálogo (REQ-09 a REQ-13), atualizada a cada mudança.
+- **Dado** valores que ainda não formam uma carta no formato do contrato (ex.: campo obrigatório vazio), **então** a seção mostra "Preencha os campos obrigatórios para ver a carta." (conferência de formato, D-39).
+
+### REQ-23 — Publicar, duplicar e excluir carta
+
+- **Dado** uma carta em rascunho, salva e sem alterações pendentes, **então** o botão "Publicar" fica habilitado; **quando** clicado, abre um diálogo "Publicar “{nome}”?" com o texto "Depois de publicada, a carta entra no catálogo e nas partidas, e o identificador não pode mais mudar." e os botões "Publicar" e "Cancelar"; confirmado com sucesso, a situação passa a "Publicada" e a área de status mostra "Carta publicada.".
+- **Dado** `CONTENT_INVALID` ao publicar, **então** os erros aparecem como no REQ-21 e a carta continua em rascunho.
+- **Dado** uma carta salva, **quando** o autor clica "Duplicar", **então** o backend cria um rascunho com outro identificador (escolhido por ele); o formulário abre nesse rascunho e a área de status mostra "Cópia criada.".
+- **Dado** uma carta salva, **quando** o autor clica "Excluir carta", **então** abre um diálogo "Excluir “{nome}”?" com "A carta será apagada. Não dá para desfazer." e os botões "Excluir" e "Cancelar"; confirmado com sucesso, o formulário fecha, a lista é consultada de novo e a área de status mostra "Carta excluída."; com `409` `CONTENT_IN_USE`, mostra a `message` e nada é apagado.
+
+### REQ-24 — Alterações não salvas
+
+- **Dado** o formulário (de carta ou de coleção) com alterações não salvas, **quando** o autor escolhe outra carta, outra coleção, "Nova carta", "Voltar ao laboratório" ou outra rota do app, **então** abre um diálogo "Descartar alterações?" com o texto "As alterações desta carta ainda não foram salvas." (ou "desta coleção") e os botões "Descartar" e "Continuar editando" (foco inicial); "Continuar editando" ou Esc fecham sem sair.
+- **Dado** alterações não salvas, **quando** o autor fecha ou recarrega a aba, **então** o navegador pede confirmação (aviso padrão do navegador).
+
+### REQ-25 — Validar coleção como dimensão
+
+- **Dado** uma coleção escolhida, **quando** o autor clica "Validar como dimensão", **então** o app pede a validação ao backend (README 3.5; Apêndice B, I5 e K7) e a área de status mostra "Validando…"; com resultado válido, "A coleção forma uma dimensão válida."; com problemas, "A coleção não forma uma dimensão válida." e a lista "Problemas" com cada texto recebido, na ordem recebida. Só cartas publicadas entram na validação (decidido pelo backend).
+
+### REQ-26 — Exportar e importar coleção
+
+- **Dado** uma coleção escolhida, **quando** o autor clica "Exportar", **então** o app pede a exportação ao backend e o navegador baixa o arquivo `{collectionId}.json` com o conteúdo recebido; a área de status mostra "Coleção exportada.".
+- **Dado** "Importar coleção", **quando** o autor escolhe um arquivo `.json`, **então** o app envia o conteúdo ao backend sem conferir o formato (o backend valida); com a caixa "Substituir se já existir" desmarcada e a coleção já existente, o backend responde `409` `CONTENT_ID_TAKEN` e a área de status mostra a `message`; com sucesso, a lista é consultada de novo, a coleção importada fica escolhida e a área de status mostra "Coleção importada: {n} cartas." (`n` recebido).
+- **Dado** um arquivo que não é JSON, **então** nada é enviado e a área de status mostra "O arquivo não é um JSON válido.".
+- **Dado** `CONTENT_INVALID` na importação, **então** a área de status mostra a `message` e a lista "Problemas" com cada campo e texto recebido (D-38); nada é importado.
+
 Formato:
 
 ### REQ-nn — <nome>
@@ -267,6 +339,8 @@ Formato:
 - **D-35 — Menu inicial e abandono (T-17):** "Seus jogos" em `src/features/home/SavedGames.tsx`, numa `section` com título (região "Seus jogos") e sua área de status; a da ponte (REQ-01) continua fora dela. A mensagem de uma ação ("Grupo abandonado." ou o erro) tem precedência sobre o estado da consulta e fica até o próximo "Abandonar". O diálogo é próprio (`div` com `role="dialog"` e `aria-modal`), não o `<dialog>` nativo (`showModal` sem suporte no jsdom); foco inicial em "Cancelar", Esc fecha, foco volta ao "Abandonar" do save; **sem** prender o Tab dentro do diálogo (o REQ-17 não pede; fica para a `/visual` ou um REQ, se o autor quiser). Confirmar fecha o diálogo na hora e a mensagem chega com a resposta. Data: `Intl.DateTimeFormat` pt-BR de data e de hora juntas com espaço ("14/11/2026 18:30", sem a vírgula do `dateStyle`+`timeStyle`). Testes no fuso fixo `America/Sao_Paulo`; sem `@testing-library/user-event` (não autorizada), com `fireEvent`. *(T-17, 2026-11-15.)*
 - **D-36 — Tela "Novo jogo" (T-18):** `src/features/party/NewGame.tsx`, num `form` com `noValidate` (a validação é do backend). O erro de cada campo fica num parágrafo logo abaixo dele, ligado por `aria-describedby` só enquanto existe. A área de status (papel `status`) vem depois do botão "Criar grupo"; o link "Voltar" fica no fim. Os textos derivam do último envio (estado da mutação), então somem ao enviar de novo. `PARTY_INVALID` com `details` fora do contrato mostra "Servidor indisponível. Tente novamente." (T-16). Até a T-19, `/grupo/:partyId` não tem tela.
 - **D-37 — Tela do grupo em sessão (T-19):** `src/features/party/PartySession.tsx` em `/grupo/:partyId`. O `POST …/session` sai num efeito ao abrir. No StrictMode do dev o efeito roda duas vezes e o pedido também, mas sem consequência: pelo contrato, Continuar repetido não muda o grupo. Por isso não há guarda. Ordem da área de status: erro do encerrar, erro do abrir, "Abrindo o grupo…" até o `200`, vazio depois. Quando o encerrar falha, o grupo continua na tela e o botão volta a ficar habilitado. "Voltar ao início" só aparece com `PARTY_NOT_FOUND`. "Sessão encerrada." chega a "Seus jogos" pelo `state` da navegação (`{ message }`, lido como `unknown`), com a mesma precedência da D-35; recarregar `/` no navegador pode mostrá-la de novo, porque o histórico guarda o `state`. `formatSavedAt` saiu de `SavedGames.tsx` para `src/ui/formatSavedAt.ts`, compartilhado pelas duas telas. *(T-19, 2026-11-15.)*
+- **D-38 — Editor: texto dos erros por campo vem pronto do backend:** em `CONTENT_INVALID` e `CONTENT_ID_TAKEN`, cada item de `details.fields` traz o caminho do campo (ex.: `modifiers.1.value`) e o texto pt-BR pronto; o frontend só liga o texto ao campo. *(Motivo: as conferências de conteúdo são muitas e são regra (README 3.4, 4.3, 5.1, 14.1, 18.1); montar o texto por `reason` no frontend, como a D-23, espalharia regra pela tela. A D-23 continua valendo para a configuração do laboratório.)*
+- **D-39 — Editor de conteúdo (FEAT-31):** decisões do autor de 2026-11-15: (1) o backend grava o conteúdo em arquivos JSON no repositório dele (versionados no git); (2) cada carta é rascunho ou publicada; só as publicadas entram no catálogo (REQ-08) e nas partidas; (3) o editor cresce com cada FEAT, que acrescenta ao formulário o que trouxer (FEAT-11 efeitos estruturados, FEAT-15 missões, FEAT-16 boosters e estoque do mercado, FEAT-17 encantamentos do ferreiro, FEAT-18 montarias, FEAT-19 Carta de Dimensão e dimensão de lançamento da coleção); (4) id imutável depois de publicado e nada usado em saves é excluído (Apêndice B, T1). Outras escolhas desta spec: o editor fica em `src/lab/editor/` (só dev, D-07) na rota `/lab/editor`; editar uma carta publicada grava direto, sem rascunho paralelo (ferramenta de dev); a busca e os filtros são feitos pelo backend, como no catálogo; a pré-visualização confere só o **formato** com o schema Zod do `Card` antes de montar a carta, sem regra. *(Fora desta FEAT: upload de imagens (as artes seguem a `/assets`), efeitos estruturados, ofertas de serviço das zonas, missões, montarias, Carta de Dimensão, boosters.)*
 
 **Pendências (decidir antes da tarefa indicada):**
 - **P-02 — Como o jogador vê as vezes dos outros no momento 2** (antes da FEAT-21): proposta: o backend devolve a lista ordenada de eventos do domínio e o frontend anima um por um; no momento 3 só o transporte muda (socket). Registrada também no ROADMAP.
@@ -320,6 +394,19 @@ A T-15 fecha o lado FE da FEAT-04 com MSW; depois, `/retorno-backend` contra o b
 
 A T-19 fecha o lado FE da FEAT-05 com MSW; depois, `/retorno-backend` contra o backend real. O laboratório já tem `minPlayers` (FEAT-03), único valor do Apêndice A que a FEAT usa.
 
+**FEAT-31 — Editor de conteúdo (lado frontend)** (depende do CONTRATO §3 FEAT-31 `acordado`)
+
+- [ ] **T-20 — Cliente do editor** (REQ-19 a REQ-26; D-38, D-39). Em `src/api/`: tipos e schemas Zod do CONTRATO §3 FEAT-31; hooks de 3.4; `CONTENT_INVALID` e `CONTENT_ID_TAKEN` com `details` válido viram erro com `fields`. Em `src/mocks/`: fixtures dos cenários do contrato e handlers por tabela de cenários (D-29), sem guardar estado. Como verificar: unitários da camada de cliente.
+- [ ] **T-21 — Rota do editor e coleções** (REQ-18, REQ-19, REQ-24 na parte de coleção). `/lab/editor` atrás da rota de dev (D-24), link em `/lab`, marca "Editor de conteúdo" no teste de build, seção "Coleções" com painel, formulário e exclusão. Como verificar: `npm run dev` (mocks) em `/lab/editor`; `npm run test:build`; unitários e e2e da área `editor`.
+- [ ] **T-22 — Lista de cartas** (REQ-20). Filtros, busca, "Nova carta" com escolha de tipo. Como verificar: unitários e e2e da área `editor`.
+- [ ] **T-23 — Formulário base, zona e atributo** (REQ-21, REQ-22, REQ-24). Estrutura comum (identificador, listas com adicionar/remover/subir/descer, erros por caminho de campo, "Salvar rascunho", alterações não salvas), formulários de zona e de atributo e a pré-visualização. Como verificar: unitários e e2e da área `editor`.
+- [ ] **T-24 — Formulários de equipamento e item** (REQ-21). Como verificar: unitários e e2e da área `editor`.
+- [ ] **T-25 — Formulários de evento aleatório e de combate** (REQ-21). Inclui a lista de inimigos. Como verificar: unitários e e2e da área `editor`.
+- [ ] **T-26 — Publicar, duplicar e excluir carta** (REQ-23). Como verificar: unitários e e2e da área `editor`.
+- [ ] **T-27 — Validar como dimensão, exportar e importar** (REQ-25, REQ-26). Como verificar: unitários e e2e da área `editor`.
+
+A T-27 fecha o lado FE da FEAT-31 com MSW; depois, `/retorno-backend` contra o backend real. A FEAT não usa valores do Apêndice A.
+
 ## 8. Histórico
 
 | Versão | Data | Mudança |
@@ -352,3 +439,4 @@ A T-19 fecha o lado FE da FEAT-05 com MSW; depois, `/retorno-backend` contra o b
 | 0.26 | 2026-11-15 | T-17 concluída: menu inicial com "Novo jogo" e "Seus jogos" e o abandono com diálogo (`src/features/home/SavedGames.tsx`); D-35. |
 | 0.27 | 2026-11-15 | T-18 concluída: tela "Novo jogo" em `/novo` com erros por campo (`src/features/party/NewGame.tsx`); D-36. |
 | 0.28 | 2026-11-15 | T-19 concluída: tela do grupo em sessão em `/grupo/:partyId` (`src/features/party/PartySession.tsx`); D-37. FEAT-05 com o lado FE pronto (MSW). |
+| 0.29 | 2026-11-15 | FEAT-31 planejada (editor de conteúdo, só dev): REQ-18 a REQ-26, D-38 (erros por campo com texto do backend), D-39 (decisões do autor e da spec), área `editor` e cliente do editor em 3.4, tarefas T-20 a T-27. Depende do CONTRATO §3 FEAT-31. |
