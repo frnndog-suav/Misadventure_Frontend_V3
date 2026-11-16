@@ -1,19 +1,29 @@
-import type {
-  Attribute,
-  AttributeCard,
-  Card,
-  CardType,
-  EquipmentSlot,
-  ItemCategory,
-  Modifier,
-  PlayerClass,
-  Rarity,
-  ZoneAction,
-  ZoneCard,
-  ZoneType,
+import {
+  modifierSchema,
+  type Attribute,
+  type AttributeCard,
+  type Card,
+  type CardType,
+  type Element,
+  type Enemy,
+  type EnemyBehavior,
+  type EnemyCategory,
+  type EnemyType,
+  type EquipmentSlot,
+  type ItemCategory,
+  type Modifier,
+  type PlayerClass,
+  type Rarity,
+  type ZoneAction,
+  type ZoneCard,
+  type ZoneType,
 } from '../../api/catalog'
 import type { CardInput } from '../../api/editor'
-import { playerClassLabels, zoneActionLabels } from '../../ui/labels'
+import {
+  enemyTypeLabels,
+  playerClassLabels,
+  zoneActionLabels,
+} from '../../ui/labels'
 
 /**
  * Valores do formulário de carta (REQ-21, D-43). Números ficam como texto e
@@ -78,21 +88,81 @@ export interface ItemForm {
   effects: string[]
 }
 
-export type CardForm = ZoneForm | AttributeForm | EquipmentForm | ItemForm
-
-/** Tipos com formulário; os eventos chegam na T-25 (D-43). */
-export type FormCardType = CardForm['type']
-
-export function hasForm(type: CardType): type is FormCardType {
-  return (
-    type === 'zone' ||
-    type === 'attribute' ||
-    type === 'equipment' ||
-    type === 'item'
-  )
+export interface RandomEventForm {
+  type: 'randomEvent'
+  slug: string
+  title: string
+  flavorText: string
+  requirements: string[]
+  goodOutcome: string
+  badOutcome: string
+  noEscape: boolean
 }
 
-export function emptyForm(type: FormCardType): CardForm {
+export interface EnemyForm {
+  name: string
+  flavorText: string
+  count: string
+  enemyTypes: EnemyType[]
+  creature: string
+  enemyCategory: EnemyCategory | ''
+  /** `''` = sem elemento (`null`). */
+  element: Element | ''
+  health: string
+  modifiers: Record<Modifier, string>
+  /** Vazio = sem Vigor (`null`). */
+  vigor: string
+  abilities: { name: string; text: string }[]
+  behavior: EnemyBehavior | ''
+}
+
+export interface CombatEventForm {
+  type: 'combatEvent'
+  slug: string
+  title: string
+  flavorText: string
+  enemies: EnemyForm[]
+  goodOutcome: string
+  badOutcome: string
+  noEscape: boolean
+}
+
+export type CardForm =
+  | ZoneForm
+  | AttributeForm
+  | EquipmentForm
+  | ItemForm
+  | RandomEventForm
+  | CombatEventForm
+
+/** Modificadores na ordem do glossário (CONTRATO §2.3). */
+export const modifierOrder = modifierSchema.options
+
+/** Tipos de inimigo na ordem do glossário. */
+export const enemyTypeOrder = Object.keys(enemyTypeLabels) as EnemyType[]
+
+/** Inimigo novo: quantidade 1 e modificadores 0; o resto vazio (D-45). */
+export function emptyEnemy(): EnemyForm {
+  return {
+    name: '',
+    flavorText: '',
+    count: '1',
+    enemyTypes: [],
+    creature: '',
+    enemyCategory: '',
+    element: '',
+    health: '',
+    modifiers: Object.fromEntries(modifierOrder.map((m) => [m, '0'])) as Record<
+      Modifier,
+      string
+    >,
+    vigor: '',
+    abilities: [],
+    behavior: '',
+  }
+}
+
+export function emptyForm(type: CardType): CardForm {
   switch (type) {
     case 'zone':
       return {
@@ -146,6 +216,28 @@ export function emptyForm(type: FormCardType): CardForm {
         tags: [],
         effects: [],
       }
+    case 'randomEvent':
+      return {
+        type,
+        slug: '',
+        title: '',
+        flavorText: '',
+        requirements: [],
+        goodOutcome: '',
+        badOutcome: '',
+        noEscape: false,
+      }
+    case 'combatEvent':
+      return {
+        type,
+        slug: '',
+        title: '',
+        flavorText: '',
+        enemies: [],
+        goodOutcome: '',
+        badOutcome: '',
+        noEscape: false,
+      }
     default: {
       const _exhaustive: never = type
       return _exhaustive
@@ -165,8 +257,11 @@ function slugOf(card: Card): string {
   return card.id.startsWith(prefix) ? card.id.slice(prefix.length) : card.id
 }
 
-/** Valores de uma carta recebida; `null` para tipos ainda sem formulário. */
-export function formFromCard(card: Card): CardForm | null {
+const numberText = (value: number | null): string =>
+  value === null ? '' : String(value)
+
+/** Valores de uma carta recebida. */
+export function formFromCard(card: Card): CardForm {
   switch (card.type) {
     case 'zone':
       return {
@@ -239,8 +334,44 @@ export function formFromCard(card: Card): CardForm | null {
         effects: card.effects.map((e) => e.text),
       }
     case 'randomEvent':
+      return {
+        type: 'randomEvent',
+        slug: slugOf(card),
+        title: card.title,
+        flavorText: card.flavorText ?? '',
+        requirements: card.requirements.map((r) => r.text),
+        goodOutcome: card.goodOutcome.text,
+        badOutcome: card.badOutcome.text,
+        noEscape: card.noEscape,
+      }
     case 'combatEvent':
-      return null
+      return {
+        type: 'combatEvent',
+        slug: slugOf(card),
+        title: card.title,
+        flavorText: card.flavorText ?? '',
+        enemies: card.enemies.map((enemy) => ({
+          name: enemy.name,
+          flavorText: enemy.flavorText ?? '',
+          count: String(enemy.count),
+          enemyTypes: enemyTypeOrder.filter((t) =>
+            enemy.enemyTypes.includes(t),
+          ),
+          creature: enemy.creature,
+          enemyCategory: enemy.enemyCategory,
+          element: enemy.element ?? '',
+          health: String(enemy.health),
+          modifiers: Object.fromEntries(
+            modifierOrder.map((m) => [m, String(enemy.modifiers[m])]),
+          ) as Record<Modifier, string>,
+          vigor: numberText(enemy.vigor),
+          abilities: enemy.abilities.map(({ name, text }) => ({ name, text })),
+          behavior: enemy.behavior,
+        })),
+        goodOutcome: card.goodOutcome.text,
+        badOutcome: card.badOutcome.text,
+        noEscape: card.noEscape,
+      }
     default: {
       const _exhaustive: never = card
       return _exhaustive
@@ -263,6 +394,44 @@ function chosen<T extends string>(values: readonly (T | '')[]): T[] | null {
     result.push(value)
   }
   return result
+}
+
+/** Um inimigo no formato do contrato, ou `null` se falta formato. */
+function toEnemy(form: EnemyForm): Enemy | null {
+  const count = parseNumber(form.count)
+  const health = parseNumber(form.health)
+  const vigor = parseNumber(form.vigor)
+  const modifiers: Partial<Record<Modifier, number>> = {}
+  for (const m of modifierOrder) {
+    const value = parseNumber(form.modifiers[m])
+    if (value === null) return null
+    modifiers[m] = value
+  }
+  if (
+    !filled(form.name) ||
+    count === null ||
+    !filled(form.creature) ||
+    form.enemyCategory === '' ||
+    health === null ||
+    (filled(form.vigor) && vigor === null) ||
+    !form.abilities.every((a) => filled(a.name) && filled(a.text)) ||
+    form.behavior === ''
+  )
+    return null
+  return {
+    name: form.name,
+    flavorText: filled(form.flavorText) ? form.flavorText : null,
+    count,
+    enemyTypes: form.enemyTypes,
+    creature: form.creature,
+    enemyCategory: form.enemyCategory,
+    element: form.element === '' ? null : form.element,
+    health,
+    modifiers: modifiers as Record<Modifier, number>,
+    vigor,
+    abilities: form.abilities,
+    behavior: form.behavior,
+  }
 }
 
 /** O corpo do envio, ou `null` se falta formato (Salvar desabilitado). */
@@ -380,6 +549,51 @@ export function toInput(form: CardForm): CardInput | null {
         itemCategory: form.itemCategory,
         tags: form.tags,
         effects: form.effects.map((text) => ({ text })),
+      }
+    }
+    case 'randomEvent': {
+      if (
+        !filled(form.slug) ||
+        !filled(form.title) ||
+        !form.requirements.every(filled) ||
+        !filled(form.goodOutcome) ||
+        !filled(form.badOutcome)
+      )
+        return null
+      return {
+        slug: form.slug,
+        type: 'randomEvent',
+        title: form.title,
+        flavorText: filled(form.flavorText) ? form.flavorText : null,
+        requirements: form.requirements.map((text) => ({ text })),
+        goodOutcome: { text: form.goodOutcome },
+        badOutcome: { text: form.badOutcome },
+        noEscape: form.noEscape,
+      }
+    }
+    case 'combatEvent': {
+      const enemies: Enemy[] = []
+      for (const enemy of form.enemies) {
+        const parsed = toEnemy(enemy)
+        if (parsed === null) return null
+        enemies.push(parsed)
+      }
+      if (
+        !filled(form.slug) ||
+        !filled(form.title) ||
+        !filled(form.goodOutcome) ||
+        !filled(form.badOutcome)
+      )
+        return null
+      return {
+        slug: form.slug,
+        type: 'combatEvent',
+        title: form.title,
+        flavorText: filled(form.flavorText) ? form.flavorText : null,
+        enemies,
+        goodOutcome: { text: form.goodOutcome },
+        badOutcome: { text: form.badOutcome },
+        noEscape: form.noEscape,
       }
     }
     default: {

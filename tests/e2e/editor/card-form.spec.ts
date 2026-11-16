@@ -138,3 +138,68 @@ test('REQ-21: abre um item da lista com os valores recebidos (MSW)', async ({
   await expect(form.getByLabel('Etiqueta 1')).toHaveValue('poção')
   await expect(form.getByLabel('Efeito 1')).toHaveValue('Recupera 5 de vida.')
 })
+
+test('REQ-21: cria um evento de combate com um inimigo (MSW)', async ({
+  page,
+}) => {
+  await page.goto('/lab/editor')
+  await page.getByRole('button', { name: /Coleção de Teste/ }).click()
+  const cards = page.getByRole('region', { name: 'Cartas' })
+  await cards.getByRole('button', { name: 'Nova carta' }).click()
+  await cards
+    .getByRole('group', { name: 'Tipo da nova carta' })
+    .getByRole('button', { name: 'Evento de combate' })
+    .click()
+
+  const form = page.getByRole('region', { name: 'Carta', exact: true })
+  const preview = page.getByRole('region', { name: 'Pré-visualização' })
+  const save = form.getByRole('button', { name: 'Salvar rascunho' })
+  await form.getByLabel('Identificador').fill('emboscada')
+  await form.getByLabel('Título').fill('Emboscada')
+  await form.getByLabel('Coisa boa').fill('Vitória.')
+  await form.getByLabel('Coisa ruim').fill('Derrota.')
+  await form
+    .getByRole('group', { name: 'Inimigos' })
+    .getByRole('button', { name: 'Adicionar' })
+    .last()
+    .click()
+  await expect(save).toBeDisabled()
+  await form.getByLabel('Nome do inimigo 1').fill('Bandido')
+  await form
+    .getByRole('group', { name: 'Tipos do inimigo 1' })
+    .getByLabel('Humanoide')
+    .check()
+  await form.getByLabel('Criatura do inimigo 1').fill('Humano')
+  await form
+    .getByLabel('Categoria do inimigo 1')
+    .selectOption({ label: 'Comum' })
+  await form.getByLabel('Vida do inimigo 1').fill('5')
+  await form
+    .getByLabel('Comportamento do inimigo 1')
+    .selectOption({ label: 'Caçador' })
+  await expect(save).toBeEnabled()
+  await expect(
+    preview.getByRole('article', { name: 'Emboscada' }),
+  ).toBeVisible()
+  await save.click()
+  await expect(form.getByRole('status')).toHaveText('Rascunho salvo.')
+})
+
+test('REQ-21: abre um evento aleatório da lista com os valores recebidos (MSW)', async ({
+  page,
+}) => {
+  await page.goto('/lab/editor')
+  await page.getByRole('button', { name: /Coleção de Teste/ }).click()
+  await page
+    .getByRole('region', { name: 'Cartas' })
+    .getByRole('button', {
+      name: 'Viajante Ferido · Evento aleatório · Publicada',
+    })
+    .click()
+  const form = page.getByRole('region', { name: 'Carta', exact: true })
+  await expect(form.getByLabel('Identificador')).toHaveValue('wounded-traveler')
+  await expect(form.getByLabel('Requisito 1')).toHaveValue(
+    'Possuir uma Poção de Cura.',
+  )
+  await expect(form.getByLabel('Sem fuga')).not.toBeChecked()
+})

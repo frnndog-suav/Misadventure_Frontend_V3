@@ -889,3 +889,314 @@ describe('REQ-21: item', () => {
     )
   })
 })
+
+describe('REQ-21: evento aleatório', () => {
+  it('REQ-21: evento aleatório da lista abre o formulário com os valores recebidos', async () => {
+    renderEditor()
+    await openCard('Viajante Ferido · Evento aleatório · Publicada')
+    expect(field('Identificador')).toHaveValue('wounded-traveler')
+    expect(field('Título')).toHaveValue('Viajante Ferido')
+    expect(field('Texto de ambientação')).toHaveValue(
+      'Um estranho jaz à beira da trilha.',
+    )
+    expect(field('Requisito 1')).toHaveValue('Possuir uma Poção de Cura.')
+    expect(field('Coisa boa')).toHaveValue(
+      'O viajante agradece e revela um atalho.',
+    )
+    expect(field('Coisa ruim')).toHaveValue(
+      'Era uma emboscada; o grupo perde suprimentos.',
+    )
+    expect(field('Sem fuga')).not.toBeChecked()
+  })
+
+  it('REQ-21: "Nova carta" de evento aleatório só salva com o formato completo e envia o corpo', async () => {
+    const bodies = recordBodies()
+    renderEditor()
+    await newCard('Evento aleatório')
+    expect(saveButton()).toBeDisabled()
+    type('Identificador', 'ponte')
+    type('Título', 'Ponte Quebrada')
+    type('Coisa boa', 'O grupo atravessa.')
+    expect(saveButton()).toBeDisabled()
+    type('Coisa ruim', 'Alguém cai no rio.')
+    expect(saveButton()).toBeEnabled()
+    const requirements = within(form()).getByRole('group', {
+      name: 'Requisitos',
+    })
+    fireEvent.click(
+      within(requirements).getByRole('button', { name: 'Adicionar' }),
+    )
+    expect(saveButton()).toBeDisabled()
+    type('Requisito 1', 'Ter uma corda.')
+    fireEvent.click(field('Sem fuga'))
+    expect(saveButton()).toBeEnabled()
+    expect(
+      within(preview()).getByRole('article', { name: 'Ponte Quebrada' }),
+    ).toBeInTheDocument()
+    fireEvent.click(saveButton())
+    await waitFor(() =>
+      expect(formStatus()).toHaveTextContent('Rascunho salvo.'),
+    )
+    expect(bodies[0].body).toEqual({
+      slug: 'ponte',
+      type: 'randomEvent',
+      title: 'Ponte Quebrada',
+      flavorText: null,
+      requirements: [{ text: 'Ter uma corda.' }],
+      goodOutcome: { text: 'O grupo atravessa.' },
+      badOutcome: { text: 'Alguém cai no rio.' },
+      noEscape: true,
+    })
+  })
+
+  it('REQ-21: erro em requisito e em resultado aparece no campo do caminho', async () => {
+    server.use(
+      http.post(cardsUrl, () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: 'CONTENT_INVALID',
+              message: 'Conteúdo inválido.',
+              details: {
+                fields: [
+                  { path: 'requirements.0.text', message: 'Texto vazio.' },
+                  { path: 'goodOutcome.text', message: 'Muito longo.' },
+                ],
+              },
+            },
+          },
+          { status: 400 },
+        ),
+      ),
+    )
+    renderEditor()
+    await newCard('Evento aleatório')
+    type('Identificador', 'ponte')
+    type('Título', 'Ponte')
+    type('Coisa boa', 'Bom.')
+    type('Coisa ruim', 'Ruim.')
+    fireEvent.click(
+      within(
+        within(form()).getByRole('group', { name: 'Requisitos' }),
+      ).getByRole('button', { name: 'Adicionar' }),
+    )
+    type('Requisito 1', 'Algo.')
+    fireEvent.click(saveButton())
+    await waitFor(() =>
+      expect(field('Requisito 1')).toHaveAccessibleDescription('Texto vazio.'),
+    )
+    expect(field('Coisa boa')).toHaveAccessibleDescription('Muito longo.')
+    expect(field('Requisito 1')).toHaveValue('Algo.')
+  })
+})
+
+describe('REQ-21: evento de combate', () => {
+  async function newCombat(): Promise<void> {
+    renderEditor()
+    await newCard('Evento de combate')
+    type('Identificador', 'emboscada')
+    type('Título', 'Emboscada')
+    type('Coisa boa', 'Vitória.')
+    type('Coisa ruim', 'Derrota.')
+  }
+
+  function addEnemy(): void {
+    const enemies = within(form()).getByRole('group', { name: 'Inimigos' })
+    const add = within(enemies).getAllByRole('button', { name: 'Adicionar' })
+    // o último "Adicionar" do grupo é o da lista de inimigos
+    fireEvent.click(add[add.length - 1])
+  }
+
+  it('REQ-21: evento de combate da lista abre o formulário com os inimigos recebidos', async () => {
+    renderEditor()
+    await openCard('Lobos Uivantes · Evento de combate · Publicada')
+    expect(field('Identificador')).toHaveValue('howling-wolves')
+    expect(field('Título')).toHaveValue('Lobos Uivantes')
+    expect(field('Nome do inimigo 1')).toHaveValue('Lobo Cinzento')
+    expect(field('Texto de ambientação do inimigo 1')).toHaveValue('')
+    expect(field('Quantidade do inimigo 1')).toHaveValue('2')
+    const types = within(form()).getByRole('group', {
+      name: 'Tipos do inimigo 1',
+    })
+    expect(within(types).getByLabelText('Fera')).toBeChecked()
+    expect(within(types).getByLabelText('Planta')).not.toBeChecked()
+    expect(field('Criatura do inimigo 1')).toHaveValue('Lobo')
+    expect(field('Categoria do inimigo 1')).toHaveValue('common')
+    expect(field('Elemento do inimigo 1')).toHaveValue('')
+    expect(
+      within(field('Elemento do inimigo 1')).getByRole('option', {
+        name: 'Sem elemento',
+      }),
+    ).toBeInTheDocument()
+    expect(field('Vida do inimigo 1')).toHaveValue('6')
+    expect(field('Ataque do inimigo 1')).toHaveValue('2')
+    expect(field('Celeridade do inimigo 1')).toHaveValue('3')
+    expect(field('Reflexão do inimigo 1')).toHaveValue('0')
+    expect(field('Vigor do inimigo 1')).toHaveValue('')
+    expect(field('Comportamento do inimigo 1')).toHaveValue('aggressive')
+    expect(field('Coisa boa')).toHaveValue(
+      'Os lobos fogem e deixam peles para trás.',
+    )
+    expect(field('Sem fuga')).not.toBeChecked()
+  })
+
+  it('REQ-21: inimigo novo exige nome, criatura, categoria, comportamento e números em formato', async () => {
+    await newCombat()
+    expect(saveButton()).toBeEnabled()
+    addEnemy()
+    expect(saveButton()).toBeDisabled()
+    type('Nome do inimigo 1', 'Bandido')
+    type('Criatura do inimigo 1', 'Humano')
+    fireEvent.change(field('Categoria do inimigo 1'), {
+      target: { value: 'common' },
+    })
+    fireEvent.change(field('Comportamento do inimigo 1'), {
+      target: { value: 'hunter' },
+    })
+    type('Vida do inimigo 1', '5')
+    expect(saveButton()).toBeEnabled()
+    type('Ataque do inimigo 1', 'x')
+    expect(saveButton()).toBeDisabled()
+    type('Ataque do inimigo 1', '1')
+    type('Vigor do inimigo 1', 'dois')
+    expect(saveButton()).toBeDisabled()
+    type('Vigor do inimigo 1', '')
+    expect(saveButton()).toBeEnabled()
+    const abilities = within(form()).getByRole('group', {
+      name: 'Habilidades do inimigo 1',
+    })
+    fireEvent.click(
+      within(abilities).getByRole('button', { name: 'Adicionar' }),
+    )
+    expect(saveButton()).toBeDisabled()
+    type('Nome da habilidade 1 do inimigo 1', 'Golpe')
+    type('Texto da habilidade 1 do inimigo 1', 'Causa 2 de dano.')
+    expect(saveButton()).toBeEnabled()
+  })
+
+  it('REQ-21: "Salvar rascunho" envia os inimigos (vazios viram null, tipos na ordem do glossário)', async () => {
+    const bodies = recordBodies()
+    await newCombat()
+    addEnemy()
+    type('Nome do inimigo 1', 'Bandido')
+    type('Quantidade do inimigo 1', '3')
+    const types = within(form()).getByRole('group', {
+      name: 'Tipos do inimigo 1',
+    })
+    fireEvent.click(within(types).getByLabelText('Morto-vivo'))
+    fireEvent.click(within(types).getByLabelText('Humanoide'))
+    type('Criatura do inimigo 1', 'Humano')
+    fireEvent.change(field('Categoria do inimigo 1'), {
+      target: { value: 'elite' },
+    })
+    fireEvent.change(field('Elemento do inimigo 1'), {
+      target: { value: 'fire' },
+    })
+    type('Vida do inimigo 1', '8')
+    type('Defesa do inimigo 1', '2')
+    type('Vigor do inimigo 1', '4')
+    fireEvent.change(field('Comportamento do inimigo 1'), {
+      target: { value: 'defensive' },
+    })
+    expect(
+      within(preview()).getByRole('article', { name: 'Emboscada' }),
+    ).toBeInTheDocument()
+    fireEvent.click(saveButton())
+    await waitFor(() =>
+      expect(formStatus()).toHaveTextContent('Rascunho salvo.'),
+    )
+    expect(bodies[0].body).toEqual({
+      slug: 'emboscada',
+      type: 'combatEvent',
+      title: 'Emboscada',
+      flavorText: null,
+      enemies: [
+        {
+          name: 'Bandido',
+          flavorText: null,
+          count: 3,
+          enemyTypes: ['humanoid', 'undead'],
+          creature: 'Humano',
+          enemyCategory: 'elite',
+          element: 'fire',
+          health: 8,
+          modifiers: {
+            attack: 0,
+            defense: 2,
+            accuracy: 0,
+            evasion: 0,
+            celerity: 0,
+            piercing: 0,
+            reflection: 0,
+          },
+          vigor: 4,
+          abilities: [],
+          behavior: 'defensive',
+        },
+      ],
+      goodOutcome: { text: 'Vitória.' },
+      badOutcome: { text: 'Derrota.' },
+      noEscape: false,
+    })
+  })
+
+  it('REQ-21: lista de inimigos tem "Subir" e "Remover"', async () => {
+    renderEditor()
+    await openCard('Lobos Uivantes · Evento de combate · Publicada')
+    addEnemy()
+    type('Nome do inimigo 2', 'Alfa')
+    const enemyItems = () =>
+      within(
+        within(form()).getByRole('group', { name: 'Inimigos' }),
+      ).getAllByRole('listitem')
+    const ownButton = (item: HTMLElement, name: string) => {
+      const buttons = within(item).getAllByRole('button', { name })
+      return buttons[buttons.length - 1]
+    }
+    fireEvent.click(ownButton(enemyItems()[1], 'Subir'))
+    expect(field('Nome do inimigo 1')).toHaveValue('Alfa')
+    expect(field('Nome do inimigo 2')).toHaveValue('Lobo Cinzento')
+    fireEvent.click(ownButton(enemyItems()[0], 'Remover'))
+    expect(field('Nome do inimigo 1')).toHaveValue('Lobo Cinzento')
+    expect(within(form()).queryByLabelText('Nome do inimigo 2')).toBeNull()
+  })
+
+  it('REQ-21: erro dentro de um inimigo aparece no campo do caminho', async () => {
+    server.use(
+      http.put(cardUrl, () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: 'CONTENT_INVALID',
+              message: 'Conteúdo inválido.',
+              details: {
+                fields: [
+                  {
+                    path: 'enemies.0.modifiers.attack',
+                    message: 'Use um número inteiro.',
+                  },
+                  { path: 'enemies.0.enemyTypes', message: 'Escolha um tipo.' },
+                ],
+              },
+            },
+          },
+          { status: 400 },
+        ),
+      ),
+    )
+    renderEditor()
+    await openCard('Lobos Uivantes · Evento de combate · Publicada')
+    type('Ataque do inimigo 1', '2.5')
+    fireEvent.click(saveButton())
+    await waitFor(() =>
+      expect(formStatus()).toHaveTextContent('Conteúdo inválido.'),
+    )
+    expect(field('Ataque do inimigo 1')).toHaveAccessibleDescription(
+      'Use um número inteiro.',
+    )
+    expect(
+      within(form()).getByRole('group', { name: 'Tipos do inimigo 1' }),
+    ).toHaveAccessibleDescription('Escolha um tipo.')
+    expect(field('Ataque do inimigo 1')).toHaveValue('2.5')
+  })
+})

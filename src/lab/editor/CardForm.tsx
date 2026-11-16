@@ -8,6 +8,9 @@ import {
 import {
   attributeSchema,
   cardSchema,
+  elementSchema,
+  enemyBehaviorSchema,
+  enemyCategorySchema,
   equipmentSlotSchema,
   itemCategorySchema,
   modifierSchema,
@@ -30,6 +33,10 @@ import { FullCard } from '../../ui/cards/FullCard'
 import { categoryCatalog } from '../../ui/categories'
 import {
   attributeKindLabels,
+  behaviorLabels,
+  elementLabels,
+  enemyCategoryLabels,
+  enemyTypeLabels,
   playerClassLabels,
   rarityLabels,
   zoneActionLabels,
@@ -38,14 +45,20 @@ import {
 import { termCatalog } from '../../ui/terms'
 import {
   classOrder,
+  emptyEnemy,
+  enemyTypeOrder,
   formFromCard,
   inputToCard,
+  modifierOrder,
   sameForm,
   toInput,
   zoneActionOrder,
   type AttributeForm,
   type CardForm as CardFormValues,
+  type CombatEventForm,
+  type EnemyForm,
   type EquipmentForm,
+  type RandomEventForm,
   type ItemForm,
   type ZoneForm,
 } from './cardFormValues'
@@ -128,6 +141,7 @@ function SelectField<T extends string>({
   options,
   onChange,
   errors,
+  emptyLabel = 'Escolha…',
 }: {
   label: string
   path: string
@@ -135,6 +149,8 @@ function SelectField<T extends string>({
   options: readonly { value: T; label: string }[]
   onChange: (value: T | '') => void
   errors: Errors
+  /** Texto da opção vazia (ex.: "Sem elemento" quando vazio vira `null`). */
+  emptyLabel?: string
 }) {
   const id = useId()
   return (
@@ -149,7 +165,7 @@ function SelectField<T extends string>({
           onChange(next ? next.value : '')
         }}
       >
-        <option value="">Escolha…</option>
+        <option value="">{emptyLabel}</option>
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
@@ -449,6 +465,9 @@ function CheckboxField({
   )
 }
 
+/** Listas cujos itens vão como `{ text }` no corpo (o erro vem em `.text`). */
+const ruleTextLists = ['effects', 'requirements']
+
 /** Lista de textos ("Efeito {n}"); com `list`, cada campo sugere do `datalist`. */
 function TextListField({
   label,
@@ -478,7 +497,7 @@ function TextListField({
       renderItem={(text, index, setText) => (
         <TextField
           label={`${itemLabel} ${index + 1}`}
-          path={`${path}.${index}${path === 'effects' ? '.text' : ''}`}
+          path={`${path}.${index}${ruleTextLists.includes(path) ? '.text' : ''}`}
           value={text}
           onChange={setText}
           errors={errors}
@@ -809,6 +828,285 @@ function ItemFields({
   )
 }
 
+const enemyCategoryOptions = options(
+  enemyCategorySchema.options,
+  enemyCategoryLabels,
+)
+const elementOptions = options(elementSchema.options, elementLabels)
+const behaviorOptions = options(enemyBehaviorSchema.options, behaviorLabels)
+
+/** "Coisa boa", "Coisa ruim" e "Sem fuga", comuns aos dois eventos. */
+function OutcomeFields<T extends RandomEventForm | CombatEventForm>({
+  values,
+  set,
+  errors,
+}: {
+  values: T
+  set: (values: T) => void
+  errors: Errors
+}) {
+  return (
+    <>
+      <TextField
+        label="Coisa boa"
+        path="goodOutcome.text"
+        value={values.goodOutcome}
+        onChange={(goodOutcome) => set({ ...values, goodOutcome })}
+        errors={errors}
+        multiline
+      />
+      <TextField
+        label="Coisa ruim"
+        path="badOutcome.text"
+        value={values.badOutcome}
+        onChange={(badOutcome) => set({ ...values, badOutcome })}
+        errors={errors}
+        multiline
+      />
+      <CheckboxField
+        label="Sem fuga"
+        checked={values.noEscape}
+        onChange={(noEscape) => set({ ...values, noEscape })}
+      />
+    </>
+  )
+}
+
+function RandomEventFields({
+  values,
+  set,
+  errors,
+}: {
+  values: RandomEventForm
+  set: (values: RandomEventForm) => void
+  errors: Errors
+}) {
+  return (
+    <>
+      <TextField
+        label="Título"
+        path="title"
+        value={values.title}
+        onChange={(title) => set({ ...values, title })}
+        errors={errors}
+      />
+      <TextField
+        label="Texto de ambientação"
+        path="flavorText"
+        value={values.flavorText}
+        onChange={(flavorText) => set({ ...values, flavorText })}
+        errors={errors}
+        multiline
+      />
+      <TextListField
+        label="Requisitos"
+        itemLabel="Requisito"
+        path="requirements"
+        items={values.requirements}
+        onChange={(requirements) => set({ ...values, requirements })}
+        errors={errors}
+      />
+      <OutcomeFields values={values} set={set} errors={errors} />
+    </>
+  )
+}
+
+/** Campos de um inimigo; os rótulos levam "do inimigo {n}" (D-45). */
+function EnemyFields({
+  enemy,
+  index,
+  set,
+  errors,
+}: {
+  enemy: EnemyForm
+  index: number
+  set: (enemy: EnemyForm) => void
+  errors: Errors
+}) {
+  const n = index + 1
+  const suffix = ` do inimigo ${n}`
+  const path = (field: string) => `enemies.${index}.${field}`
+  return (
+    <>
+      <TextField
+        label={`Nome${suffix}`}
+        path={path('name')}
+        value={enemy.name}
+        onChange={(name) => set({ ...enemy, name })}
+        errors={errors}
+      />
+      <TextField
+        label={`Texto de ambientação${suffix}`}
+        path={path('flavorText')}
+        value={enemy.flavorText}
+        onChange={(flavorText) => set({ ...enemy, flavorText })}
+        errors={errors}
+        multiline
+      />
+      <TextField
+        label={`Quantidade${suffix}`}
+        path={path('count')}
+        value={enemy.count}
+        onChange={(count) => set({ ...enemy, count })}
+        errors={errors}
+      />
+      <fieldset aria-describedby={errors.describedBy(path('enemyTypes'))}>
+        <legend>{`Tipos${suffix}`}</legend>
+        {errors.errorText(path('enemyTypes'))}
+        {enemyTypeOrder.map((enemyType) => (
+          <CheckboxField
+            key={enemyType}
+            label={enemyTypeLabels[enemyType]}
+            checked={enemy.enemyTypes.includes(enemyType)}
+            onChange={(checked) =>
+              set({
+                ...enemy,
+                enemyTypes: enemyTypeOrder.filter((t) =>
+                  t === enemyType ? checked : enemy.enemyTypes.includes(t),
+                ),
+              })
+            }
+          />
+        ))}
+      </fieldset>
+      <TextField
+        label={`Criatura${suffix}`}
+        path={path('creature')}
+        value={enemy.creature}
+        onChange={(creature) => set({ ...enemy, creature })}
+        errors={errors}
+      />
+      <SelectField
+        label={`Categoria${suffix}`}
+        path={path('enemyCategory')}
+        value={enemy.enemyCategory}
+        options={enemyCategoryOptions}
+        onChange={(enemyCategory) => set({ ...enemy, enemyCategory })}
+        errors={errors}
+      />
+      <SelectField
+        label={`Elemento${suffix}`}
+        path={path('element')}
+        value={enemy.element}
+        options={elementOptions}
+        onChange={(element) => set({ ...enemy, element })}
+        errors={errors}
+        emptyLabel="Sem elemento"
+      />
+      <TextField
+        label={`Vida${suffix}`}
+        path={path('health')}
+        value={enemy.health}
+        onChange={(health) => set({ ...enemy, health })}
+        errors={errors}
+      />
+      {modifierOrder.map((modifier) => (
+        <TextField
+          key={modifier}
+          label={`${termCatalog[modifier].name}${suffix}`}
+          path={path(`modifiers.${modifier}`)}
+          value={enemy.modifiers[modifier]}
+          onChange={(value) =>
+            set({
+              ...enemy,
+              modifiers: { ...enemy.modifiers, [modifier]: value },
+            })
+          }
+          errors={errors}
+        />
+      ))}
+      <TextField
+        label={`Vigor${suffix}`}
+        path={path('vigor')}
+        value={enemy.vigor}
+        onChange={(vigor) => set({ ...enemy, vigor })}
+        errors={errors}
+      />
+      <ListField
+        label={`Habilidades${suffix}`}
+        path={path('abilities')}
+        items={enemy.abilities}
+        onChange={(abilities) => set({ ...enemy, abilities })}
+        newItem={() => ({ name: '', text: '' })}
+        errors={errors}
+        renderItem={(ability, j, setAbility) => (
+          <>
+            <TextField
+              label={`Nome da habilidade ${j + 1}${suffix}`}
+              path={path(`abilities.${j}.name`)}
+              value={ability.name}
+              onChange={(name) => setAbility({ ...ability, name })}
+              errors={errors}
+            />
+            <TextField
+              label={`Texto da habilidade ${j + 1}${suffix}`}
+              path={path(`abilities.${j}.text`)}
+              value={ability.text}
+              onChange={(text) => setAbility({ ...ability, text })}
+              errors={errors}
+            />
+          </>
+        )}
+      />
+      <SelectField
+        label={`Comportamento${suffix}`}
+        path={path('behavior')}
+        value={enemy.behavior}
+        options={behaviorOptions}
+        onChange={(behavior) => set({ ...enemy, behavior })}
+        errors={errors}
+      />
+    </>
+  )
+}
+
+function CombatEventFields({
+  values,
+  set,
+  errors,
+}: {
+  values: CombatEventForm
+  set: (values: CombatEventForm) => void
+  errors: Errors
+}) {
+  return (
+    <>
+      <TextField
+        label="Título"
+        path="title"
+        value={values.title}
+        onChange={(title) => set({ ...values, title })}
+        errors={errors}
+      />
+      <TextField
+        label="Texto de ambientação"
+        path="flavorText"
+        value={values.flavorText}
+        onChange={(flavorText) => set({ ...values, flavorText })}
+        errors={errors}
+        multiline
+      />
+      <ListField
+        label="Inimigos"
+        path="enemies"
+        items={values.enemies}
+        onChange={(enemies) => set({ ...values, enemies })}
+        newItem={emptyEnemy}
+        errors={errors}
+        renderItem={(enemy, index, setEnemy) => (
+          <EnemyFields
+            enemy={enemy}
+            index={index}
+            set={setEnemy}
+            errors={errors}
+          />
+        )}
+      />
+      <OutcomeFields values={values} set={set} errors={errors} />
+    </>
+  )
+}
+
 /** Campos do tipo da carta (REQ-21). */
 function TypeFields({
   values,
@@ -839,6 +1137,10 @@ function TypeFields({
       return (
         <ItemFields values={values} set={set} errors={errors} tags={tags} />
       )
+    case 'randomEvent':
+      return <RandomEventFields values={values} set={set} errors={errors} />
+    case 'combatEvent':
+      return <CombatEventFields values={values} set={set} errors={errors} />
     default: {
       const _exhaustive: never = values
       return _exhaustive
@@ -894,10 +1196,8 @@ export function CardForm({
 
   function onSuccess(result: EditorCard): void {
     const next = formFromCard(result.card)
-    if (next !== null) {
-      setInitial(next)
-      setValues(next)
-    }
+    setInitial(next)
+    setValues(next)
     setCardId(result.card.id)
     setStatus(result.status)
     setMessage(

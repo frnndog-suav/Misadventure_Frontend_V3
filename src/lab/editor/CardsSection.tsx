@@ -9,7 +9,7 @@ import {
 import { ApiError } from '../../api/http'
 import { cardTypeLabels } from '../../ui/labels'
 import { CardForm } from './CardForm'
-import { emptyForm, formFromCard, hasForm } from './cardFormValues'
+import { emptyForm, formFromCard } from './cardFormValues'
 
 const unavailable = 'Servidor indisponível. Tente novamente.'
 
@@ -52,7 +52,6 @@ function SavedCardForm({ cardId, ...props }: FormProps & { cardId: string }) {
     )
   }
   const values = formFromCard(data.card)
-  if (values === null) return null
   return (
     <CardForm
       {...props}
@@ -65,7 +64,7 @@ function SavedCardForm({ cardId, ...props }: FormProps & { cardId: string }) {
   )
 }
 
-/** Formulário da escolha aberta; tipos sem formulário ficam só na escolha (D-43). */
+/** Formulário da escolha aberta. */
 function OpenedForm({
   opened,
   ...props
@@ -73,7 +72,6 @@ function OpenedForm({
   if (opened.kind === 'card') {
     return <SavedCardForm {...props} cardId={opened.cardId} />
   }
-  if (!hasForm(opened.type)) return null
   return (
     <CardForm
       {...props}

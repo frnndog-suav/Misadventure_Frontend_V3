@@ -63,4 +63,5 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 031 | T-21 | [Rota do editor e coleções](031-T-21-editor-colecoes.md) | concluída |
 | 032 | T-22 | [Lista de cartas](032-T-22-lista-de-cartas.md) | concluída |
 | 033 | T-23 | [Formulário de carta: base, zona e atributo](033-T-23-formulario-de-carta.md) | concluída |
-| 034 | T-24 | [Formulários de equipamento e item](034-T-24-formularios-equipamento-item.md) | aguardando revisão |
+| 034 | T-24 | [Formulários de equipamento e item](034-T-24-formularios-equipamento-item.md) | concluída |
+| 035 | T-25 | [Formulários de evento aleatório e de combate](035-T-25-formularios-de-evento.md) | aguardando revisão |
