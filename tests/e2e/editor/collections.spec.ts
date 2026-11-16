@@ -74,7 +74,7 @@ test('REQ-24: alterações não salvas na coleção pedem confirmação ao sair'
   ).toBeVisible()
 })
 
-test('REQ-25: valida a coleção como dimensão e lista os problemas (MSW)', async ({
+test('REQ-25 / REQ-31: valida a coleção `fixture` como dimensão válida (MSW)', async ({
   page,
 }) => {
   await page.goto('/lab/editor')
@@ -82,11 +82,9 @@ test('REQ-25: valida a coleção como dimensão e lista os problemas (MSW)', asy
   await page.getByRole('button', { name: /Coleção de Teste/ }).click()
   await page.getByRole('button', { name: 'Validar como dimensão' }).click()
   await expect(section.getByRole('status')).toHaveText(
-    'A coleção não forma uma dimensão válida.',
+    'A coleção forma uma dimensão válida.',
   )
-  await expect(
-    section.getByRole('list', { name: 'Problemas' }).getByRole('listitem'),
-  ).toHaveText(['A coleção precisa de pelo menos 1 zona Urbana publicada.'])
+  await expect(section.getByRole('list', { name: 'Problemas' })).toHaveCount(0)
 })
 
 test('REQ-26: exporta a coleção para {id}.json (MSW)', async ({ page }) => {

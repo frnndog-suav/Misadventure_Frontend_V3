@@ -66,6 +66,31 @@ import {
   importResultFixture,
   unknownCardTypeFixture,
 } from '../mocks/editorFixtures'
+import {
+  editorClassSchema,
+  editorClassSummarySchema,
+  useCreateClass,
+  useDeleteClass,
+  useEditorClass,
+  useEditorClasses,
+  usePublishClass,
+  useSaveClass,
+  type ClassInput,
+} from './editor'
+import {
+  bosqueClassSummariesFixture,
+  bosqueDimensionFixture,
+  classIdTakenFixture,
+  classNotFoundFixture,
+  contentReferencedFixture,
+  fixtureClassSummariesFixture,
+  fixtureEditorClassesFixture,
+  fixtureExportFixture,
+  mageDraftFixture,
+  mageInput,
+  magePublishInvalidFixture,
+} from '../mocks/editorFixtures'
+import { warriorClassFixture } from '../mocks/classFixtures'
 
 const server = setupServer(...handlers)
 
@@ -601,11 +626,19 @@ describe('REQ-23: publicar, duplicar e excluir carta', () => {
 })
 
 describe('REQ-25: validar coleção como dimensão', () => {
-  it('REQ-25: entrega os problemas na ordem recebida', async () => {
+  it('REQ-25 / REQ-31: a `fixture` é válida; o `bosque` traz os problemas na ordem recebida', async () => {
     const { result } = renderHook(() => useValidateDimension(), { wrapper })
     act(() => result.current.mutate('fixture'))
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(result.current.data).toEqual(fixtureDimensionFixture)
+    expect(result.current.data).toEqual({ valid: true, problems: [] })
+
+    const bosque = renderHook(() => useValidateDimension(), { wrapper })
+    act(() => bosque.result.current.mutate('bosque'))
+    await waitFor(() => expect(bosque.result.current.isSuccess).toBe(true))
+    expect(bosque.result.current.data).toEqual(bosqueDimensionFixture)
+    expect(bosque.result.current.data?.valid).toBe(false)
+    expect(bosque.result.current.data?.problems).toHaveLength(2)
   })
 })
 
@@ -732,5 +765,264 @@ describe('D-40: tabela de cenários do MSW', () => {
       cardCount: 1,
       classCount: 0,
     })
+  })
+})
+
+describe('REQ-31: Carta de Dimensão e forma das setas no CardInput', () => {
+  it('REQ-31: criar envia a Carta de Dimensão e a zona com arrowLayout como digitadas', async () => {
+    const sent: unknown[] = []
+    server.use(
+      http.post(
+        '*/lab/content/collections/:collectionId/cards',
+        async ({ request }) => {
+          sent.push(await request.json())
+          return HttpResponse.json(forcaDraftFixture, { status: 201 })
+        },
+      ),
+    )
+    const dimension: CardInput = {
+      slug: 'nova-dimensao',
+      type: 'dimension',
+      name: 'Nova Dimensão',
+      flavorText: null,
+      releaseOrder: 2,
+      arrivalZoneTitle: null,
+      effects: [],
+    }
+    const zone: CardInput = {
+      slug: 'curva',
+      type: 'zone',
+      title: 'Curva',
+      zoneType: 'mountainous',
+      location: 'Serra',
+      connectionArrows: 2,
+      arrowLayout: 'corner',
+      zoneActions: ['startEvent'],
+      effects: [],
+    }
+
+    const { result } = renderHook(() => useCreateCard(), { wrapper })
+    await act(() =>
+      result.current.mutateAsync({ collectionId: 'bosque', input: dimension }),
+    )
+    await act(() =>
+      result.current.mutateAsync({ collectionId: 'bosque', input: zone }),
+    )
+    expect(sent).toEqual([dimension, zone])
+  })
+})
+
+describe('REQ-32: classes no editor (CONTRATO §3 FEAT-06)', () => {
+  it('REQ-32: schemas aceitam as fixtures e recusam status e classe fora do contrato', () => {
+    for (const entry of [...fixtureEditorClassesFixture, mageDraftFixture]) {
+      expect(editorClassSchema.parse(entry)).toEqual(entry)
+    }
+    for (const entry of fixtureClassSummariesFixture) {
+      expect(editorClassSummarySchema.parse(entry)).toEqual(entry)
+    }
+    expect(
+      editorClassSchema.safeParse({ ...mageDraftFixture, status: 'archived' })
+        .success,
+    ).toBe(false)
+    expect(
+      editorClassSummarySchema.safeParse({
+        playerClass: 'pirate',
+        name: 'Pirata',
+        status: 'draft',
+      }).success,
+    ).toBe(false)
+  })
+
+  it('REQ-32: useEditorClasses entrega a lista da coleção; desconhecida → 404', async () => {
+    const fixture = renderHook(() => useEditorClasses('fixture'), { wrapper })
+    await waitFor(() => expect(fixture.result.current.isSuccess).toBe(true))
+    expect(fixture.result.current.data).toEqual(fixtureClassSummariesFixture)
+
+    const bosque = renderHook(() => useEditorClasses('bosque'), { wrapper })
+    await waitFor(() => expect(bosque.result.current.isSuccess).toBe(true))
+    expect(bosque.result.current.data).toEqual(bosqueClassSummariesFixture)
+
+    const missing = renderHook(() => useEditorClasses('nope'), { wrapper })
+    await waitFor(() => expect(missing.result.current.isError).toBe(true))
+    expect((missing.result.current.error as ApiError).code).toBe(
+      'COLLECTION_NOT_FOUND',
+    )
+  })
+
+  it('REQ-32: useEditorClass lê a classe; desconhecida → ApiError CLASS_NOT_FOUND', async () => {
+    const warrior = renderHook(() => useEditorClass('warrior'), { wrapper })
+    await waitFor(() => expect(warrior.result.current.isSuccess).toBe(true))
+    expect(warrior.result.current.data).toEqual({
+      status: 'published',
+      classDefinition: warriorClassFixture,
+    })
+
+    const missing = renderHook(() => useEditorClass('cleric'), { wrapper })
+    await waitFor(() => expect(missing.result.current.isError).toBe(true))
+    expect(missing.result.current.error).toBeInstanceOf(ApiError)
+    expect(missing.result.current.error).not.toBeInstanceOf(ContentInvalidError)
+    expect((missing.result.current.error as ApiError).code).toBe(
+      'CLASS_NOT_FOUND',
+    )
+    expect((missing.result.current.error as ApiError).message).toBe(
+      classNotFoundFixture.error.message,
+    )
+  })
+
+  it('REQ-32: criar envia o ClassInput como digitado, entrega o rascunho e invalida o editor', async () => {
+    let url = ''
+    let sent: unknown
+    server.use(
+      http.post(
+        '*/lab/content/collections/:collectionId/classes',
+        async ({ request }) => {
+          url = request.url
+          sent = await request.json()
+          return HttpResponse.json(mageDraftFixture, { status: 201 })
+        },
+      ),
+    )
+    seedEditorCache()
+    const { result } = renderHook(() => useCreateClass(), { wrapper })
+    act(() =>
+      result.current.mutate({ collectionId: 'bosque', input: mageInput }),
+    )
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(new URL(url).pathname).toBe(
+      '/lab/content/collections/bosque/classes',
+    )
+    expect(sent).toEqual(mageInput)
+    expect(result.current.data).toEqual(mageDraftFixture)
+    expect(editorCacheInvalidated()).toBe(true)
+  })
+
+  it('REQ-32 / D-38: o handler padrão responde CONTENT_ID_TAKEN para `warrior` e 201 para `mage`', async () => {
+    const taken = renderHook(() => useCreateClass(), { wrapper })
+    const warriorInput: ClassInput = { ...mageInput, playerClass: 'warrior' }
+    act(() =>
+      taken.result.current.mutate({
+        collectionId: 'bosque',
+        input: warriorInput,
+      }),
+    )
+    await waitFor(() => expect(taken.result.current.isError).toBe(true))
+    const error = taken.result.current.error as ContentInvalidError
+    expect(error).toBeInstanceOf(ContentInvalidError)
+    expect(error.code).toBe('CONTENT_ID_TAKEN')
+    expect(error.fields).toEqual(classIdTakenFixture.error.details.fields)
+
+    const created = renderHook(() => useCreateClass(), { wrapper })
+    act(() =>
+      created.result.current.mutate({
+        collectionId: 'bosque',
+        input: mageInput,
+      }),
+    )
+    await waitFor(() => expect(created.result.current.isSuccess).toBe(true))
+    expect(created.result.current.data).toEqual(mageDraftFixture)
+
+    const missing = renderHook(() => useCreateClass(), { wrapper })
+    act(() =>
+      missing.result.current.mutate({ collectionId: 'nope', input: mageInput }),
+    )
+    await waitFor(() => expect(missing.result.current.isError).toBe(true))
+    expect((missing.result.current.error as ApiError).code).toBe(
+      'COLLECTION_NOT_FOUND',
+    )
+  })
+
+  it('REQ-32: salvar envia PUT com a classe inteira e invalida o editor; publicada com outro id → CONTENT_LOCKED', async () => {
+    let method = ''
+    let sent: unknown
+    server.use(
+      http.put('*/lab/content/classes/:playerClass', async ({ request }) => {
+        method = request.method
+        sent = await request.json()
+        return HttpResponse.json(mageDraftFixture)
+      }),
+    )
+    seedEditorCache()
+    const { result } = renderHook(() => useSaveClass(), { wrapper })
+    act(() => result.current.mutate({ playerClass: 'mage', input: mageInput }))
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(method).toBe('PUT')
+    expect(sent).toEqual(mageInput)
+    expect(result.current.data).toEqual(mageDraftFixture)
+    expect(editorCacheInvalidated()).toBe(true)
+
+    server.resetHandlers()
+    const locked = renderHook(() => useSaveClass(), { wrapper })
+    act(() =>
+      locked.result.current.mutate({
+        playerClass: 'warrior',
+        input: { ...mageInput, playerClass: 'cleric' },
+      }),
+    )
+    await waitFor(() => expect(locked.result.current.isError).toBe(true))
+    expect((locked.result.current.error as ApiError).code).toBe(
+      'CONTENT_LOCKED',
+    )
+  })
+
+  it('REQ-32: publicar `mage` → ContentInvalidError (trava); `warrior` → publicada', async () => {
+    seedEditorCache()
+    const mage = renderHook(() => usePublishClass(), { wrapper })
+    act(() => mage.result.current.mutate('mage'))
+    await waitFor(() => expect(mage.result.current.isError).toBe(true))
+    expect((mage.result.current.error as ContentInvalidError).fields).toEqual(
+      magePublishInvalidFixture.error.details.fields,
+    )
+
+    const warrior = renderHook(() => usePublishClass(), { wrapper })
+    act(() => warrior.result.current.mutate('warrior'))
+    await waitFor(() => expect(warrior.result.current.isSuccess).toBe(true))
+    expect(warrior.result.current.data?.status).toBe('published')
+    expect(editorCacheInvalidated()).toBe(true)
+  })
+
+  it('REQ-32: excluir aceita 204 e invalida o editor; desconhecida → CLASS_NOT_FOUND', async () => {
+    seedEditorCache()
+    const { result } = renderHook(() => useDeleteClass(), { wrapper })
+    act(() => result.current.mutate('mage'))
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(editorCacheInvalidated()).toBe(true)
+
+    const missing = renderHook(() => useDeleteClass(), { wrapper })
+    act(() => missing.result.current.mutate('cleric'))
+    await waitFor(() => expect(missing.result.current.isError).toBe(true))
+    expect((missing.result.current.error as ApiError).code).toBe(
+      'CLASS_NOT_FOUND',
+    )
+  })
+
+  it('REQ-32: excluir carta do deck pré-pronto → ApiError CONTENT_REFERENCED com a message', async () => {
+    const { result } = renderHook(() => useDeleteCard(), { wrapper })
+    act(() => result.current.mutate('fixture.dexterity-basic'))
+    await waitFor(() => expect(result.current.isError).toBe(true))
+    expect(result.current.error).toBeInstanceOf(ApiError)
+    expect(result.current.error).not.toBeInstanceOf(ContentInvalidError)
+    expect((result.current.error as ApiError).code).toBe('CONTENT_REFERENCED')
+    expect((result.current.error as ApiError).message).toBe(
+      contentReferencedFixture.error.message,
+    )
+  })
+})
+
+describe('REQ-33: exportar e importar com classes', () => {
+  it('REQ-33: o export traz as classes validadas (o schema não as descarta)', async () => {
+    const { result } = renderHook(() => useExportCollection(), { wrapper })
+    act(() => result.current.mutate('fixture'))
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(result.current.data?.classes).toEqual(fixtureExportFixture.classes)
+    expect(result.current.data?.classes).toHaveLength(2)
+  })
+
+  it('REQ-33: classes fora do contrato no export são recusadas', () => {
+    expect(
+      collectionExportSchema.safeParse({
+        ...fixtureExportFixture,
+        classes: [{ status: 'draft', classDefinition: { playerClass: 'x' } }],
+      }).success,
+    ).toBe(false)
   })
 })

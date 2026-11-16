@@ -146,6 +146,11 @@ describe('REQ-25: validar coleção como dimensão', () => {
   })
 
   it('REQ-25: uma nova validação apaga a lista de problemas anterior', async () => {
+    server.use(
+      http.post(validateUrl, () =>
+        HttpResponse.json({ valid: false, problems: ['Falta zona Urbana.'] }),
+      ),
+    )
     await chooseFixture()
     fireEvent.click(
       screen.getByRole('button', { name: 'Validar como dimensão' }),

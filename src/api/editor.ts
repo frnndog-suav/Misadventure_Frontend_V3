@@ -9,8 +9,12 @@ import { z } from 'zod'
 import {
   cardSchema,
   cardTypeSchema,
+  classDefinitionSchema,
+  playerClassSchema,
   type Card,
   type CardType,
+  type ClassDefinition,
+  type PlayerClass,
   type Rarity,
 } from './catalog'
 import { ApiError, requestJson } from './http'
@@ -98,6 +102,22 @@ export const dimensionValidationSchema = z.object({
 })
 export type DimensionValidation = z.infer<typeof dimensionValidationSchema>
 
+/** Classe no editor (CONTRATO §3 FEAT-06). */
+export type ClassInput = Omit<ClassDefinition, 'collectionId'>
+
+export const editorClassSchema = z.object({
+  status: contentStatusSchema,
+  classDefinition: classDefinitionSchema,
+})
+export type EditorClass = z.infer<typeof editorClassSchema>
+
+export const editorClassSummarySchema = z.object({
+  playerClass: playerClassSchema,
+  name: z.string(),
+  status: contentStatusSchema,
+})
+export type EditorClassSummary = z.infer<typeof editorClassSummarySchema>
+
 export const collectionExportSchema = z.object({
   formatVersion: z.literal(1),
   collection: z.object({
@@ -106,8 +126,8 @@ export const collectionExportSchema = z.object({
     description: z.string(),
   }),
   cards: z.array(editorCardSchema),
-  /** `EditorClass` entra na FEAT-06; até lá, sempre `[]` (D-40). */
-  classes: z.array(z.unknown()).default([]),
+  /** Um arquivo sem `classes` é lido como `[]` (D-40). */
+  classes: z.array(editorClassSchema).default([]),
 })
 export type CollectionExport = z.infer<typeof collectionExportSchema>
 
@@ -183,6 +203,10 @@ function collectionPath(collectionId: string): string {
 
 function cardPath(cardId: string): string {
   return `/lab/content/cards/${encodeURIComponent(cardId)}`
+}
+
+function classPath(playerClass: PlayerClass): string {
+  return `/lab/content/classes/${encodeURIComponent(playerClass)}`
 }
 
 function useInvalidateEditor(): () => Promise<void> {
@@ -422,6 +446,97 @@ export function useDeleteCard(): UseMutationResult<void, Error, string> {
   return useMutation({
     mutationFn: (cardId: string) =>
       contentRequest(noContent, 'DELETE', cardPath(cardId)),
+    retry: false,
+    onSuccess: invalidate,
+  })
+}
+
+// Classes (CONTRATO §3 FEAT-06). `CLASS_NOT_FOUND` e `CONTENT_REFERENCED`
+// chegam como `ApiError` com a `message` pronta.
+
+export function useEditorClasses(
+  collectionId: string,
+): UseQueryResult<EditorClassSummary[], Error> {
+  return useQuery({
+    queryKey: [...editorKey, 'classes', collectionId],
+    queryFn: () =>
+      contentRequest(
+        z.array(editorClassSummarySchema),
+        'GET',
+        `${collectionPath(collectionId)}/classes`,
+      ),
+    retry: false,
+  })
+}
+
+export function useEditorClass(
+  playerClass: PlayerClass,
+): UseQueryResult<EditorClass, Error> {
+  return useQuery({
+    queryKey: [...editorKey, 'class', playerClass],
+    queryFn: () =>
+      contentRequest(editorClassSchema, 'GET', classPath(playerClass)),
+    retry: false,
+  })
+}
+
+export function useCreateClass(): UseMutationResult<
+  EditorClass,
+  Error,
+  { collectionId: string; input: ClassInput }
+> {
+  const invalidate = useInvalidateEditor()
+  return useMutation({
+    mutationFn: ({ collectionId, input }) =>
+      contentRequest(
+        editorClassSchema,
+        'POST',
+        `${collectionPath(collectionId)}/classes`,
+        input,
+      ),
+    retry: false,
+    onSuccess: invalidate,
+  })
+}
+
+/** Substitui a classe inteira; outro `playerClass` num rascunho a renomeia. */
+export function useSaveClass(): UseMutationResult<
+  EditorClass,
+  Error,
+  { playerClass: PlayerClass; input: ClassInput }
+> {
+  const invalidate = useInvalidateEditor()
+  return useMutation({
+    mutationFn: ({ playerClass, input }) =>
+      contentRequest(editorClassSchema, 'PUT', classPath(playerClass), input),
+    retry: false,
+    onSuccess: invalidate,
+  })
+}
+
+export function usePublishClass(): UseMutationResult<
+  EditorClass,
+  Error,
+  PlayerClass
+> {
+  const invalidate = useInvalidateEditor()
+  return useMutation({
+    mutationFn: (playerClass: PlayerClass) =>
+      contentRequest(
+        editorClassSchema,
+        'POST',
+        `${classPath(playerClass)}/publish`,
+      ),
+    retry: false,
+    onSuccess: invalidate,
+  })
+}
+
+export function useDeleteClass(): UseMutationResult<void, Error, PlayerClass> {
+  const invalidate = useInvalidateEditor()
+  return useMutation({
+    mutationFn: (playerClass: PlayerClass) =>
+      contentRequest(noContent, 'DELETE', classPath(playerClass)),
     retry: false,
     onSuccess: invalidate,
   })

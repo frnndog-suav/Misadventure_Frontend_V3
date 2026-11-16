@@ -72,3 +72,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 040 | T-29 | [Laboratório e catálogo alinhados à FEAT-06](040-T-29-laboratorio-catalogo-feat-06.md) | aguardando revisão |
 | 041 | T-30 | [Escolha de classe no "Novo jogo"](041-T-30-escolha-de-classe.md) | aguardando revisão |
 | 042 | T-31 | [Partida preparada na tela do grupo](042-T-31-partida-preparada.md) | aguardando revisão |
+| 043 | T-32 | [Cliente do editor: classes e Carta de Dimensão](043-T-32-cliente-editor-classes.md) | aguardando revisão |

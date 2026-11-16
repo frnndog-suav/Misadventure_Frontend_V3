@@ -9,8 +9,22 @@ import {
   fixtureCardsFixture,
 } from './catalogFixtures'
 import { classesFixture } from './classFixtures'
-import type { EditorCard, EditorCollection } from '../api/editor'
+import type {
+  EditorCard,
+  EditorClass,
+  EditorClassSummary,
+  EditorCollection,
+} from '../api/editor'
 import {
+  bosqueClassSummariesFixture,
+  bosqueDimensionFixture,
+  classIdTakenFixture,
+  classNotFoundFixture,
+  contentReferencedFixture,
+  fixtureClassSummariesFixture,
+  fixtureEditorClassesFixture,
+  mageDraftFixture,
+  magePublishInvalidFixture,
   bosqueCardsDraftFixture,
   bosqueCardsSearchFixture,
   bosqueCollectionFixture,
@@ -139,6 +153,7 @@ const notFound = {
   collection: () =>
     HttpResponse.json(collectionNotFoundFixture, { status: 404 }),
   card: () => HttpResponse.json(cardNotFoundFixture, { status: 404 }),
+  class: () => HttpResponse.json(classNotFoundFixture, { status: 404 }),
 }
 
 /** Coleções que o editor conhece nos cenários (D-40). */
@@ -156,6 +171,58 @@ const editorCards: Record<string, EditorCard> = Object.fromEntries(
     forcaBrutaCopyFixture,
   ].map((entry) => [entry.card.id, entry]),
 )
+
+/** Classes que o editor conhece nos cenários (FEAT-06, D-40). */
+const editorClasses: Record<string, EditorClass> = Object.fromEntries(
+  [...fixtureEditorClassesFixture, mageDraftFixture].map((entry) => [
+    entry.classDefinition.playerClass,
+    entry,
+  ]),
+)
+
+/** GET …/:collectionId/classes: listas prontas por coleção. */
+const editorClassLists: Record<string, EditorClassSummary[]> = {
+  fixture: fixtureClassSummariesFixture,
+  bosque: bosqueClassSummariesFixture,
+}
+
+/** POST …/:collectionId/classes: `playerClass` já existente → 409. */
+async function createClassScenario(
+  collectionId: string,
+  request: Request,
+): Promise<Response> {
+  if (!Object.hasOwn(editorCollections, collectionId))
+    return notFound.collection()
+  const playerClass = field(await jsonBody(request), 'playerClass')
+  if (playerClass === 'warrior' || playerClass === 'rogue') {
+    return HttpResponse.json(classIdTakenFixture, { status: 409 })
+  }
+  return HttpResponse.json(mageDraftFixture, { status: 201 })
+}
+
+/** PUT /lab/content/classes/:playerClass: publicada com outro id → 409. */
+async function saveClassScenario(
+  playerClass: string,
+  request: Request,
+): Promise<Response> {
+  if (!Object.hasOwn(editorClasses, playerClass)) return notFound.class()
+  const current = editorClasses[playerClass]
+  const renamed = field(await jsonBody(request), 'playerClass') !== playerClass
+  if (current.status === 'published' && renamed) {
+    return HttpResponse.json(contentLockedFixture, { status: 409 })
+  }
+  return HttpResponse.json(current)
+}
+
+function knownClass(
+  playerClass: unknown,
+  ok: (playerClass: string) => Response,
+): Response {
+  return typeof playerClass === 'string' &&
+    Object.hasOwn(editorClasses, playerClass)
+    ? ok(playerClass)
+    : notFound.class()
+}
 
 /** POST /lab/content/collections: erro só nos corpos dos cenários. */
 async function createCollectionScenario(request: Request): Promise<Response> {
@@ -290,8 +357,10 @@ const editorHandlers: RequestHandler[] = [
   http.post(
     '*/lab/content/collections/:collectionId/validate-dimension',
     ({ params }) =>
-      knownCollection(params.collectionId, () =>
-        HttpResponse.json(fixtureDimensionFixture),
+      knownCollection(params.collectionId, (id) =>
+        HttpResponse.json(
+          id === 'fixture' ? fixtureDimensionFixture : bosqueDimensionFixture,
+        ),
       ),
   ),
   http.get('*/lab/content/collections/:collectionId/export', ({ params }) =>
@@ -331,7 +400,43 @@ const editorHandlers: RequestHandler[] = [
     ),
   ),
   http.delete('*/lab/content/cards/:cardId', ({ params }) =>
-    knownCard(params.cardId, () => new HttpResponse(null, { status: 204 })),
+    knownCard(params.cardId, (id) =>
+      // Cenário do contrato: carta de atributo no deck pré-pronto de uma classe.
+      id === 'fixture.dexterity-basic'
+        ? HttpResponse.json(contentReferencedFixture, { status: 409 })
+        : new HttpResponse(null, { status: 204 }),
+    ),
+  ),
+  http.get('*/lab/content/collections/:collectionId/classes', ({ params }) =>
+    knownCollection(params.collectionId, (id) =>
+      HttpResponse.json(editorClassLists[id] ?? []),
+    ),
+  ),
+  http.post(
+    '*/lab/content/collections/:collectionId/classes',
+    ({ params, request }) =>
+      createClassScenario(String(params.collectionId), request),
+  ),
+  http.get('*/lab/content/classes/:playerClass', ({ params }) =>
+    knownClass(params.playerClass, (id) =>
+      HttpResponse.json(editorClasses[id]),
+    ),
+  ),
+  http.put('*/lab/content/classes/:playerClass', ({ params, request }) =>
+    saveClassScenario(String(params.playerClass), request),
+  ),
+  http.post('*/lab/content/classes/:playerClass/publish', ({ params }) =>
+    knownClass(params.playerClass, (id) =>
+      id === 'mage'
+        ? HttpResponse.json(magePublishInvalidFixture, { status: 400 })
+        : HttpResponse.json(editorClasses[id]),
+    ),
+  ),
+  http.delete('*/lab/content/classes/:playerClass', ({ params }) =>
+    knownClass(
+      params.playerClass,
+      () => new HttpResponse(null, { status: 204 }),
+    ),
   ),
 ]
 
