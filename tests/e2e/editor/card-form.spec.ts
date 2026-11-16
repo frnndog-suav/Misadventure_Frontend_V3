@@ -256,3 +256,31 @@ test('REQ-23: publica, duplica e exclui uma carta (MSW)', async ({ page }) => {
   await expect(form).toHaveCount(0)
   await expect(cards.getByRole('status').first()).toHaveText('Carta excluída.')
 })
+
+test('REQ-31: abre a Carta de Dimensão e escolhe a forma das setas da zona (MSW)', async ({
+  page,
+}) => {
+  await page.goto('/lab/editor')
+  await page.getByRole('button', { name: /Coleção de Teste/ }).click()
+  const cards = page.getByRole('region', { name: 'Cartas' })
+  const form = page.getByRole('region', { name: 'Carta', exact: true })
+  const preview = page.getByRole('region', { name: 'Pré-visualização' })
+
+  await cards
+    .getByRole('button', { name: 'Dimensão de Teste · Dimensão · Publicada' })
+    .click()
+  await expect(form.getByLabel('Ordem de lançamento')).toHaveValue('1')
+  await expect(form.getByLabel('Zona de chegada')).toHaveValue('Porto Cinzento')
+  await expect(
+    preview.getByRole('article', { name: 'Dimensão de Teste' }),
+  ).toBeVisible()
+
+  await cards
+    .getByRole('button', { name: 'Bosque Sussurrante · Zona · Publicada' })
+    .click()
+  const layout = form.getByLabel('Forma das setas')
+  await expect(layout).toHaveValue('straight')
+  await layout.selectOption({ label: 'Vizinhas' })
+  await form.getByRole('button', { name: 'Salvar rascunho' }).click()
+  await expect(form.getByRole('status')).toHaveText('Carta salva.')
+})

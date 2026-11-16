@@ -30,18 +30,6 @@ import {
  * confere formato (número, texto obrigatório, seleção feita), nunca regra.
  */
 
-/**
- * Tipos com formulário. A Carta de Dimensão (FEAT-06) ganha formulário na
- * T-33; até lá ela só é escolhida na lista, sem formulário (como os eventos
- * antes da T-25, D-42).
- */
-export type FormCard = Exclude<Card, { type: 'dimension' }>
-export type FormCardType = FormCard['type']
-
-export function hasForm(card: Card): card is FormCard {
-  return card.type !== 'dimension'
-}
-
 type Polarity = ZoneCard['effects'][number]['polarity']
 type AttributeKind = AttributeCard['attributeKind']
 
@@ -52,8 +40,8 @@ export interface ZoneForm {
   zoneType: ZoneType | ''
   location: string
   connectionArrows: string
-  /** Guardada do jeito que veio; a seleção "Forma das setas" entra na T-33. */
-  arrowLayout: ZoneCard['arrowLayout']
+  /** `''` = "Não se aplica" (`null`, REQ-31). */
+  arrowLayout: NonNullable<ZoneCard['arrowLayout']> | ''
   zoneActions: ZoneAction[]
   effects: { text: string; polarity: Polarity }[]
 }
@@ -140,6 +128,17 @@ export interface CombatEventForm {
   noEscape: boolean
 }
 
+export interface DimensionForm {
+  type: 'dimension'
+  slug: string
+  name: string
+  flavorText: string
+  releaseOrder: string
+  /** Vazio = `null` (sorteada pelo backend, REQ-31). */
+  arrivalZoneTitle: string
+  effects: string[]
+}
+
 export type CardForm =
   | ZoneForm
   | AttributeForm
@@ -147,6 +146,9 @@ export type CardForm =
   | ItemForm
   | RandomEventForm
   | CombatEventForm
+  | DimensionForm
+
+export type FormCardType = CardForm['type']
 
 /** Modificadores na ordem do glossário (CONTRATO §2.3). */
 export const modifierOrder = modifierSchema.options
@@ -185,7 +187,7 @@ export function emptyForm(type: FormCardType): CardForm {
         zoneType: '',
         location: '',
         connectionArrows: '',
-        arrowLayout: null,
+        arrowLayout: '',
         zoneActions: [],
         effects: [],
       }
@@ -252,6 +254,16 @@ export function emptyForm(type: FormCardType): CardForm {
         badOutcome: '',
         noEscape: false,
       }
+    case 'dimension':
+      return {
+        type,
+        slug: '',
+        name: '',
+        flavorText: '',
+        releaseOrder: '',
+        arrivalZoneTitle: '',
+        effects: [],
+      }
     default: {
       const _exhaustive: never = type
       return _exhaustive
@@ -275,7 +287,7 @@ const numberText = (value: number | null): string =>
   value === null ? '' : String(value)
 
 /** Valores de uma carta recebida. */
-export function formFromCard(card: FormCard): CardForm {
+export function formFromCard(card: Card): CardForm {
   switch (card.type) {
     case 'zone':
       return {
@@ -285,7 +297,7 @@ export function formFromCard(card: FormCard): CardForm {
         zoneType: card.zoneType,
         location: card.location,
         connectionArrows: String(card.connectionArrows),
-        arrowLayout: card.arrowLayout,
+        arrowLayout: card.arrowLayout ?? '',
         zoneActions: zoneActionOrder.filter((a) =>
           card.zoneActions.includes(a),
         ),
@@ -387,6 +399,16 @@ export function formFromCard(card: FormCard): CardForm {
         badOutcome: card.badOutcome.text,
         noEscape: card.noEscape,
       }
+    case 'dimension':
+      return {
+        type: 'dimension',
+        slug: slugOf(card),
+        name: card.name,
+        flavorText: card.flavorText ?? '',
+        releaseOrder: String(card.releaseOrder),
+        arrivalZoneTitle: card.arrivalZoneTitle ?? '',
+        effects: card.effects.map((e) => e.text),
+      }
     default: {
       const _exhaustive: never = card
       return _exhaustive
@@ -470,7 +492,7 @@ export function toInput(form: CardForm): CardInput | null {
         zoneType: form.zoneType,
         location: form.location,
         connectionArrows: arrows,
-        arrowLayout: form.arrowLayout,
+        arrowLayout: form.arrowLayout === '' ? null : form.arrowLayout,
         zoneActions: form.zoneActions,
         effects: form.effects,
       }
@@ -610,6 +632,27 @@ export function toInput(form: CardForm): CardInput | null {
         goodOutcome: { text: form.goodOutcome },
         badOutcome: { text: form.badOutcome },
         noEscape: form.noEscape,
+      }
+    }
+    case 'dimension': {
+      const releaseOrder = parseNumber(form.releaseOrder)
+      if (
+        !filled(form.slug) ||
+        !filled(form.name) ||
+        releaseOrder === null ||
+        !form.effects.every(filled)
+      )
+        return null
+      return {
+        slug: form.slug,
+        type: 'dimension',
+        name: form.name,
+        flavorText: filled(form.flavorText) ? form.flavorText : null,
+        releaseOrder,
+        arrivalZoneTitle: filled(form.arrivalZoneTitle)
+          ? form.arrivalZoneTitle
+          : null,
+        effects: form.effects.map((text) => ({ text })),
       }
     }
     default: {

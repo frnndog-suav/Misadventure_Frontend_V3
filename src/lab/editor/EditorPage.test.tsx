@@ -682,7 +682,7 @@ describe('REQ-20: cartas da coleção', () => {
     expect(second).toHaveAttribute('aria-pressed', 'false')
   })
 
-  it('REQ-20: "Nova carta" oferece os 6 tipos; escolher um fecha a escolha e desmarca a carta', async () => {
+  it('REQ-20, REQ-31: "Nova carta" oferece os 7 tipos, "Dimensão" por último; escolher um fecha a escolha e desmarca a carta', async () => {
     renderEditor()
     await chooseFixture()
     const list = await within(cards()).findByRole('list', { name: 'Cartas' })
@@ -696,10 +696,15 @@ describe('REQ-20: cartas da coleção', () => {
       within(picker)
         .getAllByRole('button')
         .map((b) => b.textContent),
-    ).toEqual(
-      // A Dimensão entra em "Nova carta" com o formulário dela (T-33).
-      Object.values(cardTypeLabels).filter((label) => label !== 'Dimensão'),
-    )
+    ).toEqual([
+      'Zona',
+      'Atributo',
+      'Equipamento',
+      'Item',
+      'Evento aleatório',
+      'Evento de combate',
+      'Dimensão',
+    ])
     fireEvent.click(within(picker).getByRole('button', { name: 'Zona' }))
     expect(
       within(cards()).queryByRole('group', { name: 'Tipo da nova carta' }),

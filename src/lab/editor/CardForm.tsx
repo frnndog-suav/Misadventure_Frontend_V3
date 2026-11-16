@@ -52,7 +52,6 @@ import {
   emptyEnemy,
   enemyTypeOrder,
   formFromCard,
-  hasForm,
   inputToCard,
   modifierOrder,
   sameForm,
@@ -61,6 +60,7 @@ import {
   type AttributeForm,
   type CardForm as CardFormValues,
   type CombatEventForm,
+  type DimensionForm,
   type EnemyForm,
   type EquipmentForm,
   type RandomEventForm,
@@ -261,6 +261,11 @@ const polarityOptions = options(
 )
 const rarityOptions = options(raritySchema.options, rarityLabels)
 const zoneTypeOptions = options(zoneTypeSchema.options, zoneTypeLabels)
+/** "Forma das setas" (REQ-31); a opção vazia é "Não se aplica" (`null`). */
+const arrowLayoutOptions = options(['straight', 'corner'] as const, {
+  straight: 'Opostas',
+  corner: 'Vizinhas',
+})
 const attributeKindOptions = options(
   Object.keys(attributeKindLabels) as AttributeCard['attributeKind'][],
   attributeKindLabels,
@@ -311,6 +316,15 @@ function ZoneFields({
         value={values.connectionArrows}
         onChange={(connectionArrows) => set({ ...values, connectionArrows })}
         errors={errors}
+      />
+      <SelectField
+        label="Forma das setas"
+        path="arrowLayout"
+        value={values.arrowLayout}
+        options={arrowLayoutOptions}
+        onChange={(arrowLayout) => set({ ...values, arrowLayout })}
+        errors={errors}
+        emptyLabel="Não se aplica"
       />
       <fieldset aria-describedby={errors.describedBy('zoneActions')}>
         <legend>Ações de zona</legend>
@@ -1112,6 +1126,59 @@ function CombatEventFields({
   )
 }
 
+/** Carta de Dimensão (REQ-31); "Zona de chegada" vazia = `null` (sorteada). */
+function DimensionFields({
+  values,
+  set,
+  errors,
+}: {
+  values: DimensionForm
+  set: (values: DimensionForm) => void
+  errors: Errors
+}) {
+  return (
+    <>
+      <TextField
+        label="Nome"
+        path="name"
+        value={values.name}
+        onChange={(name) => set({ ...values, name })}
+        errors={errors}
+      />
+      <TextField
+        label="Texto de ambientação"
+        path="flavorText"
+        value={values.flavorText}
+        onChange={(flavorText) => set({ ...values, flavorText })}
+        errors={errors}
+        multiline
+      />
+      <TextField
+        label="Ordem de lançamento"
+        path="releaseOrder"
+        value={values.releaseOrder}
+        onChange={(releaseOrder) => set({ ...values, releaseOrder })}
+        errors={errors}
+      />
+      <TextField
+        label="Zona de chegada"
+        path="arrivalZoneTitle"
+        value={values.arrivalZoneTitle}
+        onChange={(arrivalZoneTitle) => set({ ...values, arrivalZoneTitle })}
+        errors={errors}
+      />
+      <TextListField
+        label="Efeitos"
+        itemLabel="Efeito"
+        path="effects"
+        items={values.effects}
+        onChange={(effects) => set({ ...values, effects })}
+        errors={errors}
+      />
+    </>
+  )
+}
+
 /** Campos do tipo da carta (REQ-21). */
 function TypeFields({
   values,
@@ -1146,6 +1213,8 @@ function TypeFields({
       return <RandomEventFields values={values} set={set} errors={errors} />
     case 'combatEvent':
       return <CombatEventFields values={values} set={set} errors={errors} />
+    case 'dimension':
+      return <DimensionFields values={values} set={set} errors={errors} />
     default: {
       const _exhaustive: never = values
       return _exhaustive
@@ -1226,7 +1295,6 @@ export function CardForm({
       : cardSchema.safeParse(inputToCard(input, collectionId)).data
 
   function show(result: EditorCard, text: string): void {
-    if (!hasForm(result.card)) return
     const next = formFromCard(result.card)
     setInitial(next)
     setValues(next)

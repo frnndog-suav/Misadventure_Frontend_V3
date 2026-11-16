@@ -1391,3 +1391,92 @@ describe('REQ-23: publicar, duplicar e excluir', () => {
     expect(field('Nome')).toHaveValue('Força')
   })
 })
+
+describe('REQ-31: Carta de Dimensão e forma das setas', () => {
+  it('REQ-31: Carta de Dimensão da lista abre o formulário dela, com a pré-visualização', async () => {
+    renderEditor()
+    await openCard('Dimensão de Teste · Dimensão · Publicada')
+    expect(field('Identificador')).toHaveValue('test-dimension')
+    expect(field('Nome')).toHaveValue('Dimensão de Teste')
+    expect(field('Texto de ambientação')).toHaveValue('')
+    expect(field('Ordem de lançamento')).toHaveValue('1')
+    expect(field('Zona de chegada')).toHaveValue('Porto Cinzento')
+    expect(
+      within(form()).getByRole('group', { name: 'Efeitos' }),
+    ).toBeInTheDocument()
+    expect(
+      within(preview()).getByRole('article', { name: 'Dimensão de Teste' }),
+    ).toBeInTheDocument()
+  })
+
+  it('REQ-31: Carta de Dimensão nova vai com o número, a zona vazia como null e os efeitos', async () => {
+    const bodies = recordBodies()
+    renderEditor()
+    await newCard('Dimensão')
+    type('Identificador', 'nova')
+    type('Nome', 'Nova Dimensão')
+    type('Ordem de lançamento', 'dois')
+    expect(saveButton()).toBeDisabled()
+    type('Ordem de lançamento', '2')
+    expect(saveButton()).toBeEnabled()
+    const effects = within(form()).getByRole('group', { name: 'Efeitos' })
+    fireEvent.click(within(effects).getByRole('button', { name: 'Adicionar' }))
+    fireEvent.change(within(effects).getByLabelText('Efeito 1'), {
+      target: { value: 'Chove sempre.' },
+    })
+    fireEvent.click(saveButton())
+    await waitFor(() => expect(bodies).toHaveLength(1))
+    expect(bodies[0].body).toEqual({
+      slug: 'nova',
+      type: 'dimension',
+      name: 'Nova Dimensão',
+      flavorText: null,
+      releaseOrder: 2,
+      arrivalZoneTitle: null,
+      effects: [{ text: 'Chove sempre.' }],
+    })
+  })
+
+  it('REQ-31: "Forma das setas" vem depois de "Setas de conexão" com as 3 opções e o valor recebido', async () => {
+    renderEditor()
+    await openCard('Bosque Sussurrante · Zona · Publicada')
+    const layout = field('Forma das setas')
+    expect(
+      field('Setas de conexão').compareDocumentPosition(layout) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(
+      within(layout)
+        .getAllByRole('option')
+        .map((o) => o.textContent),
+    ).toEqual(['Não se aplica', 'Opostas', 'Vizinhas'])
+    expect(layout).toHaveValue('straight')
+  })
+
+  it('REQ-31: a forma escolhida vai no corpo; "Não se aplica" vai como null, sem conferir as setas', async () => {
+    const bodies = recordBodies()
+    renderEditor()
+    await newCard('Zona')
+    type('Identificador', 'praca')
+    type('Título', 'Praça')
+    fireEvent.change(field('Tipo de zona'), { target: { value: 'urban' } })
+    type('Local', 'Cidade')
+    type('Setas de conexão', '4')
+    fireEvent.change(field('Forma das setas'), { target: { value: 'corner' } })
+    // 4 setas com "Vizinhas": quem confere é o backend (D-38)
+    expect(saveButton()).toBeEnabled()
+    fireEvent.click(saveButton())
+    await waitFor(() => expect(bodies).toHaveLength(1))
+    expect(bodies[0].body).toMatchObject({ arrowLayout: 'corner' })
+  })
+
+  it('REQ-31: voltar para "Não se aplica" envia arrowLayout null', async () => {
+    const bodies = recordBodies()
+    renderEditor()
+    await openCard('Bosque Sussurrante · Zona · Publicada')
+    fireEvent.change(field('Forma das setas'), { target: { value: '' } })
+    fireEvent.click(saveButton())
+    await waitFor(() => expect(bodies).toHaveLength(1))
+    expect(bodies[0].body).toMatchObject({ arrowLayout: null })
+  })
+})
