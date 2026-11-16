@@ -4,6 +4,7 @@ import {
   useEditorCard,
   useEditorCards,
   type ContentStatus,
+  type EditorCard,
   type EditorCardFilters,
 } from '../../api/editor'
 import { ApiError } from '../../api/http'
@@ -28,9 +29,14 @@ const statuses = Object.keys(statusLabels) as ContentStatus[]
 type Selection =
   null | { kind: 'card'; cardId: string } | { kind: 'new'; type: CardType }
 
+/** O que o formulário abre: a escolha ou a cópia devolvida pelo backend (REQ-23). */
+type Opened = Selection | { kind: 'copy'; copy: EditorCard }
+
 interface FormProps {
   collectionId: string
   onSaved: (cardId: string) => void
+  onDuplicated: (copy: EditorCard) => void
+  onDeleted: () => void
   onDirtyChange: (dirty: boolean) => void
 }
 
@@ -68,16 +74,38 @@ function SavedCardForm({ cardId, ...props }: FormProps & { cardId: string }) {
 function OpenedForm({
   opened,
   ...props
-}: FormProps & { opened: NonNullable<Selection> }) {
-  if (opened.kind === 'card') {
-    return <SavedCardForm {...props} cardId={opened.cardId} />
+}: FormProps & { opened: NonNullable<Opened> }) {
+  switch (opened.kind) {
+    case 'card':
+      return <SavedCardForm {...props} cardId={opened.cardId} />
+    case 'new':
+      return (
+        <CardForm
+          {...props}
+          opened={{
+            cardId: null,
+            status: 'draft',
+            values: emptyForm(opened.type),
+          }}
+        />
+      )
+    case 'copy':
+      return (
+        <CardForm
+          {...props}
+          opened={{
+            cardId: opened.copy.card.id,
+            status: opened.copy.status,
+            values: formFromCard(opened.copy.card),
+            message: 'Cópia criada.',
+          }}
+        />
+      )
+    default: {
+      const _exhaustive: never = opened
+      return _exhaustive
+    }
   }
-  return (
-    <CardForm
-      {...props}
-      opened={{ cardId: null, status: 'draft', values: emptyForm(opened.type) }}
-    />
-  )
 }
 
 /** Seção "Cartas" da coleção escolhida (REQ-20); o backend filtra (D-39). */
@@ -97,13 +125,28 @@ export function CardsSection({
   const [picking, setPicking] = useState(false)
   const [selection, setSelection] = useState<Selection>(null)
   /** O que o formulário abriu; salvar muda só a `selection` (D-43). */
-  const [opened, setOpened] = useState<Selection>(null)
+  const [opened, setOpened] = useState<Opened>(null)
   const [formKey, setFormKey] = useState(0)
+  /** "Carta excluída." depois que o formulário fecha (REQ-23). */
+  const [notice, setNotice] = useState('')
 
   function open(next: NonNullable<Selection>): void {
     setSelection(next)
     setOpened(next)
     setFormKey((key) => key + 1)
+    setNotice('')
+  }
+
+  function openCopy(copy: EditorCard): void {
+    setSelection({ kind: 'card', cardId: copy.card.id })
+    setOpened({ kind: 'copy', copy })
+    setFormKey((key) => key + 1)
+  }
+
+  function closeDeleted(): void {
+    setSelection(null)
+    setOpened(null)
+    setNotice('Carta excluída.')
   }
 
   useEffect(() => {
@@ -119,7 +162,7 @@ export function CardsSection({
     setQ(search)
   }
 
-  let statusText = ''
+  let statusText = notice
   if (cards.isPending) statusText = 'Carregando cartas…'
   else if (cards.isError)
     statusText =
@@ -245,6 +288,8 @@ export function CardsSection({
           collectionId={collectionId}
           onDirtyChange={onDirtyChange}
           onSaved={(cardId) => setSelection({ kind: 'card', cardId })}
+          onDuplicated={openCopy}
+          onDeleted={closeDeleted}
         />
       )}
     </section>

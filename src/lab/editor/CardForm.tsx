@@ -22,7 +22,10 @@ import {
 import {
   ContentInvalidError,
   useCreateCard,
+  useDeleteCard,
+  useDuplicateCard,
   useEditorCollection,
+  usePublishCard,
   useSaveCard,
   type ContentInvalidDetails,
   type ContentStatus,
@@ -43,6 +46,7 @@ import {
   zoneTypeLabels,
 } from '../../ui/labels'
 import { termCatalog } from '../../ui/terms'
+import { ConfirmDialog } from './ConfirmDialog'
 import {
   classOrder,
   emptyEnemy,
@@ -1153,7 +1157,17 @@ export interface OpenedCard {
   cardId: string | null
   status: ContentStatus
   values: CardFormValues
+  /** Texto inicial da área de status (ex.: "Cópia criada.", REQ-23). */
+  message?: string
 }
+
+/** Nome da carta nos diálogos do REQ-23: "Nome" ou "Título" do tipo. */
+function cardName(values: CardFormValues): string {
+  return 'name' in values ? values.name : values.title
+}
+
+/** Diálogo aberto pelos botões do REQ-23. */
+type Confirming = null | 'publish' | 'delete'
 
 /**
  * Formulário de carta (REQ-21) com a pré-visualização (REQ-22). O estado é
@@ -1165,21 +1179,37 @@ export function CardForm({
   collectionId,
   opened,
   onSaved,
+  onDuplicated,
+  onDeleted,
   onDirtyChange,
 }: {
   collectionId: string
   opened: OpenedCard
   onSaved: (cardId: string) => void
+  /** O backend criou a cópia; quem abriu o formulário abre a cópia. */
+  onDuplicated: (copy: EditorCard) => void
+  /** A carta foi apagada; quem abriu o formulário o fecha. */
+  onDeleted: () => void
   onDirtyChange: (dirty: boolean) => void
 }) {
   const [cardId, setCardId] = useState(opened.cardId)
   const [status, setStatus] = useState(opened.status)
   const [initial, setInitial] = useState(opened.values)
   const [values, setValues] = useState(opened.values)
-  const [message, setMessage] = useState('')
+  const [message, setMessage] = useState(opened.message ?? '')
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>([])
+  const [confirming, setConfirming] = useState<Confirming>(null)
   const create = useCreateCard()
   const save = useSaveCard()
+  const publish = usePublishCard()
+  const duplicate = useDuplicateCard()
+  const remove = useDeleteCard()
+  const busy =
+    create.isPending ||
+    save.isPending ||
+    publish.isPending ||
+    duplicate.isPending ||
+    remove.isPending
   const errors = useFieldErrors(fieldErrors)
   // sugestões de etiqueta: a consulta já existe para a seção "Coleções" (cache)
   const tags = useEditorCollection(collectionId).data?.tags ?? []
@@ -1194,16 +1224,48 @@ export function CardForm({
       ? undefined
       : cardSchema.safeParse(inputToCard(input, collectionId)).data
 
-  function onSuccess(result: EditorCard): void {
+  function show(result: EditorCard, text: string): void {
     const next = formFromCard(result.card)
     setInitial(next)
     setValues(next)
     setCardId(result.card.id)
     setStatus(result.status)
-    setMessage(
+    setMessage(text)
+    onSaved(result.card.id)
+  }
+
+  function onSuccess(result: EditorCard): void {
+    show(
+      result,
       result.status === 'published' ? 'Carta salva.' : 'Rascunho salvo.',
     )
-    onSaved(result.card.id)
+  }
+
+  /** Limpa a área de status e os erros por campo antes de um envio. */
+  function startRequest(): void {
+    setMessage('')
+    setFieldErrors([])
+  }
+
+  function onConfirm(): void {
+    const action = confirming
+    setConfirming(null)
+    if (cardId === null || action === null) return
+    startRequest()
+    if (action === 'publish') {
+      publish.mutate(cardId, {
+        onSuccess: (result) => show(result, 'Carta publicada.'),
+        onError,
+      })
+    } else {
+      remove.mutate(cardId, { onSuccess: onDeleted, onError })
+    }
+  }
+
+  function onDuplicate(): void {
+    if (cardId === null) return
+    startRequest()
+    duplicate.mutate(cardId, { onSuccess: onDuplicated, onError })
   }
 
   function onError(error: Error): void {
@@ -1214,8 +1276,7 @@ export function CardForm({
   function onSubmit(event: FormEvent): void {
     event.preventDefault()
     if (input === null) return
-    setMessage('')
-    setFieldErrors([])
+    startRequest()
     if (cardId === null) {
       create.mutate({ collectionId, input }, { onSuccess, onError })
     } else {
@@ -1245,13 +1306,51 @@ export function CardForm({
             errors={errors}
             tags={tags}
           />
-          <button
-            type="submit"
-            disabled={input === null || create.isPending || save.isPending}
-          >
+          <button type="submit" disabled={input === null || busy}>
             Salvar rascunho
           </button>
+          <button
+            type="button"
+            disabled={cardId === null || status !== 'draft' || dirty || busy}
+            onClick={() => setConfirming('publish')}
+          >
+            Publicar
+          </button>
+          <button
+            type="button"
+            disabled={cardId === null || busy}
+            onClick={onDuplicate}
+          >
+            Duplicar
+          </button>
+          <button
+            type="button"
+            disabled={cardId === null || busy}
+            onClick={() => setConfirming('delete')}
+          >
+            Excluir carta
+          </button>
         </form>
+        {confirming === 'publish' && (
+          <ConfirmDialog
+            title={`Publicar “${cardName(initial)}”?`}
+            text="Depois de publicada, a carta entra no catálogo e nas partidas, e o identificador não pode mais mudar."
+            confirmLabel="Publicar"
+            cancelLabel="Cancelar"
+            onConfirm={onConfirm}
+            onCancel={() => setConfirming(null)}
+          />
+        )}
+        {confirming === 'delete' && (
+          <ConfirmDialog
+            title={`Excluir “${cardName(initial)}”?`}
+            text="A carta será apagada. Não dá para desfazer."
+            confirmLabel="Excluir"
+            cancelLabel="Cancelar"
+            onConfirm={onConfirm}
+            onCancel={() => setConfirming(null)}
+          />
+        )}
       </section>
       <section aria-labelledby="editor-preview-title">
         <h2 id="editor-preview-title">Pré-visualização</h2>

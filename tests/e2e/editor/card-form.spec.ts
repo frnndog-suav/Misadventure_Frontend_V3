@@ -203,3 +203,56 @@ test('REQ-21: abre um evento aleatório da lista com os valores recebidos (MSW)'
   )
   await expect(form.getByLabel('Sem fuga')).not.toBeChecked()
 })
+
+test('REQ-23: publica, duplica e exclui uma carta (MSW)', async ({ page }) => {
+  await page.goto('/lab/editor')
+  await page.getByRole('button', { name: /Coleção de Teste/ }).click()
+  const cards = page.getByRole('region', { name: 'Cartas' })
+  await cards.getByRole('button', { name: 'Nova carta' }).click()
+  await cards
+    .getByRole('group', { name: 'Tipo da nova carta' })
+    .getByRole('button', { name: 'Atributo' })
+    .click()
+  const form = page.getByRole('region', { name: 'Carta', exact: true })
+  const publish = form.getByRole('button', { name: 'Publicar' })
+  await expect(publish).toBeDisabled()
+  await form.getByLabel('Identificador').fill('forca')
+  await form.getByLabel('Nome', { exact: true }).fill('Força')
+  await form.getByLabel('Raridade').selectOption({ label: 'Comum' })
+  await form
+    .getByLabel('Tipo', { exact: true })
+    .selectOption({ label: 'Básica' })
+  const attributes = form.getByRole('group', { name: 'Atributos' })
+  await attributes.getByRole('button', { name: 'Adicionar' }).click()
+  await attributes.getByLabel('Atributo 1').selectOption({ label: 'Força' })
+  await form.getByRole('button', { name: 'Salvar rascunho' }).click()
+  await expect(form.getByRole('status')).toHaveText('Rascunho salvo.')
+
+  await publish.click()
+  const publishDialog = page.getByRole('dialog', { name: 'Publicar “Força”?' })
+  await expect(
+    publishDialog.getByRole('button', { name: 'Cancelar' }),
+  ).toBeFocused()
+  await publishDialog.getByRole('button', { name: 'Publicar' }).click()
+  await expect(form.getByRole('status')).toHaveText('Carta publicada.')
+  await expect(form.getByText('Situação: Publicada')).toBeVisible()
+  await expect(form.getByLabel('Identificador')).toHaveAttribute('readonly', '')
+
+  await form.getByRole('button', { name: 'Duplicar' }).click()
+  await expect(form.getByRole('status')).toHaveText('Cópia criada.')
+  await expect(form.getByLabel('Identificador')).toHaveValue(
+    'forca-bruta-copia',
+  )
+  await expect(form.getByText('Situação: Rascunho')).toBeVisible()
+
+  await form.getByRole('button', { name: 'Excluir carta' }).click()
+  const deleteDialog = page.getByRole('dialog', {
+    name: 'Excluir “Força Bruta”?',
+  })
+  await expect(deleteDialog).toContainText(
+    'A carta será apagada. Não dá para desfazer.',
+  )
+  await deleteDialog.getByRole('button', { name: 'Excluir' }).click()
+  await expect(form).toHaveCount(0)
+  await expect(cards.getByRole('status').first()).toHaveText('Carta excluída.')
+})

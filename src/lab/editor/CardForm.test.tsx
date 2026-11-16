@@ -1200,3 +1200,193 @@ describe('REQ-21: evento de combate', () => {
     expect(field('Ataque do inimigo 1')).toHaveValue('2.5')
   })
 })
+
+describe('REQ-23: publicar, duplicar e excluir', () => {
+  const publishButton = () =>
+    within(form()).getByRole('button', { name: 'Publicar' })
+  const duplicateButton = () =>
+    within(form()).getByRole('button', { name: 'Duplicar' })
+  const deleteButton = () =>
+    within(form()).getByRole('button', { name: 'Excluir carta' })
+
+  async function savedDraft(): Promise<void> {
+    renderEditor()
+    await newCard('Atributo')
+    fillForca('forca')
+    fireEvent.click(saveButton())
+    await waitFor(() =>
+      expect(formStatus()).toHaveTextContent('Rascunho salvo.'),
+    )
+  }
+
+  it('REQ-23: "Publicar" só fica habilitado num rascunho salvo e sem alterações pendentes', async () => {
+    renderEditor()
+    await newCard('Atributo')
+    expect(publishButton()).toBeDisabled()
+    expect(duplicateButton()).toBeDisabled()
+    expect(deleteButton()).toBeDisabled()
+    fillForca('forca')
+    fireEvent.click(saveButton())
+    await waitFor(() => expect(publishButton()).toBeEnabled())
+    expect(duplicateButton()).toBeEnabled()
+    expect(deleteButton()).toBeEnabled()
+    type('Nome', 'Mudou')
+    expect(publishButton()).toBeDisabled()
+  })
+
+  it('REQ-23: carta publicada não tem "Publicar" habilitado', async () => {
+    renderEditor()
+    await openCard('Força · Atributo · Publicada')
+    expect(publishButton()).toBeDisabled()
+    expect(duplicateButton()).toBeEnabled()
+  })
+
+  it('REQ-23: "Publicar" pede confirmação; "Cancelar" fecha sem publicar', async () => {
+    const bodies = recordBodies()
+    await savedDraft()
+    fireEvent.click(publishButton())
+    const dialog = screen.getByRole('dialog', { name: 'Publicar “Força”?' })
+    expect(dialog).toHaveTextContent(
+      'Depois de publicada, a carta entra no catálogo e nas partidas, e o identificador não pode mais mudar.',
+    )
+    expect(
+      within(dialog).getByRole('button', { name: 'Cancelar' }),
+    ).toHaveFocus()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancelar' }))
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(bodies.filter((b) => b.url.endsWith('/publish'))).toEqual([])
+  })
+
+  it('REQ-23: publicar confirmado passa a "Publicada" e mostra "Carta publicada."', async () => {
+    const urls: string[] = []
+    server.events.on('request:start', ({ request }) => {
+      if (request.method === 'POST') urls.push(request.url)
+    })
+    await savedDraft()
+    fireEvent.click(publishButton())
+    const dialog = screen.getByRole('dialog', { name: 'Publicar “Força”?' })
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Publicar' }))
+    await waitFor(() =>
+      expect(formStatus()).toHaveTextContent('Carta publicada.'),
+    )
+    expect(urls).toContain(
+      'http://localhost:3000/lab/content/cards/bosque.forca/publish',
+    )
+    expect(within(form()).getByText('Situação: Publicada'))
+    expect(field('Identificador')).toHaveAttribute('readonly')
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('REQ-23: CONTENT_INVALID ao publicar mostra os erros e a carta continua em rascunho', async () => {
+    server.use(
+      http.post(`${cardUrl}/publish`, () =>
+        HttpResponse.json(forcaSorteInvalidFixture, { status: 400 }),
+      ),
+    )
+    await savedDraft()
+    fireEvent.click(publishButton())
+    fireEvent.click(
+      within(
+        screen.getByRole('dialog', { name: 'Publicar “Força”?' }),
+      ).getByRole('button', { name: 'Publicar' }),
+    )
+    await waitFor(() =>
+      expect(formStatus()).toHaveTextContent('Conteúdo inválido.'),
+    )
+    const attributes = within(form()).getByRole('group', { name: 'Atributos' })
+    const text = forcaSorteInvalidFixture.error.details.fields[0].message
+    expect(attributes).toHaveAttribute(
+      'aria-describedby',
+      within(form()).getByText(text).id,
+    )
+    expect(within(form()).getByText('Situação: Rascunho'))
+  })
+
+  it('REQ-23: "Duplicar" abre o rascunho criado pelo backend e mostra "Cópia criada."', async () => {
+    renderEditor()
+    await openCard('Força · Atributo · Publicada')
+    fireEvent.click(duplicateButton())
+    await waitFor(() => expect(formStatus()).toHaveTextContent('Cópia criada.'))
+    expect(field('Identificador')).toHaveValue('forca-bruta-copia')
+    expect(field('Identificador')).not.toHaveAttribute('readonly')
+    expect(field('Nome')).toHaveValue('Força Bruta')
+    expect(within(form()).getByText('Situação: Rascunho'))
+  })
+
+  it('REQ-23: "Excluir carta" pede confirmação; confirmado, fecha o formulário, consulta a lista e mostra "Carta excluída."', async () => {
+    let listCalls = 0
+    server.use(
+      http.get(cardsUrl, () => {
+        listCalls += 1
+        return HttpResponse.json(fixtureCardSummariesFixture)
+      }),
+    )
+    renderEditor()
+    await openCard('Força · Atributo · Publicada')
+    const before = listCalls
+    fireEvent.click(deleteButton())
+    const dialog = screen.getByRole('dialog', { name: 'Excluir “Força”?' })
+    expect(dialog).toHaveTextContent(
+      'A carta será apagada. Não dá para desfazer.',
+    )
+    expect(
+      within(dialog).getByRole('button', { name: 'Cancelar' }),
+    ).toHaveFocus()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Excluir' }))
+    await waitFor(() =>
+      expect(within(cards()).getAllByRole('status')[0]).toHaveTextContent(
+        'Carta excluída.',
+      ),
+    )
+    expect(screen.queryByRole('region', { name: 'Carta' })).toBeNull()
+    await waitFor(() => expect(listCalls).toBeGreaterThan(before))
+  })
+
+  it('REQ-23: "Cancelar" na exclusão não apaga', async () => {
+    let deletes = 0
+    server.use(
+      http.delete(cardUrl, () => {
+        deletes += 1
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+    renderEditor()
+    await openCard('Força · Atributo · Publicada')
+    fireEvent.click(deleteButton())
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(deletes).toBe(0)
+    expect(form()).toBeInTheDocument()
+  })
+
+  it('REQ-23: 409 CONTENT_IN_USE mostra a message e nada é apagado', async () => {
+    server.use(
+      http.delete(cardUrl, () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: 'CONTENT_IN_USE',
+              message:
+                'Este conteúdo é usado por algum save e não pode ser apagado.',
+            },
+          },
+          { status: 409 },
+        ),
+      ),
+    )
+    renderEditor()
+    await openCard('Força · Atributo · Publicada')
+    fireEvent.click(deleteButton())
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: 'Excluir',
+      }),
+    )
+    await waitFor(() =>
+      expect(formStatus()).toHaveTextContent(
+        'Este conteúdo é usado por algum save e não pode ser apagado.',
+      ),
+    )
+    expect(field('Nome')).toHaveValue('Força')
+  })
+})
