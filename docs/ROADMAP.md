@@ -1,6 +1,6 @@
 # Misadventures — Roadmap de desenvolvimento
 
-> **Versão:** 0.45 · **Data:** 2026-11-17
+> **Versão:** 0.47 · **Data:** 2026-11-17
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend; o autor copia o arquivo inteiro quando ele muda. Base: README Parte III (III.2 e III.4). As regras estão em [`README.md`](README.md); o que trafega entre os lados, em [`CONTRATO.md`](CONTRATO.md).
 
@@ -158,3 +158,5 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | 0.43 | 2026-11-17 | FEAT-09: FE `pronto` com MSW (T-41 a T-44, spec v0.58). Falta validar contra o backend real (`/retorno-backend`). |
 | 0.44 | 2026-11-17 | FEAT-09 `validado` nas duas colunas (CONTRATO v0.38): cenários com chamadas HTTP e a tela do grupo contra o backend real. |
 | 0.45 | 2026-11-17 | FEAT-10 dividida (decisão do autor): a FEAT-10 fica com inventário, equipar (Preparar parte a), bolsa e a doação do laboratório; a FEAT-32 nova (logo depois da FEAT-10) fica com Usar cofre, limbo, deck de recompensas e Vasculhar. Decisões para a FEAT-32: deck de recompensas na Carta de Dimensão; Vasculhar numa etapa só. |
+| 0.46 | 2026-11-17 | FEAT-10: lado BE `aguardando outro lado` (spec v0.39 planejada; CONTRATO v0.39 com a seção FEAT-10 `proposto (BE)`). Falta o FE confirmar o contrato. |
+| 0.47 | 2026-11-17 | FEAT-10: contrato `acordado` pelo FE (CONTRATO v0.40); FE `a fazer` (falta planejar REQs e tarefas na spec); BE sai de `aguardando outro lado` para `a fazer`. |

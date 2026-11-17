@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.38 · **Data:** 2026-11-17
+> **Versão do contrato:** 0.40 · **Data:** 2026-11-17
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -250,6 +250,19 @@ Base dos nomes no código dos dois lados e dos termos com destaque e tooltip (RE
 | Cópias máx. de sinérgicas/aprimoradas no deck | `maxCopiesPerCard` |
 | Build irregular (abaixo do mínimo) | `buildBelowMinimum` |
 
+### 2.14 Inventário, equipar e bolsa (README 5.1, 5.3, 6.2, 7.4, 12.2) — FEAT-10
+
+| Termo | Identificador |
+|---|---|
+| Inventário / capacidade / quantidade empilhada no slot | `inventory` / `inventoryCapacity` / `quantity` |
+| Equipamentos em uso (por categoria) | `equipment` |
+| Capacidade da bolsa | `purseCapacity` |
+| Modificadores efetivos (base + equipamentos, × Pico) | `effectiveModifiers` |
+| Preparar: equipar / guardar | `prepare` (`operation`: `equip` / `unequip`) |
+| Doação do laboratório | `labGrant` (rota `/lab/parties/:partyId/members/:memberId/grants`) |
+
+*(Inventário, bolsa e ouro já estão em §2.3; Preparar = `prepare`, §2.5; categorias de equipamento = `slot`, §2.7.)*
+
 ## 3. Features
 
 Uma seção por FEAT do roadmap, criada com `/contrato` (no frontend) ou pelo equivalente no backend. Modelo:
@@ -343,6 +356,9 @@ interface GameConfigValues {
   recoverHealthPercent: number // README 12.5
   recoverVigorPercent: number // README 7.3
   recoverHandSize: number // README 12.2, opção (a)
+  // FEAT-10
+  inventoryCapacity: number // README 6.2
+  purseCapacity: number // README 5.3
 }
 
 type GameConfigKey = keyof GameConfigValues
@@ -395,6 +411,8 @@ Padrões e limites:
 | `tcgFolderCapacity` (FEAT-09) | 30 | 0–1000 |
 | `recoverHealthPercent` / `recoverVigorPercent` (FEAT-09) | 15 / 5 | 0–100 cada |
 | `recoverHandSize` (FEAT-09) | 7 | 0–200 |
+| `inventoryCapacity` (FEAT-10) | 10 | 0–100 |
+| `purseCapacity` (FEAT-10) | 300 | 0–1000000 |
 
 #### Cenários de validação
 
@@ -1319,6 +1337,148 @@ Contra a `fixture`, laboratório no padrão. Seja `G` criado com `{ "name": "Os 
 
 Só nos e2e do backend (a pasta não enche no jogo ainda): trocar `S` por cartas da pasta, tirar cartas para a pasta, `tcgFolderFull`, `copyLimitExceeded`, `shuffleDiscard` com pilha não vazia e a leitura de saves antigos.
 
+### FEAT-10 — Inventário, equipar e bolsa — `acordado`
+
+Regras: README 5.1 (1 equipamento por categoria; equipamento guardado não funciona; arma que bloqueia escudo, B J1), 5.3 (bolsa; ouro acima da capacidade é perdido), 6.2 (inventário de 10 slots; empilhamento), 7.3 item 8 (requisito de Pico), 7.4 (pipeline do modificador), 8.2 (classe inativa ainda equipa item restrito), 9.1 (começa sem equipamentos nem recursos), 11.1 item 5 e B K2 (Preparar é gratuita, também com 0 pontos), 12.2 (Preparar, parte a: trocar equipamentos) e 17.3 item 1.
+
+**Fora desta FEAT:** Preparar (b) usar recursos e ativar efeitos/habilidades (FEAT-11) e (c) abrir boosters (FEAT-16); cofre, limbo, deck de recompensas e Vasculhar (FEAT-32); estado do equipamento (quebrado, reparo, refino: FEATs 13 e 17); montaria (FEAT-18).
+
+**Como montar o estado:** nada no jogo dá recursos ou ouro antes das FEATs 12 e 16. Por isso esta FEAT traz uma rota do **laboratório** que doa cartas e ouro a um membro. Ela não é ação do jogo: vale com o grupo sem sessão, fora da vez e sem gastar pontos. Respeita as capacidades e recusa quando não cabe.
+
+**Mudanças em outras seções:**
+- **FEAT-03 (`validado`):** `GameConfigValues` ganha `inventoryCapacity` e `purseCapacity` (tabela de limites atualizada lá).
+- **FEAT-06 (`validado`):** `PlayerState` ganha `inventory`, `inventoryCapacity`, `equipment`, `purseCapacity` e `effectiveModifiers`. `modifiers` continua sendo o valor **base** (classe ou padrões). Na criação, `gold` nunca passa de `purseCapacity` (o excedente de `initialGold` é perdido, README 5.3).
+- **FEAT-07/08/09 (`validado`):** `PartyAction` ganha `PrepareAction`; `availableActions` ganha `prepare` (ordem nova); motivos novos em `ActionInvalidDetails` e `ActionNotAllowedDetails`. Saves de antes desta versão continuam: são lidos com o inventário vazio, nada equipado e os valores novos nos padrões do laboratório.
+- **FEAT-31 (`validado`):** cartas no `inventory`, em `equipment` e na `tcgFolder` de algum save também estão **em uso** (`CONTENT_IN_USE` ao excluir ou substituir).
+
+#### Endpoints
+
+| Método | Rota | Corpo | Sucesso | Erros |
+|---|---|---|---|---|
+| POST | `/parties/:partyId/actions` (FEAT-07) | `PrepareAction` | `200` `Party` | os da FEAT-07 |
+| POST | `/lab/parties/:partyId/members/:memberId/grants` | `LabGrantRequest` | `200` `Party` | `400` `LAB_GRANT_INVALID`, `404` `PARTY_NOT_FOUND`, `404` `MEMBER_NOT_FOUND`, `404` `CARD_NOT_FOUND`, `409` `LAB_GRANT_NO_SPACE`, `404` `NOT_FOUND` (laboratório desligado) |
+
+Ordem das conferências do `prepare`: 404 → pedido malformado (400) → sem sessão (409 `PARTY_SESSION_NOT_ACTIVE`) → regra (409 `ACTION_NOT_ALLOWED`). No `equip`: `notInInventory` → `notEquipment` → `peakRequirementNotMet` → `classRestricted` → `shieldBlocked` → `inventoryFull`. No `unequip`: `slotEmpty` → `inventoryFull`. Não existe `noActionPoints` (gratuita).
+
+Ordem da doação: laboratório desligado (404 `NOT_FOUND`) → `PARTY_NOT_FOUND` → `MEMBER_NOT_FOUND` → corpo (400) → `CARD_NOT_FOUND` (inexistente ou não publicada) → tipo de carta que não se doa (400 `notGrantable`) → sem espaço (409).
+
+#### Tipos
+
+```ts
+interface PlayerState {
+  // … campos das FEATs 06 a 09 …
+  /** FEAT-10. Slots do inventário, na ordem de chegada. Começa `[]`. */
+  inventory: InventorySlot[]
+  /** FEAT-10. Da config do grupo. `inventory.length ≤ inventoryCapacity`. */
+  inventoryCapacity: number
+  /** FEAT-10. As 8 categorias, sempre presentes; `null` = slot vazio. Começa tudo `null`. */
+  equipment: Record<EquipmentSlot, string | null>
+  /** FEAT-10. Da config do grupo. `gold ≤ purseCapacity`. */
+  purseCapacity: number
+  /**
+   * FEAT-10. Pipeline de README 7.4 com o que existe hoje:
+   * ⌊max(0, (modifiers[m] + equipamentos em uso que funcionam) × (100 + peak) ÷ 100)⌋.
+   * Funciona = sem requisito de Pico ou peak ≥ peakRequirement. Equipamento no inventário não conta.
+   */
+  effectiveModifiers: Record<Modifier, number>
+  /**
+   * Ordem fixa: `move`, `recover`, `prepare`, `adjustDeck`, `endTurn`. Para o membro da vez,
+   * `prepare` entra (com qualquer `actionPoints`) quando há algum equipamento no inventário ou em uso.
+   */
+  availableActions: PartyActionType[]
+}
+
+/**
+ * Empilham (1 slot, `quantity` sem limite): item `consumable`, `material`, `treasure`, `booster`.
+ * Não empilham (1 slot por cópia, `quantity: 1`): `equipment` e item `relic`, `tool`, `document`, `special`.
+ * Carta que empilha não muda a posição do slot; slot novo entra no fim; slot que esvazia sai.
+ */
+interface InventorySlot {
+  cardId: string
+  quantity: number // ≥ 1
+}
+
+type PartyAction = MoveAction | EndTurnAction | RecoverAction | AdjustDeckAction | PrepareAction
+
+/** Preparar (README 12.2, parte a). Gratuita; só o membro da vez; repetível. */
+type PrepareAction =
+  /** Tira 1 cópia do inventário e a põe no slot da categoria dela; o que estava no slot vai para o fim do
+   *  inventário. Arma que bloqueia escudo com escudo em uso: o escudo também vai para o inventário. */
+  | { type: 'prepare'; operation: 'equip'; cardId: string }
+  /** Guarda o equipamento do slot no fim do inventário. */
+  | { type: 'prepare'; operation: 'unequip'; slot: EquipmentSlot }
+
+/** `details` do erro ACTION_INVALID, motivos acrescentados. */
+interface ActionInvalidDetails {
+  fields: {
+    field: string | null // ex.: "operation", "cardId", "slot"
+    reason:
+      | /* … motivos das FEATs 07 e 09 … */ 'invalidBody' | 'required' | 'notString' | 'unknownAction' | 'unknownKey'
+      | 'unknownOperation' // FEAT-10: operation fora de equip|unequip (vem sozinho)
+      | 'unknownSlot'      // FEAT-10: slot fora das 8 categorias
+  }[]
+}
+
+/** `details` do erro ACTION_NOT_ALLOWED, motivos acrescentados. */
+interface ActionNotAllowedDetails {
+  reason:
+    | /* … motivos das FEATs 07 a 09 … */ 'notConnected' | 'noActionPoints'
+    | 'notInInventory'        // FEAT-10: a carta não está no inventário
+    | 'notEquipment'          // FEAT-10: a carta não é equipamento
+    | 'peakRequirementNotMet' // FEAT-10: peak < peakRequirement
+    | 'classRestricted'       // FEAT-10: nenhuma classe do jogador está na restrição
+    | 'shieldBlocked'         // FEAT-10: escudo com arma que bloqueia escudo em uso
+    | 'inventoryFull'         // FEAT-10: não há slot para o que sai do slot de equipamento
+    | 'slotEmpty'             // FEAT-10: guardar um slot vazio
+  cardId?: string
+}
+
+/** POST /lab/parties/:partyId/members/:memberId/grants */
+type LabGrantRequest =
+  /** Carta `equipment`/`item` → inventário (empilhamento de InventorySlot); `attribute` → pasta de TCG. */
+  | { type: 'card'; cardId: string; quantity: number } // quantity inteiro ≥ 1
+  /** Ouro → bolsa; o que passar de `purseCapacity` é perdido (README 5.3). */
+  | { type: 'gold'; amount: number } // inteiro ≥ 1
+
+/** `details` do erro LAB_GRANT_INVALID. */
+interface LabGrantInvalidDetails {
+  fields: {
+    field: string | null // `null` só com invalidBody
+    reason:
+      | 'invalidBody' | 'required' | 'notString' | 'unknownKey'
+      | 'unknownGrantType'   // type fora de card|gold (vem sozinho)
+      | 'notPositiveInteger' // quantity/amount não é inteiro ≥ 1
+      | 'notGrantable'       // field "cardId": a carta não é equipment, item nem attribute
+  }[]
+}
+
+/** `details` do erro LAB_GRANT_NO_SPACE. Nada muda. */
+interface LabGrantNoSpaceDetails {
+  reason: 'inventoryFull' | 'tcgFolderFull'
+}
+```
+
+Mensagens (pt-BR): `LAB_GRANT_INVALID` "Doação inválida."; `MEMBER_NOT_FOUND` "Membro não encontrado neste grupo."; `LAB_GRANT_NO_SPACE` "Não há espaço para essa doação.". As de `prepare` são as de FEAT-07 (`ACTION_INVALID` / `ACTION_NOT_ALLOWED`).
+
+#### Cenários de validação
+
+Contra a `fixture` (com as cartas que o backend acrescenta nesta FEAT), laboratório no padrão. Seja `G` criado com `{ "name": "Os Teimosos", "characterName": "Lia", "playerClass": "warrior" }` e posto em sessão, `M` o id do membro e `/grants` = `/lab/parties/G/members/M/grants`. Cartas: `B` = `fixture.blade-of-dusk` (arma, +3 Ataque, +1 Precisão, bloqueia escudo), `W` = `fixture.short-sword` (arma, +2 Ataque, não bloqueia), `D` = `fixture.oak-shield` (escudo, +2 Defesa), `H` = `fixture.iron-helm` (cabeça, +1 Defesa, requisito de Pico 50), `R` = `fixture.arcane-wand` (arma, só `mage`), `P` = `fixture.healing-potion` (consumível), `K` = `fixture.pickaxe` (ferramenta).
+
+- Quando `POST /parties`, então `members[0].player` traz `inventory: []`, `inventoryCapacity: 10`, `purseCapacity: 300`, `equipment` com as 8 categorias `null`, `effectiveModifiers = { "attack": 6, "defense": 5, "accuracy": 49, "evasion": 16, "celerity": 8, "piercing": 0, "reflection": 0 }` e `availableActions = ["move", "recover", "adjustDeck", "endTurn"]` (sem `prepare`: nada a equipar).
+- Quando `POST /grants` com `{ "type": "card", "cardId": P, "quantity": 2 }` e depois com `P` em 3, então `inventory = [{ "cardId": P, "quantity": 5 }]`; com `{ "type": "card", "cardId": K, "quantity": 2 }`, então dois slots `{ "cardId": K, "quantity": 1 }` depois do de `P`.
+- Quando `POST /grants` com `{ "type": "gold", "amount": 295 }`, então `gold: 300` (5 perdidas); com `{ "type": "card", "cardId": "fixture.strength-basic", "quantity": 2 }`, então `tcgFolder = [{ "cardId": "fixture.strength-basic", "copies": 2 }]`.
+- Com `B` doado, `availableActions` passa a ter `prepare` (`["move", "recover", "prepare", "adjustDeck", "endTurn"]`). Quando `{ "type": "prepare", "operation": "equip", "cardId": B }`, então `200` com `equipment.weapon: B`, `B` fora do `inventory`, `effectiveModifiers.attack: 9`, `effectiveModifiers.accuracy: 50` e `turn.actionPoints: 3` (gratuita).
+- Com `B` em uso e `D` no inventário, quando `equip` `D`, então `409` `ACTION_NOT_ALLOWED` `{ "reason": "shieldBlocked" }`. Com `W` em uso, `equip` `D` → `200` com `equipment.shield: D`; depois, com o inventário cheio (10 slots), `equip` `B` → `409` `{ "reason": "inventoryFull" }` (o escudo não tem para onde ir); com 1 slot livre, `equip` `B` → `200` com `W` e `D` no fim do `inventory`, nessa ordem.
+- Quando `equip` `H` com Pico 10, então `409` `{ "reason": "peakRequirementNotMet" }`; `equip` `R` → `409` `{ "reason": "classRestricted" }`; `equip` `P` → `409` `{ "reason": "notEquipment" }`; `equip` de carta fora do inventário → `409` `{ "reason": "notInInventory" }`.
+- Quando `{ "type": "prepare", "operation": "unequip", "slot": "weapon" }`, então `200` com `equipment.weapon: null`, a arma no fim do `inventory` e `effectiveModifiers.attack: 6`; `unequip` `head` (vazio) → `409` `{ "reason": "slotEmpty" }`.
+- Com 0 pontos de ação, `equip` continua `200` e `prepare` continua em `availableActions`.
+- Quando `{ "type": "prepare", "operation": "wear" }`, então `400` `ACTION_INVALID` com `fields = [{ "field": "operation", "reason": "unknownOperation" }]`; `{ "type": "prepare", "operation": "unequip", "slot": "hat" }` → `fields = [{ "field": "slot", "reason": "unknownSlot" }]`.
+- Com o grupo sem sessão, `prepare` → `409` `PARTY_SESSION_NOT_ACTIVE`; a doação continua `200`.
+- `POST /grants` com `{ "type": "card", "cardId": "fixture.gray-harbor", "quantity": 1 }` → `400` `LAB_GRANT_INVALID` com `fields = [{ "field": "cardId", "reason": "notGrantable" }]`; com `"cardId": "fixture.nope"` → `404` `CARD_NOT_FOUND`; com o inventário cheio e uma carta que não empilha → `409` `LAB_GRANT_NO_SPACE` `{ "reason": "inventoryFull" }`; com um `memberId` que não é do grupo → `404` `MEMBER_NOT_FOUND`.
+- Quando `DELETE /lab/content/cards/K` (rota da FEAT-31) com `K` no inventário de `G`, então `409` `CONTENT_IN_USE`.
+
+Só nos e2e do backend: leitura de saves antigos e o Pico abaixo do requisito com o equipamento já em uso (o Pico ainda não muda no jogo).
+
 ## 4. Códigos de erro
 
 | Código | Quando acontece | FEAT |
@@ -1341,6 +1501,9 @@ Só nos e2e do backend (a pasta não enche no jogo ainda): trocar `S` por cartas
 | `CONTENT_REFERENCED` | Excluir ou renomear uma carta de atributo que está no deck pré-pronto de uma classe (409). | FEAT-06 |
 | `ACTION_INVALID` | Intenção malformada (400): corpo, `type` ou campos inválidos, ou zona fora do mapa; `details.fields` diz cada campo e o motivo. | FEAT-07 |
 | `ACTION_NOT_ALLOWED` | Intenção bem formada recusada pela regra (409), ex.: zona sem travessia com a atual, sem pontos de ação (FEAT-08), build irregular ou pasta cheia (FEAT-09); `details.reason`. | FEAT-07 |
+| `LAB_GRANT_INVALID` | Doação do laboratório malformada ou de carta que não se doa (400); `details.fields`. | FEAT-10 |
+| `MEMBER_NOT_FOUND` | Membro inexistente no grupo (404). | FEAT-10 |
+| `LAB_GRANT_NO_SPACE` | A doação não cabe no inventário ou na pasta (409); `details.reason`. Nada muda. | FEAT-10 |
 
 ## 5. Histórico
 
@@ -1384,3 +1547,5 @@ Só nos e2e do backend (a pasta não enche no jogo ainda): trocar `S` por cartas
 | 0.36 | 2026-11-17 | FE | FEAT-09 `acordado` sem mudanças: build, pasta, opções do Recuperar, ações disponíveis e os motivos de recusa chegam prontos; o frontend só exibe e envia a build inteira (não confere cópias, trava nem capacidade). O FE alinha os schemas (`PlayerState`, `availableActions`, `GameConfigValues`, motivos de erro) e as fixtures do MSW nas tarefas da FEAT-09. |
 | 0.37 | 2026-11-17 | BE | FEAT-09 `implementado (BE)`: `PlayerState.build`, `buildSize`, `tcgFolder`, `tcgFolderCapacity`, `recover`, `adjustDeck`, os motivos novos e as 5 chaves de `GameConfigValues` implementados; os cenários cobertos pelos e2e de `take-party-action` (`index.deck.controller.e2e-spec.ts`, REQ-60 a REQ-68), `create-party` e `get-lab-config`. Saves anteriores são lidos com a pasta vazia e as chaves novas nos padrões, e regravados no formato novo. Sem mudança de tipos ou textos. |
 | 0.38 | 2026-11-17 | FE | FEAT-09 `validado`: os 10 cenários (15 conferências) passaram contra o backend real (`http://localhost:3333`, conteúdo `base`: a build pré-pronta do guerreiro tem 9 cartas somando 60, então `S` 29/31 virou Força − 1/+ 1 e o `notOwned` de carta a mais virou Resistência + 1; invariantes iguais). A tela do grupo com o MSW desligado passou: Recuperar, "Ajustar deck" com as 9 linhas, `buildBelowMinimum`, `notOwned`, `200` "Build salva: 60 cartas." e, com 0 pontos, sem Recuperar nem "Ajustar deck". Sem mudança de formato. |
+| 0.39 | 2026-11-17 | BE | FEAT-10 proposta (`proposto (BE)`): `PlayerState.inventory` (`InventorySlot`), `inventoryCapacity`, `equipment`, `purseCapacity`, `effectiveModifiers` (altera FEAT-06); `PartyAction` ganha `PrepareAction` (`equip`/`unequip`, gratuita); `availableActions` ganha `prepare` (ordem nova); motivos novos em `ActionInvalidDetails` (`unknownOperation`, `unknownSlot`) e `ActionNotAllowedDetails` (`notInInventory`, `notEquipment`, `peakRequirementNotMet`, `classRestricted`, `shieldBlocked`, `inventoryFull`, `slotEmpty`); `inventoryCapacity` e `purseCapacity` em `GameConfigValues` (altera FEAT-03); rota do laboratório `POST /lab/parties/:partyId/members/:memberId/grants` (`LabGrantRequest`); códigos `LAB_GRANT_INVALID`, `MEMBER_NOT_FOUND`, `LAB_GRANT_NO_SPACE` (§4); "em uso" estendido (altera FEAT-31); glossário §2.14. Cofre, limbo e Vasculhar foram para a FEAT-32 (ROADMAP v0.45). |
+| 0.40 | 2026-11-17 | FE | FEAT-10 `acordado` sem mudanças: modificadores efetivos, ações disponíveis (`prepare`) e motivos de recusa chegam prontos; o frontend só exibe e envia a intenção (não confere Pico, classe, escudo nem capacidade). A doação fica só no laboratório (fora do release, D-08). O FE alinha os schemas (`PlayerState`, `availableActions`, `GameConfigValues`, motivos de erro) e as fixtures do MSW nas tarefas da FEAT-10. |
