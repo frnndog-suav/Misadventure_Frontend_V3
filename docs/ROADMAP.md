@@ -1,6 +1,6 @@
 # Misadventures — Roadmap de desenvolvimento
 
-> **Versão:** 0.39 · **Data:** 2026-11-17
+> **Versão:** 0.41 · **Data:** 2026-11-17
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend; o autor copia o arquivo inteiro quando ele muda. Base: README Parte III (III.2 e III.4). As regras estão em [`README.md`](README.md); o que trafega entre os lados, em [`CONTRATO.md`](CONTRATO.md).
 
@@ -151,3 +151,5 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | 0.37 | 2026-11-17 | FEAT-08: BE `pronto` (T-24 e T-25; CONTRATO v0.33 `implementado (BE)`). Falta o FE implementar e validar contra o backend real. |
 | 0.38 | 2026-11-17 | FEAT-08: FE `pronto` com MSW (T-38 a T-40, spec v0.53). Falta validar contra o backend real (`/retorno-backend`). |
 | 0.39 | 2026-11-17 | FEAT-08 `validado` nas duas colunas (CONTRATO v0.34): cenários com chamadas HTTP e a tela do grupo contra o backend real. |
+| 0.40 | 2026-11-17 | FEAT-09: lado BE `aguardando outro lado` (spec v0.36 planejada; CONTRATO v0.35 com a seção FEAT-09 `proposto (BE)`). Falta o FE confirmar o contrato. |
+| 0.41 | 2026-11-17 | FEAT-09: contrato `acordado` pelo FE (CONTRATO v0.36); FE `a fazer` (falta planejar REQs e tarefas na spec); BE sai de `aguardando outro lado` para `a fazer`. |

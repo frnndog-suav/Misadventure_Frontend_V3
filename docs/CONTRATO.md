@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.34 · **Data:** 2026-11-17
+> **Versão do contrato:** 0.36 · **Data:** 2026-11-17
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -237,6 +237,19 @@ Base dos nomes no código dos dois lados e dos termos com destaque e tooltip (RE
 
 *(Vez = `turn` e rodada = `round`, §2.1.)*
 
+### 2.13 Deck de atributos (README 4.3, 4.4, 6.3, 8.2, 12.5) — FEAT-09
+
+| Termo | Identificador |
+|---|---|
+| Build (lista de cartas do deck salva) | `build` |
+| Tamanho da build (cartas em jogo) | `buildSize` |
+| Pasta de TCG / capacidade | `tcgFolder` / `tcgFolderCapacity` |
+| Recuperar | `recover` |
+| Opções do Recuperar: (a) comprar até N na mão / (b) mão no deck / (c) descarte no deck | `drawToHand` / `shuffleHand` / `shuffleDiscard` |
+| Ajustar deck | `adjustDeck` |
+| Cópias máx. de sinérgicas/aprimoradas no deck | `maxCopiesPerCard` |
+| Build irregular (abaixo do mínimo) | `buildBelowMinimum` |
+
 ## 3. Features
 
 Uma seção por FEAT do roadmap, criada com `/contrato` (no frontend) ou pelo equivalente no backend. Modelo:
@@ -324,6 +337,12 @@ interface GameConfigValues {
   defaultCelerity: number
   defaultPiercing: number
   defaultReflection: number
+  // FEAT-09
+  maxCopiesPerCard: number // README 4.3
+  tcgFolderCapacity: number // README 6.3
+  recoverHealthPercent: number // README 12.5
+  recoverVigorPercent: number // README 7.3
+  recoverHandSize: number // README 12.2, opção (a)
 }
 
 type GameConfigKey = keyof GameConfigValues
@@ -372,6 +391,10 @@ Padrões e limites:
 | `defaultAttack` / `defaultDefense` (FEAT-06) | 5 / 3 | 0–1000 cada |
 | `defaultAccuracy` / `defaultEvasion` (FEAT-06) | 50 / 20 | 0–1000 cada |
 | `defaultCelerity` / `defaultPiercing` / `defaultReflection` (FEAT-06) | 10 / 0 / 0 | 0–1000 cada |
+| `maxCopiesPerCard` (FEAT-09) | 4 | 1–200 |
+| `tcgFolderCapacity` (FEAT-09) | 30 | 0–1000 |
+| `recoverHealthPercent` / `recoverVigorPercent` (FEAT-09) | 15 / 5 | 0–100 cada |
+| `recoverHandSize` (FEAT-09) | 7 | 0–200 |
 
 #### Cenários de validação
 
@@ -1189,6 +1212,113 @@ Contra a `fixture`, com o laboratório no padrão (`actionPointsPerTurn: 3`). Se
 - Depois de `POST /parties/<G>/session/end`, quando `{ "type": "endTurn" }`, então `409` `PARTY_SESSION_NOT_ACTIVE`; ao continuar a sessão (`POST /parties/<G>/session`), `turn` é o mesmo de antes.
 - Com o laboratório em `actionPointsPerTurn: 5` (`PATCH /lab/config`), um grupo criado depois começa com `actionPoints: 5`; `G`, criado antes, continua recebendo 3 a cada `endTurn`. (Volte com `POST /lab/config/reset`.)
 
+### FEAT-09 — Deck de atributos — `acordado`
+
+Regras: README 4.3 (limite de cópias de sinérgicas e aprimoradas **só dentro do deck**), 4.4 (build e cartas em jogo; "Mexer na build": recolher, salvar, embaralhar, comprar a mesma quantidade), 6.3 (pasta de TCG: só cartas de atributo, 30 cartas, começa vazia; uma carta só sai da build se couber na pasta, B C19), 8.2 (trava checada ao salvar a build; build abaixo do mínimo não é salva; build que não cumpre a trava é aceita e só desliga a classe), 9.2 (deck esgotado não perde o jogo), 12.2/12.5 (Recuperar e Ajustar deck, 1 ponto cada; Recuperar repetível) e 7.3 item 6.
+
+**A pasta nesta FEAT:** ela existe e começa vazia. Nada no jogo a enche ainda (boosters, singles e recompensas vêm nas FEATs 10, 12 e 16); então, contra o backend real, o Ajustar deck só pode ser feito sem mudanças, ou recusado. As trocas com a pasta estão definidas aqui e cobertas pelos e2e do backend com saves montados.
+
+**Mudanças em outras seções:**
+- **FEAT-03 (`validado`):** `GameConfigValues` ganha `maxCopiesPerCard`, `tcgFolderCapacity`, `recoverHealthPercent`, `recoverVigorPercent`, `recoverHandSize` (tabela de limites atualizada lá).
+- **FEAT-06/FEAT-31 (`validado`):** ao **publicar** uma classe (e na integridade do conteúdo no boot), carta sinérgica ou aprimorada com `copies` acima de `maxCopiesPerCard` (padrão do laboratório) → `400` `CONTENT_INVALID`, path `starterDeck.N.copies`, texto "Carta sinérgica ou aprimorada pode ter no máximo N cópias no deck pré-pronto.". `PlayerState` ganha `build`, `buildSize`, `tcgFolder`, `tcgFolderCapacity`.
+- **FEAT-07/08 (`validado`):** `PartyAction` ganha `RecoverAction` e `AdjustDeckAction`; `availableActions` ganha `recover` e `adjustDeck`; motivos novos em `ActionInvalidDetails` e `ActionNotAllowedDetails`. Saves de antes desta versão continuam: são lidos com a pasta vazia e os valores novos nos padrões do laboratório.
+
+#### Endpoints
+
+Nenhuma rota nova: `POST /parties/:partyId/actions` (FEAT-07) aceita `recover` e `adjustDeck`; responde `200` `Party`.
+
+Ordem das conferências do `recover`: 404 → pedido malformado (400) → sem sessão (409 `PARTY_SESSION_NOT_ACTIVE`) → sem pontos (409 `noActionPoints`).
+Do `adjustDeck`: 404 → 400 → 409 sem sessão → `noActionPoints` → `notOwned` → `copyLimitExceeded` → `buildBelowMinimum` → `tcgFolderFull`.
+
+#### Tipos
+
+```ts
+interface PlayerState {
+  // … campos das FEATs 06 a 08 …
+  /** FEAT-09. Build salva, agrupada por carta, em ordem de `cardId`. */
+  build: CardCopies[]
+  /** FEAT-09. Soma das cópias da build = attributeDeckCount + hand.length + attributeDiscardPileCount. */
+  buildSize: number
+  /** FEAT-09. Cartas de atributo na pasta de TCG, em ordem de `cardId`. Começa `[]`. */
+  tcgFolder: CardCopies[]
+  /** FEAT-09. Capacidade total da pasta (cartas), da config do grupo. */
+  tcgFolderCapacity: number
+  /**
+   * Ordem fixa: `move`, `recover`, `adjustDeck`, `endTurn`. Para o membro da vez,
+   * `recover` e `adjustDeck` entram com `actionPoints ≥ 1`.
+   */
+  availableActions: PartyActionType[]
+}
+
+interface CardCopies {
+  cardId: string
+  copies: number // ≥ 1
+}
+
+type PartyAction = MoveAction | EndTurnAction | RecoverAction | AdjustDeckAction
+
+/** Recuperar (README 12.2, 12.5). 1 ponto de ação. */
+interface RecoverAction {
+  type: 'recover'
+  option: 'drawToHand' | 'shuffleHand' | 'shuffleDiscard'
+}
+
+/** Ajustar deck (README 4.4, 6.3). 1 ponto de ação. Envia a build nova INTEIRA. */
+interface AdjustDeckAction {
+  type: 'adjustDeck'
+  build: CardCopies[]
+}
+
+/** `details` do erro ACTION_INVALID (FEAT-07), motivos acrescentados. */
+interface ActionInvalidDetails {
+  fields: {
+    field: string | null // ex.: "option", "build", "build.2", "build.2.copies"
+    reason:
+      | 'invalidBody' | 'required' | 'notString' | 'unknownAction' | 'unknownKey' | 'zoneNotInMap'
+      | 'unknownOption'      // FEAT-09: option fora das três
+      | 'notArray'           // FEAT-09: build não é lista
+      | 'invalidItem'        // FEAT-09: item da build não é objeto
+      | 'notPositiveInteger' // FEAT-09: copies não é inteiro ≥ 1
+      | 'duplicateCard'      // FEAT-09: cardId repetido (no segundo)
+  }[]
+}
+
+/** `details` do erro ACTION_NOT_ALLOWED. */
+interface ActionNotAllowedDetails {
+  reason:
+    | 'notConnected' | 'noActionPoints'
+    | 'notOwned'          // FEAT-09: cópias acima do que há na build + pasta
+    | 'copyLimitExceeded' // FEAT-09: sinérgica/aprimorada acima de maxCopiesPerCard
+    | 'buildBelowMinimum' // FEAT-09: build com menos de minDeckSize cartas (irregular)
+    | 'tcgFolderFull'     // FEAT-09: o que sai da build não cabe na pasta
+  /** Só em `notOwned` e `copyLimitExceeded`: a primeira carta com problema, na ordem da build enviada. */
+  cardId?: string
+}
+```
+
+**Recuperar:** gasta 1 ponto; vida sobe `max(1, ⌊maxHealth × recoverHealthPercent ÷ 100⌋)` e Vigor `max(1, ⌊peak × recoverVigorPercent ÷ 100⌋)`, sem passar de `maxHealth` e `peak`. `drawToHand`: compra do topo até a mão ter `recoverHandSize` cartas ou o deck acabar (mão já cheia não compra). `shuffleHand`: a mão inteira vai para o deck, que é embaralhado; a mão fica vazia. `shuffleDiscard`: a pilha de descarte vai para o deck, que é embaralhado. Aceito mesmo sem efeito.
+
+**Ajustar deck:** o conjunto disponível é build + pasta. A build enviada vira a build salva; o que sobra vai para a pasta. Mão e descarte voltam ao deck, o deck é embaralhado e o jogador compra a **mesma quantidade** de cartas que tinha na mão. `playerClasses[].deckLockMet` e `modifiers` são recalculados. Enviar a build atual (sem mudar nada) é válido e gasta 1 ponto.
+
+Mensagens: as de FEAT-07 (`ACTION_INVALID` / `ACTION_NOT_ALLOWED`).
+
+#### Cenários de validação
+
+Contra a `fixture`, laboratório no padrão. Seja `G` criado com `{ "name": "Os Teimosos", "characterName": "Lia", "playerClass": "warrior" }` e posto em sessão; `S` = `fixture.strength-basic`, `E` = `fixture.endurance-basic`.
+
+- Quando `POST /parties`, então `members[0].player` traz `build = [{ "cardId": E, "copies": 30 }, { "cardId": S, "copies": 30 }]`, `buildSize: 60`, `tcgFolder: []`, `tcgFolderCapacity: 30` e `availableActions = ["move", "recover", "adjustDeck", "endTurn"]`.
+- Quando `{ "type": "recover", "option": "drawToHand" }`, então `200` com `turn.actionPoints: 2`, `health: 22`, `vigor: 10` (já no máximo), `hand` com 7 cartas e `attributeDeckCount: 53` (nada comprado).
+- Quando `{ "type": "recover", "option": "shuffleHand" }`, então `200` com `hand: []`, `attributeDeckCount: 60`, `actionPoints` − 1; e um `drawToHand` seguinte devolve `hand` com 7 e `attributeDeckCount: 53`.
+- Quando `{ "type": "adjustDeck", "build": [{ "cardId": E, "copies": 30 }, { "cardId": S, "copies": 30 }] }` com 7 na mão, então `200` com a mesma `build`, `tcgFolder: []`, `hand` com 7, `attributeDeckCount: 53`, `attributeDiscardPileCount: 0`, `deckLockMet: true` e `actionPoints` − 1.
+- Quando `adjustDeck` com `S` em 29 cópias (59 no total), então `409` `ACTION_NOT_ALLOWED` com `details = { "reason": "buildBelowMinimum" }`; nada muda (`GET` com o mesmo `savedAt`).
+- Quando `adjustDeck` com `S` em 31 cópias, então `409` com `details = { "reason": "notOwned", "cardId": S }`.
+- Quando `adjustDeck` com `fixture.dexterity-basic` em 1 cópia (além da build atual), então `409` com `details = { "reason": "notOwned", "cardId": "fixture.dexterity-basic" }`.
+- Quando `{ "type": "recover", "option": "nap" }`, então `400` `ACTION_INVALID` com `fields = [{ "field": "option", "reason": "unknownOption" }]`; com `{ "type": "adjustDeck", "build": [{ "cardId": S, "copies": 0 }, { "cardId": S, "copies": 1 }] }` → `fields = [{ "field": "build.0.copies", "reason": "notPositiveInteger" }, { "field": "build.1.cardId", "reason": "duplicateCard" }]`.
+- Com 0 pontos, `recover` e `adjustDeck` → `409` `noActionPoints`; `availableActions = ["endTurn"]` quando também não há como mover.
+- Com o laboratório em `recoverHandSize: 10`, um grupo criado depois, com `drawToHand`, fica com 10 cartas na mão e `attributeDeckCount: 50`; `G` continua comprando só até 7.
+
+Só nos e2e do backend (a pasta não enche no jogo ainda): trocar `S` por cartas da pasta, tirar cartas para a pasta, `tcgFolderFull`, `copyLimitExceeded`, `shuffleDiscard` com pilha não vazia e a leitura de saves antigos.
+
 ## 4. Códigos de erro
 
 | Código | Quando acontece | FEAT |
@@ -1210,7 +1340,7 @@ Contra a `fixture`, com o laboratório no padrão (`actionPointsPerTurn: 3`). Se
 | `CLASS_NOT_FOUND` | Classe inexistente no editor (404). | FEAT-06 |
 | `CONTENT_REFERENCED` | Excluir ou renomear uma carta de atributo que está no deck pré-pronto de uma classe (409). | FEAT-06 |
 | `ACTION_INVALID` | Intenção malformada (400): corpo, `type` ou campos inválidos, ou zona fora do mapa; `details.fields` diz cada campo e o motivo. | FEAT-07 |
-| `ACTION_NOT_ALLOWED` | Intenção bem formada recusada pela regra (409), ex.: zona sem travessia com a atual, ou sem pontos de ação (FEAT-08); `details.reason`. | FEAT-07 |
+| `ACTION_NOT_ALLOWED` | Intenção bem formada recusada pela regra (409), ex.: zona sem travessia com a atual, sem pontos de ação (FEAT-08), build irregular ou pasta cheia (FEAT-09); `details.reason`. | FEAT-07 |
 
 ## 5. Histórico
 
@@ -1250,3 +1380,5 @@ Contra a `fixture`, com o laboratório no padrão (`actionPointsPerTurn: 3`). Se
 | 0.32 | 2026-11-17 | FE | FEAT-08 `acordado` sem mudanças: pontos restantes, vez e ações disponíveis chegam prontos (`turn`, `availableActions`); o frontend só exibe e envia `endTurn`. O FE alinha schemas e fixtures do MSW (`Party.turn`, `availableActions`) nas tarefas da FEAT-08. |
 | 0.33 | 2026-11-17 | BE | FEAT-08 `implementado (BE)`: `Party.turn`, `PlayerState.availableActions`, `endTurn` e `noActionPoints` implementados; os 8 cenários cobertos pelos e2e de `take-party-action` (REQ-54 a REQ-59) e `create-party`. Saves anteriores são lidos na rodada 1 e regravados no formato novo. Sem mudança de tipos ou textos. |
 | 0.34 | 2026-11-17 | FE | FEAT-08 `validado` sem mudança de formato: os 8 cenários com chamadas HTTP contra o backend real (`http://localhost:3333`, `contractVersion` 0.33) e a tela do grupo (pontos 3→0, aviso sem pontos e botão Movimentar ausente, Encerrar a vez → rodada 2 com 3 pontos) com o MSW desligado. Backend com o conteúdo `base`: `H` = `base.harbor-town`, `A` = `base.misty-forest`; as invariantes são as mesmas. |
+| 0.35 | 2026-11-17 | BE | FEAT-09 proposta (`proposto (BE)`): `PlayerState.build`, `buildSize`, `tcgFolder`, `tcgFolderCapacity` (altera FEAT-06); `PartyAction` ganha `RecoverAction` e `AdjustDeckAction` (build nova inteira); `availableActions` ganha `recover`/`adjustDeck`; motivos novos em `ActionInvalidDetails` (`unknownOption`, `notArray`, `invalidItem`, `notPositiveInteger`, `duplicateCard`) e `ActionNotAllowedDetails` (`notOwned`, `copyLimitExceeded`, `buildBelowMinimum`, `tcgFolderFull`, campo `cardId`); 5 chaves novas em `GameConfigValues` (altera FEAT-03); limite de cópias ao publicar classe (altera FEAT-06/31); glossário §2.13. Sem rota nem código de erro novos. |
+| 0.36 | 2026-11-17 | FE | FEAT-09 `acordado` sem mudanças: build, pasta, opções do Recuperar, ações disponíveis e os motivos de recusa chegam prontos; o frontend só exibe e envia a build inteira (não confere cópias, trava nem capacidade). O FE alinha os schemas (`PlayerState`, `availableActions`, `GameConfigValues`, motivos de erro) e as fixtures do MSW nas tarefas da FEAT-09. |
