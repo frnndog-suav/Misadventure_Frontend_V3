@@ -33,6 +33,8 @@ function cardIdsOf(party: Party): string[] {
       player.zoneId,
       player.respawnZoneId,
       ...player.hand,
+      ...player.build.map(({ cardId }) => cardId),
+      ...player.tcgFolder.map(({ cardId }) => cardId),
     ]),
   ]
 }
@@ -57,6 +59,8 @@ function MemberState({
   const { player } = member
   const titleId = `member-${member.id}`
   const handId = `hand-${member.id}`
+  const buildId = `build-${member.id}`
+  const folderId = `folder-${member.id}`
   return (
     <section aria-labelledby={titleId}>
       <h2 id={titleId}>{member.characterName}</h2>
@@ -85,6 +89,28 @@ function MemberState({
       <p>Ponto de respawn: {nameOf(cards, player.respawnZoneId)}</p>
       <p>Deck de atributos: {player.attributeDeckCount} cartas</p>
       <p>Descarte de atributos: {player.attributeDiscardPileCount} cartas</p>
+      <h3 id={buildId}>Build ({player.buildSize} cartas)</h3>
+      <ul aria-labelledby={buildId}>
+        {player.build.map(({ cardId, copies }) => (
+          <li key={cardId}>
+            {copies}× {nameOf(cards, cardId)}
+          </li>
+        ))}
+      </ul>
+      <h3 id={folderId}>
+        Pasta de TCG (capacidade {player.tcgFolderCapacity})
+      </h3>
+      {player.tcgFolder.length === 0 ? (
+        <p>Pasta vazia.</p>
+      ) : (
+        <ul aria-labelledby={folderId}>
+          {player.tcgFolder.map(({ cardId, copies }) => (
+            <li key={cardId}>
+              {copies}× {nameOf(cards, cardId)}
+            </li>
+          ))}
+        </ul>
+      )}
       <section aria-labelledby={handId}>
         <h3 id={handId}>Mão ({player.hand.length})</h3>
         {player.hand.map((cardId, i) => {

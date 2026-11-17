@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.55 · **Data:** 2026-11-17
+> **Versão da spec:** 0.56 · **Data:** 2026-11-17
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -604,7 +604,7 @@ A T-40 fecha o lado FE da FEAT-08 com MSW; depois, `/retorno-backend` contra o b
 **FEAT-09 — Deck de atributos (lado frontend)** (CONTRATO v0.37 §3 FEAT-09 `implementado (BE)`; altera as seções `validado` FEAT-03/06/07/08)
 
 - [x] **T-41 — Cliente da FEAT-09** (REQ-39 a REQ-42; D-57). Em `src/api/`: 5 chaves novas em `GameConfigValues`; `build`, `buildSize`, `tcgFolder`, `tcgFolderCapacity` (`CardCopies`) em `PlayerState`; `RecoverAction` e `AdjustDeckAction` em `PartyAction` (`availableActions` aceita `recover` e `adjustDeck`); `ActionNotAllowedDetails` com os motivos novos e `cardId` opcional. Em `src/mocks/`: chaves e padrões no `LabConfig`; campos novos em todas as fixtures do `Party`; cenários da D-57 item 6 no handler de ações. Como verificar: unitários da camada de cliente; os testes das FEAT-03/05/06/07/08 continuam passando.
-- [ ] **T-42 — Laboratório, build e pasta** (REQ-39, REQ-40). 5 campos novos na configuração; listas "Build" e "Pasta de TCG" na seção do membro. Como verificar: `npm run dev` (mocks) em `/lab` e em `/grupo/:partyId`; unitários e e2e das áreas `lab` e `party`.
+- [x] **T-42 — Laboratório, build e pasta** (REQ-39, REQ-40). 5 campos novos na configuração; listas "Build" e "Pasta de TCG" na seção do membro. Como verificar: `npm run dev` (mocks) em `/lab` e em `/grupo/:partyId`; unitários e e2e das áreas `lab` e `party`.
 - [ ] **T-43 — Recuperar** (REQ-41). Grupo de botões na região "A vez", envio, mensagens. Como verificar: `npm run dev` (mocks), cada opção; unitários e e2e da área `party`.
 - [ ] **T-44 — Ajustar deck** (REQ-42). Botão, seção com o formulário, envio, recusas por motivo. Como verificar: `npm run dev` (mocks), salvar sem mudança e ver as recusas; unitários e e2e da área `party`.
 
@@ -669,3 +669,4 @@ A T-44 fecha o lado FE da FEAT-09 com MSW; depois, `/retorno-backend` contra o b
 | 0.53 | 2026-11-17 | T-40 concluída: "Movimentar para {title}" só com `move` em `availableActions`; "Sem pontos de ação para Movimentar." na "Zona escolhida" quando a zona está em `moveTargets` e `turn.actionPoints` é 0; D-56 item 7 (sessão do MSW abre o grupo `party-sem-pontos` com 0 pontos). Fecha o lado FE da FEAT-08 com MSW. |
 | 0.54 | 2026-11-17 | FEAT-09 planejada (CONTRATO v0.37 `implementado (BE)`): REQ-39 (valores no laboratório, alinha o REQ-06), REQ-40 (build e pasta, alinha o REQ-30), REQ-41 (Recuperar), REQ-42 (Ajustar deck), D-57, áreas `lab` e `party`, tarefas T-41 a T-44. |
 | 0.55 | 2026-11-17 | T-41 concluída: 5 chaves da FEAT-09 em `GameConfigValues`; `build`, `buildSize`, `tcgFolder`, `tcgFolderCapacity` em `PlayerState`; `RecoverAction`, `AdjustDeckAction`; `ActionNotAllowedError` (`reason`, `cardId`); fixtures e tabela do MSW (D-57 item 6 detalhado); rótulos do REQ-39 no `LabPage`. |
+| 0.56 | 2026-11-17 | T-42 concluída: listas "Build" e "Pasta de TCG" na seção do membro (REQ-40); o REQ-39 já estava no `LabPage` desde a T-41. |

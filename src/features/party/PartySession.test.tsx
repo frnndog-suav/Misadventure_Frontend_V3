@@ -371,6 +371,70 @@ describe('REQ-30: partida preparada na tela do grupo', () => {
     expect(new Set(asked).size).toBe(asked.length)
   })
 
+  it('REQ-40: "Build (60 cartas)" e "Pasta de TCG (capacidade 30)" vêm antes da mão, na ordem recebida; pasta vazia mostra "Pasta vazia."', async () => {
+    renderParty()
+    const build = await screen.findByRole('list', { name: 'Build (60 cartas)' })
+    await waitFor(() =>
+      expect(
+        within(build)
+          .getAllByRole('listitem')
+          .map((li) => li.textContent),
+      ).toEqual(['30× Resistência', '30× Força']),
+    )
+    const folderTitle = screen.getByRole('heading', {
+      name: 'Pasta de TCG (capacidade 30)',
+    })
+    expect(folderTitle).toBeInTheDocument()
+    expect(
+      screen.queryByRole('list', { name: 'Pasta de TCG (capacidade 30)' }),
+    ).not.toBeInTheDocument()
+    expect(screen.getByText('Pasta vazia.')).toBeInTheDocument()
+    const hand = screen.getByRole('region', { name: 'Mão (7)' })
+    expect(
+      folderTitle.compareDocumentPosition(hand) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(
+      build.compareDocumentPosition(folderTitle) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('REQ-40: a pasta com entradas lista "{copies}× {nome}" na ordem recebida e o nome mostra "…" até a carta chegar', async () => {
+    const [lia] = partyInSessionFixture.members
+    server.use(
+      http.post('*/parties/:partyId/session', () =>
+        HttpResponse.json({
+          ...partyInSessionFixture,
+          members: [
+            {
+              ...lia,
+              player: {
+                ...lia.player,
+                tcgFolder: [
+                  { cardId: 'fixture.strength-basic', copies: 2 },
+                  { cardId: 'fixture.endurance-basic', copies: 1 },
+                ],
+              },
+            },
+          ],
+        } satisfies Party),
+      ),
+    )
+    renderParty()
+    const folder = await screen.findByRole('list', {
+      name: 'Pasta de TCG (capacidade 30)',
+    })
+    await waitFor(() =>
+      expect(
+        within(folder)
+          .getAllByRole('listitem')
+          .map((li) => li.textContent),
+      ).toEqual(['2× Força', '1× Resistência']),
+    )
+    expect(screen.queryByText('Pasta vazia.')).not.toBeInTheDocument()
+  })
+
   it('REQ-30: com os nomes ainda não recebidos, mostra "Carregando a partida…"', async () => {
     let release: () => void = () => {}
     const gate = new Promise<void>((resolve) => (release = resolve))

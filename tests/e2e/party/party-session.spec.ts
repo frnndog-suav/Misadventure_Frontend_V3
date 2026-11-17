@@ -41,6 +41,15 @@ test.describe('REQ-16: grupo em sessão (MSW)', () => {
     await expect(lia.getByText('Vida 22/22')).toBeVisible()
     const hand = lia.getByRole('region', { name: 'Mão (7)' })
     await expect(hand.getByRole('article')).toHaveCount(7)
+    await expect(
+      lia
+        .getByRole('list', { name: 'Build (60 cartas)' })
+        .getByRole('listitem'),
+    ).toHaveText(['30× Resistência', '30× Força'])
+    await expect(
+      lia.getByRole('heading', { name: 'Pasta de TCG (capacidade 30)' }),
+    ).toBeVisible()
+    await expect(lia.getByText('Pasta vazia.')).toBeVisible()
     await expect(page.getByRole('status')).toHaveText('')
   })
 

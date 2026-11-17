@@ -84,4 +84,5 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 052 | T-39 | [A vez e Encerrar a vez](052-T-39-a-vez-encerrar.md) | concluída |
 | 053 | T-40 | [Alinhar Movimentar às ações disponíveis](053-T-40-movimentar-acoes-disponiveis.md) | concluída |
 | 054 | RETORNO | [FEAT-08 validada contra o backend real](054-RETORNO-feat-08-validada.md) | concluída |
-| 055 | T-41 | [Cliente da FEAT-09](055-T-41-cliente-feat-09.md) | aguardando revisão |
+| 055 | T-41 | [Cliente da FEAT-09](055-T-41-cliente-feat-09.md) | concluída |
+| 056 | T-42 | [Laboratório, build e pasta](056-T-42-build-e-pasta.md) | concluída |
