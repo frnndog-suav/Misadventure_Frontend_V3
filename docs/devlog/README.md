@@ -77,3 +77,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 045 | T-34 | [Classes no editor](045-T-34-classes-no-editor.md) | aguardando revisão |
 | 046 | RETORNO | [FEAT-06 validada contra o backend real](046-RETORNO-feat-06-validada.md) | aguardando revisão |
 | 047 | T-35 | [Cliente da FEAT-07](047-T-35-cliente-feat-07.md) | aguardando revisão |
+| 048 | T-36 | [Mapa na tela do grupo](048-T-36-mapa-tela-grupo.md) | aguardando revisão |

@@ -423,3 +423,167 @@ describe('REQ-30: partida preparada na tela do grupo', () => {
     )
   })
 })
+
+describe('REQ-34: mapa da partida', () => {
+  const mapRegion = () => screen.getByRole('region', { name: 'Mapa' })
+  const zoneButton = (title: string) =>
+    within(mapRegion()).getByRole('button', { name: new RegExp(title) })
+
+  async function renderMap(): Promise<void> {
+    renderParty()
+    await screen.findByRole('region', { name: 'Mapa' })
+    await waitFor(() => expect(status()).toHaveTextContent(''))
+  }
+
+  it('REQ-34: a região "Mapa" vem depois de "Cidade inicial" e antes da ordem dos jogadores', async () => {
+    await renderMap()
+    const city = screen.getByText('Cidade inicial: Porto Cinzento')
+    const order = screen.getByRole('heading', { name: 'Ordem dos jogadores' })
+    expect(
+      city.compareDocumentPosition(mapRegion()) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(
+      mapRegion().compareDocumentPosition(order) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('REQ-34: cada zona ocupa a posição (x, y) recebida: x para a direita, y para baixo', async () => {
+    await renderMap()
+    const place = (title: string) => {
+      const el = zoneButton(title)
+      return { col: el.dataset.col, row: el.dataset.row }
+    }
+    expect(place('Porto Cinzento')).toEqual({ col: '1', row: '1' })
+    expect(place('Bosque Sussurrante')).toEqual({ col: '3', row: '1' })
+    expect(place('Curva de Pedra')).toEqual({ col: '1', row: '3' })
+    expect(place('Mina Velha')).toEqual({ col: '3', row: '3' })
+  })
+
+  it('REQ-34: o menor x fica na primeira coluna e o menor y na primeira linha', async () => {
+    server.use(
+      http.post('*/parties/:partyId/session', () => {
+        const zones = partyInSessionFixture.dimension.map.zones.map((z) => ({
+          ...z,
+          x: z.x + 5,
+          y: z.y - 2,
+        }))
+        return HttpResponse.json({
+          ...partyInSessionFixture,
+          dimension: {
+            ...partyInSessionFixture.dimension,
+            map: { ...partyInSessionFixture.dimension.map, zones },
+          },
+        })
+      }),
+    )
+    await renderMap()
+    const el = zoneButton('Porto Cinzento')
+    expect([el.dataset.col, el.dataset.row]).toEqual(['1', '1'])
+  })
+
+  it('REQ-34: cada zona é um botão com título, setas com texto alternativo e "{characterName} está aqui"', async () => {
+    await renderMap()
+    const harbor = zoneButton('Porto Cinzento')
+    expect(harbor).toHaveAttribute('aria-pressed', 'false')
+    expect(harbor).toHaveTextContent('↑→↓←')
+    expect(
+      within(harbor).getByRole('img', {
+        name: 'Setas: norte, leste, sul, oeste',
+      }),
+    ).toBeInTheDocument()
+    expect(harbor).toHaveTextContent('Lia está aqui')
+    const bend = zoneButton('Curva de Pedra')
+    expect(
+      within(bend).getByRole('img', { name: 'Setas: norte, leste' }),
+    ).toBeInTheDocument()
+    expect(bend).not.toHaveTextContent('está aqui')
+  })
+
+  it('REQ-34: ligações só entre zonas vizinhas com crossing, decorativas', async () => {
+    await renderMap()
+    const links = Array.from(
+      mapRegion().querySelectorAll<HTMLElement>('[data-link]'),
+    )
+    expect(links.map((l) => l.textContent).sort()).toEqual(['|', '—', '—'])
+    for (const l of links) expect(l).toHaveAttribute('aria-hidden', 'true')
+    const at = (col: string, row: string) =>
+      links.find((l) => l.dataset.col === col && l.dataset.row === row)
+    expect(at('2', '1')?.textContent).toBe('—') // porto–bosque
+    expect(at('1', '2')?.textContent).toBe('|') // porto–curva
+    expect(at('2', '3')?.textContent).toBe('—') // curva–mina
+    expect(at('3', '2')).toBeUndefined() // bosque–mina: vizinhas sem crossing
+  })
+
+  it('REQ-34: nenhuma zona vem escolhida e não há seção "Zona escolhida"', async () => {
+    await renderMap()
+    expect(zoneButton('Porto Cinzento')).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+    expect(
+      screen.queryByRole('region', { name: 'Zona escolhida' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('REQ-34: clicar numa zona a marca e mostra a carta completa e "Travessias com" na ordem recebida', async () => {
+    await renderMap()
+    fireEvent.click(zoneButton('Porto Cinzento'))
+    expect(zoneButton('Porto Cinzento')).toHaveAttribute('aria-pressed', 'true')
+    const chosen = await screen.findByRole('region', { name: 'Zona escolhida' })
+    expect(within(chosen).getByRole('article')).toBeInTheDocument()
+    expect(chosen).toHaveTextContent(
+      'Travessias com: Curva de Pedra, Bosque Sussurrante',
+    )
+  })
+
+  it('REQ-34: clicar na zona marcada não desmarca; clicar em outra troca a escolha', async () => {
+    await renderMap()
+    fireEvent.click(zoneButton('Porto Cinzento'))
+    fireEvent.click(zoneButton('Porto Cinzento'))
+    expect(zoneButton('Porto Cinzento')).toHaveAttribute('aria-pressed', 'true')
+    fireEvent.click(zoneButton('Mina Velha'))
+    expect(zoneButton('Porto Cinzento')).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+    expect(zoneButton('Mina Velha')).toHaveAttribute('aria-pressed', 'true')
+    const chosen = await screen.findByRole('region', { name: 'Zona escolhida' })
+    expect(chosen).toHaveTextContent('Travessias com: Curva de Pedra')
+  })
+
+  it('REQ-34: zona sem crossings mostra "Travessias com: nenhuma"', async () => {
+    server.use(
+      http.post('*/parties/:partyId/session', () =>
+        HttpResponse.json({
+          ...partyInSessionFixture,
+          dimension: {
+            ...partyInSessionFixture.dimension,
+            map: { ...partyInSessionFixture.dimension.map, crossings: [] },
+          },
+        }),
+      ),
+    )
+    await renderMap()
+    fireEvent.click(zoneButton('Porto Cinzento'))
+    const chosen = await screen.findByRole('region', { name: 'Zona escolhida' })
+    expect(chosen).toHaveTextContent('Travessias com: nenhuma')
+  })
+
+  it('REQ-34: com os títulos ainda não recebidos, mostra "Carregando a partida…" e "…" no lugar do título', async () => {
+    let release: () => void = () => {}
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    server.use(
+      http.get('*/catalog/cards/:cardId', async () => {
+        await gate
+        return HttpResponse.json(internalErrorFixture, { status: 500 })
+      }),
+    )
+    renderParty()
+    const map = await screen.findByRole('region', { name: 'Mapa' })
+    expect(status()).toHaveTextContent('Carregando a partida…')
+    expect(within(map).getAllByRole('button')[0]).toHaveTextContent('…')
+    release()
+  })
+})

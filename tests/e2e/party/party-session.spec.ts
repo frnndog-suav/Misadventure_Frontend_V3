@@ -53,3 +53,30 @@ test.describe('REQ-16: grupo em sessão (MSW)', () => {
     await expect(page).toHaveURL(/\/$/)
   })
 })
+
+test.describe('REQ-34: mapa da partida (MSW)', () => {
+  test('REQ-34: mapa em grade, escolha de zona com a carta e "Travessias com"', async ({
+    page,
+  }) => {
+    await page.goto('/grupo/party-os-teimosos')
+    const map = page.getByRole('region', { name: 'Mapa' })
+    const harbor = map.getByRole('button', { name: /Porto Cinzento/ })
+    await expect(harbor).toContainText('Lia está aqui')
+    await expect(harbor).toHaveAttribute('aria-pressed', 'false')
+    await expect(
+      page.getByRole('region', { name: 'Zona escolhida' }),
+    ).toHaveCount(0)
+
+    await harbor.click()
+    await expect(harbor).toHaveAttribute('aria-pressed', 'true')
+    const chosen = page.getByRole('region', { name: 'Zona escolhida' })
+    await expect(chosen.getByRole('article')).toBeVisible()
+    await expect(chosen).toContainText(
+      'Travessias com: Curva de Pedra, Bosque Sussurrante',
+    )
+
+    await map.getByRole('button', { name: /Mina Velha/ }).click()
+    await expect(harbor).toHaveAttribute('aria-pressed', 'false')
+    await expect(chosen).toContainText('Travessias com: Curva de Pedra')
+  })
+})

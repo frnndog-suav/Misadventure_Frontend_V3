@@ -18,6 +18,7 @@ import {
 import { FullCard } from '../../ui/cards/FullCard'
 import { formatSavedAt } from '../../ui/formatSavedAt'
 import { Term } from '../../ui/Term'
+import { PartyMap } from './PartyMap'
 
 type Cards = ReadonlyMap<string, Card>
 
@@ -26,6 +27,7 @@ function cardIdsOf(party: Party): string[] {
   return [
     party.dimension.dimensionCardId,
     party.dimension.startingCityZoneId,
+    ...party.dimension.map.zones.map(({ zoneId }) => zoneId),
     ...party.members.flatMap(({ player }) => [
       player.zoneId,
       player.respawnZoneId,
@@ -93,7 +95,7 @@ function MemberState({
   )
 }
 
-/** Estado da partida preparada (REQ-30); o mapa é desenhado na FEAT-07. */
+/** Estado da partida preparada (REQ-30) com o mapa (REQ-34). */
 function PreparedMatch({
   party,
   classes,
@@ -108,6 +110,11 @@ function PreparedMatch({
     <>
       <p>Dimensão: {nameOf(cards, party.dimension.dimensionCardId)}</p>
       <p>Cidade inicial: {nameOf(cards, party.dimension.startingCityZoneId)}</p>
+      <PartyMap
+        party={party}
+        cards={cards}
+        titleOf={(cardId) => nameOf(cards, cardId)}
+      />
       <h2 id="turn-order-title">Ordem dos jogadores</h2>
       <ul aria-labelledby="turn-order-title">
         {party.turnOrder.map((id) => (
