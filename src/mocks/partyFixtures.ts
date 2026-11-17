@@ -6,7 +6,7 @@ import type {
 } from '../api/parties'
 
 /**
- * Fixtures dos cenários do CONTRATO §3 FEAT-05 (v0.14) e FEAT-06 (v0.21).
+ * Fixtures dos cenários do CONTRATO §3 FEAT-05 (v0.14) e FEAT-06 (v0.21) e FEAT-07 (v0.28).
  * `id`, datas, mão e mapa são gerados (e sorteados) pelo backend; aqui são
  * valores fixos de exemplo que respeitam as invariantes do cenário (D-32,
  * D-48). Só valores prontos — nenhuma regra (Princípio 3).
@@ -51,6 +51,7 @@ const member: Party['members'][number] = {
     attributeDiscardPileCount: 0,
     zoneId: 'fixture.gray-harbor',
     respawnZoneId: 'fixture.gray-harbor',
+    moveTargets: ['fixture.stone-bend', 'fixture.whispering-grove'],
   },
 }
 
@@ -106,6 +107,30 @@ export const partyIdleFixture: Party = {
   ...partyCreatedFixture,
   savedAt: '2026-11-14T22:05:00.000Z',
 }
+
+/**
+ * Party em sessão com o jogador em `zoneId` (cenário de mover, FEAT-07): o
+ * resto do `player` fica igual; `moveTargets` é o valor pronto do backend.
+ */
+function partyMovedTo(zoneId: string, moveTargets: string[]): Party {
+  return {
+    ...partyInSessionFixture,
+    members: [{ ...member, player: { ...member.player, zoneId, moveTargets } }],
+    savedAt: '2026-11-14T21:40:00.000Z',
+  }
+}
+
+/** 200 de POST …/actions com `move` para `fixture.stone-bend`. */
+export const partyMovedToStoneBendFixture = partyMovedTo('fixture.stone-bend', [
+  'fixture.gray-harbor',
+  'fixture.old-mine',
+])
+
+/** 200 de POST …/actions com `move` para `fixture.whispering-grove`. */
+export const partyMovedToGroveFixture = partyMovedTo(
+  'fixture.whispering-grove',
+  ['fixture.gray-harbor'],
+)
 
 /** 200 de GET /parties com o grupo criado. */
 export const partiesFixture: PartySummary[] = [
@@ -201,5 +226,32 @@ export const partySessionNotActiveFixture = {
   error: {
     code: 'PARTY_SESSION_NOT_ACTIVE',
     message: 'Não há sessão em andamento neste grupo.',
+  },
+} as const
+
+/** 409 de ação sem travessia com a zona atual (CONTRATO §3 FEAT-07). */
+export const actionNotAllowedFixture = {
+  error: {
+    code: 'ACTION_NOT_ALLOWED',
+    message: 'Esta ação não é permitida agora.',
+    details: { reason: 'notConnected' },
+  },
+} as const
+
+/** 400 de `move` para uma zona que não é do mapa. */
+export const actionInvalidZoneNotInMapFixture = {
+  error: {
+    code: 'ACTION_INVALID',
+    message: 'Ação inválida.',
+    details: { fields: [{ field: 'zoneId', reason: 'zoneNotInMap' }] },
+  },
+} as const
+
+/** 400 de ação com `type` desconhecido. */
+export const actionInvalidUnknownActionFixture = {
+  error: {
+    code: 'ACTION_INVALID',
+    message: 'Ação inválida.',
+    details: { fields: [{ field: 'type', reason: 'unknownAction' }] },
   },
 } as const

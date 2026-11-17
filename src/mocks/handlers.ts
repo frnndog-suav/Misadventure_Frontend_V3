@@ -57,6 +57,9 @@ import {
   labConfigUpdatedFixture,
 } from './fixtures'
 import {
+  actionInvalidUnknownActionFixture,
+  actionInvalidZoneNotInMapFixture,
+  actionNotAllowedFixture,
   partiesFixture,
   partyBelowMinPlayersFixture,
   partyClassRequiredFixture,
@@ -64,6 +67,8 @@ import {
   partyIdleFixture,
   partyInSessionFixture,
   partyInvalidFieldsFixture,
+  partyMovedToGroveFixture,
+  partyMovedToStoneBendFixture,
   partyNotFoundFixture,
   partyUnknownClassFixture,
 } from './partyFixtures'
@@ -123,6 +128,31 @@ async function createPartyScenario(request: Request): Promise<Response> {
   return HttpResponse.json(partyCreatedFixture, { status: 201 })
 }
 
+/**
+ * POST /parties/:partyId/actions: tabela de cenários do contrato (D-55) —
+ * escolhe a resposta pronta pelo corpo, sem estado nem regra de travessia.
+ */
+async function partyActionScenario(request: Request): Promise<Response> {
+  const body: unknown = await request.json().catch(() => undefined)
+  if (field(body, 'type') !== 'move') {
+    return HttpResponse.json(actionInvalidUnknownActionFixture, { status: 400 })
+  }
+  switch (field(body, 'zoneId')) {
+    case 'fixture.stone-bend':
+      return HttpResponse.json(partyMovedToStoneBendFixture)
+    case 'fixture.whispering-grove':
+      return HttpResponse.json(partyMovedToGroveFixture)
+    case 'fixture.gray-harbor':
+      return HttpResponse.json(partyInSessionFixture)
+    case 'fixture.old-mine':
+      return HttpResponse.json(actionNotAllowedFixture, { status: 409 })
+    default:
+      return HttpResponse.json(actionInvalidZoneNotInMapFixture, {
+        status: 400,
+      })
+  }
+}
+
 /** GET /catalog/cards/:cardId: as cartas da `fixture`; qualquer outra é 404. */
 function catalogCardScenario(cardId: string): Response {
   const card = fixtureCardsFixture.find((entry) => entry.id === cardId)
@@ -132,7 +162,10 @@ function catalogCardScenario(cardId: string): Response {
 }
 
 /** Rotas de um grupo: o grupo de exemplo responde, qualquer outro é 404. */
-function knownParty(partyId: unknown, ok: () => Response): Response {
+function knownParty(
+  partyId: unknown,
+  ok: () => Response | Promise<Response>,
+): Response | Promise<Response> {
   return partyId === partyCreatedFixture.id
     ? ok()
     : HttpResponse.json(partyNotFoundFixture, { status: 404 })
@@ -474,6 +507,9 @@ export const handlers: RequestHandler[] = [
   ),
   http.post('*/parties/:partyId/session/end', ({ params }) =>
     knownParty(params.partyId, () => HttpResponse.json(partyIdleFixture)),
+  ),
+  http.post('*/parties/:partyId/actions', ({ params, request }) =>
+    knownParty(params.partyId, () => partyActionScenario(request)),
   ),
   http.delete('*/parties/:partyId', ({ params }) =>
     knownParty(params.partyId, () => new HttpResponse(null, { status: 204 })),

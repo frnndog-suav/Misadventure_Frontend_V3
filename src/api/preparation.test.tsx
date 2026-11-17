@@ -442,6 +442,7 @@ describe('REQ-30: Party preparado (dimension, turnOrder, player)', () => {
       attributeDiscardPileCount: 0,
       zoneId: 'fixture.gray-harbor',
       respawnZoneId: 'fixture.gray-harbor',
+      moveTargets: ['fixture.stone-bend', 'fixture.whispering-grove'],
     })
     expect(hand).toHaveLength(7)
     for (const id of hand) {

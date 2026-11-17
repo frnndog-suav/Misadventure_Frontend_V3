@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.45 · **Data:** 2026-11-16
+> **Versão da spec:** 0.47 · **Data:** 2026-11-17
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -89,6 +89,7 @@ Funções e hooks que as telas usam para ler o estado e enviar intenções. Regr
 | `useClasses()` | consulta `GET /catalog/classes`: `ClassDefinition[]` validado (CONTRATO §3 FEAT-06) | T-28 |
 | `useCatalogCard(cardId)` | consulta `GET /catalog/cards/:cardId`: `Card` validado; cache por id (D-48) | T-28 |
 | `useCatalogCards(cardIds)` | várias `GET /catalog/cards/:cardId`, uma por id distinto, no mesmo cache do `useCatalogCard`; devolve as cartas recebidas, `isPending` e o primeiro erro (D-51) | T-31 |
+| `usePartyAction(partyId)` | mutação `POST /parties/:partyId/actions` com `PartyAction` (`MoveAction` na FEAT-07): `Party` validado; erros §1.4 como `ApiError` (CONTRATO §3 FEAT-07) | T-35 |
 | Classes no editor, em `src/api/editor.ts` | `useEditorClasses(collectionId)`, `useEditorClass(playerClass)`, `useCreateClass`, `useSaveClass`, `usePublishClass`, `useDeleteClass`, sob a chave `['editor']` (D-40, D-52) | T-32 |
 | Editor de conteúdo (FEAT-31), em `src/api/editor.ts` | consultas `useEditorCollections()`, `useEditorCollection(collectionId | null)` (`null`: consulta parada, T-21), `useEditorCards(collectionId, { type?, status?, q? })`, `useEditorCard(cardId)`; mutações `useCreateCollection`, `useUpdateCollection` (`{ collectionId, patch }`), `useDeleteCollection`, `useValidateDimension`, `useExportCollection`, `useImportCollection` (`{ content, replace }`), `useCreateCard` (`{ collectionId, input }`), `useSaveCard` (`{ cardId, input }`), `usePublishCard`, `useDuplicateCard`, `useDeleteCard`. `CONTENT_INVALID` e `CONTENT_ID_TAKEN` com `details` válido viram `ContentInvalidError` (com `code` e `fields`) (D-40) | T-20 |
 
@@ -100,7 +101,7 @@ Base comum (T-08): `requestJson(method, path, body?)` em `src/api/http.ts` faz t
 |---|---|---|---|
 | app | `/` | rota inicial: menu da campanha e "Seus jogos" com o abandono (REQ-14, REQ-17) + área de status da ponte com o servidor (REQ-01); tema e tipografia da base visual (REQ-02) | FEAT-01, FEAT-02 |
 | lab | `/lab` (só dev, D-07) | laboratório: configuração ajustável do jogo e vitrine de componentes (REQ-05 a REQ-07); catálogo de cartas (REQ-08 a REQ-13); valores e cartas da FEAT-06 (REQ-27, REQ-28) | FEAT-03, FEAT-04, FEAT-06 |
-| party | `/novo`, `/grupo/:partyId` | novo jogo (grupo de 1) com escolha de classe e grupo em sessão com a partida preparada (REQ-15, REQ-16, REQ-29, REQ-30) | FEAT-05, FEAT-06 |
+| party | `/novo`, `/grupo/:partyId` | novo jogo (grupo de 1) com escolha de classe e grupo em sessão com a partida preparada, o mapa e o Movimentar (REQ-15, REQ-16, REQ-29, REQ-30, REQ-34, REQ-35) | FEAT-05, FEAT-06, FEAT-07 |
 | editor | `/lab/editor` (só dev, D-07) | editor de conteúdo: coleções, cartas e classes (REQ-18 a REQ-26, REQ-31 a REQ-33) | FEAT-31, FEAT-06 |
 
 Os componentes compartilhados da FEAT-02 (termo do jogo, categoria de carta) ainda não aparecem em nenhuma tela: são verificados por testes de componente até entrarem no laboratório (FEAT-03) e nas telas da FEAT-04.
@@ -360,6 +361,28 @@ Alinha o REQ-26.
 - **Dado** "Exportar", **então** o arquivo traz também as `classes` recebidas (o schema não as descarta, D-40).
 - **Dado** uma importação com sucesso, **então** a área de status mostra "Coleção importada: {cardCount} cartas e {classCount} classes.".
 
+### Mapa e Movimentar (FEAT-07)
+
+O mapa chega pronto em `Party.dimension.map` (zonas com posição e setas, travessias) e os destinos válidos do Movimentar em `PlayerState.moveTargets` (CONTRATO §3 FEAT-07). O frontend desenha o que recebe e envia a intenção; não calcula travessias nem destinos (D-55). Até a FEAT-08, mover não gasta ponto de ação; quem age é o host (jogo solo).
+
+### REQ-34 — Mapa da partida
+
+Alinha o REQ-30 (fim do item (1) da D-48).
+
+- **Dado** a partida preparada (REQ-30), **então**, depois de "Cidade inicial", há a região "Mapa" com uma grade em que cada zona de `dimension.map.zones` ocupa a posição (`x`, `y`) recebida: `x` cresce para a direita (leste) e `y` para baixo (sul); a menor `x` fica na primeira coluna e a menor `y` na primeira linha; posições sem zona ficam vazias.
+- **Dado** cada zona do mapa, **então** ela é um botão com `aria-pressed`, que mostra "{title}", as setas de `arrows` como "↑" (`north`), "→" (`east`), "↓" (`south`) e "←" (`west`), com o texto alternativo "Setas: {direções}" ("norte", "leste", "sul", "oeste", na ordem recebida), e, para cada membro cuja `zoneId` é essa zona, "{characterName} está aqui".
+- **Dado** um `crossing` entre duas zonas, **então** o espaço entre elas na grade mostra uma ligação ("—" na horizontal, "|" na vertical), decorativa (`aria-hidden`); zonas vizinhas sem `crossing` não têm ligação.
+- **Dado** a tela recém-aberta, **então** nenhuma zona vem escolhida. **Quando** o jogador clica numa zona, **então** ela fica marcada e, abaixo do mapa, a seção "Zona escolhida" mostra a carta completa da zona (REQ-12; todas viradas para cima, README 3.6) e "Travessias com: {títulos}", com as outras zonas dos `crossings` dessa zona, na ordem recebida ("Travessias com: nenhuma" se não houver). Clicar na zona marcada não desmarca; clicar em outra troca a escolha.
+- **Dado** os títulos das zonas ainda não recebidos (`GET /catalog/cards/:cardId`), **então** vale o REQ-30: "Carregando a partida…" na área de status e "…" no lugar do título.
+
+### REQ-35 — Movimentar
+
+- **Dado** uma zona escolhida (REQ-34) que está em `moveTargets` do host, **então** a seção "Zona escolhida" mostra o botão "Movimentar para {title}"; numa zona fora de `moveTargets` (inclusive a zona atual), não há botão.
+- **Quando** o jogador clica "Movimentar para {title}", **então** o app envia `POST /parties/:partyId/actions` com `{ "type": "move", "zoneId": <zona escolhida> }`; enquanto o pedido está em curso, o botão fica desabilitado.
+- **Dado** o `200`, **então** a tela passa a mostrar o `Party` devolvido (zona atual, "Salvo em", "{characterName} está aqui" no mapa e os botões seguintes vêm dele), a zona escolhida continua escolhida e a área de status mostra "Você está em {title}.".
+- **Dado** um erro §1.4 (`ACTION_NOT_ALLOWED`, `ACTION_INVALID`, `PARTY_SESSION_NOT_ACTIVE`, `PARTY_NOT_FOUND` ou outro), **então** a área de status mostra a `message` e nada muda na tela; falha de rede ou de validação mostra "Servidor indisponível. Tente novamente.". Nenhuma exceção chega à tela.
+- **Dado** o jogador muda de zona mais de uma vez (README 12.2), **então** cada movimento segue as regras acima, sem limite na tela.
+
 Formato:
 
 ### REQ-nn — <nome>
@@ -423,6 +446,7 @@ Formato:
 - **D-52 — Cliente do editor: classes (T-32):** `ClassInput`, `EditorClass` e `EditorClassSummary` reaproveitam `classDefinitionSchema` e `playerClassSchema` do catálogo; `CollectionExport.classes` valida cada item como `EditorClass` (sem item fora do contrato) e segue `[]` quando ausente (D-40); `CardInput` já cobria `dimension` e `arrowLayout` desde a T-28 (é o `Card`). `CLASS_NOT_FOUND`, `CONTENT_REFERENCED` e `CONTENT_LOCKED` de classe chegam como `ApiError` comum. MSW sem estado (D-40): `GET …/classes` responde `fixture` → `rogue`, `warrior` publicadas e `bosque` → `mage` em rascunho; criar com `warrior`/`rogue` → `CONTENT_ID_TAKEN`, outro → `mage`; publicar `mage` → `CONTENT_INVALID`; `PUT` numa publicada com outro `playerClass` → `CONTENT_LOCKED`; excluir classe conhecida → `204`; excluir `fixture.dexterity-basic` → `CONTENT_REFERENCED`; `validate-dimension` da `fixture` → válida, do `bosque` → 2 problemas (fim do estado intermediário da D-49 nesse ponto). **Provisórios até o `implementado (BE)`** (como a D-29): os campos que o contrato omite no `mage` (nome "Mago", modificadores), os textos de `fields[].message` das classes e o texto e a ordem do problema da Carta de Dimensão no `bosque`. Extensões e limites da tabela sem estado: `rogue` também responde `CONTENT_ID_TAKEN`; `CONTENT_LOCKED` de classe reusa o texto do contrato (que fala em carta) até o BE confirmar; `CONTENT_REFERENCED` responde sempre (o "sem grupos" do cenário não se reproduz); `CONTENT_IN_USE` de classe e o `404` depois de excluir o `mage` não têm cenário (os testes da T-34 usam `server.use`). Os testes que fixavam a `fixture` inválida (e2e do REQ-25 e "nova validação apaga a lista") foram alinhados. *(T-32, 2026-11-16.)*
 - **D-53 — Carta de Dimensão e forma das setas no editor (T-33):** sai o `hasForm`: os 7 tipos têm formulário e "Nova carta" oferece os 7, na ordem do glossário ("Dimensão" por último). Formulário da Carta de Dimensão no molde da D-43: "Nome" e "Ordem de lançamento" (número) obrigatórios; "Texto de ambientação" e "Zona de chegada" em branco = `null`; "Zona de chegada" é campo de texto livre, sem sugestão (o backend confere o título, D-38); efeitos com caminho `effects.{n}.text`. "Forma das setas" é uma seleção cuja opção vazia é "Não se aplica" (`null`); os rótulos do editor são "Opostas"/"Vizinhas" (os da carta, REQ-28, seguem "Setas opostas"/"Setas vizinhas"). Fim do estado intermediário da D-49 no editor; o e2e que contava 6 tipos em "Nova carta" foi alinhado. *(T-33, 2026-11-16.)*
 - **D-54 — Classes no editor (T-34):** a seção "Classes" (`src/lab/editor/ClassesSection.tsx`) aparece depois de "Cartas" quando a coleção escolhida carregou e recomeça ao trocar de coleção; cada classe é um botão com `aria-pressed`. O formulário (`ClassForm.tsx`, região "Classe"; modelo `classFormValues.ts`) segue a D-43 e a D-46: estado próprio, números como texto, "Salvar classe" desabilitado sem formato (classe não escolhida, nome em branco, atributo essencial não escolhido, modificador ou cópias não numéricos, carta em branco); "Publicar classe" e "Excluir classe" sempre visíveis, desabilitados numa classe não salva (publicar também fora de rascunho ou com alterações). A seleção "Classe" fica **desabilitada** numa classe publicada (o `select` não tem `readOnly`). Os 7 modificadores base levam o nome do glossário como rótulo (D-30), caminhos `baseModifiers.<modificador>`; o deck usa `starterDeck.{n}.cardId` e `starterDeck.{n}.copies`. A sugestão de "Carta {n}" é um `datalist` com as cartas de `useEditorCards(coleção, { type: 'attribute' })` (o backend filtra). "Classe salva."/"Classe publicada." na área de status do formulário; "Classe excluída." na da seção, porque o formulário fecha. Limites (1 a 2 essenciais, trava do deck, cópias) seguem com o backend (D-38). A guarda única da D-43 passa a cobrir a classe ("desta classe", depois de coleção e carta na precedência). `CONTENT_REFERENCED` já aparecia pela `message` no formulário de carta (D-46); a T-34 só acrescenta os testes. `useFieldErrors`, `options` e `attributeOptions` saíram de `CardForm.tsx` para `formHelpers.tsx` (regra do Fast Refresh), e `TextField`, `SelectField` (com `disabled`) e `ListField` passaram a ser exportados. No MSW a lista de coleções só traz a `fixture`; os unitários acrescentam o `bosque` com `server.use` e o e2e cria a classe na `fixture`. *(T-34, 2026-11-16.)*
+- **D-55 — Mapa e Movimentar (FEAT-07):** (1) o mapa é uma grade pelas posições recebidas, com títulos, setas e ligações das travessias; o acabamento é da FEAT-30 (autor, 2026-11-17; alternativa descartada: lista textual, descartável); (2) mover é em dois passos: escolher a zona no mapa (que mostra a carta completa) e clicar "Movimentar para {title}" (autor; vantagem: sem movimento acidental e a zona é lida antes; desvantagem: dois cliques; alternativas descartadas: clique direto na zona, lista de destinos fora do mapa); (3) o botão só aparece para zonas de `moveTargets`, e as ligações e "Travessias com" vêm só de `crossings`: o frontend não deduz travessia de setas nem de vizinhança (README 3.5 é do backend); (4) a tela mostra a resposta da ação, sem novo `GET` (o `200` já traz o `Party` gravado); (5) o MSW segue sem estado (D-29): o `POST …/actions` responde por tabela de cenários com `Party` fixos do mapa de exemplo, um por destino conhecido, e os erros do contrato por corpo; (6) os títulos das zonas do mapa vêm de `useCatalogCards`, como os da D-51. *(Planejamento da FEAT-07, 2026-11-17.)*
 
 **Pendências (decidir antes da tarefa indicada):**
 - **P-02 — Como o jogador vê as vezes dos outros no momento 2** (antes da FEAT-21): proposta: o backend devolve a lista ordenada de eventos do domínio e o frontend anima um por um; no momento 3 só o transporte muda (socket). Registrada também no ROADMAP.
@@ -501,6 +525,14 @@ A T-27 fecha o lado FE da FEAT-31 com MSW; depois, `/retorno-backend` contra o b
 
 A T-34 fecha o lado FE da FEAT-06 com MSW; depois, `/retorno-backend` contra o backend real (quando o BE estiver `pronto`). Valores do Apêndice A que a FEAT usa: os 11 novos do REQ-27 (laboratório) e os já existentes `baseHealth`, `initialPeak`, `initialVigor`, `initialGold`, `initialHandSize`.
 
+**FEAT-07 — Mapa e Movimentar (lado frontend)** (CONTRATO v0.28 §3 FEAT-07 `acordado`; altera a seção `validado` FEAT-06)
+
+- [x] **T-35 — Cliente da FEAT-07** (REQ-34, REQ-35; D-55). Em `src/api/`: `PlayerState.moveTargets` no schema; `PartyAction`/`MoveAction`; hook `usePartyAction(partyId)` (`POST /parties/:partyId/actions`, `Party` validado; erros como `ApiError` com a `message`). Em `src/mocks/`: `moveTargets` nas fixtures do `Party`; handler de ações por tabela de cenários (D-55 item 5). Como verificar: unitários da camada de cliente; os testes da FEAT-05/06 que usam o `Party` continuam passando.
+- [ ] **T-36 — Mapa na tela do grupo** (REQ-34). Grade, setas, ligações, "{characterName} está aqui", escolha de zona com a carta e "Travessias com". Como verificar: `npm run dev` (mocks), fluxo `/novo` → `/grupo/:partyId`; unitários e e2e da área `party`.
+- [ ] **T-37 — Movimentar** (REQ-35). Botão, envio, `Party` devolvido na tela, mensagens. Como verificar: `npm run dev` (mocks), mover e voltar à cidade; unitários e e2e da área `party`.
+
+A T-37 fecha o lado FE da FEAT-07 com MSW; depois, `/retorno-backend` contra o backend real. A FEAT não usa valores novos do Apêndice A (o custo do Movimentar entra com a FEAT-08).
+
 ## 8. Histórico
 
 | Versão | Data | Mudança |
@@ -550,3 +582,5 @@ A T-34 fecha o lado FE da FEAT-06 com MSW; depois, `/retorno-backend` contra o b
 | 0.43 | 2026-11-16 | T-32 concluída: cliente do editor com classes e Carta de Dimensão, cenários das classes no MSW, `validate-dimension` da `fixture` válida; D-52. |
 | 0.44 | 2026-11-16 | T-33 concluída: Carta de Dimensão e forma das setas no editor (REQ-31); D-53. |
 | 0.45 | 2026-11-16 | T-34 concluída: classes no editor (REQ-32) e importação com classes (REQ-33); D-54. Lado FE da FEAT-06 pronto com MSW. |
+| 0.46 | 2026-11-17 | FEAT-07 planejada (CONTRATO v0.28 `acordado`): REQ-34 (mapa em grade com escolha de zona), REQ-35 (Movimentar), D-55 (escolhas do autor), `usePartyAction` em 3.4, área `party` em 3.5, tarefas T-35 a T-37. |
+| 0.47 | 2026-11-17 | T-35 concluída: `PlayerState.moveTargets`, `PartyAction`/`MoveAction` e `usePartyAction` em `src/api/parties.ts`; fixtures `moveTargets` e Party movidos e handler de ações por tabela de cenários no MSW (D-55 item 5: `stone-bend`/`whispering-grove`/`gray-harbor` → `200`; `old-mine` → `409 ACTION_NOT_ALLOWED`; zona desconhecida e `type` desconhecido → `400 ACTION_INVALID`). |

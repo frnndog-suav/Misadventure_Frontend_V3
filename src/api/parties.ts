@@ -74,6 +74,8 @@ export const playerStateSchema = z.object({
   attributeDiscardPileCount: nonNegativeInt,
   zoneId: z.string(),
   respawnZoneId: z.string(),
+  /** Destinos válidos do Movimentar, prontos do backend (FEAT-07, D-55). */
+  moveTargets: z.array(z.string()),
 })
 export type PlayerState = z.infer<typeof playerStateSchema>
 
@@ -229,6 +231,31 @@ export function useStartSession(
     mutationFn: async () =>
       partySchema.parse(
         await requestJson('POST', `${partyPath(partyId)}/session`),
+      ),
+    retry: false,
+  })
+}
+
+/** Intenção de jogo (CONTRATO §1.6); a FEAT-08+ acrescenta variantes. */
+export type PartyAction = MoveAction
+
+/** Movimentar (README 12.2); `zoneId` vem de `moveTargets`. */
+export interface MoveAction {
+  type: 'move'
+  zoneId: string
+}
+
+/**
+ * Envia uma intenção (`POST /parties/:partyId/actions`) e entrega o `Party`
+ * já com o efeito; erros §1.4 chegam como `ApiError` (D-55).
+ */
+export function usePartyAction(
+  partyId: string,
+): UseMutationResult<Party, Error, PartyAction> {
+  return useMutation({
+    mutationFn: async (action: PartyAction) =>
+      partySchema.parse(
+        await requestJson('POST', `${partyPath(partyId)}/actions`, action),
       ),
     retry: false,
   })
