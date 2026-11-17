@@ -15,6 +15,7 @@ import {
   type Party,
   type PartyMember,
   type PartyStatus,
+  type RecoverAction,
 } from '../../api/parties'
 import { FullCard } from '../../ui/cards/FullCard'
 import { formatSavedAt } from '../../ui/formatSavedAt'
@@ -122,14 +123,22 @@ function MemberState({
   )
 }
 
-/** Região "A vez" (REQ-36) com "Encerrar a vez" (REQ-37, REQ-38). */
+const recoverOptions: { option: RecoverAction['option']; label: string }[] = [
+  { option: 'drawToHand', label: 'Comprar cartas' },
+  { option: 'shuffleHand', label: 'Mão no deck' },
+  { option: 'shuffleDiscard', label: 'Descarte no deck' },
+]
+
+/** Região "A vez" (REQ-36) com "Recuperar" (REQ-41) e "Encerrar a vez" (REQ-37, REQ-38). */
 function TurnState({
   party,
   onEndTurn,
+  onRecover,
   pending,
 }: {
   party: Party
   onEndTurn: () => void
+  onRecover: (option: RecoverAction['option']) => void
   pending: boolean
 }) {
   const { round, memberId, actionPoints } = party.turn
@@ -147,6 +156,20 @@ function TurnState({
           label={actionPoints === 1 ? 'ponto de ação' : 'pontos de ação'}
         />
       </p>
+      {host?.player.availableActions.includes('recover') && (
+        <div role="group" aria-label="Recuperar">
+          {recoverOptions.map(({ option, label }) => (
+            <button
+              key={option}
+              type="button"
+              onClick={() => onRecover(option)}
+              disabled={pending}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
       {host?.player.availableActions.includes('endTurn') && (
         <button type="button" onClick={onEndTurn} disabled={pending}>
           Encerrar a vez
@@ -163,6 +186,7 @@ function PreparedMatch({
   cards,
   onMove,
   onEndTurn,
+  onRecover,
   moving,
 }: {
   party: Party
@@ -170,6 +194,7 @@ function PreparedMatch({
   cards: Cards
   onMove: (zoneId: string) => void
   onEndTurn: () => void
+  onRecover: (option: RecoverAction['option']) => void
   moving: boolean
 }) {
   const names = new Map(party.members.map((m) => [m.id, m.characterName]))
@@ -177,7 +202,12 @@ function PreparedMatch({
     <>
       <p>Dimensão: {nameOf(cards, party.dimension.dimensionCardId)}</p>
       <p>Cidade inicial: {nameOf(cards, party.dimension.startingCityZoneId)}</p>
-      <TurnState party={party} onEndTurn={onEndTurn} pending={moving} />
+      <TurnState
+        party={party}
+        onEndTurn={onEndTurn}
+        onRecover={onRecover}
+        pending={moving}
+      />
       <PartyMap
         party={party}
         cards={cards}
@@ -251,6 +281,9 @@ export function PartySession() {
     if (action.variables.type === 'endTurn') {
       const current = party.members.find((m) => m.id === party.turn.memberId)
       status = `Rodada ${party.turn.round}: vez de ${current?.characterName ?? '…'}.`
+    } else if (action.variables.type === 'recover') {
+      const { health, maxHealth, vigor } = host.player
+      status = `Recuperou: vida ${health}/${maxHealth}, Vigor ${vigor}.`
     } else {
       status = `Você está em ${nameOf(cards.cards, host.player.zoneId)}.`
     }
@@ -289,6 +322,7 @@ export function PartySession() {
             cards={cards.cards}
             onMove={(zoneId) => action.mutate({ type: 'move', zoneId })}
             onEndTurn={() => action.mutate({ type: 'endTurn' })}
+            onRecover={(option) => action.mutate({ type: 'recover', option })}
             moving={action.isPending}
           />
         </>

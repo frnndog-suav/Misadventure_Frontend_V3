@@ -86,3 +86,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 054 | RETORNO | [FEAT-08 validada contra o backend real](054-RETORNO-feat-08-validada.md) | concluída |
 | 055 | T-41 | [Cliente da FEAT-09](055-T-41-cliente-feat-09.md) | concluída |
 | 056 | T-42 | [Laboratório, build e pasta](056-T-42-build-e-pasta.md) | concluída |
+| 057 | T-43 | [Recuperar](057-T-43-recuperar.md) | concluída |

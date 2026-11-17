@@ -162,3 +162,27 @@ test.describe('REQ-36/REQ-38: a vez e Encerrar a vez (MSW)', () => {
     await expect(turn).toContainText('3 pontos de ação')
   })
 })
+
+test.describe('REQ-41: Recuperar (MSW)', () => {
+  for (const [label, option] of [
+    ['Comprar cartas', 'drawToHand'],
+    ['Mão no deck', 'shuffleHand'],
+    ['Descarte no deck', 'shuffleDiscard'],
+  ] as const) {
+    test(`REQ-41: "${label}" (${option}) mostra o Party devolvido`, async ({
+      page,
+    }) => {
+      await page.goto('/grupo/party-os-teimosos')
+      const turn = page.getByRole('region', { name: 'A vez' })
+      const status = page.getByRole('status')
+      await expect(status).toHaveText('')
+      await expect(
+        turn.getByRole('group', { name: 'Recuperar' }).getByRole('button'),
+      ).toHaveText(['Comprar cartas', 'Mão no deck', 'Descarte no deck'])
+
+      await turn.getByRole('button', { name: label }).click()
+      await expect(status).toHaveText('Recuperou: vida 22/22, Vigor 10.')
+      await expect(turn).toContainText('2 pontos de ação')
+    })
+  }
+})

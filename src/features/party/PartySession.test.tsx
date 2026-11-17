@@ -1030,3 +1030,120 @@ describe('REQ-36/REQ-38: a vez e Encerrar a vez', () => {
     expect(turnRegion()).toHaveTextContent('Rodada 1')
   })
 })
+
+describe('REQ-41: Recuperar', () => {
+  const turnRegion = () => screen.getByRole('region', { name: 'A vez' })
+  const group = () =>
+    within(turnRegion()).queryByRole('group', { name: 'Recuperar' })
+  const option = (name: string) =>
+    within(turnRegion()).getByRole('button', { name })
+
+  async function renderTurn(): Promise<void> {
+    renderParty()
+    await screen.findByRole('region', { name: 'A vez' })
+    await waitFor(() => expect(status()).toHaveTextContent(''))
+  }
+
+  function withActions(availableActions: string[]): void {
+    server.use(
+      http.post('*/parties/:partyId/session', () =>
+        HttpResponse.json({
+          ...partyInSessionFixture,
+          members: partyInSessionFixture.members.map((m) => ({
+            ...m,
+            player: { ...m.player, availableActions },
+          })),
+        }),
+      ),
+    )
+  }
+
+  it('REQ-41: com recover, o grupo "Recuperar" tem os 3 botões em ordem, antes de "Encerrar a vez"', async () => {
+    await renderTurn()
+    const buttons = within(group()!).getAllByRole('button')
+    expect(buttons.map((b) => b.textContent)).toEqual([
+      'Comprar cartas',
+      'Mão no deck',
+      'Descarte no deck',
+    ])
+    const end = within(turnRegion()).getByRole('button', {
+      name: 'Encerrar a vez',
+    })
+    expect(
+      group()!.compareDocumentPosition(end) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('REQ-41: sem recover não há o grupo', async () => {
+    withActions(['move', 'endTurn'])
+    await renderTurn()
+    expect(group()).toBeNull()
+  })
+
+  it.each([
+    ['Comprar cartas', 'drawToHand'],
+    ['Mão no deck', 'shuffleHand'],
+    ['Descarte no deck', 'shuffleDiscard'],
+  ])(
+    'REQ-41: "%s" envia { type: "recover", option: "%s" } sem confirmação, com os botões desabilitados no pedido',
+    async (label, opt) => {
+      let release: () => void = () => {}
+      const gate = new Promise<void>((resolve) => (release = resolve))
+      let body: unknown
+      server.use(
+        http.post('*/parties/:partyId/actions', async ({ request }) => {
+          body = await request.json()
+          await gate
+          return HttpResponse.json(partyInSessionFixture)
+        }),
+      )
+      await renderTurn()
+      fireEvent.click(option(label))
+      await waitFor(() => expect(option('Comprar cartas')).toBeDisabled())
+      expect(option('Mão no deck')).toBeDisabled()
+      expect(option('Descarte no deck')).toBeDisabled()
+      expect(option('Encerrar a vez')).toBeDisabled()
+      expect(screen.queryByRole('dialog')).toBeNull()
+      expect(body).toEqual({ type: 'recover', option: opt })
+      release()
+      await waitFor(() => expect(option('Comprar cartas')).toBeEnabled())
+    },
+  )
+
+  it('REQ-41: com 200 mostra o Party devolvido e "Recuperou: vida {health}/{maxHealth}, Vigor {vigor}."', async () => {
+    await renderTurn()
+    fireEvent.click(option('Comprar cartas'))
+    await waitFor(() =>
+      expect(status()).toHaveTextContent('Recuperou: vida 22/22, Vigor 10.'),
+    )
+    expect(turnRegion()).toHaveTextContent('2 pontos de ação')
+    expect(screen.getByText('Salvo em 14/11/2026 18:41')).toBeInTheDocument()
+  })
+
+  it('REQ-41: erro §1.4 mostra a message e nada muda na tela', async () => {
+    server.use(
+      http.post('*/parties/:partyId/actions', () =>
+        HttpResponse.json(actionNoActionPointsFixture, { status: 409 }),
+      ),
+    )
+    await renderTurn()
+    fireEvent.click(option('Mão no deck'))
+    await waitFor(() => expect(status()).not.toHaveTextContent(''))
+    expect(status()).not.toHaveTextContent('Recuperou')
+    expect(turnRegion()).toHaveTextContent('3 pontos de ação')
+  })
+
+  it('REQ-41: falha de rede mostra "Servidor indisponível. Tente novamente."', async () => {
+    server.use(
+      http.post('*/parties/:partyId/actions', () => HttpResponse.error()),
+    )
+    await renderTurn()
+    fireEvent.click(option('Descarte no deck'))
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(
+        'Servidor indisponível. Tente novamente.',
+      ),
+    )
+    expect(turnRegion()).toHaveTextContent('3 pontos de ação')
+  })
+})
