@@ -57,8 +57,13 @@ export const partyDimensionSchema = z.object({
 })
 export type PartyDimension = z.infer<typeof partyDimensionSchema>
 
-/** Tipos de `PartyAction`, na ordem fixa do contrato (FEAT-08). */
-export const partyActionTypeSchema = z.enum(['move', 'endTurn'])
+/** Tipos de `PartyAction`, na ordem fixa do contrato (FEAT-08, FEAT-09). */
+export const partyActionTypeSchema = z.enum([
+  'move',
+  'recover',
+  'adjustDeck',
+  'endTurn',
+])
 export type PartyActionType = z.infer<typeof partyActionTypeSchema>
 
 /** A vez: rodada, membro da vez e pontos restantes (FEAT-08, D-56). */
@@ -68,6 +73,13 @@ export const partyTurnSchema = z.object({
   actionPoints: nonNegativeInt,
 })
 export type PartyTurn = z.infer<typeof partyTurnSchema>
+
+/** Cópias de uma carta de atributo (build ou pasta de TCG, FEAT-09). */
+export const cardCopiesSchema = z.object({
+  cardId: z.string(),
+  copies: z.number().int().min(1),
+})
+export type CardCopies = z.infer<typeof cardCopiesSchema>
 
 /** Estado do jogador na partida; tudo calculado pelo backend (§1.3). */
 export const playerStateSchema = z.object({
@@ -90,6 +102,11 @@ export const playerStateSchema = z.object({
   moveTargets: z.array(z.string()),
   /** Ações que o jogador pode mandar agora, prontas do backend (FEAT-08, D-56). */
   availableActions: z.array(partyActionTypeSchema),
+  /** Build salva, pasta e capacidade, prontas do backend (FEAT-09, D-57). */
+  build: z.array(cardCopiesSchema),
+  buildSize: nonNegativeInt,
+  tcgFolder: z.array(cardCopiesSchema),
+  tcgFolderCapacity: nonNegativeInt,
 })
 export type PlayerState = z.infer<typeof playerStateSchema>
 
@@ -252,7 +269,8 @@ export function useStartSession(
 }
 
 /** Intenção de jogo (CONTRATO §1.6); as FEATs seguintes acrescentam variantes. */
-export type PartyAction = MoveAction | EndTurnAction
+export type PartyAction =
+  MoveAction | EndTurnAction | RecoverAction | AdjustDeckAction
 
 /** Movimentar (README 12.2); `zoneId` vem de `moveTargets`. */
 export interface MoveAction {
@@ -265,18 +283,76 @@ export interface EndTurnAction {
   type: 'endTurn'
 }
 
+/** Recuperar (README 12.2, 12.5): opções (a), (b) e (c). */
+export interface RecoverAction {
+  type: 'recover'
+  option: 'drawToHand' | 'shuffleHand' | 'shuffleDiscard'
+}
+
+/** Ajustar deck (README 4.4, 6.3): a build nova inteira. */
+export interface AdjustDeckAction {
+  type: 'adjustDeck'
+  build: CardCopies[]
+}
+
+export const actionNotAllowedDetailsSchema = z.object({
+  reason: z.enum([
+    'notConnected',
+    'noActionPoints',
+    'notOwned',
+    'copyLimitExceeded',
+    'buildBelowMinimum',
+    'tcgFolderFull',
+  ]),
+  /** Só em `notOwned` e `copyLimitExceeded`. */
+  cardId: z.string().optional(),
+})
+export type ActionNotAllowedDetails = z.infer<
+  typeof actionNotAllowedDetailsSchema
+>
+
+/** `409 ACTION_NOT_ALLOWED` com `details` já validado (REQ-42). */
+export class ActionNotAllowedError extends ApiError {
+  readonly reason: ActionNotAllowedDetails['reason']
+  readonly cardId: string | undefined
+
+  constructor(message: string, details: ActionNotAllowedDetails) {
+    super('ACTION_NOT_ALLOWED', message, details)
+    this.name = 'ActionNotAllowedError'
+    this.reason = details.reason
+    this.cardId = details.cardId
+  }
+}
+
+async function takePartyAction(
+  partyId: string,
+  action: PartyAction,
+): Promise<Party> {
+  try {
+    return partySchema.parse(
+      await requestJson('POST', `${partyPath(partyId)}/actions`, action),
+    )
+  } catch (error) {
+    if (error instanceof ApiError && error.code === 'ACTION_NOT_ALLOWED') {
+      throw new ActionNotAllowedError(
+        error.message,
+        parseDetails(error, actionNotAllowedDetailsSchema),
+      )
+    }
+    throw error
+  }
+}
+
 /**
  * Envia uma intenção (`POST /parties/:partyId/actions`) e entrega o `Party`
- * já com o efeito; erros §1.4 chegam como `ApiError` (D-55).
+ * já com o efeito; erros §1.4 chegam como `ApiError`, e `ACTION_NOT_ALLOWED`
+ * como `ActionNotAllowedError` com o motivo (D-55, D-57).
  */
 export function usePartyAction(
   partyId: string,
 ): UseMutationResult<Party, Error, PartyAction> {
   return useMutation({
-    mutationFn: async (action: PartyAction) =>
-      partySchema.parse(
-        await requestJson('POST', `${partyPath(partyId)}/actions`, action),
-      ),
+    mutationFn: (action: PartyAction) => takePartyAction(partyId, action),
     retry: false,
   })
 }

@@ -40,6 +40,12 @@ const fieldLabels: Record<GameConfigKey, string> = {
   defaultCelerity: 'Celeridade padrão',
   defaultPiercing: 'Perfuração padrão',
   defaultReflection: 'Reflexão padrão',
+  // FEAT-09 (REQ-39)
+  maxCopiesPerCard: 'Cópias máximas por carta no deck',
+  tcgFolderCapacity: 'Capacidade da pasta de TCG',
+  recoverHealthPercent: 'Recuperar: % da vida máxima',
+  recoverVigorPercent: 'Recuperar: % do Pico em Vigor',
+  recoverHandSize: 'Recuperar: comprar até (cartas na mão)',
 }
 
 const fieldKeys = Object.keys(fieldLabels) as GameConfigKey[]

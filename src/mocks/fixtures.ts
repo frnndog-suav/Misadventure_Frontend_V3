@@ -48,6 +48,12 @@ const defaultValues: LabConfig['values'] = {
   defaultCelerity: 10,
   defaultPiercing: 0,
   defaultReflection: 0,
+  // FEAT-09 (CONTRATO v0.37)
+  maxCopiesPerCard: 4,
+  tcgFolderCapacity: 30,
+  recoverHealthPercent: 15,
+  recoverVigorPercent: 5,
+  recoverHandSize: 7,
 }
 
 const modifierDefaultLimit = { min: 0, max: 1000 }
@@ -75,6 +81,11 @@ export const labConfigDefaultsFixture: LabConfig = {
     defaultCelerity: modifierDefaultLimit,
     defaultPiercing: modifierDefaultLimit,
     defaultReflection: modifierDefaultLimit,
+    maxCopiesPerCard: { min: 1, max: 200 },
+    tcgFolderCapacity: { min: 0, max: 1000 },
+    recoverHealthPercent: { min: 0, max: 100 },
+    recoverVigorPercent: { min: 0, max: 100 },
+    recoverHandSize: { min: 0, max: 200 },
   },
 }
 

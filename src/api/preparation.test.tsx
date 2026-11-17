@@ -443,7 +443,15 @@ describe('REQ-30: Party preparado (dimension, turnOrder, player)', () => {
       zoneId: 'fixture.gray-harbor',
       respawnZoneId: 'fixture.gray-harbor',
       moveTargets: ['fixture.stone-bend', 'fixture.whispering-grove'],
-      availableActions: ['move', 'endTurn'],
+      availableActions: ['move', 'recover', 'adjustDeck', 'endTurn'],
+      // FEAT-09 (CONTRATO v0.37, cenário de criação)
+      build: [
+        { cardId: 'fixture.endurance-basic', copies: 30 },
+        { cardId: 'fixture.strength-basic', copies: 30 },
+      ],
+      buildSize: 60,
+      tcgFolder: [],
+      tcgFolderCapacity: 30,
     })
     expect(hand).toHaveLength(7)
     for (const id of hand) {

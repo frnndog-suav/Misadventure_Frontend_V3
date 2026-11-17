@@ -37,6 +37,12 @@ export const gameConfigValuesSchema = z.object({
   defaultCelerity: gameConfigInt,
   defaultPiercing: gameConfigInt,
   defaultReflection: gameConfigInt,
+  // FEAT-09
+  maxCopiesPerCard: gameConfigInt,
+  tcgFolderCapacity: gameConfigInt,
+  recoverHealthPercent: gameConfigInt,
+  recoverVigorPercent: gameConfigInt,
+  recoverHandSize: gameConfigInt,
 })
 
 export type GameConfigValues = z.infer<typeof gameConfigValuesSchema>
@@ -67,6 +73,11 @@ export const labConfigSchema = z.object({
     defaultCelerity: limitSchema,
     defaultPiercing: limitSchema,
     defaultReflection: limitSchema,
+    maxCopiesPerCard: limitSchema,
+    tcgFolderCapacity: limitSchema,
+    recoverHealthPercent: limitSchema,
+    recoverVigorPercent: limitSchema,
+    recoverHandSize: limitSchema,
   }) satisfies z.ZodType<Record<GameConfigKey, { min: number; max: number }>>,
 })
 

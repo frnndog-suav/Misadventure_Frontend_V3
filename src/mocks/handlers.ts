@@ -57,8 +57,15 @@ import {
   labConfigUpdatedFixture,
 } from './fixtures'
 import {
+  actionBuildBelowMinimumFixture,
   actionInvalidUnknownActionFixture,
+  actionInvalidUnknownOptionFixture,
   actionInvalidZoneNotInMapFixture,
+  actionNotOwnedFixture,
+  partyDeckAdjustedFixture,
+  partyRecoveredDrawFixture,
+  partyRecoveredShuffleDiscardFixture,
+  partyRecoveredShuffleHandFixture,
   actionNoActionPointsFixture,
   actionNotAllowedFixture,
   partiesFixture,
@@ -143,12 +150,18 @@ async function partyActionScenario(
   const body: unknown = await request.json().catch(() => undefined)
   const type = field(body, 'type')
   if (type === 'endTurn') return HttpResponse.json(partyNextRoundFixture)
-  if (type !== 'move') {
+  if (type !== 'move' && type !== 'recover' && type !== 'adjustDeck') {
     return HttpResponse.json(actionInvalidUnknownActionFixture, { status: 400 })
+  }
+  const option = field(body, 'option')
+  if (type === 'recover' && !recoverOptions.includes(option)) {
+    return HttpResponse.json(actionInvalidUnknownOptionFixture, { status: 400 })
   }
   if (partyId === partyNoPointsFixture.id) {
     return HttpResponse.json(actionNoActionPointsFixture, { status: 409 })
   }
+  if (type === 'recover') return recoverScenario(option)
+  if (type === 'adjustDeck') return adjustDeckScenario(field(body, 'build'))
   switch (field(body, 'zoneId')) {
     case 'fixture.stone-bend':
       return HttpResponse.json(partyMovedToStoneBendFixture)
@@ -162,6 +175,67 @@ async function partyActionScenario(
       return HttpResponse.json(actionInvalidZoneNotInMapFixture, {
         status: 400,
       })
+  }
+}
+
+/** Opções do `recover` no contrato (o 400 vem antes do `noActionPoints`). */
+const recoverOptions: unknown[] = [
+  'drawToHand',
+  'shuffleHand',
+  'shuffleDiscard',
+]
+
+/** `recover`: um `Party` pronto por opção (CONTRATO §3 FEAT-09, D-57). */
+function recoverScenario(option: unknown): Response {
+  switch (option) {
+    case 'drawToHand':
+      return HttpResponse.json(partyRecoveredDrawFixture)
+    case 'shuffleHand':
+      return HttpResponse.json(partyRecoveredShuffleHandFixture)
+    case 'shuffleDiscard':
+      return HttpResponse.json(partyRecoveredShuffleDiscardFixture)
+    default:
+      return HttpResponse.json(actionInvalidUnknownOptionFixture, {
+        status: 400,
+      })
+  }
+}
+
+/** Build enviada como texto comparável (`cardId:copies`, na ordem enviada). */
+function buildKey(build: unknown): string {
+  return Array.isArray(build)
+    ? build
+        .map(
+          (item) =>
+            `${String(field(item, 'cardId'))}:${String(field(item, 'copies'))}`,
+        )
+        .join(',')
+    : ''
+}
+
+const strengthBasic = 'fixture.strength-basic'
+const enduranceBasic = 'fixture.endurance-basic'
+const dexterityBasic = 'fixture.dexterity-basic'
+
+/**
+ * `adjustDeck`: tabela das builds dos cenários do contrato, pela build enviada
+ * exatamente; qualquer outra recebe o `Party` ajustado sem mudança (D-57 item
+ * 6). Nenhuma conferência de mínimo, posse ou pasta (Princípio 3).
+ */
+function adjustDeckScenario(build: unknown): Response {
+  switch (buildKey(build)) {
+    case `${enduranceBasic}:30,${strengthBasic}:29`:
+      return HttpResponse.json(actionBuildBelowMinimumFixture, { status: 409 })
+    case `${enduranceBasic}:30,${strengthBasic}:31`:
+      return HttpResponse.json(actionNotOwnedFixture(strengthBasic), {
+        status: 409,
+      })
+    case `${enduranceBasic}:30,${strengthBasic}:30,${dexterityBasic}:1`:
+      return HttpResponse.json(actionNotOwnedFixture(dexterityBasic), {
+        status: 409,
+      })
+    default:
+      return HttpResponse.json(partyDeckAdjustedFixture)
   }
 }
 

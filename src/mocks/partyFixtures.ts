@@ -52,7 +52,14 @@ const member: Party['members'][number] = {
     zoneId: 'fixture.gray-harbor',
     respawnZoneId: 'fixture.gray-harbor',
     moveTargets: ['fixture.stone-bend', 'fixture.whispering-grove'],
-    availableActions: ['move', 'endTurn'],
+    availableActions: ['move', 'recover', 'adjustDeck', 'endTurn'],
+    build: [
+      { cardId: endurance, copies: 30 },
+      { cardId: strength, copies: 30 },
+    ],
+    buildSize: 60,
+    tcgFolder: [],
+    tcgFolderCapacity: 30,
   },
 }
 
@@ -163,6 +170,47 @@ export const partyNextRoundFixture: Party = {
   turn: { round: 2, memberId: member.id, actionPoints: 3 },
   savedAt: '2026-11-14T21:45:00.000Z',
 }
+
+/**
+ * Party em sessão depois de uma ação de 1 ponto que não muda a zona
+ * (Recuperar, Ajustar deck; CONTRATO §3 FEAT-09): 2 pontos restantes e o
+ * `player` com as mudanças prontas do backend.
+ */
+function partyAfterDeckAction(
+  player: Partial<Party['members'][number]['player']>,
+  savedAt: string,
+): Party {
+  return {
+    ...partyInSessionFixture,
+    members: [{ ...member, player: { ...member.player, ...player } }],
+    turn: { ...partyInSessionFixture.turn, actionPoints: 2 },
+    savedAt,
+  }
+}
+
+/** 200 de `recover` `drawToHand` com a mão já cheia: nada comprado, vida e Vigor no máximo. */
+export const partyRecoveredDrawFixture = partyAfterDeckAction(
+  {},
+  '2026-11-14T21:41:00.000Z',
+)
+
+/** 200 de `recover` `shuffleHand`: mão vazia, as 7 cartas de volta ao deck. */
+export const partyRecoveredShuffleHandFixture = partyAfterDeckAction(
+  { hand: [], attributeDeckCount: 60 },
+  '2026-11-14T21:42:00.000Z',
+)
+
+/** 200 de `recover` `shuffleDiscard` com o descarte vazio. */
+export const partyRecoveredShuffleDiscardFixture = partyAfterDeckAction(
+  {},
+  '2026-11-14T21:43:00.000Z',
+)
+
+/** 200 de `adjustDeck` com a build atual (sem mudança): mesma build, 7 na mão. */
+export const partyDeckAdjustedFixture = partyAfterDeckAction(
+  {},
+  '2026-11-14T21:44:00.000Z',
+)
 
 /** 200 de GET /parties com o grupo criado. */
 export const partiesFixture: PartySummary[] = [
@@ -276,6 +324,35 @@ export const actionNoActionPointsFixture = {
     code: 'ACTION_NOT_ALLOWED',
     message: 'Esta ação não é permitida agora.',
     details: { reason: 'noActionPoints' },
+  },
+} as const
+
+/** 409 de `adjustDeck` com a build abaixo do mínimo (CONTRATO §3 FEAT-09). */
+export const actionBuildBelowMinimumFixture = {
+  error: {
+    code: 'ACTION_NOT_ALLOWED',
+    message: 'Esta ação não é permitida agora.',
+    details: { reason: 'buildBelowMinimum' },
+  },
+} as const
+
+/** 409 de `adjustDeck` com cópias além da build + pasta de `cardId`. */
+export function actionNotOwnedFixture(cardId: string) {
+  return {
+    error: {
+      code: 'ACTION_NOT_ALLOWED',
+      message: 'Esta ação não é permitida agora.',
+      details: { reason: 'notOwned', cardId },
+    },
+  } as const
+}
+
+/** 400 de `recover` com opção desconhecida (CONTRATO §3 FEAT-09). */
+export const actionInvalidUnknownOptionFixture = {
+  error: {
+    code: 'ACTION_INVALID',
+    message: 'Ação inválida.',
+    details: { fields: [{ field: 'option', reason: 'unknownOption' }] },
   },
 } as const
 

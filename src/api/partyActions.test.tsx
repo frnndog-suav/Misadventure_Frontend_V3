@@ -218,8 +218,10 @@ describe('REQ-37: PlayerState.availableActions', () => {
   it('REQ-37: as fixtures trazem availableActions na ordem do contrato', () => {
     const actions = (party: typeof partyInSessionFixture) =>
       party.members[0].player.availableActions
-    expect(actions(partyInSessionFixture)).toEqual(['move', 'endTurn'])
-    expect(actions(partyMovedToStoneBendFixture)).toEqual(['move', 'endTurn'])
+    // FEAT-09 (CONTRATO v0.37): recover e adjustDeck entre move e endTurn
+    const full = ['move', 'recover', 'adjustDeck', 'endTurn']
+    expect(actions(partyInSessionFixture)).toEqual(full)
+    expect(actions(partyMovedToStoneBendFixture)).toEqual(full)
     expect(actions(partyNoPointsFixture)).toEqual(['endTurn'])
     expect(partyNoPointsFixture.turn.actionPoints).toBe(0)
   })

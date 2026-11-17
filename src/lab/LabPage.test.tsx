@@ -91,6 +91,12 @@ const labels = [
   ['defaultCelerity', 'Celeridade padrão'],
   ['defaultPiercing', 'Perfuração padrão'],
   ['defaultReflection', 'Reflexão padrão'],
+  // FEAT-09 (REQ-39)
+  ['maxCopiesPerCard', 'Cópias máximas por carta no deck'],
+  ['tcgFolderCapacity', 'Capacidade da pasta de TCG'],
+  ['recoverHealthPercent', 'Recuperar: % da vida máxima'],
+  ['recoverVigorPercent', 'Recuperar: % do Pico em Vigor'],
+  ['recoverHandSize', 'Recuperar: comprar até (cartas na mão)'],
 ] as const
 
 async function loaded(): Promise<void> {
@@ -142,6 +148,25 @@ describe('REQ-06: configuração ajustável do jogo', () => {
       .getAllByRole('spinbutton')
       .map((input) => (input as HTMLInputElement).labels?.[0]?.textContent)
     expect(names).toEqual(labels.map(([, label]) => label))
+  })
+
+  it('REQ-39: os 5 campos da FEAT-09 vêm depois dos do REQ-27, nesta ordem, com padrão e limites', async () => {
+    renderLab()
+    await loaded()
+    const region = screen.getByRole('region', { name: 'Configuração' })
+    const names = within(region)
+      .getAllByRole('spinbutton')
+      .map((input) => (input as HTMLInputElement).labels?.[0]?.textContent)
+    expect(names.slice(-5)).toEqual([
+      'Cópias máximas por carta no deck',
+      'Capacidade da pasta de TCG',
+      'Recuperar: % da vida máxima',
+      'Recuperar: % do Pico em Vigor',
+      'Recuperar: comprar até (cartas na mão)',
+    ])
+    expect(field('Recuperar: % da vida máxima')).toHaveAccessibleDescription(
+      'Padrão: 15 · Mín. 0 · Máx. 100',
+    )
   })
 
   it('REQ-06: "Salvar" fica desabilitado sem campo alterado e com campo vazio', async () => {

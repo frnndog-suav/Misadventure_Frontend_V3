@@ -74,13 +74,14 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 042 | T-31 | [Partida preparada na tela do grupo](042-T-31-partida-preparada.md) | concluída |
 | 043 | T-32 | [Cliente do editor: classes e Carta de Dimensão](043-T-32-cliente-editor-classes.md) | concluída |
 | 044 | T-33 | [Editor: Carta de Dimensão e forma das setas](044-T-33-editor-dimensao-setas.md) | concluída |
-| 045 | T-34 | [Classes no editor](045-T-34-classes-no-editor.md) | aguardando revisão |
-| 046 | RETORNO | [FEAT-06 validada contra o backend real](046-RETORNO-feat-06-validada.md) | aguardando revisão |
-| 047 | T-35 | [Cliente da FEAT-07](047-T-35-cliente-feat-07.md) | aguardando revisão |
-| 048 | T-36 | [Mapa na tela do grupo](048-T-36-mapa-tela-grupo.md) | aguardando revisão |
-| 049 | T-37 | [Movimentar](049-T-37-movimentar.md) | aguardando revisão |
-| 050 | RETORNO | [FEAT-07 validada contra o backend real](050-RETORNO-feat-07-validada.md) | aguardando revisão |
-| 051 | T-38 | [Cliente da FEAT-08](051-T-38-cliente-feat-08.md) | aguardando revisão |
-| 052 | T-39 | [A vez e Encerrar a vez](052-T-39-a-vez-encerrar.md) | aguardando revisão |
-| 053 | T-40 | [Alinhar Movimentar às ações disponíveis](053-T-40-movimentar-acoes-disponiveis.md) | aguardando revisão |
-| 054 | RETORNO | [FEAT-08 validada contra o backend real](054-RETORNO-feat-08-validada.md) | aguardando revisão |
+| 045 | T-34 | [Classes no editor](045-T-34-classes-no-editor.md) | concluída |
+| 046 | RETORNO | [FEAT-06 validada contra o backend real](046-RETORNO-feat-06-validada.md) | concluída |
+| 047 | T-35 | [Cliente da FEAT-07](047-T-35-cliente-feat-07.md) | concluída |
+| 048 | T-36 | [Mapa na tela do grupo](048-T-36-mapa-tela-grupo.md) | concluída |
+| 049 | T-37 | [Movimentar](049-T-37-movimentar.md) | concluída |
+| 050 | RETORNO | [FEAT-07 validada contra o backend real](050-RETORNO-feat-07-validada.md) | concluída |
+| 051 | T-38 | [Cliente da FEAT-08](051-T-38-cliente-feat-08.md) | concluída |
+| 052 | T-39 | [A vez e Encerrar a vez](052-T-39-a-vez-encerrar.md) | concluída |
+| 053 | T-40 | [Alinhar Movimentar às ações disponíveis](053-T-40-movimentar-acoes-disponiveis.md) | concluída |
+| 054 | RETORNO | [FEAT-08 validada contra o backend real](054-RETORNO-feat-08-validada.md) | concluída |
+| 055 | T-41 | [Cliente da FEAT-09](055-T-41-cliente-feat-09.md) | aguardando revisão |
