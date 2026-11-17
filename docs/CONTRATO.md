@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.24 · **Data:** 2026-11-16
+> **Versão do contrato:** 0.25 · **Data:** 2026-11-17
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -845,7 +845,7 @@ Partem do laboratório ligado e de um `CONTENT_DIR` com só a coleção `fixture
 - Quando `GET /lab/content/collections/nope`, então `404` com `{ "error": { "code": "COLLECTION_NOT_FOUND", "message": "Coleção não encontrada." } }`.
 - Dado o laboratório desligado, quando `GET /lab/content/collections`, então `404` `NOT_FOUND`.
 
-### FEAT-06 — Preparação da partida — `acordado`
+### FEAT-06 — Preparação da partida — `implementado (BE)`
 
 Regras: README 10.1, 3.2 (zona de chegada), 3.5 (montagem do mapa e validação da composição), 4.4 (deck pré-pronto), 7.4 (vida máxima), 8.2 (trava), 8.6/8.7 (classes e modificadores base), 9.1 (valores iniciais), 11.2 (ordem por D20), 20.1 (spawn e respawn), 27, 28.1 (todo grupo novo começa pela primeira dimensão lançada) e Apêndice B T1.
 
@@ -1011,6 +1011,18 @@ Sorteios usam semente aleatória: mapa, mão e rolagens mudam a cada grupo. Comp
 - Dado `mage` em rascunho, quando `DELETE /lab/content/classes/mage`, então `204`; `GET /lab/content/classes/mage` seguinte → `404` com `{ "error": { "code": "CLASS_NOT_FOUND", "message": "Classe não encontrada." } }`.
 - `DIMENSION_INVALID` não tem cenário com a `fixture` (ela é uma dimensão válida). O backend cobre o caso com testes do gerador e da composição.
 
+**Textos (implementado (BE), 2026-11-17):** `problems` de `DimensionValidation` e de `DimensionInvalidDetails`, nesta ordem:
+- "A coleção precisa de 1 Carta de Dimensão publicada."
+- "A coleção precisa de pelo menos 1 zona Urbana publicada."
+- "A zona de chegada "<título>" da Carta de Dimensão não é uma zona Urbana publicada da coleção."
+- "Sem zona de chegada na Carta de Dimensão, a coleção precisa de pelo menos 1 zona Urbana publicada sem efeito negativo."
+- "As zonas publicadas têm N setas; são precisas pelo menos M (2 × (zonas − 1))."
+- só no `POST /parties`: "O gerador não montou o mapa dentro do limite de tentativas (mapMaxAttempts = N)."
+
+Sem Carta de Dimensão publicada, o `problems` também traz o texto da zona Urbana. `fields[].message` novo do editor de classes: carta do deck não publicada (ao publicar) → path `starterDeck.N.cardId`, "Toda carta do deck pré-pronto precisa estar publicada.". `CollectionExport.classes` traz `EditorClass[]` da coleção (por `playerClass`) e `ImportResult.classCount` conta as classes do arquivo; os paths do import seguem `classes.N.classDefinition.*` e `classes.N.status`. Excluir uma coleção cuja carta está no deck pré-pronto de uma classe de **outra** coleção, ou substituí-la no import removendo essa carta → `409` `CONTENT_REFERENCED`.
+
+Testes e2e do backend por cenário: `list-classes`, `get-card`, `create-party/*`, `content-in-use.e2e-spec.ts` (REQ-39, REQ-40), `create-class/index.controller.e2e-spec.ts` (REQ-38), `validate-dimension` (REQ-36), `import-collection`/`export-collection` (REQ-48).
+
 ## 4. Códigos de erro
 
 | Código | Quando acontece | FEAT |
@@ -1060,3 +1072,4 @@ Sorteios usam semente aleatória: mapa, mão e rolagens mudam a cada grupo. Comp
 | 0.22 | 2026-11-15 | BE | FEAT-31 `acordado` sem mudanças de formato. Esclarecimentos: até a FEAT-06, o export traz `classes: []` e o import `classCount: 0` (os cenários os omitem; compare por campo); o `id` de coleção e o `slug` seguem `kebab-case` (sem hífen no início, no fim ou repetido), com a mesma mensagem do cenário; os cenários da FEAT-31 valem para a `fixture` de 6 cartas, e a seção FEAT-06 diz como mudam depois dela. |
 | 0.23 | 2026-11-16 | BE | FEAT-31 `implementado (BE)` (SPEC-BACKEND T-19 a T-21): e2e de cada cenário em `src/infra/http/controllers/*/index.controller.e2e-spec.ts` e conferidos com `curl` contra o backend real. Sem mudança de formato: textos exatos de REQ-47 no cenário de `validate-dimension`; textos fixos novos de `fields[].message` (JSON malformado, `status` desconhecido, parâmetro repetido, `replace` inválido); citação "spec D-38" corrigida para "spec D-49". |
 | 0.24 | 2026-11-16 | FE | FEAT-31 `validado` sem mudança de formato: 17 de 18 cenários com chamadas HTTP contra o backend real (29 conferências; o de laboratório desligado não foi rodado, pede reiniciar o backend) e as telas do editor (validar, exportar, importar, coleções e cartas) com o MSW desligado. |
+| 0.25 | 2026-11-17 | BE | FEAT-06 `implementado (BE)` (SPEC-BACKEND T-14 a T-18): sem mudança de formato; textos de `problems` e do motivo `starterDeckCardNotPublished` incluídos; esclarecido `CONTENT_REFERENCED` na exclusão e no import com `replace` da coleção (carta referenciada por classe de outra coleção). |

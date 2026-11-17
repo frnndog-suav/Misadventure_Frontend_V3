@@ -7,11 +7,9 @@ import type {
 import type { ErrorEnvelope } from '../api/http'
 
 /**
- * Fixtures dos cenários do CONTRATO §3 FEAT-04 (v0.11) e FEAT-06 (v0.21).
- * As 6 cartas da FEAT-04 são cópias exatas do conteúdo de teste do backend
- * (coleção `fixture`); das 6 da FEAT-06, só a Carta de Dimensão é cópia do
- * cenário — as outras são provisórias, com o que os cenários dizem (título,
- * tipo urbano, setas e forma), até a cópia exata do `implementado (BE)`.
+ * Fixtures dos cenários do CONTRATO §3 FEAT-04 e FEAT-06 (v0.25).
+ * As 12 cartas são cópias exatas do conteúdo de teste do backend
+ * (coleção `fixture`).
  * Nenhuma regra (Princípio 3).
  */
 
@@ -152,49 +150,49 @@ export const whisperingGroveFixture: Card = {
   collectionId: 'fixture',
 }
 
-/** Provisória (FEAT-06): zona `urban` de chegada, 4 setas. */
+/** Cópia exata do backend (coleção `fixture`, CONTRATO v0.25). */
 export const grayHarborFixture: Card = {
   type: 'zone',
   id: 'fixture.gray-harbor',
   collectionId: 'fixture',
   title: 'Porto Cinzento',
   zoneType: 'urban',
-  location: 'Porto',
+  location: 'Costa Cinzenta',
   connectionArrows: 4,
   arrowLayout: null,
   zoneActions: ['startEvent', 'useVault', 'saveRespawnPoint'],
   effects: [],
 }
 
-/** Provisória (FEAT-06): 2 setas vizinhas. */
+/** Cópia exata do backend (coleção `fixture`, CONTRATO v0.25). */
 export const stoneBendFixture: Card = {
   type: 'zone',
   id: 'fixture.stone-bend',
   collectionId: 'fixture',
   title: 'Curva de Pedra',
-  zoneType: 'mountainous',
-  location: 'Serra',
+  zoneType: 'forest',
+  location: 'Terras Selvagens',
   connectionArrows: 2,
   arrowLayout: 'corner',
   zoneActions: ['startEvent'],
   effects: [],
 }
 
-/** Provisória (FEAT-06): 1 seta. */
+/** Cópia exata do backend (coleção `fixture`, CONTRATO v0.25). */
 export const oldMineFixture: Card = {
   type: 'zone',
   id: 'fixture.old-mine',
   collectionId: 'fixture',
   title: 'Mina Velha',
-  zoneType: 'underground',
-  location: 'Mina',
+  zoneType: 'forest',
+  location: 'Terras Selvagens',
   connectionArrows: 1,
   arrowLayout: null,
   zoneActions: ['startEvent'],
   effects: [],
 }
 
-/** Provisória (FEAT-06), no molde da `strength-basic`. */
+/** Cópia exata do backend (coleção `fixture`, CONTRATO v0.25). */
 export const enduranceBasicFixture: Card = {
   type: 'attribute',
   id: 'fixture.endurance-basic',
@@ -207,7 +205,7 @@ export const enduranceBasicFixture: Card = {
   effects: [],
 }
 
-/** Provisória (FEAT-06), no molde da `strength-basic`. */
+/** Cópia exata do backend (coleção `fixture`, CONTRATO v0.25). */
 export const dexterityBasicFixture: Card = {
   type: 'attribute',
   id: 'fixture.dexterity-basic',

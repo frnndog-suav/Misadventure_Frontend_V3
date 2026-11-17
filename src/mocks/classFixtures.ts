@@ -1,9 +1,8 @@
 import type { ClassDefinition } from '../api/catalog'
 
 /**
- * Fixtures das classes do CONTRATO §3 FEAT-06 (v0.21). `warrior` é cópia
- * exata do cenário; `rogue` segue o que o cenário diz (essencial, deck e
- * modificadores) com o nome do glossário, até a cópia do `implementado (BE)`.
+ * Fixtures das classes do CONTRATO §3 FEAT-06 (v0.25). As duas classes
+ * são cópias exatas do conteúdo de teste do backend (coleção `fixture`).
  * Nenhuma regra (Princípio 3).
  */
 
