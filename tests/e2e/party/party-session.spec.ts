@@ -186,3 +186,63 @@ test.describe('REQ-41: Recuperar (MSW)', () => {
     })
   }
 })
+
+test.describe('REQ-42: Ajustar deck (MSW)', () => {
+  test('REQ-42: salvar sem mudança fecha a seção; as recusas aparecem na seção', async ({
+    page,
+  }) => {
+    await page.goto('/grupo/party-os-teimosos')
+    const turn = page.getByRole('region', { name: 'A vez' })
+    const status = page.getByRole('status')
+    await expect(status).toHaveText('')
+    const adjust = turn.getByRole('button', { name: 'Ajustar deck' })
+    const section = page.getByRole('region', { name: 'Ajustar deck' })
+    const strength = section.getByRole('spinbutton', {
+      name: 'Cópias na build de Força',
+    })
+
+    await adjust.click()
+    await expect(adjust).toBeDisabled()
+    await expect(section.getByRole('listitem')).toHaveCount(2)
+    await expect(strength).toHaveValue('30')
+
+    // Abaixo do mínimo (cenário do contrato).
+    await strength.fill('29')
+    await section.getByRole('button', { name: 'Salvar build' }).click()
+    await expect(section).toContainText(
+      'Esta ação não é permitida agora. A build ficou abaixo do mínimo de cartas.',
+    )
+    await expect(strength).toHaveValue('29')
+
+    // Cópias além da build + pasta.
+    await strength.fill('31')
+    await section.getByRole('button', { name: 'Salvar build' }).click()
+    await expect(section).toContainText(
+      'Você não tem cópias suficientes de Força.',
+    )
+
+    // Campo inválido não envia.
+    await strength.fill('')
+    await section.getByRole('button', { name: 'Salvar build' }).click()
+    await expect(strength).toHaveAccessibleDescription(
+      'Use um número inteiro a partir de 0.',
+    )
+
+    // Sem mudança: 200.
+    await strength.fill('30')
+    await section.getByRole('button', { name: 'Salvar build' }).click()
+    await expect(status).toHaveText('Build salva: 60 cartas.')
+    await expect(section).toHaveCount(0)
+    await expect(adjust).toBeEnabled()
+  })
+
+  test('REQ-42: Cancelar fecha a seção', async ({ page }) => {
+    await page.goto('/grupo/party-os-teimosos')
+    const turn = page.getByRole('region', { name: 'A vez' })
+    await turn.getByRole('button', { name: 'Ajustar deck' }).click()
+    const section = page.getByRole('region', { name: 'Ajustar deck' })
+    await section.getByRole('button', { name: 'Cancelar' }).click()
+    await expect(section).toHaveCount(0)
+    await expect(page.getByRole('status')).toHaveText('')
+  })
+})

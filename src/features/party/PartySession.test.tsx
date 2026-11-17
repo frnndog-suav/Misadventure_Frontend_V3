@@ -1147,3 +1147,278 @@ describe('REQ-41: Recuperar', () => {
     expect(turnRegion()).toHaveTextContent('3 pontos de ação')
   })
 })
+
+describe('REQ-42: Ajustar deck', () => {
+  const turnRegion = () => screen.getByRole('region', { name: 'A vez' })
+  const adjustButton = () =>
+    within(turnRegion()).queryByRole('button', { name: 'Ajustar deck' })
+  const section = () => screen.queryByRole('region', { name: 'Ajustar deck' })
+  const inSection = (name: string) =>
+    within(section()!).getByRole('button', { name })
+  const copiesField = (cardName: string) =>
+    within(section()!).getByRole('spinbutton', {
+      name: `Cópias na build de ${cardName}`,
+    })
+
+  async function openSection(): Promise<void> {
+    renderParty()
+    await screen.findByRole('region', { name: 'A vez' })
+    await waitFor(() => expect(status()).toHaveTextContent(''))
+    fireEvent.click(adjustButton()!)
+    await screen.findByRole('region', { name: 'Ajustar deck' })
+  }
+
+  function rejectWith(details: Record<string, string>): void {
+    server.use(
+      http.post('*/parties/:partyId/actions', () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: 'ACTION_NOT_ALLOWED',
+              message: 'Esta ação não é permitida agora.',
+              details,
+            },
+          },
+          { status: 409 },
+        ),
+      ),
+    )
+  }
+
+  it('REQ-42: com adjustDeck, "Ajustar deck" vem depois do grupo "Recuperar"', async () => {
+    renderParty()
+    await screen.findByRole('region', { name: 'A vez' })
+    const group = within(turnRegion()).getByRole('group', { name: 'Recuperar' })
+    expect(
+      group.compareDocumentPosition(adjustButton()!) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('REQ-42: sem adjustDeck não há botão', async () => {
+    server.use(
+      http.post('*/parties/:partyId/session', () =>
+        HttpResponse.json({
+          ...partyInSessionFixture,
+          members: partyInSessionFixture.members.map((m) => ({
+            ...m,
+            player: { ...m.player, availableActions: ['move', 'endTurn'] },
+          })),
+        }),
+      ),
+    )
+    renderParty()
+    await screen.findByRole('region', { name: 'A vez' })
+    expect(adjustButton()).toBeNull()
+  })
+
+  it('REQ-42: abre a seção com uma linha por carta da build ∪ pasta, em ordem de cardId, e desabilita o botão', async () => {
+    server.use(
+      http.post('*/parties/:partyId/session', () =>
+        HttpResponse.json({
+          ...partyInSessionFixture,
+          members: partyInSessionFixture.members.map((m) => ({
+            ...m,
+            player: {
+              ...m.player,
+              tcgFolder: [
+                { cardId: 'fixture.strength-basic', copies: 2 },
+                { cardId: 'fixture.dexterity-basic', copies: 3 },
+              ],
+            },
+          })),
+        }),
+      ),
+    )
+    await openSection()
+    const rows = within(section()!).getAllByRole('listitem')
+    expect(rows).toHaveLength(3)
+    await waitFor(() => expect(rows[0]).toHaveTextContent('Destreza'))
+    expect(rows[0]).toHaveTextContent('Na build: 0')
+    expect(rows[0]).toHaveTextContent('Na pasta: 3')
+    expect(rows[1]).toHaveTextContent('Resistência')
+    expect(rows[1]).toHaveTextContent('Na build: 30')
+    expect(rows[1]).toHaveTextContent('Na pasta: 0')
+    expect(rows[2]).toHaveTextContent('Força')
+    expect(rows[2]).toHaveTextContent('Na pasta: 2')
+    expect(copiesField('Destreza')).toHaveValue(0)
+    expect(copiesField('Resistência')).toHaveValue(30)
+    expect(copiesField('Força')).toHaveValue(30)
+    expect(adjustButton()).toBeDisabled()
+    // A seção fica abaixo da região "A vez".
+    expect(
+      turnRegion().compareDocumentPosition(section()!) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('REQ-42: "Cancelar" fecha a seção sem enviar nada', async () => {
+    const sent = vi.fn()
+    server.use(
+      http.post('*/parties/:partyId/actions', () => {
+        sent()
+        return HttpResponse.json(partyInSessionFixture)
+      }),
+    )
+    await openSection()
+    fireEvent.click(inSection('Cancelar'))
+    expect(section()).toBeNull()
+    expect(adjustButton()).toBeEnabled()
+    expect(sent).not.toHaveBeenCalled()
+  })
+
+  it.each(['', '-1', '1.5'])(
+    'REQ-42: campo "%s" não envia e mostra "Use um número inteiro a partir de 0." por aria-describedby',
+    async (value) => {
+      const sent = vi.fn()
+      server.use(
+        http.post('*/parties/:partyId/actions', () => {
+          sent()
+          return HttpResponse.json(partyInSessionFixture)
+        }),
+      )
+      await openSection()
+      await waitFor(() => copiesField('Força'))
+      fireEvent.change(copiesField('Força'), { target: { value } })
+      fireEvent.click(inSection('Salvar build'))
+      expect(copiesField('Força')).toHaveAccessibleDescription(
+        'Use um número inteiro a partir de 0.',
+      )
+      expect(copiesField('Resistência')).not.toHaveAccessibleDescription(
+        'Use um número inteiro a partir de 0.',
+      )
+      expect(sent).not.toHaveBeenCalled()
+    },
+  )
+
+  it('REQ-42: "Salvar build" envia só as linhas ≥ 1 em ordem de cardId, com tudo desabilitado no pedido', async () => {
+    let release: () => void = () => {}
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    let body: unknown
+    server.use(
+      http.post('*/parties/:partyId/actions', async ({ request }) => {
+        body = await request.json()
+        await gate
+        return HttpResponse.json(partyInSessionFixture)
+      }),
+    )
+    await openSection()
+    await waitFor(() => copiesField('Força'))
+    fireEvent.change(copiesField('Resistência'), { target: { value: '0' } })
+    fireEvent.change(copiesField('Força'), { target: { value: '60' } })
+    fireEvent.click(inSection('Salvar build'))
+    await waitFor(() => expect(inSection('Salvar build')).toBeDisabled())
+    expect(inSection('Cancelar')).toBeDisabled()
+    expect(
+      within(turnRegion()).getByRole('button', { name: 'Encerrar a vez' }),
+    ).toBeDisabled()
+    expect(
+      within(turnRegion()).getByRole('button', { name: 'Comprar cartas' }),
+    ).toBeDisabled()
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(body).toEqual({
+      type: 'adjustDeck',
+      build: [{ cardId: 'fixture.strength-basic', copies: 60 }],
+    })
+    release()
+    await waitFor(() => expect(section()).toBeNull())
+  })
+
+  it('REQ-42: com 200 fecha a seção, mostra o Party devolvido e "Build salva: {buildSize} cartas."', async () => {
+    await openSection()
+    await waitFor(() => copiesField('Força'))
+    fireEvent.click(inSection('Salvar build'))
+    await waitFor(() =>
+      expect(status()).toHaveTextContent('Build salva: 60 cartas.'),
+    )
+    expect(section()).toBeNull()
+    expect(screen.getByText('Salvo em 14/11/2026 18:44')).toBeInTheDocument()
+  })
+
+  it.each([
+    [
+      { reason: 'buildBelowMinimum' },
+      'A build ficou abaixo do mínimo de cartas.',
+    ],
+    [
+      { reason: 'notOwned', cardId: 'fixture.strength-basic' },
+      'Você não tem cópias suficientes de Força.',
+    ],
+    [
+      { reason: 'copyLimitExceeded', cardId: 'fixture.strength-basic' },
+      'Força passou do limite de cópias no deck.',
+    ],
+    [
+      { reason: 'tcgFolderFull' },
+      'Não há espaço na pasta de TCG para as cartas que saíram da build.',
+    ],
+  ])(
+    'REQ-42: 409 %o mantém a seção com o digitado e mostra a message e "%s"',
+    async (details, text) => {
+      rejectWith(details)
+      await openSection()
+      await waitFor(() => copiesField('Força'))
+      fireEvent.change(copiesField('Força'), { target: { value: '29' } })
+      fireEvent.click(inSection('Salvar build'))
+      await waitFor(() => expect(section()).toHaveTextContent(text))
+      expect(section()).toHaveTextContent(
+        `Esta ação não é permitida agora. ${text}`,
+      )
+      expect(copiesField('Força')).toHaveValue(29)
+      expect(status()).not.toHaveTextContent('Build salva')
+    },
+  )
+
+  it('REQ-42: 409 com outro motivo (noActionPoints) mostra só a message', async () => {
+    rejectWith({ reason: 'noActionPoints' })
+    await openSection()
+    fireEvent.click(inSection('Salvar build'))
+    await waitFor(() =>
+      expect(section()).toHaveTextContent('Esta ação não é permitida agora.'),
+    )
+    expect(section()).not.toHaveTextContent('mínimo')
+  })
+
+  it('REQ-42: pelo MSW, a build com 29 de Força é recusada com buildBelowMinimum', async () => {
+    await openSection()
+    await waitFor(() => copiesField('Força'))
+    fireEvent.change(copiesField('Força'), { target: { value: '29' } })
+    fireEvent.click(inSection('Salvar build'))
+    await waitFor(() =>
+      expect(section()).toHaveTextContent(
+        'A build ficou abaixo do mínimo de cartas.',
+      ),
+    )
+  })
+
+  it('REQ-42: outro erro §1.4 mantém a seção e mostra a message', async () => {
+    server.use(
+      http.post('*/parties/:partyId/actions', () =>
+        HttpResponse.json(partySessionNotActiveFixture, { status: 409 }),
+      ),
+    )
+    await openSection()
+    await waitFor(() => copiesField('Força'))
+    fireEvent.change(copiesField('Força'), { target: { value: '31' } })
+    fireEvent.click(inSection('Salvar build'))
+    await waitFor(() =>
+      expect(section()).toHaveTextContent(
+        'Não há sessão em andamento neste grupo.',
+      ),
+    )
+    expect(copiesField('Força')).toHaveValue(31)
+  })
+
+  it('REQ-42: falha de rede mantém a seção e mostra "Servidor indisponível. Tente novamente."', async () => {
+    server.use(
+      http.post('*/parties/:partyId/actions', () => HttpResponse.error()),
+    )
+    await openSection()
+    fireEvent.click(inSection('Salvar build'))
+    await waitFor(() =>
+      expect(section()).toHaveTextContent(
+        'Servidor indisponível. Tente novamente.',
+      ),
+    )
+  })
+})

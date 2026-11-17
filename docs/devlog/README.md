@@ -87,3 +87,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 055 | T-41 | [Cliente da FEAT-09](055-T-41-cliente-feat-09.md) | concluída |
 | 056 | T-42 | [Laboratório, build e pasta](056-T-42-build-e-pasta.md) | concluída |
 | 057 | T-43 | [Recuperar](057-T-43-recuperar.md) | concluída |
+| 058 | T-44 | [Ajustar deck](058-T-44-ajustar-deck.md) | concluída |
