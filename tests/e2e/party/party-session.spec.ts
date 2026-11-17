@@ -114,3 +114,20 @@ test.describe('REQ-35: Movimentar (MSW)', () => {
     await expect(lia.getByText('Zona atual: Porto Cinzento')).toBeVisible()
   })
 })
+
+test.describe('REQ-36/REQ-38: a vez e Encerrar a vez (MSW)', () => {
+  test('REQ-38: encerrar a vez mostra a rodada 2', async ({ page }) => {
+    await page.goto('/grupo/party-os-teimosos')
+    const turn = page.getByRole('region', { name: 'A vez' })
+    const status = page.getByRole('status')
+    await expect(status).toHaveText('')
+    await expect(turn).toContainText('Rodada 1')
+    await expect(turn).toContainText('Vez de Lia')
+    await expect(turn).toContainText('3 pontos de ação')
+
+    await turn.getByRole('button', { name: 'Encerrar a vez' }).click()
+    await expect(status).toHaveText('Rodada 2: vez de Lia.')
+    await expect(turn).toContainText('Rodada 2')
+    await expect(turn).toContainText('3 pontos de ação')
+  })
+})

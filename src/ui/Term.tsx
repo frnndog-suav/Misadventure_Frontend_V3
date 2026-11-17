@@ -2,8 +2,11 @@ import { useId, useState } from 'react'
 import { termCatalog, type TermId } from './terms'
 import './Term.css'
 
-/** Termo do jogo com destaque e tooltip explicativo (REQ-03). */
-export function Term({ id }: { id: TermId }) {
+/**
+ * Termo do jogo com destaque e tooltip explicativo (REQ-03). `label` troca o
+ * texto exibido quando a frase pede outra flexão (ex.: "ponto de ação").
+ */
+export function Term({ id, label }: { id: TermId; label?: string }) {
   const [open, setOpen] = useState(false)
   const tooltipId = useId()
   const entry = termCatalog[id]
@@ -22,7 +25,7 @@ export function Term({ id }: { id: TermId }) {
           if (e.key === 'Escape') setOpen(false)
         }}
       >
-        {entry.name}
+        {label ?? entry.name}
       </span>
       {open && (
         <span role="tooltip" id={tooltipId} className="term-tooltip">

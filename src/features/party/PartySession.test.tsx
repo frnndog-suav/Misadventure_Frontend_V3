@@ -26,6 +26,7 @@ import {
   partyCreatedFixture,
   partyInSessionFixture,
   partyMovedToStoneBendFixture,
+  partyNextRoundFixture,
   partySessionNotActiveFixture,
 } from '../../mocks/partyFixtures'
 
@@ -739,5 +740,144 @@ describe('REQ-35: Movimentar', () => {
       ),
     )
     expect(lia()).toHaveTextContent('Zona atual: Porto Cinzento')
+  })
+})
+
+describe('REQ-36/REQ-38: a vez e Encerrar a vez', () => {
+  const turnRegion = () => screen.getByRole('region', { name: 'A vez' })
+  const endTurnButton = () =>
+    screen.queryByRole('button', { name: 'Encerrar a vez' })
+  const mapRegion = () => screen.getByRole('region', { name: 'Mapa' })
+  const zoneButton = (title: string) =>
+    within(mapRegion()).getByRole('button', { name: new RegExp(`^${title}`) })
+  const moveButton = (title: string) =>
+    screen.queryByRole('button', { name: `Movimentar para ${title}` })
+
+  async function renderTurn(id: string = partyId): Promise<void> {
+    renderParty(id)
+    await screen.findByRole('region', { name: 'A vez' })
+    await waitFor(() => expect(status()).toHaveTextContent(''))
+  }
+
+  it('REQ-36: a região "A vez" vem antes do "Mapa" com rodada, vez e pontos recebidos', async () => {
+    await renderTurn()
+    expect(
+      turnRegion().compareDocumentPosition(mapRegion()) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(turnRegion()).toHaveTextContent('Rodada 1')
+    expect(turnRegion()).toHaveTextContent('Vez de Lia')
+    expect(turnRegion()).toHaveTextContent('3 pontos de ação')
+    expect(within(turnRegion()).getByText('pontos de ação')).toHaveClass('term')
+  })
+
+  it('REQ-36: "1 ponto de ação" no singular', async () => {
+    server.use(
+      http.post('*/parties/:partyId/session', () =>
+        HttpResponse.json({
+          ...partyInSessionFixture,
+          turn: { ...partyInSessionFixture.turn, actionPoints: 1 },
+        }),
+      ),
+    )
+    await renderTurn()
+    expect(turnRegion()).toHaveTextContent('1 ponto de ação')
+    expect(turnRegion()).not.toHaveTextContent('pontos de ação')
+  })
+
+  it('REQ-36: com 200 de Movimentar, a região mostra o turn devolvido', async () => {
+    await renderTurn()
+    fireEvent.click(zoneButton('Curva de Pedra'))
+    fireEvent.click(moveButton('Curva de Pedra')!)
+    await waitFor(() =>
+      expect(status()).toHaveTextContent('Você está em Curva de Pedra.'),
+    )
+    expect(turnRegion()).toHaveTextContent('2 pontos de ação')
+  })
+
+  it('REQ-37 (botão): "Encerrar a vez" só com endTurn em availableActions', async () => {
+    server.use(
+      http.post('*/parties/:partyId/session', () =>
+        HttpResponse.json({
+          ...partyInSessionFixture,
+          members: partyInSessionFixture.members.map((m) => ({
+            ...m,
+            player: { ...m.player, availableActions: ['move'] },
+          })),
+        }),
+      ),
+    )
+    await renderTurn()
+    expect(endTurnButton()).toBeNull()
+  })
+
+  it('REQ-38: envia { type: "endTurn" } sem confirmação, com os botões desabilitados durante o pedido', async () => {
+    let release: () => void = () => {}
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    let body: unknown
+    server.use(
+      http.post('*/parties/:partyId/actions', async ({ request }) => {
+        body = await request.json()
+        await gate
+        return HttpResponse.json(partyNextRoundFixture)
+      }),
+    )
+    await renderTurn()
+    fireEvent.click(zoneButton('Curva de Pedra'))
+    fireEvent.click(
+      within(turnRegion()).getByRole('button', { name: 'Encerrar a vez' }),
+    )
+    await waitFor(() => expect(endTurnButton()).toBeDisabled())
+    expect(moveButton('Curva de Pedra')).toBeDisabled()
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(body).toEqual({ type: 'endTurn' })
+    release()
+    await waitFor(() =>
+      expect(status()).toHaveTextContent('Rodada 2: vez de Lia.'),
+    )
+  })
+
+  it('REQ-38: com 200 mostra o Party devolvido, mantém a zona escolhida e "Rodada {round}: vez de {characterName}."', async () => {
+    await renderTurn()
+    fireEvent.click(zoneButton('Curva de Pedra'))
+    fireEvent.click(endTurnButton()!)
+    await waitFor(() =>
+      expect(status()).toHaveTextContent('Rodada 2: vez de Lia.'),
+    )
+    expect(turnRegion()).toHaveTextContent('Rodada 2')
+    expect(turnRegion()).toHaveTextContent('3 pontos de ação')
+    expect(screen.getByText('Salvo em 14/11/2026 18:45')).toBeInTheDocument()
+    expect(zoneButton('Curva de Pedra')).toHaveAttribute('aria-pressed', 'true')
+    expect(endTurnButton()).toBeEnabled()
+  })
+
+  it('REQ-38: erro §1.4 mostra a message e nada muda na tela', async () => {
+    server.use(
+      http.post('*/parties/:partyId/actions', () =>
+        HttpResponse.json(partySessionNotActiveFixture, { status: 409 }),
+      ),
+    )
+    await renderTurn()
+    fireEvent.click(endTurnButton()!)
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(
+        'Não há sessão em andamento neste grupo.',
+      ),
+    )
+    expect(turnRegion()).toHaveTextContent('Rodada 1')
+  })
+
+  it('REQ-38: falha de rede mostra "Servidor indisponível. Tente novamente." e nada muda', async () => {
+    server.use(
+      http.post('*/parties/:partyId/actions', () => HttpResponse.error()),
+    )
+    await renderTurn()
+    fireEvent.click(endTurnButton()!)
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(
+        'Servidor indisponível. Tente novamente.',
+      ),
+    )
+    expect(turnRegion()).toHaveTextContent('Rodada 1')
   })
 })

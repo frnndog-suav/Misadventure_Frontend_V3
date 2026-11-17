@@ -34,7 +34,7 @@ describe('Term', () => {
   })
 
   it('REQ-03 (T-13): o catálogo tem os 9 atributos e os 7 modificadores, cada um com nome e texto', () => {
-    const ids: TermId[] = [...attributeIds, ...modifierIds]
+    const ids: TermId[] = [...attributeIds, ...modifierIds, 'actionPoints']
     expect(Object.keys(termCatalog).sort()).toEqual([...ids].sort())
     expect(termCatalog.attack.name).toBe('Ataque')
     expect(termCatalog.reflection.name).toBe('Reflexão')
@@ -42,6 +42,17 @@ describe('Term', () => {
       expect(termCatalog[id].name.length).toBeGreaterThan(0)
       expect(termCatalog[id].description.length).toBeGreaterThan(0)
     }
+  })
+
+  it('REQ-36: "pontos de ação" no catálogo; o rótulo opcional troca o texto e mantém o tooltip', () => {
+    expect(termCatalog.actionPoints.name).toBe('Pontos de ação')
+    render(<Term id="actionPoints" label="ponto de ação" />)
+    const term = screen.getByText('ponto de ação')
+    expect(term).toHaveClass('term')
+    fireEvent.mouseEnter(term)
+    expect(screen.getByRole('tooltip')).toHaveTextContent(
+      'O que o jogador pode gastar na vez com ações de zona, como Movimentar. Renovam a cada vez.',
+    )
   })
 
   it('REQ-03: tooltip abre ao passar o mouse, ligado por aria-describedby', () => {

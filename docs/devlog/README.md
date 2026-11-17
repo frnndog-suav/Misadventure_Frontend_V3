@@ -81,3 +81,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 049 | T-37 | [Movimentar](049-T-37-movimentar.md) | aguardando revisão |
 | 050 | RETORNO | [FEAT-07 validada contra o backend real](050-RETORNO-feat-07-validada.md) | aguardando revisão |
 | 051 | T-38 | [Cliente da FEAT-08](051-T-38-cliente-feat-08.md) | aguardando revisão |
+| 052 | T-39 | [A vez e Encerrar a vez](052-T-39-a-vez-encerrar.md) | aguardando revisão |

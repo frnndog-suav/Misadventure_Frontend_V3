@@ -96,18 +96,54 @@ function MemberState({
   )
 }
 
-/** Estado da partida preparada (REQ-30) com o mapa (REQ-34). */
+/** Região "A vez" (REQ-36) com "Encerrar a vez" (REQ-37, REQ-38). */
+function TurnState({
+  party,
+  onEndTurn,
+  pending,
+}: {
+  party: Party
+  onEndTurn: () => void
+  pending: boolean
+}) {
+  const { round, memberId, actionPoints } = party.turn
+  const current = party.members.find((m) => m.id === memberId)
+  const host = party.members.find((m) => m.isHost)
+  return (
+    <section aria-labelledby="turn-title">
+      <h2 id="turn-title">A vez</h2>
+      <p>Rodada {round}</p>
+      <p>Vez de {current?.characterName ?? '…'}</p>
+      <p>
+        {actionPoints}{' '}
+        <Term
+          id="actionPoints"
+          label={actionPoints === 1 ? 'ponto de ação' : 'pontos de ação'}
+        />
+      </p>
+      {host?.player.availableActions.includes('endTurn') && (
+        <button type="button" onClick={onEndTurn} disabled={pending}>
+          Encerrar a vez
+        </button>
+      )}
+    </section>
+  )
+}
+
+/** Estado da partida preparada (REQ-30) com a vez (REQ-36) e o mapa (REQ-34). */
 function PreparedMatch({
   party,
   classes,
   cards,
   onMove,
+  onEndTurn,
   moving,
 }: {
   party: Party
   classes: ClassDefinition[]
   cards: Cards
   onMove: (zoneId: string) => void
+  onEndTurn: () => void
   moving: boolean
 }) {
   const names = new Map(party.members.map((m) => [m.id, m.characterName]))
@@ -115,6 +151,7 @@ function PreparedMatch({
     <>
       <p>Dimensão: {nameOf(cards, party.dimension.dimensionCardId)}</p>
       <p>Cidade inicial: {nameOf(cards, party.dimension.startingCityZoneId)}</p>
+      <TurnState party={party} onEndTurn={onEndTurn} pending={moving} />
       <PartyMap
         party={party}
         cards={cards}
@@ -184,8 +221,13 @@ export function PartySession() {
   let status = ''
   if (end.isError) status = errorText(end.error)
   else if (action.isError) status = errorText(action.error)
-  else if (action.isSuccess && host !== undefined) {
-    status = `Você está em ${nameOf(cards.cards, host.player.zoneId)}.`
+  else if (action.isSuccess && party !== undefined && host !== undefined) {
+    if (action.variables.type === 'endTurn') {
+      const current = party.members.find((m) => m.id === party.turn.memberId)
+      status = `Rodada ${party.turn.round}: vez de ${current?.characterName ?? '…'}.`
+    } else {
+      status = `Você está em ${nameOf(cards.cards, host.player.zoneId)}.`
+    }
   } else if (start.isError) status = errorText(start.error)
   else if (!start.isSuccess) status = 'Abrindo o grupo…'
   else if (classes.isError) status = errorText(classes.error)
@@ -220,6 +262,7 @@ export function PartySession() {
             classes={classes.data ?? []}
             cards={cards.cards}
             onMove={(zoneId) => action.mutate({ type: 'move', zoneId })}
+            onEndTurn={() => action.mutate({ type: 'endTurn' })}
             moving={action.isPending}
           />
         </>

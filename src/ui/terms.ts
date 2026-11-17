@@ -81,6 +81,12 @@ export const termCatalog = {
     name: 'Reflexão',
     description: 'Quantos pontos do dano recebido são devolvidos ao atacante.',
   },
-} as const satisfies Record<Attribute | Modifier, TermEntry>
+  // A vez (README 11.1), T-39.
+  actionPoints: {
+    name: 'Pontos de ação',
+    description:
+      'O que o jogador pode gastar na vez com ações de zona, como Movimentar. Renovam a cada vez.',
+  },
+} as const satisfies Record<Attribute | Modifier | 'actionPoints', TermEntry>
 
 export type TermId = keyof typeof termCatalog
