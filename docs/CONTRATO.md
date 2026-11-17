@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.26 · **Data:** 2026-11-17
+> **Versão do contrato:** 0.28 · **Data:** 2026-11-17
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -215,6 +215,15 @@ Base dos nomes no código dos dois lados e dos termos com destaque e tooltip (RE
 | Tentativas máximas do gerador de mapa | `mapMaxAttempts` |
 
 *(Dimensão, Carta de Dimensão, travessia, mapa, cidade inicial, classe, trava, build, mão, Pico, Vigor e vida máxima já estão em §2.2 e §2.3.)*
+
+### 2.11 Mapa e Movimentar (README 3.5, 12.2) — FEAT-07
+
+| Termo | Identificador |
+|---|---|
+| Ação do jogador (intenção) | `PartyAction` (rota `/parties/:partyId/actions`) |
+| Destinos do Movimentar | `moveTargets` |
+
+*(Movimentar = `move`, §2.5; travessia = `crossing`, §2.2.)*
 
 ## 3. Features
 
@@ -1023,6 +1032,75 @@ Sem Carta de Dimensão publicada, o `problems` também traz o texto da zona Urba
 
 Testes e2e do backend por cenário: `list-classes`, `get-card`, `create-party/*`, `content-in-use.e2e-spec.ts` (REQ-39, REQ-40), `create-class/index.controller.e2e-spec.ts` (REQ-38), `validate-dimension` (REQ-36), `import-collection`/`export-collection` (REQ-48).
 
+### FEAT-07 — Mapa e Movimentar — `acordado`
+
+Regras: README 12.2 (Movimentar: só para zona **conectada**; pode repetir na mesma vez), 3.5 (encaixe: travessia nos dois sentidos; vizinhas sem setas que se apontam e setas mortas não ligam) e 3.6 (todas as zonas viradas para cima).
+
+O mapa já vem em `Party.dimension.map` (FEAT-06) e as zonas no catálogo (FEAT-04). Esta seção acrescenta a lista pronta de destinos (§1.3) e a primeira **intenção** de jogo (§1.6), por uma rota única de ações: as próximas FEATs só acrescentam tipos a `PartyAction`.
+
+**Até a FEAT-08:** mover **não gasta ponto de ação** e não há vez nem limite de movimentos (o custo de 1 ponto, README 12.2, entra com a vez). Quem age é o host (jogo solo).
+
+**Mudanças em outras seções:**
+- **FEAT-06 (`validado`):** `PlayerState.moveTargets`.
+- **FEAT-05 (`validado`):** `PARTY_SESSION_NOT_ACTIVE` passa a valer também para ações num grupo sem sessão (só a descrição em §4 muda; a mensagem é a mesma).
+
+#### Endpoints
+
+| Método | Rota | Pedido | Resposta | Erros |
+|---|---|---|---|---|
+| POST | `/parties/:partyId/actions` | `PartyAction` | `200` `Party` (já com o efeito da ação) | `404` `PARTY_NOT_FOUND`, `400` `ACTION_INVALID`, `409` `PARTY_SESSION_NOT_ACTIVE`, `409` `ACTION_NOT_ALLOWED` |
+
+Ordem das conferências: grupo inexistente (404) → pedido malformado (400 `ACTION_INVALID`) → grupo sem sessão (409 `PARTY_SESSION_NOT_ACTIVE`) → zona fora do mapa (400 `ACTION_INVALID`, `zoneNotInMap`) → zona sem travessia (409 `ACTION_NOT_ALLOWED`). Em qualquer erro nada é gravado. No sucesso, o save é gravado (`savedAt` avança).
+
+#### Tipos
+
+```ts
+/** Intenção de jogo (§1.6). União por `type`; FEAT-08+ acrescentam variantes. */
+type PartyAction = MoveAction
+
+/** Movimentar (README 12.2). `zoneId` precisa estar em `moveTargets` do jogador. */
+interface MoveAction {
+  type: 'move'
+  zoneId: string
+}
+
+interface PlayerState {
+  // … campos da FEAT-06 …
+  /** Zonas com travessia com `zoneId` (destinos válidos do Movimentar), sem repetição, em ordem de id. */
+  moveTargets: string[]
+}
+
+/** `details` do erro ACTION_INVALID. */
+interface ActionInvalidDetails {
+  fields: {
+    /** `null` só com `invalidBody`; nome do campo a mais com `unknownKey`. */
+    field: 'type' | 'zoneId' | string | null
+    reason: 'invalidBody' | 'required' | 'notString' | 'unknownAction' | 'unknownKey' | 'zoneNotInMap'
+  }[]
+}
+
+/** `details` do erro ACTION_NOT_ALLOWED. FEAT-08+ acrescentam motivos. */
+interface ActionNotAllowedDetails {
+  reason: 'notConnected'
+}
+```
+
+`invalidBody`: o corpo não é um objeto JSON ou está malformado. `unknownAction`: `type` que não é uma ação conhecida. `unknownKey`: campo que a ação não tem. `zoneNotInMap`: `zoneId` que não é zona do mapa do grupo. `notConnected`: zona do mapa sem travessia com a zona atual (inclusive a própria zona atual). Ordem de `fields`: `type`, `zoneId`, campos a mais na ordem do pedido.
+
+Mensagens: `ACTION_INVALID` "Ação inválida."; `ACTION_NOT_ALLOWED` "Esta ação não é permitida agora.".
+
+#### Cenários de validação
+
+Contra a `fixture` (FEAT-06). O mapa é sorteado: compare as invariantes. Seja `G` um grupo criado com `{ "name": "Os Teimosos", "characterName": "Lia", "playerClass": "warrior" }` e posto em sessão (`POST /parties/<id>/session`).
+
+- Quando `GET /parties/<G>`, então `members[0].player.moveTargets` é exatamente o conjunto das zonas que formam um `crossing` com `fixture.gray-harbor`, em ordem de id, com pelo menos 1 item.
+- Quando `POST /parties/<G>/actions` com `{ "type": "move", "zoneId": <primeiro de moveTargets> }`, então `200` com `player.zoneId` = essa zona, `respawnZoneId: "fixture.gray-harbor"`, o resto de `player` igual, `moveTargets` = as zonas com travessia com a nova zona (inclui `fixture.gray-harbor`) e `savedAt` ≥ o anterior; `GET /parties/<G>` devolve o mesmo. Repetir com `{ "type": "move", "zoneId": "fixture.gray-harbor" }` → `200` de volta à cidade.
+- Com o jogador em `fixture.gray-harbor`, quando `{ "type": "move", "zoneId": "fixture.gray-harbor" }`, então `409` com `{ "error": { "code": "ACTION_NOT_ALLOWED", "message": "Esta ação não é permitida agora.", "details": { "reason": "notConnected" } } }`; `GET` seguinte mostra o mesmo `savedAt`.
+- Quando `{ "type": "move", "zoneId": "fixture.nowhere" }`, então `400` `ACTION_INVALID` com `details.fields = [{ "field": "zoneId", "reason": "zoneNotInMap" }]`.
+- Quando `{ "type": "fly", "zoneId": 3 }`, então `400` `ACTION_INVALID` com `details.fields = [{ "field": "type", "reason": "unknownAction" }]`; com `{ "type": "move", "zoneId": 3, "speed": 2 }` → `fields = [{ "field": "zoneId", "reason": "notString" }, { "field": "speed", "reason": "unknownKey" }]`; com `{}` → `fields = [{ "field": "type", "reason": "required" }]`; com corpo `[1]` ou JSON malformado → `fields = [{ "field": null, "reason": "invalidBody" }]`.
+- Depois de `POST /parties/<G>/session/end`, quando `{ "type": "move", "zoneId": <qualquer de moveTargets> }`, então `409` com `{ "error": { "code": "PARTY_SESSION_NOT_ACTIVE", "message": "Não há sessão em andamento neste grupo." } }`.
+- Quando `POST /parties/00000000-0000-0000-0000-000000000000/actions` com um `move`, então `404` `PARTY_NOT_FOUND`.
+
 ## 4. Códigos de erro
 
 | Código | Quando acontece | FEAT |
@@ -1035,7 +1113,7 @@ Testes e2e do backend por cenário: `list-classes`, `get-card`, `create-party/*`
 | `CARD_NOT_FOUND` | Carta inexistente no catálogo (404). | FEAT-04 |
 | `PARTY_INVALID` | Dados de criação do grupo inválidos (400); `details.fields` diz cada campo e o motivo. | FEAT-05 |
 | `PARTY_NOT_FOUND` | Grupo (save) inexistente ou abandonado (404). | FEAT-05 |
-| `PARTY_SESSION_NOT_ACTIVE` | Encerrar sessão num grupo sem sessão em andamento (409). | FEAT-05 |
+| `PARTY_SESSION_NOT_ACTIVE` | Encerrar sessão ou fazer uma ação (FEAT-07) num grupo sem sessão em andamento (409). | FEAT-05 |
 | `CONTENT_INVALID` | Coleção, carta, filtro ou arquivo de importação inválido (400); `details.fields` traz o caminho e o texto pronto de cada problema. | FEAT-31 |
 | `CONTENT_ID_TAKEN` | Identificador de coleção ou carta já usado (409); `details.fields` como em `CONTENT_INVALID`. | FEAT-31 |
 | `CONTENT_IN_USE` | Excluir ou substituir conteúdo usado por algum save (409). | FEAT-31 |
@@ -1043,6 +1121,8 @@ Testes e2e do backend por cenário: `list-classes`, `get-card`, `create-party/*`
 | `DIMENSION_INVALID` | Não há Carta de Dimensão publicada, a composição da dimensão falhou (README 3.5) ou o gerador passou do limite de tentativas, ao criar um grupo (409: o conteúdo publicado no servidor não permite preparar a partida); `details` com `dimensionCardId` e `problems`. Erro de conteúdo, para o designer. | FEAT-06 |
 | `CLASS_NOT_FOUND` | Classe inexistente no editor (404). | FEAT-06 |
 | `CONTENT_REFERENCED` | Excluir ou renomear uma carta de atributo que está no deck pré-pronto de uma classe (409). | FEAT-06 |
+| `ACTION_INVALID` | Intenção malformada (400): corpo, `type` ou campos inválidos, ou zona fora do mapa; `details.fields` diz cada campo e o motivo. | FEAT-07 |
+| `ACTION_NOT_ALLOWED` | Intenção bem formada recusada pela regra (409), ex.: zona sem travessia com a atual; `details.reason`. | FEAT-07 |
 
 ## 5. Histórico
 
@@ -1074,3 +1154,5 @@ Testes e2e do backend por cenário: `list-classes`, `get-card`, `create-party/*`
 | 0.24 | 2026-11-16 | FE | FEAT-31 `validado` sem mudança de formato: 17 de 18 cenários com chamadas HTTP contra o backend real (29 conferências; o de laboratório desligado não foi rodado, pede reiniciar o backend) e as telas do editor (validar, exportar, importar, coleções e cartas) com o MSW desligado. |
 | 0.25 | 2026-11-17 | BE | FEAT-06 `implementado (BE)` (SPEC-BACKEND T-14 a T-18): sem mudança de formato; textos de `problems` e do motivo `starterDeckCardNotPublished` incluídos; esclarecido `CONTENT_REFERENCED` na exclusão e no import com `replace` da coleção (carta referenciada por classe de outra coleção). |
 | 0.26 | 2026-11-17 | FE | FEAT-06 `validado` sem mudança de formato: 26 conferências dos 12 cenários com chamadas HTTP contra o backend real (`http://localhost:3333`, `fixture`); só "apagar `fixture.stone-bend` → `204`" ficou de fora, porque um save anterior do autor usa o mapa (o `409` seria o correto). Telas "Novo jogo", grupo preparado e classes do editor com o MSW desligado. As fixtures do MSW passaram a ser cópia exata do conteúdo de teste do backend. |
+| 0.27 | 2026-11-17 | BE | FEAT-07 proposta: `POST /parties/:partyId/actions` (rota única de ações) com `PartyAction` = `MoveAction`; `PlayerState.moveTargets` (altera a FEAT-06); `ActionInvalidDetails`, `ActionNotAllowedDetails`; códigos `ACTION_INVALID` (400) e `ACTION_NOT_ALLOWED` (409) (§4); `PARTY_SESSION_NOT_ACTIVE` vale também para ações; glossário §2.11. Até a FEAT-08, mover não gasta ponto de ação. |
+| 0.28 | 2026-11-17 | FE | FEAT-07 `acordado` sem mudanças: os destinos vêm prontos em `moveTargets` (o frontend não calcula travessias); a rota única de ações e a união `PartyAction` cobrem as próximas intenções. O FE alinha `PlayerState` (schema e fixtures do MSW) na tarefa da FEAT-07. |
