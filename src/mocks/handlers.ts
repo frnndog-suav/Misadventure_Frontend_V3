@@ -516,7 +516,13 @@ export const handlers: RequestHandler[] = [
   http.get('*/parties', () => HttpResponse.json(partiesFixture)),
   http.post('*/parties', ({ request }) => createPartyScenario(request)),
   http.post('*/parties/:partyId/session', ({ params }) =>
-    knownParty(params.partyId, () => HttpResponse.json(partyInSessionFixture)),
+    knownParty(params.partyId, () =>
+      HttpResponse.json(
+        params.partyId === partyNoPointsFixture.id
+          ? partyNoPointsFixture
+          : partyInSessionFixture,
+      ),
+    ),
   ),
   http.post('*/parties/:partyId/session/end', ({ params }) =>
     knownParty(params.partyId, () => HttpResponse.json(partyIdleFixture)),

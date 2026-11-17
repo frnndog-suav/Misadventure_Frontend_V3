@@ -115,6 +115,28 @@ test.describe('REQ-35: Movimentar (MSW)', () => {
   })
 })
 
+test.describe('REQ-37: ações disponíveis (MSW)', () => {
+  test('REQ-37: com 0 pontos não há "Movimentar" e aparece o aviso', async ({
+    page,
+  }) => {
+    await page.goto('/grupo/party-sem-pontos')
+    const map = page.getByRole('region', { name: 'Mapa' })
+    const turn = page.getByRole('region', { name: 'A vez' })
+    await expect(page.getByRole('status')).toHaveText('')
+    await expect(turn).toContainText('0 pontos de ação')
+    await expect(
+      turn.getByRole('button', { name: 'Encerrar a vez' }),
+    ).toBeVisible()
+
+    await map.getByRole('button', { name: /^Porto Cinzento/ }).click()
+    const chosen = page.getByRole('region', { name: 'Zona escolhida' })
+    await expect(chosen).toContainText('Sem pontos de ação para Movimentar.')
+    await expect(
+      page.getByRole('button', { name: /^Movimentar para/ }),
+    ).toHaveCount(0)
+  })
+})
+
 test.describe('REQ-36/REQ-38: a vez e Encerrar a vez (MSW)', () => {
   test('REQ-38: encerrar a vez mostra a rodada 2', async ({ page }) => {
     await page.goto('/grupo/party-os-teimosos')

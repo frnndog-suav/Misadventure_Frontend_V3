@@ -19,10 +19,12 @@ import {
   it,
   vi,
 } from 'vitest'
+import type { Party } from '../../api/parties'
 import App from '../../App'
 import { internalErrorFixture } from '../../mocks/fixtures'
 import { handlers } from '../../mocks/handlers'
 import {
+  actionNoActionPointsFixture,
   partyCreatedFixture,
   partyInSessionFixture,
   partyMovedToStoneBendFixture,
@@ -740,6 +742,89 @@ describe('REQ-35: Movimentar', () => {
       ),
     )
     expect(lia()).toHaveTextContent('Zona atual: Porto Cinzento')
+  })
+})
+
+describe('REQ-37: Movimentar e as ações disponíveis', () => {
+  const mapRegion = () => screen.getByRole('region', { name: 'Mapa' })
+  const zoneButton = (title: string) =>
+    within(mapRegion()).getByRole('button', { name: new RegExp(`^${title}`) })
+  const moveButton = (title: string) =>
+    screen.queryByRole('button', { name: `Movimentar para ${title}` })
+  const chosenRegion = () =>
+    screen.getByRole('region', { name: 'Zona escolhida' })
+  const noPoints = 'Sem pontos de ação para Movimentar.'
+
+  /** Abre a sessão com o `Party` dado (host com os campos trocados). */
+  async function renderWith(
+    player: Partial<Party['members'][number]['player']>,
+    actionPoints: number,
+  ): Promise<void> {
+    server.use(
+      http.post('*/parties/:partyId/session', () =>
+        HttpResponse.json({
+          ...partyInSessionFixture,
+          members: partyInSessionFixture.members.map((m) => ({
+            ...m,
+            player: { ...m.player, ...player },
+          })),
+          turn: { ...partyInSessionFixture.turn, actionPoints },
+        }),
+      ),
+    )
+    renderParty()
+    await screen.findByRole('region', { name: 'Mapa' })
+    await waitFor(() => expect(status()).toHaveTextContent(''))
+  }
+
+  it('REQ-37: sem move em availableActions e 0 pontos, não há botão e aparece o aviso', async () => {
+    await renderWith({ availableActions: ['endTurn'] }, 0)
+    fireEvent.click(zoneButton('Curva de Pedra'))
+    expect(moveButton('Curva de Pedra')).toBeNull()
+    expect(chosenRegion()).toHaveTextContent(noPoints)
+  })
+
+  it('REQ-37: zona fora de moveTargets com 0 pontos não mostra o aviso', async () => {
+    await renderWith({ availableActions: ['endTurn'] }, 0)
+    fireEvent.click(zoneButton('Mina Velha'))
+    expect(moveButton('Mina Velha')).toBeNull()
+    expect(chosenRegion()).not.toHaveTextContent(noPoints)
+  })
+
+  it('REQ-37: sem move por outro motivo (pontos > 0) não há botão nem aviso', async () => {
+    await renderWith({ availableActions: ['endTurn'] }, 2)
+    fireEvent.click(zoneButton('Curva de Pedra'))
+    expect(moveButton('Curva de Pedra')).toBeNull()
+    expect(chosenRegion()).not.toHaveTextContent(noPoints)
+  })
+
+  it('REQ-37: com move em availableActions, o botão aparece e não há aviso', async () => {
+    await renderWith({}, 3)
+    fireEvent.click(zoneButton('Curva de Pedra'))
+    expect(moveButton('Curva de Pedra')).toBeInTheDocument()
+    expect(chosenRegion()).not.toHaveTextContent(noPoints)
+  })
+
+  it('REQ-37: 409 ACTION_NOT_ALLOWED (noActionPoints) mostra a message e nada muda', async () => {
+    // A tela ainda oferece `move` (estado antigo); o backend recusa com 409.
+    server.use(
+      http.post('*/parties/:partyId/session', () =>
+        HttpResponse.json(partyInSessionFixture),
+      ),
+    )
+    renderParty('party-sem-pontos')
+    await screen.findByRole('region', { name: 'Mapa' })
+    await waitFor(() => expect(status()).toHaveTextContent(''))
+    fireEvent.click(zoneButton('Curva de Pedra'))
+    fireEvent.click(moveButton('Curva de Pedra')!)
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(
+        actionNoActionPointsFixture.error.message,
+      ),
+    )
+    expect(screen.getByRole('region', { name: 'Lia' })).toHaveTextContent(
+      'Zona atual: Porto Cinzento',
+    )
   })
 })
 

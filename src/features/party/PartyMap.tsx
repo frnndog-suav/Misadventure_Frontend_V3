@@ -123,15 +123,20 @@ export function PartyMap({
         <section aria-labelledby="chosen-zone-title">
           <h3 id="chosen-zone-title">Zona escolhida</h3>
           {chosen !== undefined && <FullCard card={chosen} />}
-          {host?.player.moveTargets.includes(chosenId) && (
-            <button
-              type="button"
-              onClick={() => onMove(chosenId)}
-              disabled={moving}
-            >
-              Movimentar para {titleOf(chosenId)}
-            </button>
-          )}
+          {host?.player.moveTargets.includes(chosenId) &&
+            (host.player.availableActions.includes('move') ? (
+              <button
+                type="button"
+                onClick={() => onMove(chosenId)}
+                disabled={moving}
+              >
+                Movimentar para {titleOf(chosenId)}
+              </button>
+            ) : (
+              party.turn.actionPoints === 0 && (
+                <p>Sem pontos de ação para Movimentar.</p>
+              )
+            ))}
           <p>
             Travessias com:{' '}
             {crossingTitles.length === 0
