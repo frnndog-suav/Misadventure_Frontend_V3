@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.36 · **Data:** 2026-11-17
+> **Versão do contrato:** 0.37 · **Data:** 2026-11-17
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -1212,7 +1212,7 @@ Contra a `fixture`, com o laboratório no padrão (`actionPointsPerTurn: 3`). Se
 - Depois de `POST /parties/<G>/session/end`, quando `{ "type": "endTurn" }`, então `409` `PARTY_SESSION_NOT_ACTIVE`; ao continuar a sessão (`POST /parties/<G>/session`), `turn` é o mesmo de antes.
 - Com o laboratório em `actionPointsPerTurn: 5` (`PATCH /lab/config`), um grupo criado depois começa com `actionPoints: 5`; `G`, criado antes, continua recebendo 3 a cada `endTurn`. (Volte com `POST /lab/config/reset`.)
 
-### FEAT-09 — Deck de atributos — `acordado`
+### FEAT-09 — Deck de atributos — `implementado (BE)`
 
 Regras: README 4.3 (limite de cópias de sinérgicas e aprimoradas **só dentro do deck**), 4.4 (build e cartas em jogo; "Mexer na build": recolher, salvar, embaralhar, comprar a mesma quantidade), 6.3 (pasta de TCG: só cartas de atributo, 30 cartas, começa vazia; uma carta só sai da build se couber na pasta, B C19), 8.2 (trava checada ao salvar a build; build abaixo do mínimo não é salva; build que não cumpre a trava é aceita e só desliga a classe), 9.2 (deck esgotado não perde o jogo), 12.2/12.5 (Recuperar e Ajustar deck, 1 ponto cada; Recuperar repetível) e 7.3 item 6.
 
@@ -1382,3 +1382,4 @@ Só nos e2e do backend (a pasta não enche no jogo ainda): trocar `S` por cartas
 | 0.34 | 2026-11-17 | FE | FEAT-08 `validado` sem mudança de formato: os 8 cenários com chamadas HTTP contra o backend real (`http://localhost:3333`, `contractVersion` 0.33) e a tela do grupo (pontos 3→0, aviso sem pontos e botão Movimentar ausente, Encerrar a vez → rodada 2 com 3 pontos) com o MSW desligado. Backend com o conteúdo `base`: `H` = `base.harbor-town`, `A` = `base.misty-forest`; as invariantes são as mesmas. |
 | 0.35 | 2026-11-17 | BE | FEAT-09 proposta (`proposto (BE)`): `PlayerState.build`, `buildSize`, `tcgFolder`, `tcgFolderCapacity` (altera FEAT-06); `PartyAction` ganha `RecoverAction` e `AdjustDeckAction` (build nova inteira); `availableActions` ganha `recover`/`adjustDeck`; motivos novos em `ActionInvalidDetails` (`unknownOption`, `notArray`, `invalidItem`, `notPositiveInteger`, `duplicateCard`) e `ActionNotAllowedDetails` (`notOwned`, `copyLimitExceeded`, `buildBelowMinimum`, `tcgFolderFull`, campo `cardId`); 5 chaves novas em `GameConfigValues` (altera FEAT-03); limite de cópias ao publicar classe (altera FEAT-06/31); glossário §2.13. Sem rota nem código de erro novos. |
 | 0.36 | 2026-11-17 | FE | FEAT-09 `acordado` sem mudanças: build, pasta, opções do Recuperar, ações disponíveis e os motivos de recusa chegam prontos; o frontend só exibe e envia a build inteira (não confere cópias, trava nem capacidade). O FE alinha os schemas (`PlayerState`, `availableActions`, `GameConfigValues`, motivos de erro) e as fixtures do MSW nas tarefas da FEAT-09. |
+| 0.37 | 2026-11-17 | BE | FEAT-09 `implementado (BE)`: `PlayerState.build`, `buildSize`, `tcgFolder`, `tcgFolderCapacity`, `recover`, `adjustDeck`, os motivos novos e as 5 chaves de `GameConfigValues` implementados; os cenários cobertos pelos e2e de `take-party-action` (`index.deck.controller.e2e-spec.ts`, REQ-60 a REQ-68), `create-party` e `get-lab-config`. Saves anteriores são lidos com a pasta vazia e as chaves novas nos padrões, e regravados no formato novo. Sem mudança de tipos ou textos. |

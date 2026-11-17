@@ -1,6 +1,6 @@
 # Misadventures — Roadmap de desenvolvimento
 
-> **Versão:** 0.41 · **Data:** 2026-11-17
+> **Versão:** 0.42 · **Data:** 2026-11-17
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend; o autor copia o arquivo inteiro quando ele muda. Base: README Parte III (III.2 e III.4). As regras estão em [`README.md`](README.md); o que trafega entre os lados, em [`CONTRATO.md`](CONTRATO.md).
 
@@ -60,7 +60,7 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | FEAT-06 | Preparação da partida: classe e deck pré-pronto, valores iniciais, montagem do mapa, ordem e cidade inicial | 10.1, 3.5, 4.4, 8, 9 | validado | validado |
 | FEAT-07 | Mapa e Movimentar | 3.5, 12.2 | validado | validado |
 | FEAT-08 | A vez: pontos de ação, ações de zona disponíveis, encerrar a vez, rodadas | 11.1, 11.2, 12 | validado | validado |
-| FEAT-09 | Deck de atributos: mão, Recuperar, Ajustar deck, build e trava | 4, 8.2, 12.5 | a fazer | a fazer |
+| FEAT-09 | Deck de atributos: mão, Recuperar, Ajustar deck, build e trava | 4, 8.2, 12.5 | a fazer | pronto |
 | FEAT-10 | Recursos e onde ficam: inventário, equipar, Preparar, pasta, cofre, bolsa, limbo, Vasculhar | 5, 6, 9, 12.6 | a fazer | a fazer |
 | FEAT-11 | Efeitos e status: exibição de efeitos, buffs e debuffs; catálogo de variações de efeitos validado pelo autor (BE/design) | 13, III.3 | a fazer | a fazer |
 | FEAT-12 | Eventos aleatórios: fases, pagamento por partes, desistência, reposição, fuga | 14, 15 | a fazer | a fazer |
@@ -153,3 +153,4 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | 0.39 | 2026-11-17 | FEAT-08 `validado` nas duas colunas (CONTRATO v0.34): cenários com chamadas HTTP e a tela do grupo contra o backend real. |
 | 0.40 | 2026-11-17 | FEAT-09: lado BE `aguardando outro lado` (spec v0.36 planejada; CONTRATO v0.35 com a seção FEAT-09 `proposto (BE)`). Falta o FE confirmar o contrato. |
 | 0.41 | 2026-11-17 | FEAT-09: contrato `acordado` pelo FE (CONTRATO v0.36); FE `a fazer` (falta planejar REQs e tarefas na spec); BE sai de `aguardando outro lado` para `a fazer`. |
+| 0.42 | 2026-11-17 | FEAT-09: lado BE `pronto` (spec v0.38, T-26 e T-27; CONTRATO v0.37 `implementado (BE)`). Falta o FE implementar e validar contra o backend real. |
