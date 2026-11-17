@@ -10,6 +10,7 @@ import {
 import { ApiError } from '../../api/http'
 import {
   useEndSession,
+  usePartyAction,
   useStartSession,
   type Party,
   type PartyMember,
@@ -100,10 +101,14 @@ function PreparedMatch({
   party,
   classes,
   cards,
+  onMove,
+  moving,
 }: {
   party: Party
   classes: ClassDefinition[]
   cards: Cards
+  onMove: (zoneId: string) => void
+  moving: boolean
 }) {
   const names = new Map(party.members.map((m) => [m.id, m.characterName]))
   return (
@@ -114,6 +119,8 @@ function PreparedMatch({
         party={party}
         cards={cards}
         titleOf={(cardId) => nameOf(cards, cardId)}
+        onMove={onMove}
+        moving={moving}
       />
       <h2 id="turn-order-title">Ordem dos jogadores</h2>
       <ul aria-labelledby="turn-order-title">
@@ -155,6 +162,7 @@ export function PartySession() {
   const navigate = useNavigate()
   const start = useStartSession(partyId)
   const end = useEndSession(partyId)
+  const action = usePartyAction(partyId)
   const { mutate: startSession } = start
 
   // Continuar ao abrir; repetir não muda nada (CONTRATO §3 FEAT-05, D-37).
@@ -167,13 +175,18 @@ export function PartySession() {
     })
   }
 
-  const party = start.data
+  // O `200` da ação já traz o `Party` gravado (D-55 item 4); erro não muda a tela.
+  const party = action.data ?? start.data
   const classes = useClasses()
   const cards = useCatalogCards(party === undefined ? [] : cardIdsOf(party))
+  const host = party?.members.find((m) => m.isHost)
 
   let status = ''
   if (end.isError) status = errorText(end.error)
-  else if (start.isError) status = errorText(start.error)
+  else if (action.isError) status = errorText(action.error)
+  else if (action.isSuccess && host !== undefined) {
+    status = `Você está em ${nameOf(cards.cards, host.player.zoneId)}.`
+  } else if (start.isError) status = errorText(start.error)
   else if (!start.isSuccess) status = 'Abrindo o grupo…'
   else if (classes.isError) status = errorText(classes.error)
   else if (cards.error !== null) status = errorText(cards.error)
@@ -206,6 +219,8 @@ export function PartySession() {
             party={party}
             classes={classes.data ?? []}
             cards={cards.cards}
+            onMove={(zoneId) => action.mutate({ type: 'move', zoneId })}
+            moving={action.isPending}
           />
         </>
       )}

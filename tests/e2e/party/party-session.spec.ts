@@ -80,3 +80,37 @@ test.describe('REQ-34: mapa da partida (MSW)', () => {
     await expect(chosen).toContainText('Travessias com: Curva de Pedra')
   })
 })
+
+test.describe('REQ-35: Movimentar (MSW)', () => {
+  test('REQ-35: mover para Curva de Pedra e voltar à cidade', async ({
+    page,
+  }) => {
+    await page.goto('/grupo/party-os-teimosos')
+    const map = page.getByRole('region', { name: 'Mapa' })
+    const status = page.getByRole('status')
+    const lia = page.getByRole('region', { name: 'Lia' })
+    const zone = (title: string) =>
+      map.getByRole('button', { name: new RegExp(`^${title}`) })
+    await expect(status).toHaveText('')
+
+    await zone('Mina Velha').click()
+    await expect(
+      page.getByRole('button', { name: 'Movimentar para Mina Velha' }),
+    ).toHaveCount(0)
+
+    await zone('Curva de Pedra').click()
+    await page
+      .getByRole('button', { name: 'Movimentar para Curva de Pedra' })
+      .click()
+    await expect(status).toHaveText('Você está em Curva de Pedra.')
+    await expect(lia.getByText('Zona atual: Curva de Pedra')).toBeVisible()
+    await expect(zone('Curva de Pedra')).toContainText('Lia está aqui')
+
+    await zone('Porto Cinzento').click()
+    await page
+      .getByRole('button', { name: 'Movimentar para Porto Cinzento' })
+      .click()
+    await expect(status).toHaveText('Você está em Porto Cinzento.')
+    await expect(lia.getByText('Zona atual: Porto Cinzento')).toBeVisible()
+  })
+})

@@ -22,11 +22,16 @@ export function PartyMap({
   party,
   cards,
   titleOf,
+  onMove,
+  moving,
 }: {
   party: Party
   cards: ReadonlyMap<string, Card>
   titleOf: (cardId: string) => string
+  onMove: (zoneId: string) => void
+  moving: boolean
 }) {
+  const host = party.members.find((m) => m.isHost)
   const [chosenId, setChosenId] = useState<string | null>(null)
   const { zones, crossings } = party.dimension.map
   const minX = Math.min(...zones.map((z) => z.x))
@@ -118,6 +123,15 @@ export function PartyMap({
         <section aria-labelledby="chosen-zone-title">
           <h3 id="chosen-zone-title">Zona escolhida</h3>
           {chosen !== undefined && <FullCard card={chosen} />}
+          {host?.player.moveTargets.includes(chosenId) && (
+            <button
+              type="button"
+              onClick={() => onMove(chosenId)}
+              disabled={moving}
+            >
+              Movimentar para {titleOf(chosenId)}
+            </button>
+          )}
           <p>
             Travessias com:{' '}
             {crossingTitles.length === 0

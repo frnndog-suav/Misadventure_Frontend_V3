@@ -25,6 +25,7 @@ import { handlers } from '../../mocks/handlers'
 import {
   partyCreatedFixture,
   partyInSessionFixture,
+  partyMovedToStoneBendFixture,
   partySessionNotActiveFixture,
 } from '../../mocks/partyFixtures'
 
@@ -585,5 +586,158 @@ describe('REQ-34: mapa da partida', () => {
     expect(status()).toHaveTextContent('Carregando a partida…')
     expect(within(map).getAllByRole('button')[0]).toHaveTextContent('…')
     release()
+  })
+})
+
+describe('REQ-35: Movimentar', () => {
+  const mapRegion = () => screen.getByRole('region', { name: 'Mapa' })
+  const zoneButton = (title: string) =>
+    within(mapRegion()).getByRole('button', { name: new RegExp(`^${title}`) })
+  const moveButton = (title: string) =>
+    screen.queryByRole('button', { name: `Movimentar para ${title}` })
+  const lia = () => screen.getByRole('region', { name: 'Lia' })
+
+  async function renderMap(): Promise<void> {
+    renderParty()
+    await screen.findByRole('region', { name: 'Mapa' })
+    await waitFor(() => expect(status()).toHaveTextContent(''))
+  }
+
+  it('REQ-35: zona em moveTargets mostra "Movimentar para {title}"; fora (inclusive a atual) não há botão', async () => {
+    await renderMap()
+    fireEvent.click(zoneButton('Curva de Pedra'))
+    expect(moveButton('Curva de Pedra')).toBeInTheDocument()
+    fireEvent.click(zoneButton('Mina Velha'))
+    expect(moveButton('Mina Velha')).toBeNull()
+    fireEvent.click(zoneButton('Porto Cinzento'))
+    expect(moveButton('Porto Cinzento')).toBeNull()
+  })
+
+  it('REQ-35: envia { type: "move", zoneId } com o botão desabilitado durante o pedido', async () => {
+    let release: () => void = () => {}
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    let body: unknown
+    server.use(
+      http.post('*/parties/:partyId/actions', async ({ request }) => {
+        body = await request.json()
+        await gate
+        return HttpResponse.json(partyMovedToStoneBendFixture)
+      }),
+    )
+    await renderMap()
+    fireEvent.click(zoneButton('Curva de Pedra'))
+    fireEvent.click(moveButton('Curva de Pedra')!)
+    await waitFor(() => expect(moveButton('Curva de Pedra')).toBeDisabled())
+    expect(body).toEqual({ type: 'move', zoneId: 'fixture.stone-bend' })
+    release()
+    await waitFor(() =>
+      expect(status()).toHaveTextContent('Você está em Curva de Pedra.'),
+    )
+  })
+
+  it('REQ-35: com 200 mostra o Party devolvido, mantém a zona escolhida e "Você está em {title}."', async () => {
+    await renderMap()
+    fireEvent.click(zoneButton('Curva de Pedra'))
+    fireEvent.click(moveButton('Curva de Pedra')!)
+    await waitFor(() =>
+      expect(status()).toHaveTextContent('Você está em Curva de Pedra.'),
+    )
+    expect(lia()).toHaveTextContent('Zona atual: Curva de Pedra')
+    expect(screen.getByText('Salvo em 14/11/2026 18:40')).toBeInTheDocument()
+    expect(zoneButton('Curva de Pedra')).toHaveTextContent('Lia está aqui')
+    expect(zoneButton('Porto Cinzento')).not.toHaveTextContent('Lia está aqui')
+    expect(zoneButton('Curva de Pedra')).toHaveAttribute('aria-pressed', 'true')
+    expect(moveButton('Curva de Pedra')).toBeNull()
+    fireEvent.click(zoneButton('Mina Velha'))
+    expect(moveButton('Mina Velha')).toBeInTheDocument()
+  })
+
+  it('REQ-35: move mais de uma vez (ida e volta à cidade)', async () => {
+    await renderMap()
+    fireEvent.click(zoneButton('Curva de Pedra'))
+    fireEvent.click(moveButton('Curva de Pedra')!)
+    await waitFor(() =>
+      expect(status()).toHaveTextContent('Você está em Curva de Pedra.'),
+    )
+    fireEvent.click(zoneButton('Porto Cinzento'))
+    fireEvent.click(moveButton('Porto Cinzento')!)
+    await waitFor(() =>
+      expect(status()).toHaveTextContent('Você está em Porto Cinzento.'),
+    )
+    expect(lia()).toHaveTextContent('Zona atual: Porto Cinzento')
+  })
+
+  it('REQ-35: erro §1.4 mostra a message e nada muda na tela', async () => {
+    server.use(
+      http.post('*/parties/:partyId/session', () =>
+        HttpResponse.json({
+          ...partyInSessionFixture,
+          members: partyInSessionFixture.members.map((m) => ({
+            ...m,
+            player: {
+              ...m.player,
+              moveTargets: [...m.player.moveTargets, 'fixture.old-mine'],
+            },
+          })),
+        }),
+      ),
+    )
+    await renderMap()
+    fireEvent.click(zoneButton('Mina Velha'))
+    fireEvent.click(moveButton('Mina Velha')!)
+    await waitFor(() =>
+      expect(status()).toHaveTextContent('Esta ação não é permitida agora.'),
+    )
+    expect(lia()).toHaveTextContent('Zona atual: Porto Cinzento')
+    expect(zoneButton('Mina Velha')).toHaveAttribute('aria-pressed', 'true')
+    expect(moveButton('Mina Velha')).toBeEnabled()
+  })
+
+  it('REQ-35: PARTY_SESSION_NOT_ACTIVE mostra a message', async () => {
+    server.use(
+      http.post('*/parties/:partyId/actions', () =>
+        HttpResponse.json(partySessionNotActiveFixture, { status: 409 }),
+      ),
+    )
+    await renderMap()
+    fireEvent.click(zoneButton('Curva de Pedra'))
+    fireEvent.click(moveButton('Curva de Pedra')!)
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(
+        'Não há sessão em andamento neste grupo.',
+      ),
+    )
+    expect(lia()).toHaveTextContent('Zona atual: Porto Cinzento')
+  })
+
+  it('REQ-35: falha de rede mostra "Servidor indisponível. Tente novamente."', async () => {
+    server.use(
+      http.post('*/parties/:partyId/actions', () => HttpResponse.error()),
+    )
+    await renderMap()
+    fireEvent.click(zoneButton('Curva de Pedra'))
+    fireEvent.click(moveButton('Curva de Pedra')!)
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(
+        'Servidor indisponível. Tente novamente.',
+      ),
+    )
+  })
+
+  it('REQ-35: resposta fora do contrato mostra "Servidor indisponível. Tente novamente." e nada muda', async () => {
+    server.use(
+      http.post('*/parties/:partyId/actions', () =>
+        HttpResponse.json({ nope: true }),
+      ),
+    )
+    await renderMap()
+    fireEvent.click(zoneButton('Curva de Pedra'))
+    fireEvent.click(moveButton('Curva de Pedra')!)
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(
+        'Servidor indisponível. Tente novamente.',
+      ),
+    )
+    expect(lia()).toHaveTextContent('Zona atual: Porto Cinzento')
   })
 })

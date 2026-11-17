@@ -58,7 +58,7 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | FEAT-05 | Campanha solo: criar grupo de 1, saves, continuar, salvamento automático, encerrar sessão, abandonar a partida | 28.1 | validado | validado |
 | FEAT-31 | Editor de conteúdo no laboratório (só dev): coleções e cartas dos 6 tipos, rascunho e publicação, validar coleção como dimensão, exportar e importar; o BE grava em arquivos JSON. Cresce com cada FEAT que trouxer conteúdo novo | 27, II.6, 3.5, Apêndice B (T1) | validado | validado |
 | FEAT-06 | Preparação da partida: classe e deck pré-pronto, valores iniciais, montagem do mapa, ordem e cidade inicial | 10.1, 3.5, 4.4, 8, 9 | validado | validado |
-| FEAT-07 | Mapa e Movimentar | 3.5, 12.2 | em andamento | a fazer |
+| FEAT-07 | Mapa e Movimentar | 3.5, 12.2 | aguardando outro lado | a fazer |
 | FEAT-08 | A vez: pontos de ação, ações de zona disponíveis, encerrar a vez, rodadas | 11.1, 11.2, 12 | a fazer | a fazer |
 | FEAT-09 | Deck de atributos: mão, Recuperar, Ajustar deck, build e trava | 4, 8.2, 12.5 | a fazer | a fazer |
 | FEAT-10 | Recursos e onde ficam: inventário, equipar, Preparar, pasta, cofre, bolsa, limbo, Vasculhar | 5, 6, 9, 12.6 | a fazer | a fazer |

@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.48 · **Data:** 2026-11-17
+> **Versão da spec:** 0.49 · **Data:** 2026-11-17
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -529,7 +529,7 @@ A T-34 fecha o lado FE da FEAT-06 com MSW; depois, `/retorno-backend` contra o b
 
 - [x] **T-35 — Cliente da FEAT-07** (REQ-34, REQ-35; D-55). Em `src/api/`: `PlayerState.moveTargets` no schema; `PartyAction`/`MoveAction`; hook `usePartyAction(partyId)` (`POST /parties/:partyId/actions`, `Party` validado; erros como `ApiError` com a `message`). Em `src/mocks/`: `moveTargets` nas fixtures do `Party`; handler de ações por tabela de cenários (D-55 item 5). Como verificar: unitários da camada de cliente; os testes da FEAT-05/06 que usam o `Party` continuam passando.
 - [x] **T-36 — Mapa na tela do grupo** (REQ-34). Grade, setas, ligações, "{characterName} está aqui", escolha de zona com a carta e "Travessias com". Como verificar: `npm run dev` (mocks), fluxo `/novo` → `/grupo/:partyId`; unitários e e2e da área `party`.
-- [ ] **T-37 — Movimentar** (REQ-35). Botão, envio, `Party` devolvido na tela, mensagens. Como verificar: `npm run dev` (mocks), mover e voltar à cidade; unitários e e2e da área `party`.
+- [x] **T-37 — Movimentar** (REQ-35). Botão, envio, `Party` devolvido na tela, mensagens. Como verificar: `npm run dev` (mocks), mover e voltar à cidade; unitários e e2e da área `party`.
 
 A T-37 fecha o lado FE da FEAT-07 com MSW; depois, `/retorno-backend` contra o backend real. A FEAT não usa valores novos do Apêndice A (o custo do Movimentar entra com a FEAT-08).
 
@@ -585,3 +585,4 @@ A T-37 fecha o lado FE da FEAT-07 com MSW; depois, `/retorno-backend` contra o b
 | 0.46 | 2026-11-17 | FEAT-07 planejada (CONTRATO v0.28 `acordado`): REQ-34 (mapa em grade com escolha de zona), REQ-35 (Movimentar), D-55 (escolhas do autor), `usePartyAction` em 3.4, área `party` em 3.5, tarefas T-35 a T-37. |
 | 0.47 | 2026-11-17 | T-35 concluída: `PlayerState.moveTargets`, `PartyAction`/`MoveAction` e `usePartyAction` em `src/api/parties.ts`; fixtures `moveTargets` e Party movidos e handler de ações por tabela de cenários no MSW (D-55 item 5: `stone-bend`/`whispering-grove`/`gray-harbor` → `200`; `old-mine` → `409 ACTION_NOT_ALLOWED`; zona desconhecida e `type` desconhecido → `400 ACTION_INVALID`). |
 | 0.48 | 2026-11-17 | T-36 concluída: região "Mapa" na tela do grupo (`PartyMap`, REQ-34): grade pelas posições, zonas como botões com setas e "{characterName} está aqui", ligações só de `crossings` entre vizinhas, "Zona escolhida" com a carta e "Travessias com". Posição também em `data-col`/`data-row` (jsdom descarta as propriedades de grade). |
+| 0.49 | 2026-11-17 | T-37 concluída: botão "Movimentar para {title}" na "Zona escolhida" só para zonas de `moveTargets` do host; a tela passa a mostrar o `Party` do `200` (sem novo `GET`, D-55 item 4) e "Você está em {title}." com o título da `zoneId` devolvida; erros na área de status sem mudar a tela. Lado FE da FEAT-07 pronto com MSW. |
