@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.49 · **Data:** 2026-11-17
+> **Versão da spec:** 0.50 · **Data:** 2026-11-17
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -89,7 +89,7 @@ Funções e hooks que as telas usam para ler o estado e enviar intenções. Regr
 | `useClasses()` | consulta `GET /catalog/classes`: `ClassDefinition[]` validado (CONTRATO §3 FEAT-06) | T-28 |
 | `useCatalogCard(cardId)` | consulta `GET /catalog/cards/:cardId`: `Card` validado; cache por id (D-48) | T-28 |
 | `useCatalogCards(cardIds)` | várias `GET /catalog/cards/:cardId`, uma por id distinto, no mesmo cache do `useCatalogCard`; devolve as cartas recebidas, `isPending` e o primeiro erro (D-51) | T-31 |
-| `usePartyAction(partyId)` | mutação `POST /parties/:partyId/actions` com `PartyAction` (`MoveAction` na FEAT-07): `Party` validado; erros §1.4 como `ApiError` (CONTRATO §3 FEAT-07) | T-35 |
+| `usePartyAction(partyId)` | mutação `POST /parties/:partyId/actions` com `PartyAction` (`MoveAction` na FEAT-07, `EndTurnAction` na FEAT-08, T-38): `Party` validado; erros §1.4 como `ApiError` (CONTRATO §3 FEAT-07) | T-35 |
 | Classes no editor, em `src/api/editor.ts` | `useEditorClasses(collectionId)`, `useEditorClass(playerClass)`, `useCreateClass`, `useSaveClass`, `usePublishClass`, `useDeleteClass`, sob a chave `['editor']` (D-40, D-52) | T-32 |
 | Editor de conteúdo (FEAT-31), em `src/api/editor.ts` | consultas `useEditorCollections()`, `useEditorCollection(collectionId | null)` (`null`: consulta parada, T-21), `useEditorCards(collectionId, { type?, status?, q? })`, `useEditorCard(cardId)`; mutações `useCreateCollection`, `useUpdateCollection` (`{ collectionId, patch }`), `useDeleteCollection`, `useValidateDimension`, `useExportCollection`, `useImportCollection` (`{ content, replace }`), `useCreateCard` (`{ collectionId, input }`), `useSaveCard` (`{ cardId, input }`), `usePublishCard`, `useDuplicateCard`, `useDeleteCard`. `CONTENT_INVALID` e `CONTENT_ID_TAKEN` com `details` válido viram `ContentInvalidError` (com `code` e `fields`) (D-40) | T-20 |
 
@@ -101,7 +101,7 @@ Base comum (T-08): `requestJson(method, path, body?)` em `src/api/http.ts` faz t
 |---|---|---|---|
 | app | `/` | rota inicial: menu da campanha e "Seus jogos" com o abandono (REQ-14, REQ-17) + área de status da ponte com o servidor (REQ-01); tema e tipografia da base visual (REQ-02) | FEAT-01, FEAT-02 |
 | lab | `/lab` (só dev, D-07) | laboratório: configuração ajustável do jogo e vitrine de componentes (REQ-05 a REQ-07); catálogo de cartas (REQ-08 a REQ-13); valores e cartas da FEAT-06 (REQ-27, REQ-28) | FEAT-03, FEAT-04, FEAT-06 |
-| party | `/novo`, `/grupo/:partyId` | novo jogo (grupo de 1) com escolha de classe e grupo em sessão com a partida preparada, o mapa e o Movimentar (REQ-15, REQ-16, REQ-29, REQ-30, REQ-34, REQ-35) | FEAT-05, FEAT-06, FEAT-07 |
+| party | `/novo`, `/grupo/:partyId` | novo jogo (grupo de 1) com escolha de classe e grupo em sessão com a partida preparada, o mapa, o Movimentar e a vez (REQ-15, REQ-16, REQ-29, REQ-30, REQ-34 a REQ-38) | FEAT-05, FEAT-06, FEAT-07, FEAT-08 |
 | editor | `/lab/editor` (só dev, D-07) | editor de conteúdo: coleções, cartas e classes (REQ-18 a REQ-26, REQ-31 a REQ-33) | FEAT-31, FEAT-06 |
 
 Os componentes compartilhados da FEAT-02 (termo do jogo, categoria de carta) ainda não aparecem em nenhuma tela: são verificados por testes de componente até entrarem no laboratório (FEAT-03) e nas telas da FEAT-04.
@@ -363,7 +363,7 @@ Alinha o REQ-26.
 
 ### Mapa e Movimentar (FEAT-07)
 
-O mapa chega pronto em `Party.dimension.map` (zonas com posição e setas, travessias) e os destinos válidos do Movimentar em `PlayerState.moveTargets` (CONTRATO §3 FEAT-07). O frontend desenha o que recebe e envia a intenção; não calcula travessias nem destinos (D-55). Até a FEAT-08, mover não gasta ponto de ação; quem age é o host (jogo solo).
+O mapa chega pronto em `Party.dimension.map` (zonas com posição e setas, travessias) e os destinos válidos do Movimentar em `PlayerState.moveTargets` (CONTRATO §3 FEAT-07). O frontend desenha o que recebe e envia a intenção; não calcula travessias nem destinos (D-55). A partir da FEAT-08, mover gasta 1 ponto de ação e o botão depende de `availableActions` (REQ-37); quem age é o host (jogo solo).
 
 ### REQ-34 — Mapa da partida
 
@@ -382,6 +382,31 @@ Alinha o REQ-30 (fim do item (1) da D-48).
 - **Dado** o `200`, **então** a tela passa a mostrar o `Party` devolvido (zona atual, "Salvo em", "{characterName} está aqui" no mapa e os botões seguintes vêm dele), a zona escolhida continua escolhida e a área de status mostra "Você está em {title}.".
 - **Dado** um erro §1.4 (`ACTION_NOT_ALLOWED`, `ACTION_INVALID`, `PARTY_SESSION_NOT_ACTIVE`, `PARTY_NOT_FOUND` ou outro), **então** a área de status mostra a `message` e nada muda na tela; falha de rede ou de validação mostra "Servidor indisponível. Tente novamente.". Nenhuma exceção chega à tela.
 - **Dado** o jogador muda de zona mais de uma vez (README 12.2), **então** cada movimento segue as regras acima, sem limite na tela.
+
+### A vez (FEAT-08)
+
+A vez chega pronta em `Party.turn` (rodada, membro da vez, pontos restantes) e o que o jogador pode fazer em `PlayerState.availableActions` (CONTRATO §3 FEAT-08). O frontend mostra e envia a intenção; não conta pontos nem decide se uma ação cabe (D-56).
+
+### REQ-36 — A vez na tela do grupo
+
+Alinha o REQ-30.
+
+- **Dado** a partida preparada (REQ-30), **então**, antes do "Mapa", há a região "A vez" com "Rodada {round}", "Vez de {characterName do membro `turn.memberId`}" e "{actionPoints} pontos de ação" ("pontos de ação" como termo do jogo, REQ-03; "1 ponto de ação" no singular). Todos os valores são os recebidos.
+- **Dado** um `200` de qualquer ação (REQ-35, REQ-38), **então** a região mostra o `turn` do `Party` devolvido.
+
+### REQ-37 — Ações disponíveis
+
+Alinha o REQ-35.
+
+- **Dado** uma zona escolhida que está em `moveTargets` do host, **então** o botão "Movimentar para {title}" só aparece se `availableActions` do host contém `move`; sem `move` (ex.: 0 pontos de ação), não há botão e a seção "Zona escolhida" mostra "Sem pontos de ação para Movimentar." só quando a zona está em `moveTargets` e `turn.actionPoints` é 0.
+- **Dado** `availableActions` do host contém `endTurn`, **então** a região "A vez" mostra o botão "Encerrar a vez"; sem `endTurn`, não há botão.
+- **Dado** um `409` `ACTION_NOT_ALLOWED` (`noActionPoints` ou outro motivo), **então** vale o REQ-35: a `message` na área de status e nada muda.
+
+### REQ-38 — Encerrar a vez
+
+- **Quando** o jogador clica "Encerrar a vez", **então** o app envia `POST /parties/:partyId/actions` com `{ "type": "endTurn" }`, sem diálogo de confirmação (D-56); enquanto o pedido está em curso, os botões "Encerrar a vez" e "Movimentar para {title}" ficam desabilitados.
+- **Dado** o `200`, **então** a tela passa a mostrar o `Party` devolvido (REQ-35, item 3), a zona escolhida continua escolhida e a área de status mostra "Rodada {round}: vez de {characterName}.".
+- **Dado** um erro §1.4 ou falha de rede/validação, **então** vale o REQ-35 (mesmas mensagens; nada muda na tela).
 
 Formato:
 
@@ -447,6 +472,7 @@ Formato:
 - **D-53 — Carta de Dimensão e forma das setas no editor (T-33):** sai o `hasForm`: os 7 tipos têm formulário e "Nova carta" oferece os 7, na ordem do glossário ("Dimensão" por último). Formulário da Carta de Dimensão no molde da D-43: "Nome" e "Ordem de lançamento" (número) obrigatórios; "Texto de ambientação" e "Zona de chegada" em branco = `null`; "Zona de chegada" é campo de texto livre, sem sugestão (o backend confere o título, D-38); efeitos com caminho `effects.{n}.text`. "Forma das setas" é uma seleção cuja opção vazia é "Não se aplica" (`null`); os rótulos do editor são "Opostas"/"Vizinhas" (os da carta, REQ-28, seguem "Setas opostas"/"Setas vizinhas"). Fim do estado intermediário da D-49 no editor; o e2e que contava 6 tipos em "Nova carta" foi alinhado. *(T-33, 2026-11-16.)*
 - **D-54 — Classes no editor (T-34):** a seção "Classes" (`src/lab/editor/ClassesSection.tsx`) aparece depois de "Cartas" quando a coleção escolhida carregou e recomeça ao trocar de coleção; cada classe é um botão com `aria-pressed`. O formulário (`ClassForm.tsx`, região "Classe"; modelo `classFormValues.ts`) segue a D-43 e a D-46: estado próprio, números como texto, "Salvar classe" desabilitado sem formato (classe não escolhida, nome em branco, atributo essencial não escolhido, modificador ou cópias não numéricos, carta em branco); "Publicar classe" e "Excluir classe" sempre visíveis, desabilitados numa classe não salva (publicar também fora de rascunho ou com alterações). A seleção "Classe" fica **desabilitada** numa classe publicada (o `select` não tem `readOnly`). Os 7 modificadores base levam o nome do glossário como rótulo (D-30), caminhos `baseModifiers.<modificador>`; o deck usa `starterDeck.{n}.cardId` e `starterDeck.{n}.copies`. A sugestão de "Carta {n}" é um `datalist` com as cartas de `useEditorCards(coleção, { type: 'attribute' })` (o backend filtra). "Classe salva."/"Classe publicada." na área de status do formulário; "Classe excluída." na da seção, porque o formulário fecha. Limites (1 a 2 essenciais, trava do deck, cópias) seguem com o backend (D-38). A guarda única da D-43 passa a cobrir a classe ("desta classe", depois de coleção e carta na precedência). `CONTENT_REFERENCED` já aparecia pela `message` no formulário de carta (D-46); a T-34 só acrescenta os testes. `useFieldErrors`, `options` e `attributeOptions` saíram de `CardForm.tsx` para `formHelpers.tsx` (regra do Fast Refresh), e `TextField`, `SelectField` (com `disabled`) e `ListField` passaram a ser exportados. No MSW a lista de coleções só traz a `fixture`; os unitários acrescentam o `bosque` com `server.use` e o e2e cria a classe na `fixture`. *(T-34, 2026-11-16.)*
 - **D-55 — Mapa e Movimentar (FEAT-07):** (1) o mapa é uma grade pelas posições recebidas, com títulos, setas e ligações das travessias; o acabamento é da FEAT-30 (autor, 2026-11-17; alternativa descartada: lista textual, descartável); (2) mover é em dois passos: escolher a zona no mapa (que mostra a carta completa) e clicar "Movimentar para {title}" (autor; vantagem: sem movimento acidental e a zona é lida antes; desvantagem: dois cliques; alternativas descartadas: clique direto na zona, lista de destinos fora do mapa); (3) o botão só aparece para zonas de `moveTargets`, e as ligações e "Travessias com" vêm só de `crossings`: o frontend não deduz travessia de setas nem de vizinhança (README 3.5 é do backend); (4) a tela mostra a resposta da ação, sem novo `GET` (o `200` já traz o `Party` gravado); (5) o MSW segue sem estado (D-29): o `POST …/actions` responde por tabela de cenários com `Party` fixos do mapa de exemplo, um por destino conhecido, e os erros do contrato por corpo; (6) os títulos das zonas do mapa vêm de `useCatalogCards`, como os da D-51. *(Planejamento da FEAT-07, 2026-11-17.)*
+- **D-56 — A vez (FEAT-08):** (1) o botão de uma ação só aparece se o tipo está em `availableActions` (some, não fica desabilitado; vantagem: igual à D-55 item 3, a tela nunca oferece o que o backend recusaria; desvantagem: o jogador pode não entender por que o botão sumiu, por isso o aviso "Sem pontos de ação para Movimentar."); (2) "Encerrar a vez" sem confirmação (vantagem: um clique, e no solo não há prejuízo além dos pontos não usados; desvantagem: clique acidental perde os pontos; alternativa: confirmar quando `actionPoints > 0`, fica para a FEAT-30 se o autor quiser); (3) o MSW segue sem estado (D-29): `Party` fixos por cenário (após 1 movimento: 2 pontos; com 0 pontos: só `endTurn`; após `endTurn`: rodada 2 com pontos cheios); o `move` de um `Party` com 0 pontos responde `409` `noActionPoints` por tabela; (4) sem valor novo no laboratório: `actionPointsPerTurn` já está lá (FEAT-03). *(Planejamento da FEAT-08, 2026-11-17.)*
 
 **Pendências (decidir antes da tarefa indicada):**
 - **P-02 — Como o jogador vê as vezes dos outros no momento 2** (antes da FEAT-21): proposta: o backend devolve a lista ordenada de eventos do domínio e o frontend anima um por um; no momento 3 só o transporte muda (socket). Registrada também no ROADMAP.
@@ -533,6 +559,14 @@ A T-34 fecha o lado FE da FEAT-06 com MSW; depois, `/retorno-backend` contra o b
 
 A T-37 fecha o lado FE da FEAT-07 com MSW; depois, `/retorno-backend` contra o backend real. A FEAT não usa valores novos do Apêndice A (o custo do Movimentar entra com a FEAT-08).
 
+**FEAT-08 — A vez (lado frontend)** (CONTRATO v0.33 §3 FEAT-08 `implementado (BE)`; altera as seções `validado` FEAT-05/06/07)
+
+- [ ] **T-38 — Cliente da FEAT-08** (REQ-36 a REQ-38; D-56). Em `src/api/`: `Party.turn` (`PartyTurn`) e `PlayerState.availableActions` no schema; `EndTurnAction` em `PartyAction`; `usePartyAction` aceita `endTurn`. Em `src/mocks/`: `turn` e `availableActions` em todas as fixtures do `Party`; cenários da D-56 item 3 no handler de ações. Como verificar: unitários da camada de cliente; os testes das FEAT-05/06/07 que usam o `Party` continuam passando.
+- [ ] **T-39 — A vez e Encerrar a vez** (REQ-36, REQ-38). Região "A vez", botão, envio, mensagens. Como verificar: `npm run dev` (mocks), encerrar a vez e ver a rodada 2; unitários e e2e da área `party`.
+- [ ] **T-40 — Alinhar Movimentar às ações disponíveis** (REQ-37). Botão só com `move` em `availableActions` e o aviso de 0 pontos. Como verificar: `npm run dev` (mocks), gastar os pontos e ver o botão sumir; unitários e e2e da área `party`.
+
+A T-40 fecha o lado FE da FEAT-08 com MSW; depois, `/retorno-backend` contra o backend real. Valor do Apêndice A: só `actionPointsPerTurn`, já no laboratório (REQ-06).
+
 ## 8. Histórico
 
 | Versão | Data | Mudança |
@@ -586,3 +620,4 @@ A T-37 fecha o lado FE da FEAT-07 com MSW; depois, `/retorno-backend` contra o b
 | 0.47 | 2026-11-17 | T-35 concluída: `PlayerState.moveTargets`, `PartyAction`/`MoveAction` e `usePartyAction` em `src/api/parties.ts`; fixtures `moveTargets` e Party movidos e handler de ações por tabela de cenários no MSW (D-55 item 5: `stone-bend`/`whispering-grove`/`gray-harbor` → `200`; `old-mine` → `409 ACTION_NOT_ALLOWED`; zona desconhecida e `type` desconhecido → `400 ACTION_INVALID`). |
 | 0.48 | 2026-11-17 | T-36 concluída: região "Mapa" na tela do grupo (`PartyMap`, REQ-34): grade pelas posições, zonas como botões com setas e "{characterName} está aqui", ligações só de `crossings` entre vizinhas, "Zona escolhida" com a carta e "Travessias com". Posição também em `data-col`/`data-row` (jsdom descarta as propriedades de grade). |
 | 0.49 | 2026-11-17 | T-37 concluída: botão "Movimentar para {title}" na "Zona escolhida" só para zonas de `moveTargets` do host; a tela passa a mostrar o `Party` do `200` (sem novo `GET`, D-55 item 4) e "Você está em {title}." com o título da `zoneId` devolvida; erros na área de status sem mudar a tela. Lado FE da FEAT-07 pronto com MSW. |
+| 0.50 | 2026-11-17 | FEAT-08 planejada (CONTRATO v0.33 `implementado (BE)`): REQ-36 (a vez na tela), REQ-37 (ações disponíveis, alinha o REQ-35), REQ-38 (Encerrar a vez), D-56, área `party` em 3.5, tarefas T-38 a T-40. |
