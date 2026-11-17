@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.30 · **Data:** 2026-11-17
+> **Versão do contrato:** 0.32 · **Data:** 2026-11-17
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -224,6 +224,18 @@ Base dos nomes no código dos dois lados e dos termos com destaque e tooltip (RE
 | Destinos do Movimentar | `moveTargets` |
 
 *(Movimentar = `move`, §2.5; travessia = `crossing`, §2.2.)*
+
+### 2.12 A vez (README 11.1, 12.1) — FEAT-08
+
+| Termo | Identificador |
+|---|---|
+| Pontos de ação (restantes na vez) | `actionPoints` |
+| Pontos de ação por vez | `actionPointsPerTurn` (já na FEAT-03) |
+| Encerrar a vez | `endTurn` |
+| Ações disponíveis agora | `availableActions` |
+| Sem pontos de ação | `noActionPoints` |
+
+*(Vez = `turn` e rodada = `round`, §2.1.)*
 
 ## 3. Features
 
@@ -1038,7 +1050,7 @@ Regras: README 12.2 (Movimentar: só para zona **conectada**; pode repetir na me
 
 O mapa já vem em `Party.dimension.map` (FEAT-06) e as zonas no catálogo (FEAT-04). Esta seção acrescenta a lista pronta de destinos (§1.3) e a primeira **intenção** de jogo (§1.6), por uma rota única de ações: as próximas FEATs só acrescentam tipos a `PartyAction`.
 
-**Até a FEAT-08:** mover **não gasta ponto de ação** e não há vez nem limite de movimentos (o custo de 1 ponto, README 12.2, entra com a vez). Quem age é o host (jogo solo).
+**Custo:** a partir da FEAT-08, mover gasta 1 ponto de ação (README 12.2) e quem age é o jogador da vez; veja a seção FEAT-08.
 
 **Mudanças em outras seções:**
 - **FEAT-06 (`validado`):** `PlayerState.moveTargets`.
@@ -1101,6 +1113,82 @@ Contra a `fixture` (FEAT-06). O mapa é sorteado: compare as invariantes. Seja `
 - Depois de `POST /parties/<G>/session/end`, quando `{ "type": "move", "zoneId": <qualquer de moveTargets> }`, então `409` com `{ "error": { "code": "PARTY_SESSION_NOT_ACTIVE", "message": "Não há sessão em andamento neste grupo." } }`.
 - Quando `POST /parties/00000000-0000-0000-0000-000000000000/actions` com um `move`, então `404` `PARTY_NOT_FOUND`.
 
+### FEAT-08 — A vez — `acordado`
+
+Regras: README 11.1 (3 pontos de ação por vez; Movimentar gasta 1; encerrar a vez quando quiser; com 0 pontos a vez **não** termina sozinha, Apêndice B K2), 11.2 (ordem fixa), 2.1 (vez e rodada), 12.1/12.2 (custo do Movimentar), 11.4 (fora da vez ninguém inicia ação) e 28.1 (salvamento no fim de cada vez). No jogo solo os relógios da vez estão desligados (11.3 item 6, B J2): não há tempo nesta seção.
+
+Os pontos por vez vêm de `actionPointsPerTurn` (FEAT-03), **copiado para o grupo na criação**: mudar o laboratório depois não muda grupos já criados. Quem age é o jogador da vez (`turn.memberId`); no solo é o único membro. Cada ação aceita continua gravando o save (`savedAt` avança), e `endTurn` também grava.
+
+**Mudanças em outras seções:**
+- **FEAT-05/06 (`validado`):** `Party.turn`; `PlayerState.availableActions`. O `POST /parties` já devolve `turn` na rodada 1.
+- **FEAT-07 (`validado`):** sai a nota "Até a FEAT-08"; `move` passa a gastar 1 ponto; `PartyAction` ganha `EndTurnAction`; `ActionNotAllowedDetails.reason` ganha `noActionPoints`; `unknownKey` também vale para `endTurn`. Saves de antes desta versão continuam: são lidos na rodada 1, na vez do 1º de `turnOrder`, com pontos cheios.
+
+#### Endpoints
+
+Nenhuma rota nova: `POST /parties/:partyId/actions` (FEAT-07) aceita `{ "type": "endTurn" }`.
+
+Ordem das conferências do `move`: grupo inexistente (404) → pedido malformado (400) → sem sessão (409 `PARTY_SESSION_NOT_ACTIVE`) → zona fora do mapa (400 `zoneNotInMap`) → **sem pontos (409 `noActionPoints`)** → sem travessia (409 `notConnected`). Do `endTurn`: 404 → 400 → 409 sem sessão.
+
+#### Tipos
+
+```ts
+interface Party {
+  // … campos das FEATs 05 e 06 …
+  /** FEAT-08. De quem é a vez agora. */
+  turn: PartyTurn
+}
+
+interface PartyTurn {
+  /** Rodada atual, começa em 1 (README 2.1). */
+  round: number
+  /** Id do membro da vez (um de `turnOrder`). */
+  memberId: string
+  /** Pontos de ação que restam nesta vez (0 a `actionPointsPerTurn`). */
+  actionPoints: number
+}
+
+interface PlayerState {
+  // … campos das FEATs 06 e 07 …
+  /**
+   * FEAT-08. Tipos de `PartyAction` que este jogador pode mandar agora, em ordem fixa
+   * (`move`, `endTurn`). Para o membro da vez: `move` se tem ponto e `moveTargets` não
+   * está vazio; `endTurn` sempre. Para os demais: `[]`. Só ações já existentes; as FEATs
+   * seguintes acrescentam as suas.
+   */
+  availableActions: PartyActionType[]
+}
+
+type PartyAction = MoveAction | EndTurnAction
+type PartyActionType = PartyAction['type']
+
+/** Encerrar a vez (README 11.1). Os pontos que sobraram se perdem. */
+interface EndTurnAction {
+  type: 'endTurn'
+}
+
+/** `details` do erro ACTION_NOT_ALLOWED. */
+interface ActionNotAllowedDetails {
+  reason: 'notConnected' | 'noActionPoints'
+}
+```
+
+`noActionPoints`: a ação custa ponto e `turn.actionPoints` é 0. `endTurn`: a vez passa ao membro seguinte em `turnOrder` com `actionPoints = actionPointsPerTurn`; passando do último para o primeiro, `round` sobe 1. Com 1 membro: mesmo `memberId`, `round + 1`, pontos cheios.
+
+Mensagens: as de FEAT-07 (`ACTION_NOT_ALLOWED` "Esta ação não é permitida agora.").
+
+#### Cenários de validação
+
+Contra a `fixture`, com o laboratório no padrão (`actionPointsPerTurn: 3`). Seja `G` criado com `{ "name": "Os Teimosos", "characterName": "Lia", "playerClass": "warrior" }` e posto em sessão; `M` = `members[0].id`; `A` = primeiro de `moveTargets`; `H` = `fixture.gray-harbor` (cidade inicial).
+
+- Quando `POST /parties` (criação), então `turn = { "round": 1, "memberId": M, "actionPoints": 3 }` e `members[0].player.availableActions = ["move", "endTurn"]`.
+- Quando `move` para `A`, depois para `H`, depois para `A`, então três `200` com `turn.actionPoints` 2, 1 e 0; no terceiro, `availableActions = ["endTurn"]`.
+- Com 0 pontos, quando `{ "type": "move", "zoneId": H }`, então `409` com `{ "error": { "code": "ACTION_NOT_ALLOWED", "message": "Esta ação não é permitida agora.", "details": { "reason": "noActionPoints" } } }`; `GET` seguinte mostra o mesmo `savedAt` e o jogador ainda em `A`.
+- Com 0 pontos, quando `{ "type": "endTurn" }`, então `200` com `turn = { "round": 2, "memberId": M, "actionPoints": 3 }`, `player.zoneId = A` e `availableActions = ["move", "endTurn"]`; `savedAt` ≥ o anterior; `GET` devolve o mesmo.
+- Com 3 pontos, quando `endTurn` logo em seguida, então `200` com `round: 3` e 3 pontos (os pontos não acumulam).
+- Quando `{ "type": "endTurn", "now": true }`, então `400` `ACTION_INVALID` com `details.fields = [{ "field": "now", "reason": "unknownKey" }]`.
+- Depois de `POST /parties/<G>/session/end`, quando `{ "type": "endTurn" }`, então `409` `PARTY_SESSION_NOT_ACTIVE`; ao continuar a sessão (`POST /parties/<G>/session`), `turn` é o mesmo de antes.
+- Com o laboratório em `actionPointsPerTurn: 5` (`PATCH /lab/config`), um grupo criado depois começa com `actionPoints: 5`; `G`, criado antes, continua recebendo 3 a cada `endTurn`. (Volte com `POST /lab/config/reset`.)
+
 ## 4. Códigos de erro
 
 | Código | Quando acontece | FEAT |
@@ -1122,7 +1210,7 @@ Contra a `fixture` (FEAT-06). O mapa é sorteado: compare as invariantes. Seja `
 | `CLASS_NOT_FOUND` | Classe inexistente no editor (404). | FEAT-06 |
 | `CONTENT_REFERENCED` | Excluir ou renomear uma carta de atributo que está no deck pré-pronto de uma classe (409). | FEAT-06 |
 | `ACTION_INVALID` | Intenção malformada (400): corpo, `type` ou campos inválidos, ou zona fora do mapa; `details.fields` diz cada campo e o motivo. | FEAT-07 |
-| `ACTION_NOT_ALLOWED` | Intenção bem formada recusada pela regra (409), ex.: zona sem travessia com a atual; `details.reason`. | FEAT-07 |
+| `ACTION_NOT_ALLOWED` | Intenção bem formada recusada pela regra (409), ex.: zona sem travessia com a atual, ou sem pontos de ação (FEAT-08); `details.reason`. | FEAT-07 |
 
 ## 5. Histórico
 
@@ -1158,3 +1246,5 @@ Contra a `fixture` (FEAT-06). O mapa é sorteado: compare as invariantes. Seja `
 | 0.28 | 2026-11-17 | FE | FEAT-07 `acordado` sem mudanças: os destinos vêm prontos em `moveTargets` (o frontend não calcula travessias); a rota única de ações e a união `PartyAction` cobrem as próximas intenções. O FE alinha `PlayerState` (schema e fixtures do MSW) na tarefa da FEAT-07. |
 | 0.29 | 2026-11-17 | BE | FEAT-07 `implementado (BE)`: `POST /parties/:partyId/actions` e `PlayerState.moveTargets` implementados; cenários cobertos pelos e2e de `take-party-action`. Sem mudança de tipos ou textos. |
 | 0.30 | 2026-11-17 | FE | FEAT-07 `validado` sem mudança de formato: os 7 cenários com chamadas HTTP contra o backend real (`http://localhost:3333`, `contractVersion` 0.29) e a tela do grupo (mapa, Movimentar ida e volta, zona sem travessia sem botão, sessão encerrada) com o MSW desligado. O backend estava com o conteúdo `base`, não a `fixture`: os cenários com `fixture.gray-harbor` rodaram com a cidade inicial real (`base.harbor-town`); as invariantes são as mesmas. |
+| 0.31 | 2026-11-17 | BE | FEAT-08 proposta: `Party.turn` (`PartyTurn`: `round`, `memberId`, `actionPoints`) e `PlayerState.availableActions` (alteram FEAT-05/06); `PartyAction` ganha `EndTurnAction` (`{ type: "endTurn" }`) na rota de ações; `move` gasta 1 ponto de ação; `ActionNotAllowedDetails.reason` ganha `noActionPoints` (altera FEAT-07, cuja nota "Até a FEAT-08" sai); glossário §2.12. Saves anteriores continuam (lidos na rodada 1). Sem rota nem código de erro novos. |
+| 0.32 | 2026-11-17 | FE | FEAT-08 `acordado` sem mudanças: pontos restantes, vez e ações disponíveis chegam prontos (`turn`, `availableActions`); o frontend só exibe e envia `endTurn`. O FE alinha schemas e fixtures do MSW (`Party.turn`, `availableActions`) nas tarefas da FEAT-08. |
