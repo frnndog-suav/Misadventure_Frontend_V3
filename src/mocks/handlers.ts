@@ -59,6 +59,7 @@ import {
 import {
   actionInvalidUnknownActionFixture,
   actionInvalidZoneNotInMapFixture,
+  actionNoActionPointsFixture,
   actionNotAllowedFixture,
   partiesFixture,
   partyBelowMinPlayersFixture,
@@ -69,6 +70,8 @@ import {
   partyInvalidFieldsFixture,
   partyMovedToGroveFixture,
   partyMovedToStoneBendFixture,
+  partyNextRoundFixture,
+  partyNoPointsFixture,
   partyNotFoundFixture,
   partyUnknownClassFixture,
 } from './partyFixtures'
@@ -129,13 +132,22 @@ async function createPartyScenario(request: Request): Promise<Response> {
 }
 
 /**
- * POST /parties/:partyId/actions: tabela de cenários do contrato (D-55) —
- * escolhe a resposta pronta pelo corpo, sem estado nem regra de travessia.
+ * POST /parties/:partyId/actions: tabela de cenários do contrato (D-55, D-56)
+ * — escolhe a resposta pronta pelo grupo e pelo corpo, sem estado nem regra de
+ * travessia ou de pontos. O grupo `partyNoPointsFixture` é o cenário "0 pontos".
  */
-async function partyActionScenario(request: Request): Promise<Response> {
+async function partyActionScenario(
+  partyId: unknown,
+  request: Request,
+): Promise<Response> {
   const body: unknown = await request.json().catch(() => undefined)
-  if (field(body, 'type') !== 'move') {
+  const type = field(body, 'type')
+  if (type === 'endTurn') return HttpResponse.json(partyNextRoundFixture)
+  if (type !== 'move') {
     return HttpResponse.json(actionInvalidUnknownActionFixture, { status: 400 })
+  }
+  if (partyId === partyNoPointsFixture.id) {
+    return HttpResponse.json(actionNoActionPointsFixture, { status: 409 })
   }
   switch (field(body, 'zoneId')) {
     case 'fixture.stone-bend':
@@ -166,7 +178,8 @@ function knownParty(
   partyId: unknown,
   ok: () => Response | Promise<Response>,
 ): Response | Promise<Response> {
-  return partyId === partyCreatedFixture.id
+  return partyId === partyCreatedFixture.id ||
+    partyId === partyNoPointsFixture.id
     ? ok()
     : HttpResponse.json(partyNotFoundFixture, { status: 404 })
 }
@@ -509,7 +522,9 @@ export const handlers: RequestHandler[] = [
     knownParty(params.partyId, () => HttpResponse.json(partyIdleFixture)),
   ),
   http.post('*/parties/:partyId/actions', ({ params, request }) =>
-    knownParty(params.partyId, () => partyActionScenario(request)),
+    knownParty(params.partyId, () =>
+      partyActionScenario(params.partyId, request),
+    ),
   ),
   http.delete('*/parties/:partyId', ({ params }) =>
     knownParty(params.partyId, () => new HttpResponse(null, { status: 204 })),

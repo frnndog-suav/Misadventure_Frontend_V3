@@ -19,9 +19,12 @@ import type { PartyAction } from './parties'
 import {
   actionInvalidUnknownActionFixture,
   actionInvalidZoneNotInMapFixture,
+  actionNoActionPointsFixture,
   actionNotAllowedFixture,
   partyCreatedFixture,
   partyInSessionFixture,
+  partyNextRoundFixture,
+  partyNoPointsFixture,
   partyMovedToGroveFixture,
   partyMovedToStoneBendFixture,
   partyNotFoundFixture,
@@ -29,7 +32,10 @@ import {
 } from '../mocks/partyFixtures'
 import { handlers } from '../mocks/handlers'
 
-/** CONTRATO §3 FEAT-07 (v0.28): rota única de ações e `moveTargets`. */
+/**
+ * CONTRATO §3 FEAT-07 (v0.28): rota única de ações e `moveTargets`; FEAT-08
+ * (v0.33): `turn`, `availableActions` e `endTurn`.
+ */
 
 const server = setupServer(...handlers)
 
@@ -176,5 +182,105 @@ describe('REQ-35: usePartyAction (POST /parties/:partyId/actions)', () => {
     act(() => result.current.mutate(move('fixture.stone-bend')))
     await waitFor(() => expect(result.current.isError).toBe(true))
     expect(result.current.error).not.toBeInstanceOf(ApiError)
+  })
+})
+
+describe('REQ-36: Party.turn', () => {
+  it('REQ-36: as fixtures do Party trazem turn válido (rodada 1, 3 pontos, vez do 1º de turnOrder)', () => {
+    expect(partySchema.safeParse(partyInSessionFixture).success).toBe(true)
+    expect(partyInSessionFixture.turn).toEqual({
+      round: 1,
+      memberId: partyInSessionFixture.turnOrder[0],
+      actionPoints: 3,
+    })
+    expect(partyMovedToStoneBendFixture.turn.actionPoints).toBe(2)
+    expect(partyMovedToGroveFixture.turn.actionPoints).toBe(2)
+  })
+
+  it('REQ-36: Party sem turn, ou com rodada/pontos fora do contrato, é inválido', () => {
+    const withoutTurn: Record<string, unknown> = { ...partyCreatedFixture }
+    delete withoutTurn.turn
+    expect(partySchema.safeParse(withoutTurn).success).toBe(false)
+    const turn = partyCreatedFixture.turn
+    for (const bad of [
+      { ...turn, round: 1.5 },
+      { ...turn, actionPoints: -1 },
+      { ...turn, memberId: 7 },
+    ]) {
+      expect(
+        partySchema.safeParse({ ...partyCreatedFixture, turn: bad }).success,
+      ).toBe(false)
+    }
+  })
+})
+
+describe('REQ-37: PlayerState.availableActions', () => {
+  it('REQ-37: as fixtures trazem availableActions na ordem do contrato', () => {
+    const actions = (party: typeof partyInSessionFixture) =>
+      party.members[0].player.availableActions
+    expect(actions(partyInSessionFixture)).toEqual(['move', 'endTurn'])
+    expect(actions(partyMovedToStoneBendFixture)).toEqual(['move', 'endTurn'])
+    expect(actions(partyNoPointsFixture)).toEqual(['endTurn'])
+    expect(partyNoPointsFixture.turn.actionPoints).toBe(0)
+  })
+
+  it('REQ-37: jogador sem availableActions ou com ação desconhecida é fora do contrato', () => {
+    const player = partyCreatedFixture.members[0].player
+    const withoutActions: Record<string, unknown> = { ...player }
+    delete withoutActions.availableActions
+    expect(playerStateSchema.safeParse(withoutActions).success).toBe(false)
+    expect(
+      playerStateSchema.safeParse({ ...player, availableActions: ['fly'] })
+        .success,
+    ).toBe(false)
+    expect(
+      playerStateSchema.safeParse({ ...player, availableActions: [] }).success,
+    ).toBe(true)
+  })
+})
+
+describe('REQ-38: usePartyAction com endTurn', () => {
+  it('REQ-38: envia { type: "endTurn" } e entrega o Party da rodada 2 com pontos cheios', async () => {
+    let body: unknown
+    server.use(
+      http.post('*/parties/:id/actions', async ({ request }) => {
+        body = await request.json()
+        return HttpResponse.json(partyNextRoundFixture)
+      }),
+    )
+    const { result } = renderHook(() => usePartyAction(partyId), { wrapper })
+    const action: PartyAction = { type: 'endTurn' }
+    act(() => result.current.mutate(action))
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(body).toEqual({ type: 'endTurn' })
+    expect(result.current.data?.turn).toEqual({
+      round: 2,
+      memberId: partyInSessionFixture.turnOrder[0],
+      actionPoints: 3,
+    })
+  })
+
+  it('REQ-38: o handler do MSW responde endTurn com o Party da rodada 2', async () => {
+    const { result } = renderHook(() => usePartyAction(partyId), { wrapper })
+    act(() => result.current.mutate({ type: 'endTurn' }))
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(result.current.data).toEqual(partyNextRoundFixture)
+  })
+
+  it('REQ-37: com 0 pontos, o handler responde move 409 noActionPoints e endTurn 200', async () => {
+    const noPoints = renderHook(() => usePartyAction(partyNoPointsFixture.id), {
+      wrapper,
+    })
+    act(() => noPoints.result.current.mutate(move('fixture.gray-harbor')))
+    await waitFor(() => expect(noPoints.result.current.isError).toBe(true))
+    const error = noPoints.result.current.error as ApiError
+    expect(error).toBeInstanceOf(ApiError)
+    expect(error.code).toBe('ACTION_NOT_ALLOWED')
+    expect(error.message).toBe(actionNoActionPointsFixture.error.message)
+    expect(error.details).toEqual({ reason: 'noActionPoints' })
+
+    act(() => noPoints.result.current.mutate({ type: 'endTurn' }))
+    await waitFor(() => expect(noPoints.result.current.isSuccess).toBe(true))
+    expect(noPoints.result.current.data?.turn.round).toBe(2)
   })
 })

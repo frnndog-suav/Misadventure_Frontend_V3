@@ -52,6 +52,7 @@ const member: Party['members'][number] = {
     zoneId: 'fixture.gray-harbor',
     respawnZoneId: 'fixture.gray-harbor',
     moveTargets: ['fixture.stone-bend', 'fixture.whispering-grove'],
+    availableActions: ['move', 'endTurn'],
   },
 }
 
@@ -92,6 +93,7 @@ export const partyCreatedFixture: Party = {
   members: [member],
   dimension,
   turnOrder: [member.id],
+  turn: { round: 1, memberId: member.id, actionPoints: 3 },
   createdAt: '2026-11-14T21:30:00.000Z',
   savedAt: '2026-11-14T21:30:00.000Z',
 }
@@ -109,13 +111,15 @@ export const partyIdleFixture: Party = {
 }
 
 /**
- * Party em sessão com o jogador em `zoneId` (cenário de mover, FEAT-07): o
- * resto do `player` fica igual; `moveTargets` é o valor pronto do backend.
+ * Party em sessão com o jogador em `zoneId` (cenário de mover, FEAT-07 e
+ * FEAT-08): o resto do `player` fica igual; `moveTargets` e os 2 pontos de
+ * ação que restam depois de 1 movimento são valores prontos do backend.
  */
 function partyMovedTo(zoneId: string, moveTargets: string[]): Party {
   return {
     ...partyInSessionFixture,
     members: [{ ...member, player: { ...member.player, zoneId, moveTargets } }],
+    turn: { ...partyInSessionFixture.turn, actionPoints: 2 },
     savedAt: '2026-11-14T21:40:00.000Z',
   }
 }
@@ -131,6 +135,34 @@ export const partyMovedToGroveFixture = partyMovedTo(
   'fixture.whispering-grove',
   ['fixture.gray-harbor'],
 )
+
+/**
+ * Grupo de exemplo com 0 pontos de ação (CONTRATO §3 FEAT-08): jogador em
+ * `fixture.stone-bend`, só `endTurn` disponível. O `id` próprio é a chave do
+ * cenário no handler (D-56 item 3).
+ */
+export const partyNoPointsFixture: Party = {
+  ...partyMovedToStoneBendFixture,
+  id: 'party-sem-pontos',
+  members: [
+    {
+      ...member,
+      player: {
+        ...partyMovedToStoneBendFixture.members[0].player,
+        availableActions: ['endTurn'],
+      },
+    },
+  ],
+  turn: { ...partyInSessionFixture.turn, actionPoints: 0 },
+  savedAt: '2026-11-14T21:50:00.000Z',
+}
+
+/** 200 de POST …/actions com `endTurn`: rodada 2, pontos cheios. */
+export const partyNextRoundFixture: Party = {
+  ...partyInSessionFixture,
+  turn: { round: 2, memberId: member.id, actionPoints: 3 },
+  savedAt: '2026-11-14T21:45:00.000Z',
+}
 
 /** 200 de GET /parties com o grupo criado. */
 export const partiesFixture: PartySummary[] = [
@@ -235,6 +267,15 @@ export const actionNotAllowedFixture = {
     code: 'ACTION_NOT_ALLOWED',
     message: 'Esta ação não é permitida agora.',
     details: { reason: 'notConnected' },
+  },
+} as const
+
+/** 409 de `move` sem pontos de ação (CONTRATO §3 FEAT-08). */
+export const actionNoActionPointsFixture = {
+  error: {
+    code: 'ACTION_NOT_ALLOWED',
+    message: 'Esta ação não é permitida agora.',
+    details: { reason: 'noActionPoints' },
   },
 } as const
 

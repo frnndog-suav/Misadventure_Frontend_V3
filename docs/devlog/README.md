@@ -80,3 +80,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 048 | T-36 | [Mapa na tela do grupo](048-T-36-mapa-tela-grupo.md) | aguardando revisão |
 | 049 | T-37 | [Movimentar](049-T-37-movimentar.md) | aguardando revisão |
 | 050 | RETORNO | [FEAT-07 validada contra o backend real](050-RETORNO-feat-07-validada.md) | aguardando revisão |
+| 051 | T-38 | [Cliente da FEAT-08](051-T-38-cliente-feat-08.md) | aguardando revisão |

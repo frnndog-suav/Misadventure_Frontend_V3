@@ -57,6 +57,18 @@ export const partyDimensionSchema = z.object({
 })
 export type PartyDimension = z.infer<typeof partyDimensionSchema>
 
+/** Tipos de `PartyAction`, na ordem fixa do contrato (FEAT-08). */
+export const partyActionTypeSchema = z.enum(['move', 'endTurn'])
+export type PartyActionType = z.infer<typeof partyActionTypeSchema>
+
+/** A vez: rodada, membro da vez e pontos restantes (FEAT-08, D-56). */
+export const partyTurnSchema = z.object({
+  round: z.number().int().min(1),
+  memberId: z.string(),
+  actionPoints: nonNegativeInt,
+})
+export type PartyTurn = z.infer<typeof partyTurnSchema>
+
 /** Estado do jogador na partida; tudo calculado pelo backend (§1.3). */
 export const playerStateSchema = z.object({
   playerClasses: z.array(
@@ -76,6 +88,8 @@ export const playerStateSchema = z.object({
   respawnZoneId: z.string(),
   /** Destinos válidos do Movimentar, prontos do backend (FEAT-07, D-55). */
   moveTargets: z.array(z.string()),
+  /** Ações que o jogador pode mandar agora, prontas do backend (FEAT-08, D-56). */
+  availableActions: z.array(partyActionTypeSchema),
 })
 export type PlayerState = z.infer<typeof playerStateSchema>
 
@@ -96,6 +110,7 @@ export const partySchema = z.object({
   dimension: partyDimensionSchema,
   /** Ids de membro, do 1º ao último (README 11.2). */
   turnOrder: z.array(z.string()),
+  turn: partyTurnSchema,
   createdAt: z.iso.datetime(),
   savedAt: z.iso.datetime(),
 })
@@ -236,13 +251,18 @@ export function useStartSession(
   })
 }
 
-/** Intenção de jogo (CONTRATO §1.6); a FEAT-08+ acrescenta variantes. */
-export type PartyAction = MoveAction
+/** Intenção de jogo (CONTRATO §1.6); as FEATs seguintes acrescentam variantes. */
+export type PartyAction = MoveAction | EndTurnAction
 
 /** Movimentar (README 12.2); `zoneId` vem de `moveTargets`. */
 export interface MoveAction {
   type: 'move'
   zoneId: string
+}
+
+/** Encerrar a vez (README 11.1); sem campos. */
+export interface EndTurnAction {
+  type: 'endTurn'
 }
 
 /**
