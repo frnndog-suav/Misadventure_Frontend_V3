@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.28 · **Data:** 2026-11-17
+> **Versão do contrato:** 0.30 · **Data:** 2026-11-17
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -1032,7 +1032,7 @@ Sem Carta de Dimensão publicada, o `problems` também traz o texto da zona Urba
 
 Testes e2e do backend por cenário: `list-classes`, `get-card`, `create-party/*`, `content-in-use.e2e-spec.ts` (REQ-39, REQ-40), `create-class/index.controller.e2e-spec.ts` (REQ-38), `validate-dimension` (REQ-36), `import-collection`/`export-collection` (REQ-48).
 
-### FEAT-07 — Mapa e Movimentar — `acordado`
+### FEAT-07 — Mapa e Movimentar — `validado`
 
 Regras: README 12.2 (Movimentar: só para zona **conectada**; pode repetir na mesma vez), 3.5 (encaixe: travessia nos dois sentidos; vizinhas sem setas que se apontam e setas mortas não ligam) e 3.6 (todas as zonas viradas para cima).
 
@@ -1156,3 +1156,5 @@ Contra a `fixture` (FEAT-06). O mapa é sorteado: compare as invariantes. Seja `
 | 0.26 | 2026-11-17 | FE | FEAT-06 `validado` sem mudança de formato: 26 conferências dos 12 cenários com chamadas HTTP contra o backend real (`http://localhost:3333`, `fixture`); só "apagar `fixture.stone-bend` → `204`" ficou de fora, porque um save anterior do autor usa o mapa (o `409` seria o correto). Telas "Novo jogo", grupo preparado e classes do editor com o MSW desligado. As fixtures do MSW passaram a ser cópia exata do conteúdo de teste do backend. |
 | 0.27 | 2026-11-17 | BE | FEAT-07 proposta: `POST /parties/:partyId/actions` (rota única de ações) com `PartyAction` = `MoveAction`; `PlayerState.moveTargets` (altera a FEAT-06); `ActionInvalidDetails`, `ActionNotAllowedDetails`; códigos `ACTION_INVALID` (400) e `ACTION_NOT_ALLOWED` (409) (§4); `PARTY_SESSION_NOT_ACTIVE` vale também para ações; glossário §2.11. Até a FEAT-08, mover não gasta ponto de ação. |
 | 0.28 | 2026-11-17 | FE | FEAT-07 `acordado` sem mudanças: os destinos vêm prontos em `moveTargets` (o frontend não calcula travessias); a rota única de ações e a união `PartyAction` cobrem as próximas intenções. O FE alinha `PlayerState` (schema e fixtures do MSW) na tarefa da FEAT-07. |
+| 0.29 | 2026-11-17 | BE | FEAT-07 `implementado (BE)`: `POST /parties/:partyId/actions` e `PlayerState.moveTargets` implementados; cenários cobertos pelos e2e de `take-party-action`. Sem mudança de tipos ou textos. |
+| 0.30 | 2026-11-17 | FE | FEAT-07 `validado` sem mudança de formato: os 7 cenários com chamadas HTTP contra o backend real (`http://localhost:3333`, `contractVersion` 0.29) e a tela do grupo (mapa, Movimentar ida e volta, zona sem travessia sem botão, sessão encerrada) com o MSW desligado. O backend estava com o conteúdo `base`, não a `fixture`: os cenários com `fixture.gray-harbor` rodaram com a cidade inicial real (`base.harbor-town`); as invariantes são as mesmas. |

@@ -79,3 +79,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 047 | T-35 | [Cliente da FEAT-07](047-T-35-cliente-feat-07.md) | aguardando revisão |
 | 048 | T-36 | [Mapa na tela do grupo](048-T-36-mapa-tela-grupo.md) | aguardando revisão |
 | 049 | T-37 | [Movimentar](049-T-37-movimentar.md) | aguardando revisão |
+| 050 | RETORNO | [FEAT-07 validada contra o backend real](050-RETORNO-feat-07-validada.md) | aguardando revisão |
