@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.32 · **Data:** 2026-11-17
+> **Versão do contrato:** 0.33 · **Data:** 2026-11-17
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -1113,7 +1113,7 @@ Contra a `fixture` (FEAT-06). O mapa é sorteado: compare as invariantes. Seja `
 - Depois de `POST /parties/<G>/session/end`, quando `{ "type": "move", "zoneId": <qualquer de moveTargets> }`, então `409` com `{ "error": { "code": "PARTY_SESSION_NOT_ACTIVE", "message": "Não há sessão em andamento neste grupo." } }`.
 - Quando `POST /parties/00000000-0000-0000-0000-000000000000/actions` com um `move`, então `404` `PARTY_NOT_FOUND`.
 
-### FEAT-08 — A vez — `acordado`
+### FEAT-08 — A vez — `implementado (BE)`
 
 Regras: README 11.1 (3 pontos de ação por vez; Movimentar gasta 1; encerrar a vez quando quiser; com 0 pontos a vez **não** termina sozinha, Apêndice B K2), 11.2 (ordem fixa), 2.1 (vez e rodada), 12.1/12.2 (custo do Movimentar), 11.4 (fora da vez ninguém inicia ação) e 28.1 (salvamento no fim de cada vez). No jogo solo os relógios da vez estão desligados (11.3 item 6, B J2): não há tempo nesta seção.
 
@@ -1248,3 +1248,4 @@ Contra a `fixture`, com o laboratório no padrão (`actionPointsPerTurn: 3`). Se
 | 0.30 | 2026-11-17 | FE | FEAT-07 `validado` sem mudança de formato: os 7 cenários com chamadas HTTP contra o backend real (`http://localhost:3333`, `contractVersion` 0.29) e a tela do grupo (mapa, Movimentar ida e volta, zona sem travessia sem botão, sessão encerrada) com o MSW desligado. O backend estava com o conteúdo `base`, não a `fixture`: os cenários com `fixture.gray-harbor` rodaram com a cidade inicial real (`base.harbor-town`); as invariantes são as mesmas. |
 | 0.31 | 2026-11-17 | BE | FEAT-08 proposta: `Party.turn` (`PartyTurn`: `round`, `memberId`, `actionPoints`) e `PlayerState.availableActions` (alteram FEAT-05/06); `PartyAction` ganha `EndTurnAction` (`{ type: "endTurn" }`) na rota de ações; `move` gasta 1 ponto de ação; `ActionNotAllowedDetails.reason` ganha `noActionPoints` (altera FEAT-07, cuja nota "Até a FEAT-08" sai); glossário §2.12. Saves anteriores continuam (lidos na rodada 1). Sem rota nem código de erro novos. |
 | 0.32 | 2026-11-17 | FE | FEAT-08 `acordado` sem mudanças: pontos restantes, vez e ações disponíveis chegam prontos (`turn`, `availableActions`); o frontend só exibe e envia `endTurn`. O FE alinha schemas e fixtures do MSW (`Party.turn`, `availableActions`) nas tarefas da FEAT-08. |
+| 0.33 | 2026-11-17 | BE | FEAT-08 `implementado (BE)`: `Party.turn`, `PlayerState.availableActions`, `endTurn` e `noActionPoints` implementados; os 8 cenários cobertos pelos e2e de `take-party-action` (REQ-54 a REQ-59) e `create-party`. Saves anteriores são lidos na rodada 1 e regravados no formato novo. Sem mudança de tipos ou textos. |
