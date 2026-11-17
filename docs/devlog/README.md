@@ -75,3 +75,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 043 | T-32 | [Cliente do editor: classes e Carta de Dimensão](043-T-32-cliente-editor-classes.md) | concluída |
 | 044 | T-33 | [Editor: Carta de Dimensão e forma das setas](044-T-33-editor-dimensao-setas.md) | concluída |
 | 045 | T-34 | [Classes no editor](045-T-34-classes-no-editor.md) | aguardando revisão |
+| 046 | RETORNO | [FEAT-06 validada contra o backend real](046-RETORNO-feat-06-validada.md) | aguardando revisão |

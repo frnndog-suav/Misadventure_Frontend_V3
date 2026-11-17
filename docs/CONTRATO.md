@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.25 · **Data:** 2026-11-17
+> **Versão do contrato:** 0.26 · **Data:** 2026-11-17
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -845,7 +845,7 @@ Partem do laboratório ligado e de um `CONTENT_DIR` com só a coleção `fixture
 - Quando `GET /lab/content/collections/nope`, então `404` com `{ "error": { "code": "COLLECTION_NOT_FOUND", "message": "Coleção não encontrada." } }`.
 - Dado o laboratório desligado, quando `GET /lab/content/collections`, então `404` `NOT_FOUND`.
 
-### FEAT-06 — Preparação da partida — `implementado (BE)`
+### FEAT-06 — Preparação da partida — `validado`
 
 Regras: README 10.1, 3.2 (zona de chegada), 3.5 (montagem do mapa e validação da composição), 4.4 (deck pré-pronto), 7.4 (vida máxima), 8.2 (trava), 8.6/8.7 (classes e modificadores base), 9.1 (valores iniciais), 11.2 (ordem por D20), 20.1 (spawn e respawn), 27, 28.1 (todo grupo novo começa pela primeira dimensão lançada) e Apêndice B T1.
 
@@ -1073,3 +1073,4 @@ Testes e2e do backend por cenário: `list-classes`, `get-card`, `create-party/*`
 | 0.23 | 2026-11-16 | BE | FEAT-31 `implementado (BE)` (SPEC-BACKEND T-19 a T-21): e2e de cada cenário em `src/infra/http/controllers/*/index.controller.e2e-spec.ts` e conferidos com `curl` contra o backend real. Sem mudança de formato: textos exatos de REQ-47 no cenário de `validate-dimension`; textos fixos novos de `fields[].message` (JSON malformado, `status` desconhecido, parâmetro repetido, `replace` inválido); citação "spec D-38" corrigida para "spec D-49". |
 | 0.24 | 2026-11-16 | FE | FEAT-31 `validado` sem mudança de formato: 17 de 18 cenários com chamadas HTTP contra o backend real (29 conferências; o de laboratório desligado não foi rodado, pede reiniciar o backend) e as telas do editor (validar, exportar, importar, coleções e cartas) com o MSW desligado. |
 | 0.25 | 2026-11-17 | BE | FEAT-06 `implementado (BE)` (SPEC-BACKEND T-14 a T-18): sem mudança de formato; textos de `problems` e do motivo `starterDeckCardNotPublished` incluídos; esclarecido `CONTENT_REFERENCED` na exclusão e no import com `replace` da coleção (carta referenciada por classe de outra coleção). |
+| 0.26 | 2026-11-17 | FE | FEAT-06 `validado` sem mudança de formato: 26 conferências dos 12 cenários com chamadas HTTP contra o backend real (`http://localhost:3333`, `fixture`); só "apagar `fixture.stone-bend` → `204`" ficou de fora, porque um save anterior do autor usa o mapa (o `409` seria o correto). Telas "Novo jogo", grupo preparado e classes do editor com o MSW desligado. As fixtures do MSW passaram a ser cópia exata do conteúdo de teste do backend. |
