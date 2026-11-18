@@ -16,6 +16,7 @@ import { Term } from '../ui/Term'
 import { attributeSchema } from '../api/catalog'
 import { testCategoryCatalog } from '../ui/test-assets/categories'
 import { CatalogSection } from './CatalogSection'
+import { GrantSection } from './GrantSection'
 import './LabPage.css'
 
 /** Rótulos dos campos (REQ-06, glossário §2.6), na ordem da tela. */
@@ -232,6 +233,7 @@ export default function LabPage() {
       <LabConfigSection />
       <ComponentsSection />
       <CatalogSection />
+      <GrantSection />
     </main>
   )
 }

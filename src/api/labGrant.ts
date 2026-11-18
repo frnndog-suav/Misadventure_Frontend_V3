@@ -1,7 +1,11 @@
-import { useMutation, type UseMutationResult } from '@tanstack/react-query'
+import {
+  useMutation,
+  useQueryClient,
+  type UseMutationResult,
+} from '@tanstack/react-query'
 import { z } from 'zod'
 import { ApiError, requestJson } from './http'
-import { parseDetails, partySchema } from './parties'
+import { parseDetails, partiesKey, partySchema } from './parties'
 import type { Party } from './parties'
 
 /**
@@ -97,12 +101,18 @@ async function grantToMember({
 /**
  * Doa uma carta ou ouro a um membro e entrega o `Party` devolvido;
  * `LAB_GRANT_INVALID` e `LAB_GRANT_NO_SPACE` chegam com os detalhes validados,
- * os demais erros §1.4 como `ApiError`. Sem retry (D-16).
+ * os demais erros §1.4 como `ApiError`. O sucesso invalida as consultas de
+ * grupos (REQ-46). Sem retry (D-16).
  */
 export function useLabGrant(): UseMutationResult<
   Party,
   Error,
   LabGrantVariables
 > {
-  return useMutation({ mutationFn: grantToMember, retry: false })
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: grantToMember,
+    retry: false,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: partiesKey }),
+  })
 }

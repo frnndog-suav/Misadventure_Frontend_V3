@@ -421,14 +421,18 @@ export function useCollections(): UseQueryResult<CollectionSummary[], Error> {
   })
 }
 
-/** Cartas da coleção, filtradas pelo backend quando há `type` (REQ-08). */
+/**
+ * Cartas da coleção, filtradas pelo backend quando há `type` (REQ-08);
+ * `null`: consulta parada (REQ-46, enquanto não há coleção).
+ */
 export function useCards(
-  collectionId: string,
+  collectionId: string | null,
   type?: CardType,
 ): UseQueryResult<Card[], Error> {
   return useQuery({
     queryKey: ['catalog', 'cards', collectionId, type ?? 'all'],
-    queryFn: () => getCards(collectionId, type),
+    queryFn: () => getCards(collectionId ?? '', type),
+    enabled: collectionId !== null,
     retry: false,
   })
 }

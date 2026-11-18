@@ -119,3 +119,34 @@ test('REQ-43: "Capacidade do inventário" e "Capacidade da bolsa" com padrão e 
     page.getByRole('spinbutton', { name: 'Capacidade da bolsa' }),
   ).toHaveAccessibleDescription('Padrão: 300 · Mín. 0 · Máx. 1000000')
 })
+
+test('REQ-46: doa carta e ouro na seção "Doação" (MSW)', async ({ page }) => {
+  await page.goto('/lab')
+  const section = page.getByRole('region', { name: 'Doação' })
+  const status = section.getByRole('status')
+  const grant = section.getByRole('button', { name: 'Doar' })
+
+  await section.getByRole('radio', { name: 'Os Teimosos (Lia)' }).check()
+  await expect(section.getByRole('radio', { name: 'Lia' })).toBeChecked()
+  await expect(grant).toBeDisabled()
+
+  const card = section.getByRole('combobox', { name: 'Carta' })
+  await expect(
+    card.getByRole('option', { name: 'Poção de Cura · Item' }),
+  ).toBeAttached()
+  await card.selectOption({ label: 'Poção de Cura · Item' })
+  await section.getByRole('spinbutton', { name: 'Quantidade' }).fill('2')
+  await grant.click()
+  await expect(status).toHaveText(
+    'Doação feita. Lia: ouro 10, 1 slots no inventário, 0 cartas diferentes na pasta.',
+  )
+
+  await section.getByRole('radio', { name: 'Ouro' }).check()
+  const amount = section.getByRole('spinbutton', { name: 'Quantidade de ouro' })
+  await expect(grant).toBeDisabled()
+  await amount.fill('295')
+  await grant.click()
+  await expect(status).toHaveText(
+    'Doação feita. Lia: ouro 300, 0 slots no inventário, 0 cartas diferentes na pasta.',
+  )
+})
