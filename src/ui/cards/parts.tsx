@@ -59,6 +59,12 @@ export function LabeledList<T>({
   )
 }
 
+/** "Coletada com" (REQ-48): o `toolKind` como veio (D-59 item 4); `null`, nada. */
+export function ScavengeTool({ tool }: { tool: string | null }) {
+  if (tool === null) return null
+  return <p>Coletada com: {tool}</p>
+}
+
 export function Tags({ tags }: { tags: readonly string[] }) {
   return (
     <LabeledList

@@ -15,18 +15,18 @@ React Router DOM, Zod, Vitest, Playwright, MSW, ESLint, Prettier.
 
 ## Mapa (onde está o que)
 
-| Onde | O que guarda | Quando leio |
-|---|---|---|
-| `CLAUDE.md` | Constituição (14 princípios), fluxos de trabalho, comandos | Antes do primeiro trabalho de código da sessão |
-| `docs/SPEC-FRONTEND.md` | Spec do frontend: REQ, decisões D, tarefas T, telas — **fonte do comportamento** | Em toda tarefa T-xx (só as partes citadas) |
-| `docs/README.md` | Manual de regras do jogo. Citar por seção (README 19.2); o Apêndice B são decisões fechadas que não se reabrem | Quando a tarefa tocar regras |
-| `docs/CONTRATO.md` | Contrato com o backend: §1 convenções, §2 glossário, §4 códigos de erro, seções por FEAT com situação | Ao mexer em `src/api/` |
-| `docs/ROADMAP.md` | Momentos e features (FEAT-nn); §2 = protocolo da ponte entre os repositórios | Ao planejar |
-| `docs/devlog/` | Registro de cada etapa (formato e índice no `README.md`); `tempo.html` + `tempo-eventos.log` = registro de tempo | Antes de alterar funcionalidade/visual |
-| `docs/PROMPT-AGENTES-E-SKILLS.md` | Meta-prompt que montou este sistema de agentes/skills (referência para replicar em outro projeto; não é fluxo de trabalho) | Só se o autor pedir para replicar/adaptar o sistema |
-| `.claude/skills/*/SKILL.md` | Workflows: `/tarefa`, `/mudar-spec`, `/checar`, `/testar`, `/registrar-etapa`, `/contrato`, `/retorno-backend`, `/visual`, `/revisar-visual`, `/guia-visual`, `/assets` | Quando o usuário pedir um fluxo pelo nome; `$ARGUMENTS` = o que vem depois |
-| `.claude/agents/*.md` | Papéis: `client-dev`, `ui-dev`, `motion-dev`, `ux-designer`, `test-writer`, `spec-reviewer` | Como instrução ao implementar ou ao delegar a subagente |
-| `.claude/hooks/client-guard.mjs` | Guarda das proibições em `src/` (D-08) | ESLint aplica as mesmas regras; manual: `node .claude/hooks/client-guard.mjs --all` |
+| Onde                              | O que guarda                                                                                                                                                            | Quando leio                                                                         |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `CLAUDE.md`                       | Constituição (14 princípios), fluxos de trabalho, comandos                                                                                                              | Antes do primeiro trabalho de código da sessão                                      |
+| `docs/SPEC-FRONTEND.md`           | Spec do frontend: REQ, decisões D, tarefas T, telas — **fonte do comportamento**                                                                                        | Em toda tarefa T-xx (só as partes citadas)                                          |
+| `docs/README.md`                  | Manual de regras do jogo. Citar por seção (README 19.2); o Apêndice B são decisões fechadas que não se reabrem                                                          | Quando a tarefa tocar regras                                                        |
+| `docs/CONTRATO.md`                | Contrato com o backend: §1 convenções, §2 glossário, §4 códigos de erro, seções por FEAT com situação                                                                   | Ao mexer em `src/api/`                                                              |
+| `docs/ROADMAP.md`                 | Momentos e features (FEAT-nn); §2 = protocolo da ponte entre os repositórios                                                                                            | Ao planejar                                                                         |
+| `docs/devlog/`                    | Registro de cada etapa (formato e índice no `README.md`); `tempo.html` + `tempo-eventos.log` = registro de tempo                                                        | Antes de alterar funcionalidade/visual                                              |
+| `docs/PROMPT-AGENTES-E-SKILLS.md` | Meta-prompt que montou este sistema de agentes/skills (referência para replicar em outro projeto; não é fluxo de trabalho)                                              | Só se o autor pedir para replicar/adaptar o sistema                                 |
+| `.claude/skills/*/SKILL.md`       | Workflows: `/tarefa`, `/mudar-spec`, `/checar`, `/testar`, `/registrar-etapa`, `/contrato`, `/retorno-backend`, `/visual`, `/revisar-visual`, `/guia-visual`, `/assets` | Quando o usuário pedir um fluxo pelo nome; `$ARGUMENTS` = o que vem depois          |
+| `.claude/agents/*.md`             | Papéis: `client-dev`, `ui-dev`, `motion-dev`, `ux-designer`, `test-writer`, `spec-reviewer`                                                                             | Como instrução ao implementar ou ao delegar a subagente                             |
+| `.claude/hooks/client-guard.mjs`  | Guarda das proibições em `src/` (D-08)                                                                                                                                  | ESLint aplica as mesmas regras; manual: `node .claude/hooks/client-guard.mjs --all` |
 
 ## Invariantes (resumo — a fonte autoritativa é `CLAUDE.md`)
 

@@ -95,3 +95,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 063 | T-48 | [Doação do laboratório](063-T-48-doacao-do-laboratorio.md) | concluída |
 | 064 | RETORNO | [FEAT-10 validada contra o backend real](064-RETORNO-feat-10-validada.md) | concluída |
 | 065 | T-49 | [Cliente da FEAT-32](065-T-49-cliente-feat-32.md) | concluída |
+| 066 | T-50 | [Laboratório e catálogo da FEAT-32](066-T-50-laboratorio-catalogo-feat-32.md) | aguardando revisão |

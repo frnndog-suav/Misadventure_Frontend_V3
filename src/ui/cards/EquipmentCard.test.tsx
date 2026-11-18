@@ -68,6 +68,16 @@ describe('EquipmentCard', () => {
     expect(screen.queryByText(/Nenhum|—/)).toBeNull()
   })
 
+  it('REQ-48: scavengeTool mostra "Coletada com"; com null, nada', () => {
+    const { unmount } = render(
+      <EquipmentCard card={{ ...minimal, scavengeTool: 'pickaxe' }} />,
+    )
+    expect(screen.getByText('Coletada com: pickaxe')).toBeVisible()
+    unmount()
+    render(<EquipmentCard card={minimal} />)
+    expect(screen.queryByText(/Coletada com/)).toBeNull()
+  })
+
   it('REQ-10: carta completa mostra todos os campos na ordem recebida', () => {
     render(<EquipmentCard card={full} />)
     const mods = screen.getByRole('list', { name: 'Modificadores' })

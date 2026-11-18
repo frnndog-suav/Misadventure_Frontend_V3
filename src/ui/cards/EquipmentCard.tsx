@@ -10,6 +10,7 @@ import {
   Effects,
   LabeledList,
   RuleBlock,
+  ScavengeTool,
   Tags,
 } from './parts'
 
@@ -48,6 +49,7 @@ export function EquipmentCard({ card }: { card: EquipmentCardData }) {
       {card.blocksShield && <p>Bloqueia escudo</p>}
       <Abilities abilities={card.abilities} />
       <Effects effects={card.effects} />
+      <ScavengeTool tool={card.scavengeTool} />
       {card.refinement !== null && (
         <div className="game-card-block">
           <p>Refinável até +{card.refinement.maxLevel}</p>

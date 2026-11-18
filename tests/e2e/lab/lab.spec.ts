@@ -120,6 +120,60 @@ test('REQ-43: "Capacidade do inventário" e "Capacidade da bolsa" com padrão e 
   ).toHaveAccessibleDescription('Padrão: 300 · Mín. 0 · Máx. 1000000')
 })
 
+test('REQ-47: os 3 campos do cofre com padrão e limites (MSW)', async ({
+  page,
+}) => {
+  await page.goto('/lab')
+  const region = page.getByRole('region', { name: 'Configuração' })
+  await expect(
+    region.getByRole('spinbutton', { name: 'Capacidade do cofre' }),
+  ).toHaveValue('30')
+  await expect(
+    region.getByRole('spinbutton', {
+      name: 'Slots de decks do cofre (a build em uso ocupa um)',
+    }),
+  ).toHaveAccessibleDescription('Padrão: 10 · Mín. 1 · Máx. 100')
+  await expect(
+    region.getByRole('spinbutton', { name: 'Capacidade de ouro do cofre' }),
+  ).toBeVisible()
+})
+
+test('REQ-48: ferramenta, "Coletada com" e "Decks de recompensas" no catálogo (MSW)', async ({
+  page,
+}) => {
+  await page.goto('/lab')
+  const section = page.getByRole('region', { name: 'Catálogo' })
+  const list = section.getByRole('list', { name: 'Cartas' })
+
+  await section.getByRole('radio', { name: 'Item (5)' }).check()
+  await list.getByRole('button', { name: 'Vara de Pesca · Item' }).click()
+  const rod = section.getByRole('article', { name: 'Vara de Pesca' })
+  await expect(rod.getByText('Ferramenta: fishing-rod')).toBeVisible()
+  await expect(
+    rod.getByText('Vasculha em: Costeira, Fluvial, Lacustre, Urbana'),
+  ).toBeVisible()
+
+  await list.getByRole('button', { name: 'Peixe Prateado · Item' }).click()
+  await expect(
+    section
+      .getByRole('article', { name: 'Peixe Prateado' })
+      .getByText('Coletada com: fishing-rod'),
+  ).toBeVisible()
+
+  await section.getByRole('radio', { name: 'Dimensão (1)' }).check()
+  await list
+    .getByRole('button', { name: 'Dimensão de Teste · Dimensão' })
+    .click()
+  const decks = section
+    .getByRole('article', { name: 'Dimensão de Teste' })
+    .getByRole('list', { name: 'Urbana' })
+  await expect(decks.getByRole('listitem')).toHaveText([
+    '1× Peixe Prateado',
+    '1× Minério de Ferro',
+    '2× Poção de Cura',
+  ])
+})
+
 test('REQ-46: doa carta e ouro na seção "Doação" (MSW)', async ({ page }) => {
   await page.goto('/lab')
   const section = page.getByRole('region', { name: 'Doação' })
