@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.46 · **Data:** 2026-11-18
+> **Versão do contrato:** 0.47 · **Data:** 2026-11-18
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -1499,7 +1499,7 @@ Contra a `fixture` (com as cartas que o backend acrescenta nesta FEAT), laborat�
 
 Só nos e2e do backend: leitura de saves antigos e o Pico abaixo do requisito com o equipamento já em uso (o Pico ainda não muda no jogo).
 
-### FEAT-32 — Cofre, limbo, deck de recompensas e Vasculhar — `acordado`
+### FEAT-32 — Cofre, limbo, deck de recompensas e Vasculhar — `implementado (BE)`
 
 Regras: README 3.4 (deck de recompensas por tipo de zona; Vasculhar não usa o deck de reserva; toda Urbana tem Usar cofre), 4.4 (passos ao mexer na build), 6.4 (cofre: slots, slots de decks com a build em uso, ouro, cópias físicas, Descartar), 6.5 (limbo: nada volta), 8.2, 12.2 (Usar cofre e Vasculhar: 1 ponto, repetíveis) e 12.6 (Vasculhar), B 12 e B 35.
 
@@ -1700,7 +1700,7 @@ Seja `G` criado com `{ "name": "Os Teimosos", "characterName": "Lia", "playerCla
 - Em seguida, `useVault` com `[{ "operation": "saveDeck", "cards": [{ "cardId": STR, "copies": 2 }] }]` → `200` com `vault.decks = [[{ "cardId": STR, "copies": 2 }]]`; `[{ "operation": "swapBuild", "deckIndex": 0 }]` → `409` `{ "reason": "buildBelowMinimum", "operationIndex": 0 }`; `[{ "operation": "unpackDeck", "deckIndex": 3 }]` → `409` `{ "reason": "deckNotFound", "operationIndex": 0 }`.
 - Quando `{ "type": "useVault", "operations": [] }`, então `400` `ACTION_INVALID` com `fields = [{ "field": "operations", "reason": "invalidLength" }]`; `[{ "operation": "store", "cardId": P, "quantity": 0 }]` → `fields = [{ "field": "operations.0.quantity", "reason": "notPositiveInteger" }]`; `[{ "operation": "pack" }]` → `fields = [{ "field": "operations.0.operation", "reason": "unknownOperation" }]`.
 - Depois de um `move` para fora de Porto Cinzento, `useVault` e `scavenge` → `409` `{ "reason": "zoneActionUnavailable" }` e nenhum dos dois em `availableActions`.
-- Quando `DELETE /lab/content/cards/fixture.silver-fish` (FEAT-31), então `409` `CONTENT_REFERENCED` (está no `rewardDecks`); com `P` no cofre de `G`, `DELETE` de `P` → `409` `CONTENT_IN_USE`.
+- Quando `DELETE /lab/content/cards/fixture.silver-fish` (FEAT-31) **sem nenhum grupo**, então `409` `CONTENT_REFERENCED` (está no `rewardDecks`; com um grupo vivo, ela está no deck de recompensas dele e a resposta é `CONTENT_IN_USE`, que vem antes, v0.47); com `P` no cofre de `G`, `DELETE` de `P` → `409` `CONTENT_IN_USE`.
 
 Só nos e2e do backend: ordem exata dos decks de recompensas (sorteio), saves antigos, `deckSlotsFull`, `vaultFull` e `vaultGoldFull` com capacidades baixas no laboratório, e a validação completa dos campos novos no editor.
 
@@ -1780,3 +1780,4 @@ Só nos e2e do backend: ordem exata dos decks de recompensas (sorteio), saves an
 | 0.44 | 2026-11-18 | BE | FEAT-32 proposta (`proposto (BE)`): `PlayerState.vault` (`Vault`), `vaultCapacity`, `vaultDeckSlots`, `vaultGoldCapacity`, `scavengeTargets` (altera FEAT-06); `PartyAction` ganha `UseVaultAction` (lote de 1 a 50 `VaultOperation`: `store`, `take`, `storeGold`, `takeGold`, `discard`, `saveDeck`, `unpackDeck`, `swapBuild`, `editBuild`) e `ScavengeAction`; `availableActions` ganha `scavenge` e `useVault` (ordem nova); motivos novos em `ActionInvalidDetails` (`invalidLength`, `notNonNegativeInteger`) e `ActionNotAllowedDetails` (13 motivos e o campo `operationIndex`); 3 chaves novas em `GameConfigValues` (altera FEAT-03); `ItemCard.toolKind`/`scavengeZoneTypes`/`scavengeTool`, `EquipmentCard.scavengeTool`, `DimensionCard.rewardDecks` (altera FEAT-04/06) e a `fixture` com 3 itens novos; `CONTENT_REFERENCED` também por deck de recompensas e "em uso" estendido (altera FEAT-31); glossário §2.15. Sem rota nem código de erro novos. |
 | 0.45 | 2026-11-18 | FE | FEAT-32 → `proposto (FE)`, um pedido de mudança: o resultado do Vasculhar vem pronto em `PlayerState.lastScavenge` (`{ cardId, found }` ou `null`), em vez de o frontend comparar o inventário (princípio "o backend decide"; com carta que empilha, a comparação depende de regra de empilhamento). Cenários do Vasculhar atualizados. O resto da proposta aceito sem mudanças. |
 | 0.46 | 2026-11-18 | BE | FEAT-32 `acordado`: `lastScavenge` aceito sem mudanças. Sem mudança de formato. |
+| 0.47 | 2026-11-18 | BE | FEAT-32 `implementado (BE)` (T-30 a T-33; e2e de todos os cenários de validação). Esclarecimento no cenário de `DELETE` de `fixture.silver-fish`: `CONTENT_REFERENCED` só sem grupo; com um grupo vivo a carta está no deck de recompensas dele → `CONTENT_IN_USE` (ordem da FEAT-31, REQ-94). Sem mudança de tipos. |
