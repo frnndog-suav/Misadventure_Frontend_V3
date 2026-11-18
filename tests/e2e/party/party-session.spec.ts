@@ -101,7 +101,8 @@ test.describe('REQ-16: grupo em sessão (MSW)', () => {
       lia
         .getByRole('list', { name: 'Inventário (5 de 10 slots)' })
         .getByRole('listitem'),
-    ).toHaveText([
+      // `toContainText`: os itens também têm os botões do REQ-45.
+    ).toContainText([
       '1× Lâmina do Crepúsculo',
       '1× Escudo de Carvalho',
       '1× Elmo de Ferro',
@@ -312,5 +313,50 @@ test.describe('REQ-42: Ajustar deck (MSW)', () => {
     await section.getByRole('button', { name: 'Cancelar' }).click()
     await expect(section).toHaveCount(0)
     await expect(page.getByRole('status')).toHaveText('')
+  })
+})
+
+test.describe('REQ-45: Preparar (MSW)', () => {
+  test('REQ-45: equipar, recusas por motivo e guardar', async ({ page }) => {
+    await page.goto('/grupo/party-com-equipamento')
+    const lia = page.getByRole('region', { name: 'Lia' })
+    const status = page.getByRole('status')
+    await expect(status).toHaveText('')
+    await expect(lia.getByRole('button', { name: /^Equipar / })).toHaveText([
+      'Equipar Lâmina do Crepúsculo',
+      'Equipar Escudo de Carvalho',
+      'Equipar Elmo de Ferro',
+      'Equipar Varinha Arcana',
+    ])
+
+    // Recusas (cenários do contrato no MSW).
+    await lia.getByRole('button', { name: 'Equipar Elmo de Ferro' }).click()
+    await expect(status).toHaveText(
+      'Esta ação não é permitida agora. Seu Pico não alcança o requisito de Elmo de Ferro.',
+    )
+    await lia.getByRole('button', { name: 'Equipar Varinha Arcana' }).click()
+    await expect(status).toHaveText(
+      'Esta ação não é permitida agora. Nenhuma das suas classes pode usar Varinha Arcana.',
+    )
+    await expect(lia.getByText('Arma: vazio')).toBeVisible()
+
+    await lia
+      .getByRole('button', { name: 'Equipar Lâmina do Crepúsculo' })
+      .click()
+    await expect(status).toHaveText('Equipou Lâmina do Crepúsculo.')
+    await expect(lia.getByText('Arma: Lâmina do Crepúsculo')).toBeVisible()
+
+    await lia
+      .getByRole('button', { name: 'Equipar Escudo de Carvalho' })
+      .click()
+    await expect(status).toHaveText(
+      'Esta ação não é permitida agora. A arma em uso não deixa usar escudo.',
+    )
+
+    await lia
+      .getByRole('button', { name: 'Guardar Lâmina do Crepúsculo' })
+      .click()
+    await expect(status).toHaveText('Guardou Lâmina do Crepúsculo.')
+    await expect(lia.getByText('Arma: vazio')).toBeVisible()
   })
 })

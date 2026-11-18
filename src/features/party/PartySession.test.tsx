@@ -25,6 +25,9 @@ import { internalErrorFixture } from '../../mocks/fixtures'
 import { handlers } from '../../mocks/handlers'
 import {
   actionNoActionPointsFixture,
+  actionPrepareNotAllowedFixture,
+  partyBladeEquippedFixture,
+  partyBladeUnequippedFixture,
   partyCreatedFixture,
   partyGearInSessionFixture,
   partyInSessionFixture,
@@ -338,6 +341,8 @@ describe('REQ-44: inventário, equipamentos e bolsa na tela do grupo', () => {
               ...gear,
               player: {
                 ...gear.player,
+                // Sem `prepare`: o texto do item sem os botões do REQ-45.
+                availableActions: ['move', 'endTurn'],
                 equipment: {
                   ...gear.player.equipment,
                   shield: 'fixture.oak-shield',
@@ -1534,5 +1539,267 @@ describe('REQ-42: Ajustar deck', () => {
         'Servidor indisponível. Tente novamente.',
       ),
     )
+  })
+})
+
+describe('REQ-45: Preparar (equipar e guardar)', () => {
+  const blade = 'fixture.blade-of-dusk'
+  const bladeName = 'Lâmina do Crepúsculo'
+  const [gear] = partyGearInSessionFixture.members
+  const lia = () => screen.findByRole('region', { name: 'Lia' })
+  const equipButton = (name: string) =>
+    screen.getByRole('button', { name: `Equipar ${name}` })
+
+  function sessionWith(party: Party): void {
+    server.use(
+      http.post('*/parties/:partyId/session', () => HttpResponse.json(party)),
+    )
+  }
+
+  async function openGear(): Promise<void> {
+    renderParty(partyGearInSessionFixture.id)
+    await screen.findByRole('button', { name: `Equipar ${bladeName}` })
+  }
+
+  it('REQ-45: com prepare, só os slots com carta de equipamento têm "Equipar {nome}"; sem nada equipado, não há "Guardar"', async () => {
+    await openGear()
+    const section = await lia()
+    await waitFor(() =>
+      expect(
+        within(section)
+          .getAllByRole('button', { name: /^Equipar / })
+          .map((b) => b.textContent),
+      ).toEqual([
+        'Equipar Lâmina do Crepúsculo',
+        'Equipar Escudo de Carvalho',
+        'Equipar Elmo de Ferro',
+        'Equipar Varinha Arcana',
+      ]),
+    )
+    expect(
+      within(section).queryByRole('button', { name: /^Guardar / }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('REQ-45: cada categoria ocupada tem "Guardar {nome}"', async () => {
+    sessionWith(partyBladeEquippedFixture)
+    renderParty(partyGearInSessionFixture.id)
+    const button = await screen.findByRole('button', {
+      name: `Guardar ${bladeName}`,
+    })
+    expect(
+      within(screen.getByRole('list', { name: 'Equipamentos' })).getAllByRole(
+        'button',
+      ),
+    ).toEqual([button])
+  })
+
+  it('REQ-45: sem prepare em availableActions não há "Equipar" nem "Guardar"', async () => {
+    const [equipped] = partyBladeEquippedFixture.members
+    sessionWith({
+      ...partyBladeEquippedFixture,
+      members: [
+        {
+          ...equipped,
+          player: { ...equipped.player, availableActions: ['move', 'endTurn'] },
+        },
+      ],
+    })
+    renderParty(partyGearInSessionFixture.id)
+    await screen.findByText(`Arma: ${bladeName}`)
+    await screen.findByText('1× Escudo de Carvalho')
+    expect(
+      screen.queryByRole('button', { name: /^(Equipar|Guardar) / }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('REQ-45: outros membros nunca têm os botões', async () => {
+    sessionWith({
+      ...partyGearInSessionFixture,
+      members: [
+        gear,
+        { ...gear, id: 'member-bo', characterName: 'Bo', isHost: false },
+      ],
+      turnOrder: ['member-lia', 'member-bo'],
+    })
+    renderParty(partyGearInSessionFixture.id)
+    const bo = await screen.findByRole('region', { name: 'Bo' })
+    await within(await lia()).findByRole('button', {
+      name: `Equipar ${bladeName}`,
+    })
+    expect(within(bo).queryByRole('button')).not.toBeInTheDocument()
+  })
+
+  it('REQ-45: com 0 pontos de ação e prepare presente, os botões ficam habilitados', async () => {
+    sessionWith({
+      ...partyGearInSessionFixture,
+      turn: { ...partyGearInSessionFixture.turn, actionPoints: 0 },
+      members: [
+        {
+          ...gear,
+          player: { ...gear.player, availableActions: ['prepare', 'endTurn'] },
+        },
+      ],
+    })
+    renderParty(partyGearInSessionFixture.id)
+    expect(
+      await screen.findByRole('button', { name: `Equipar ${bladeName}` }),
+    ).toBeEnabled()
+  })
+
+  it('REQ-45: "Equipar" envia { prepare, equip, cardId } sem confirmação, desabilita todos os botões de ação durante o pedido e, com 200, mostra o Party e "Equipou {nome}."', async () => {
+    let body: unknown
+    let release: () => void = () => {}
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    server.use(
+      http.post('*/parties/:partyId/actions', async ({ request }) => {
+        body = await request.json()
+        await gate
+        return HttpResponse.json(partyBladeEquippedFixture)
+      }),
+    )
+    await openGear()
+    fireEvent.click(equipButton(bladeName))
+    await waitFor(() => expect(equipButton(bladeName)).toBeDisabled())
+    expect(equipButton('Escudo de Carvalho')).toBeDisabled()
+    expect(
+      screen.getByRole('button', { name: 'Comprar cartas' }),
+    ).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Ajustar deck' })).toBeDisabled()
+    expect(
+      screen.getByRole('button', { name: 'Encerrar a vez' }),
+    ).toBeDisabled()
+    expect(body).toEqual({ type: 'prepare', operation: 'equip', cardId: blade })
+    release()
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(`Equipou ${bladeName}.`),
+    )
+    expect(screen.getByText(`Arma: ${bladeName}`)).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: `Guardar ${bladeName}` }),
+    ).toBeEnabled()
+    expect(
+      screen.queryByRole('button', { name: `Equipar ${bladeName}` }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('REQ-45: "Guardar" envia { prepare, unequip, slot } e, com 200, mostra "Guardou {nome}."', async () => {
+    let body: unknown
+    sessionWith(partyBladeEquippedFixture)
+    server.use(
+      http.post('*/parties/:partyId/actions', async ({ request }) => {
+        body = await request.json()
+        return HttpResponse.json(partyBladeUnequippedFixture)
+      }),
+    )
+    renderParty(partyGearInSessionFixture.id)
+    fireEvent.click(
+      await screen.findByRole('button', { name: `Guardar ${bladeName}` }),
+    )
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(`Guardou ${bladeName}.`),
+    )
+    expect(body).toEqual({
+      type: 'prepare',
+      operation: 'unequip',
+      slot: 'weapon',
+    })
+    expect(screen.getByText('Arma: vazio')).toBeInTheDocument()
+  })
+
+  for (const [cardName, reason, text] of [
+    [
+      'Escudo de Carvalho',
+      'shieldBlocked',
+      'A arma em uso não deixa usar escudo.',
+    ],
+    [
+      'Elmo de Ferro',
+      'peakRequirementNotMet',
+      'Seu Pico não alcança o requisito de Elmo de Ferro.',
+    ],
+    [
+      'Varinha Arcana',
+      'classRestricted',
+      'Nenhuma das suas classes pode usar Varinha Arcana.',
+    ],
+    [
+      bladeName,
+      'inventoryFull',
+      'Não há espaço no inventário para o que sairia do equipamento.',
+    ],
+  ] as const) {
+    it(`REQ-45: 409 ${reason} mostra a message e o texto do motivo; nada muda`, async () => {
+      server.use(
+        http.post('*/parties/:partyId/actions', () =>
+          HttpResponse.json(actionPrepareNotAllowedFixture(reason), {
+            status: 409,
+          }),
+        ),
+      )
+      await openGear()
+      fireEvent.click(equipButton(cardName))
+      await waitFor(() =>
+        expect(status().textContent).toBe(
+          `Esta ação não é permitida agora. ${text}`,
+        ),
+      )
+      expect(equipButton(cardName)).toBeEnabled()
+      expect(screen.getByText('Arma: vazio')).toBeInTheDocument()
+    })
+  }
+
+  it('REQ-45: recusa depois de um equipar com sucesso mantém o Party devolvido pelo sucesso', async () => {
+    await openGear()
+    fireEvent.click(equipButton(bladeName))
+    const guard = await screen.findByRole('button', {
+      name: `Guardar ${bladeName}`,
+    })
+    fireEvent.click(equipButton('Escudo de Carvalho'))
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(
+        'A arma em uso não deixa usar escudo.',
+      ),
+    )
+    expect(screen.getByText(`Arma: ${bladeName}`)).toBeInTheDocument()
+    expect(guard).toBeInTheDocument()
+  })
+
+  it('REQ-45: 409 com outro motivo mostra só a message', async () => {
+    server.use(
+      http.post('*/parties/:partyId/actions', () =>
+        HttpResponse.json(actionPrepareNotAllowedFixture('slotEmpty'), {
+          status: 409,
+        }),
+      ),
+    )
+    await openGear()
+    fireEvent.click(equipButton(bladeName))
+    await waitFor(() =>
+      expect(status().textContent).toBe('Esta ação não é permitida agora.'),
+    )
+  })
+
+  it('REQ-45: outro erro §1.4 mostra a message e falha de rede o texto genérico (REQ-35)', async () => {
+    server.use(
+      http.post('*/parties/:partyId/actions', () =>
+        HttpResponse.json(internalErrorFixture, { status: 500 }),
+      ),
+    )
+    await openGear()
+    fireEvent.click(equipButton(bladeName))
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(internalErrorFixture.error.message),
+    )
+    server.use(
+      http.post('*/parties/:partyId/actions', () => HttpResponse.error()),
+    )
+    fireEvent.click(equipButton(bladeName))
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(
+        'Servidor indisponível. Tente novamente.',
+      ),
+    )
+    expect(screen.getByText('Arma: vazio')).toBeInTheDocument()
   })
 })

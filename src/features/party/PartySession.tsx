@@ -7,6 +7,7 @@ import {
   useClasses,
   type Card,
   type ClassDefinition,
+  type EquipmentSlot,
 } from '../../api/catalog'
 import { ApiError } from '../../api/http'
 import {
@@ -53,15 +54,24 @@ function nameOf(cards: Cards, cardId: string): string {
   return 'name' in card ? card.name : card.title
 }
 
+/** "Equipar"/"Guardar" do host com `prepare` (REQ-45); `null` nos outros casos. */
+type PrepareControls = {
+  onEquip: (cardId: string) => void
+  onUnequip: (slot: EquipmentSlot, cardId: string) => void
+  pending: boolean
+}
+
 /** Seção de um membro com o estado do jogador (REQ-30). */
 function MemberState({
   member,
   classes,
   cards,
+  prepare,
 }: {
   member: PartyMember
   classes: ClassDefinition[]
   cards: Cards
+  prepare: PrepareControls | null
 }) {
   const { player } = member
   const titleId = `member-${member.id}`
@@ -115,6 +125,15 @@ function MemberState({
             <li key={slot}>
               {categoryCatalog[slot].label}:{' '}
               {cardId === null ? 'vazio' : nameOf(cards, cardId)}
+              {cardId !== null && prepare !== null && (
+                <button
+                  type="button"
+                  onClick={() => prepare.onUnequip(slot, cardId)}
+                  disabled={prepare.pending}
+                >
+                  Guardar {nameOf(cards, cardId)}
+                </button>
+              )}
             </li>
           )
         })}
@@ -130,6 +149,16 @@ function MemberState({
           {player.inventory.map(({ cardId, quantity }, i) => (
             <li key={i}>
               {quantity}× {nameOf(cards, cardId)}
+              {/* Tipo da carta do catálogo: dado de exibição, não regra (D-58). */}
+              {prepare !== null && cards.get(cardId)?.type === 'equipment' && (
+                <button
+                  type="button"
+                  onClick={() => prepare.onEquip(cardId)}
+                  disabled={prepare.pending}
+                >
+                  Equipar {nameOf(cards, cardId)}
+                </button>
+              )}
             </li>
           ))}
         </ul>
@@ -174,11 +203,11 @@ const recoverOptions: { option: RecoverAction['option']; label: string }[] = [
 ]
 
 /**
- * Texto de cada motivo de recusa do "Ajustar deck" (REQ-42); outro motivo → só
- * a `message`. Os motivos do Preparar (FEAT-10) têm o texto na T-47 (REQ-45).
+ * Texto de cada motivo de recusa do "Ajustar deck" (REQ-42) e do Preparar
+ * (REQ-45); outro motivo → só a `message`. `name`: a carta de `details.cardId`
+ * (REQ-42) ou a do pedido (REQ-45).
  */
-function reasonText(error: ActionNotAllowedError, cards: Cards): string {
-  const name = nameOf(cards, error.cardId ?? '')
+function reasonText(error: ActionNotAllowedError, name: string): string {
   switch (error.reason) {
     case 'buildBelowMinimum':
       return 'A build ficou abaixo do mínimo de cartas.'
@@ -188,14 +217,18 @@ function reasonText(error: ActionNotAllowedError, cards: Cards): string {
       return `${name} passou do limite de cópias no deck.`
     case 'tcgFolderFull':
       return 'Não há espaço na pasta de TCG para as cartas que saíram da build.'
+    case 'peakRequirementNotMet':
+      return `Seu Pico não alcança o requisito de ${name}.`
+    case 'classRestricted':
+      return `Nenhuma das suas classes pode usar ${name}.`
+    case 'shieldBlocked':
+      return 'A arma em uso não deixa usar escudo.'
+    case 'inventoryFull':
+      return 'Não há espaço no inventário para o que sairia do equipamento.'
     case 'notConnected':
     case 'noActionPoints':
     case 'notInInventory':
     case 'notEquipment':
-    case 'peakRequirementNotMet':
-    case 'classRestricted':
-    case 'shieldBlocked':
-    case 'inventoryFull':
     case 'slotEmpty':
       return ''
     default: {
@@ -205,10 +238,10 @@ function reasonText(error: ActionNotAllowedError, cards: Cards): string {
   }
 }
 
-/** Erro mostrado na seção "Ajustar deck" (REQ-42). */
-function adjustErrorText(error: Error, cards: Cards): string {
+/** Erro de uma ação com motivo (REQ-42, REQ-45): `message` + texto do motivo. */
+function refusalText(error: Error, name: string): string {
   if (error instanceof ActionNotAllowedError) {
-    const reason = reasonText(error, cards)
+    const reason = reasonText(error, name)
     return reason === '' ? error.message : `${error.message} ${reason}`
   }
   return errorText(error)
@@ -372,6 +405,8 @@ function PreparedMatch({
   onEndTurn,
   onRecover,
   onSaveBuild,
+  onEquip,
+  onUnequip,
   adjustError,
   adjusting,
   setAdjusting,
@@ -384,6 +419,8 @@ function PreparedMatch({
   onEndTurn: () => void
   onRecover: (option: RecoverAction['option']) => void
   onSaveBuild: (build: CardCopies[]) => void
+  onEquip: PrepareControls['onEquip']
+  onUnequip: PrepareControls['onUnequip']
   adjustError: string
   adjusting: boolean
   setAdjusting: (open: boolean) => void
@@ -432,6 +469,11 @@ function PreparedMatch({
           member={member}
           classes={classes}
           cards={cards}
+          prepare={
+            member.isHost && member.player.availableActions.includes('prepare')
+              ? { onEquip, onUnequip, pending: moving }
+              : null
+          }
         />
       ))}
     </>
@@ -473,20 +515,39 @@ export function PartySession() {
     })
   }
 
-  // O `200` da ação já traz o `Party` gravado (D-55 item 4); erro não muda a tela.
-  const party = action.data ?? start.data
+  // O `200` da ação já traz o `Party` gravado (D-55 item 4); erro não muda a tela:
+  // um novo pedido zera `action.data`, então o último `Party` devolvido fica
+  // guardado (sem ele, uma recusa depois de um sucesso voltaria ao da abertura).
+  const [lastActionParty, setLastActionParty] = useState<Party>()
+  if (action.data !== undefined && action.data !== lastActionParty) {
+    setLastActionParty(action.data)
+  }
+  const party = action.data ?? lastActionParty ?? start.data
   const classes = useClasses()
   const cards = useCatalogCards(party === undefined ? [] : cardIdsOf(party))
   const host = party?.members.find((m) => m.isHost)
   const [adjusting, setAdjusting] = useState(false)
+  // Carta do último Preparar: {nome} das mensagens do REQ-45 (no "Guardar", a
+  // carta sai do slot, então o nome vem do clique, não do `Party` devolvido).
+  const [preparedCardId, setPreparedCardId] = useState('')
+  const preparedName = nameOf(cards.cards, preparedCardId)
   // Erros do "Ajustar deck" aparecem na seção, não na área de status (REQ-42).
   const adjustFailed = action.isError && action.variables.type === 'adjustDeck'
 
   let status = ''
   if (end.isError) status = errorText(end.error)
-  else if (action.isError && !adjustFailed) status = errorText(action.error)
-  else if (action.isSuccess && party !== undefined && host !== undefined) {
-    if (action.variables.type === 'adjustDeck') {
+  else if (action.isError && !adjustFailed) {
+    status =
+      action.variables.type === 'prepare'
+        ? refusalText(action.error, preparedName)
+        : errorText(action.error)
+  } else if (action.isSuccess && party !== undefined && host !== undefined) {
+    if (action.variables.type === 'prepare') {
+      status =
+        action.variables.operation === 'equip'
+          ? `Equipou ${preparedName}.`
+          : `Guardou ${preparedName}.`
+    } else if (action.variables.type === 'adjustDeck') {
       status = `Build salva: ${host.player.buildSize} cartas.`
     } else if (action.variables.type === 'endTurn') {
       const current = party.members.find((m) => m.id === party.turn.memberId)
@@ -539,8 +600,26 @@ export function PartySession() {
                 { onSuccess: () => setAdjusting(false) },
               )
             }
+            onEquip={(cardId) => {
+              setPreparedCardId(cardId)
+              action.mutate({ type: 'prepare', operation: 'equip', cardId })
+            }}
+            onUnequip={(slot, cardId) => {
+              setPreparedCardId(cardId)
+              action.mutate({ type: 'prepare', operation: 'unequip', slot })
+            }}
             adjustError={
-              adjustFailed ? adjustErrorText(action.error, cards.cards) : ''
+              adjustFailed
+                ? refusalText(
+                    action.error,
+                    nameOf(
+                      cards.cards,
+                      action.error instanceof ActionNotAllowedError
+                        ? (action.error.cardId ?? '')
+                        : '',
+                    ),
+                  )
+                : ''
             }
             adjusting={adjusting}
             setAdjusting={setAdjusting}
