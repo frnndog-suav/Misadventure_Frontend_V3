@@ -284,3 +284,36 @@ test('REQ-31: abre a Carta de Dimensão e escolhe a forma das setas da zona (MSW
   await form.getByRole('button', { name: 'Salvar rascunho' }).click()
   await expect(form.getByRole('status')).toHaveText('Carta salva.')
 })
+
+test('REQ-49: ferramenta do item e decks de recompensas da dimensão (MSW)', async ({
+  page,
+}) => {
+  await page.goto('/lab/editor')
+  await page.getByRole('button', { name: /Coleção de Teste/ }).click()
+  const cards = page.getByRole('region', { name: 'Cartas' })
+  const form = page.getByRole('region', { name: 'Carta', exact: true })
+  const preview = page.getByRole('region', { name: 'Pré-visualização' })
+
+  await cards
+    .getByRole('button', { name: 'Vara de Pesca · Item · Publicada' })
+    .click()
+  await expect(form.getByLabel('Tipo de ferramenta')).toHaveValue('fishing-rod')
+  const zones = form.getByRole('group', { name: 'Vasculha em' })
+  await expect(zones.getByLabel('Costeira')).toBeChecked()
+  await expect(zones.getByLabel('Montanhosa')).not.toBeChecked()
+  await expect(form.getByLabel('Coletada com')).toHaveValue('')
+  await expect(preview.getByText('Ferramenta: fishing-rod')).toBeVisible()
+
+  await cards
+    .getByRole('button', { name: 'Dimensão de Teste · Dimensão · Publicada' })
+    .click()
+  const decks = form.getByRole('group', { name: 'Decks de recompensas' })
+  await expect(decks.getByLabel('Tipo de zona do deck 1')).toHaveValue('urban')
+  const deckCards = decks.getByRole('group', { name: 'Cartas do deck 1' })
+  await expect(
+    deckCards.getByLabel('Carta 1 do deck 1', { exact: true }),
+  ).toHaveValue('fixture.silver-fish')
+  await deckCards.getByLabel('Cópias da carta 1 do deck 1').fill('2')
+  await form.getByRole('button', { name: 'Salvar rascunho' }).click()
+  await expect(form.getByRole('status')).toHaveText('Carta salva.')
+})

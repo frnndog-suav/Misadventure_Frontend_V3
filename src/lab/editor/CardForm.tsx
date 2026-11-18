@@ -754,6 +754,13 @@ function EquipmentFields({
         onChange={(priceMultiplier) => set({ ...values, priceMultiplier })}
         errors={errors}
       />
+      <TextField
+        label="Coletada com"
+        path="scavengeTool"
+        value={values.scavengeTool}
+        onChange={(scavengeTool) => set({ ...values, scavengeTool })}
+        errors={errors}
+      />
     </>
   )
 }
@@ -814,6 +821,41 @@ function ItemFields({
         path="effects"
         items={values.effects}
         onChange={(effects) => set({ ...values, effects })}
+        errors={errors}
+      />
+      <TextField
+        label="Tipo de ferramenta"
+        path="toolKind"
+        value={values.toolKind}
+        onChange={(toolKind) => set({ ...values, toolKind })}
+        errors={errors}
+      />
+      <fieldset aria-describedby={errors.describedBy('scavengeZoneTypes')}>
+        <legend>Vasculha em</legend>
+        {errors.errorText('scavengeZoneTypes')}
+        {zoneTypeSchema.options.map((zoneType) => (
+          <CheckboxField
+            key={zoneType}
+            label={zoneTypeLabels[zoneType]}
+            checked={values.scavengeZoneTypes.includes(zoneType)}
+            onChange={(checked) =>
+              set({
+                ...values,
+                scavengeZoneTypes: zoneTypeSchema.options.filter((t) =>
+                  t === zoneType
+                    ? checked
+                    : values.scavengeZoneTypes.includes(t),
+                ),
+              })
+            }
+          />
+        ))}
+      </fieldset>
+      <TextField
+        label="Coletada com"
+        path="scavengeTool"
+        value={values.scavengeTool}
+        onChange={(scavengeTool) => set({ ...values, scavengeTool })}
         errors={errors}
       />
     </>
@@ -1147,6 +1189,59 @@ function DimensionFields({
         items={values.effects}
         onChange={(effects) => set({ ...values, effects })}
         errors={errors}
+      />
+      <ListField
+        label="Decks de recompensas"
+        path="rewardDecks"
+        items={values.rewardDecks}
+        onChange={(rewardDecks) => set({ ...values, rewardDecks })}
+        newItem={(): DimensionForm['rewardDecks'][number] => ({
+          zoneType: '',
+          cards: [],
+        })}
+        errors={errors}
+        renderItem={(deck, index, setDeck) => {
+          const suffix = ` do deck ${index + 1}`
+          const path = `rewardDecks.${index}`
+          return (
+            <>
+              <SelectField
+                label={`Tipo de zona${suffix}`}
+                path={`${path}.zoneType`}
+                value={deck.zoneType}
+                options={zoneTypeOptions}
+                onChange={(zoneType) => setDeck({ ...deck, zoneType })}
+                errors={errors}
+              />
+              <ListField
+                label={`Cartas${suffix}`}
+                path={`${path}.cards`}
+                items={deck.cards}
+                onChange={(cards) => setDeck({ ...deck, cards })}
+                newItem={() => ({ cardId: '', copies: '' })}
+                errors={errors}
+                renderItem={(entry, j, setEntry) => (
+                  <>
+                    <TextField
+                      label={`Carta ${j + 1}${suffix}`}
+                      path={`${path}.cards.${j}.cardId`}
+                      value={entry.cardId}
+                      onChange={(cardId) => setEntry({ ...entry, cardId })}
+                      errors={errors}
+                    />
+                    <TextField
+                      label={`Cópias da carta ${j + 1}${suffix}`}
+                      path={`${path}.cards.${j}.copies`}
+                      value={entry.copies}
+                      onChange={(copies) => setEntry({ ...entry, copies })}
+                      errors={errors}
+                    />
+                  </>
+                )}
+              />
+            </>
+          )
+        }}
       />
     </>
   )

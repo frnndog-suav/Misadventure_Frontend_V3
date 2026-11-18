@@ -1485,3 +1485,236 @@ describe('REQ-31: Carta de Dimensão e forma das setas', () => {
     expect(bodies[0].body).toMatchObject({ arrowLayout: null })
   })
 })
+
+describe('REQ-49: ferramentas e decks de recompensas no editor', () => {
+  const zoneLabels = [
+    'Montanhosa',
+    'Florestal',
+    'Costeira',
+    'Lacustre',
+    'Pantanosa',
+    'Campestre',
+    'Desértica',
+    'Vulcânica',
+    'Fluvial',
+    'Subterrânea',
+    'Urbana',
+    'Rural',
+    'Habitada',
+    'Fortificada',
+    'Religiosa',
+    'Industrial',
+  ]
+  const follows = (a: Element, b: Element): boolean =>
+    (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0
+
+  it('REQ-49: item mostra, depois de "Efeitos", "Tipo de ferramenta", "Vasculha em" (16 tipos) e "Coletada com" com os valores recebidos', async () => {
+    renderEditor()
+    await openCard('Vara de Pesca · Item · Publicada')
+    const effects = within(form()).getByRole('group', { name: 'Efeitos' })
+    const tool = field('Tipo de ferramenta')
+    const zones = within(form()).getByRole('group', { name: 'Vasculha em' })
+    const collected = field('Coletada com')
+    expect(follows(effects, tool)).toBe(true)
+    expect(follows(tool, zones)).toBe(true)
+    expect(follows(zones, collected)).toBe(true)
+    expect(tool).toHaveValue('fishing-rod')
+    expect(collected).toHaveValue('')
+    const boxes = within(zones).getAllByRole('checkbox')
+    expect(boxes.map((b) => b.closest('label')?.textContent)).toEqual(
+      zoneLabels,
+    )
+    expect(
+      boxes
+        .filter((b) => (b as HTMLInputElement).checked)
+        .map((b) => b.closest('label')?.textContent),
+    ).toEqual(['Costeira', 'Lacustre', 'Fluvial', 'Urbana'])
+  })
+
+  it('REQ-49: item envia ferramenta, tipos na ordem do glossário e "Coletada com"; vazios vão como null', async () => {
+    const bodies = recordBodies()
+    renderEditor()
+    await openCard('Peixe Prateado · Item · Publicada')
+    expect(field('Coletada com')).toHaveValue('fishing-rod')
+    type('Tipo de ferramenta', 'net')
+    const zones = within(form()).getByRole('group', { name: 'Vasculha em' })
+    fireEvent.click(within(zones).getByLabelText('Urbana'))
+    fireEvent.click(within(zones).getByLabelText('Costeira'))
+    type('Coletada com', '')
+    fireEvent.click(saveButton())
+    await waitFor(() => expect(bodies).toHaveLength(1))
+    expect(bodies[0].body).toMatchObject({
+      toolKind: 'net',
+      scavengeZoneTypes: ['coastal', 'urban'],
+      scavengeTool: null,
+    })
+  })
+
+  it('REQ-49: equipamento tem "Coletada com" depois de "Ajuste de preço" e o envia', async () => {
+    const bodies = recordBodies()
+    renderEditor()
+    await openCard('Elmo de Ferro · Equipamento · Publicada')
+    const collected = field('Coletada com')
+    expect(follows(field('Ajuste de preço'), collected)).toBe(true)
+    expect(collected).toHaveValue('')
+    type('Coletada com', 'pickaxe')
+    fireEvent.click(saveButton())
+    await waitFor(() => expect(bodies).toHaveLength(1))
+    expect(bodies[0].body).toMatchObject({ scavengeTool: 'pickaxe' })
+  })
+
+  it('REQ-49: Carta de Dimensão mostra "Decks de recompensas" depois de "Efeitos" com os decks recebidos', async () => {
+    renderEditor()
+    await openCard('Dimensão de Teste · Dimensão · Publicada')
+    const effects = within(form()).getByRole('group', { name: 'Efeitos' })
+    const decks = within(form()).getByRole('group', {
+      name: 'Decks de recompensas',
+    })
+    expect(follows(effects, decks)).toBe(true)
+    expect(within(decks).getByLabelText('Tipo de zona do deck 1')).toHaveValue(
+      'urban',
+    )
+    const cardsGroup = within(decks).getByRole('group', {
+      name: 'Cartas do deck 1',
+    })
+    expect(within(cardsGroup).getByLabelText('Carta 1 do deck 1')).toHaveValue(
+      'fixture.silver-fish',
+    )
+    expect(
+      within(cardsGroup).getByLabelText('Cópias da carta 3 do deck 1'),
+    ).toHaveValue('2')
+  })
+
+  it('REQ-49: decks e cartas novos exigem tipo, id e cópias em formato e vão no corpo', async () => {
+    const bodies = recordBodies()
+    renderEditor()
+    await newCard('Dimensão')
+    type('Identificador', 'nova')
+    type('Nome', 'Nova Dimensão')
+    type('Ordem de lançamento', '2')
+    const decks = within(form()).getByRole('group', {
+      name: 'Decks de recompensas',
+    })
+    fireEvent.click(
+      within(decks).getAllByRole('button', { name: 'Adicionar' }).at(-1)!,
+    )
+    expect(saveButton()).toBeDisabled()
+    fireEvent.change(within(decks).getByLabelText('Tipo de zona do deck 1'), {
+      target: { value: 'coastal' },
+    })
+    const cardsGroup = within(decks).getByRole('group', {
+      name: 'Cartas do deck 1',
+    })
+    fireEvent.click(
+      within(cardsGroup).getByRole('button', { name: 'Adicionar' }),
+    )
+    fireEvent.change(within(cardsGroup).getByLabelText('Carta 1 do deck 1'), {
+      target: { value: 'fixture.silver-fish' },
+    })
+    fireEvent.change(
+      within(cardsGroup).getByLabelText('Cópias da carta 1 do deck 1'),
+      { target: { value: 'três' } },
+    )
+    expect(saveButton()).toBeDisabled()
+    fireEvent.change(
+      within(cardsGroup).getByLabelText('Cópias da carta 1 do deck 1'),
+      { target: { value: '3' } },
+    )
+    expect(saveButton()).toBeEnabled()
+    fireEvent.click(saveButton())
+    await waitFor(() => expect(bodies).toHaveLength(1))
+    expect(bodies[0].body).toMatchObject({
+      rewardDecks: [
+        {
+          zoneType: 'coastal',
+          cards: [{ cardId: 'fixture.silver-fish', copies: 3 }],
+        },
+      ],
+    })
+  })
+
+  it('REQ-49: erros pelo caminho vão para o tipo do deck e as cópias da carta', async () => {
+    server.use(
+      http.put(cardUrl, () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: 'CONTENT_INVALID',
+              message: 'Conteúdo inválido.',
+              details: {
+                fields: [
+                  {
+                    path: 'rewardDecks.0.cards.1.copies',
+                    message: 'Cópias inválidas.',
+                  },
+                  {
+                    path: 'rewardDecks.0.zoneType',
+                    message: 'Tipo repetido.',
+                  },
+                ],
+              },
+            },
+          },
+          { status: 400 },
+        ),
+      ),
+    )
+    renderEditor()
+    await openCard('Dimensão de Teste · Dimensão · Publicada')
+    fireEvent.click(saveButton())
+    await waitFor(() =>
+      expect(field('Cópias da carta 2 do deck 1')).toHaveAccessibleDescription(
+        'Cópias inválidas.',
+      ),
+    )
+    expect(field('Tipo de zona do deck 1')).toHaveAccessibleDescription(
+      'Tipo repetido.',
+    )
+  })
+
+  it('REQ-49: erros de "toolKind" e "scavengeZoneTypes" aparecem nos campos do item', async () => {
+    server.use(
+      http.put(cardUrl, () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: 'CONTENT_INVALID',
+              message: 'Conteúdo inválido.',
+              details: {
+                fields: [
+                  { path: 'toolKind', message: 'Use kebab-case.' },
+                  {
+                    path: 'scavengeZoneTypes',
+                    message: 'Ferramenta sem tipo de zona.',
+                  },
+                ],
+              },
+            },
+          },
+          { status: 400 },
+        ),
+      ),
+    )
+    renderEditor()
+    await openCard('Vara de Pesca · Item · Publicada')
+    fireEvent.click(saveButton())
+    await waitFor(() =>
+      expect(field('Tipo de ferramenta')).toHaveAccessibleDescription(
+        'Use kebab-case.',
+      ),
+    )
+    expect(
+      within(form()).getByRole('group', { name: 'Vasculha em' }),
+    ).toHaveAccessibleDescription('Ferramenta sem tipo de zona.')
+  })
+
+  it('REQ-49: a pré-visualização acompanha a ferramenta (REQ-48)', async () => {
+    renderEditor()
+    await openCard('Vara de Pesca · Item · Publicada')
+    expect(
+      within(preview()).getByText('Ferramenta: fishing-rod'),
+    ).toBeInTheDocument()
+    type('Tipo de ferramenta', 'net')
+    expect(within(preview()).getByText('Ferramenta: net')).toBeInTheDocument()
+  })
+})
