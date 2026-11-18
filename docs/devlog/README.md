@@ -99,3 +99,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 067 | T-51 | [Editor: ferramentas e decks de recompensas](067-T-51-editor-ferramentas-decks.md) | concluída |
 | 068 | T-52 | [Cofre na tela do grupo e Vasculhar](068-T-52-cofre-e-vasculhar.md) | concluída |
 | 069 | T-53 | [Usar cofre](069-T-53-usar-cofre.md) | aguardando revisão |
+| 070 | RETORNO | [FEAT-32 validada contra o backend real](070-RETORNO-feat-32-validada.md) | concluída |
