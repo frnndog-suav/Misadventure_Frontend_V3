@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.43 · **Data:** 2026-11-18
+> **Versão do contrato:** 0.45 · **Data:** 2026-11-18
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -263,6 +263,21 @@ Base dos nomes no código dos dois lados e dos termos com destaque e tooltip (RE
 
 *(Inventário, bolsa e ouro já estão em §2.3; Preparar = `prepare`, §2.5; categorias de equipamento = `slot`, §2.7.)*
 
+### 2.15 Cofre, limbo e Vasculhar (README 3.4, 6.4, 6.5, 12.6) — FEAT-32
+
+| Termo | Identificador |
+|---|---|
+| Slots do cofre / slots de decks / ouro do cofre | `vault.slots` / `vault.decks` (capacidade `vaultDeckSlots`) / `vault.gold` |
+| Capacidades do cofre | `vaultCapacity` / `vaultDeckSlots` / `vaultGoldCapacity` |
+| Operação do cofre: guardar / retirar / guardar ouro / retirar ouro / Descartar | `store` / `take` / `storeGold` / `takeGold` / `discard` |
+| Guardar deck / desmontar deck / trocar a build / editar a build | `saveDeck` / `unpackDeck` / `swapBuild` / `editBuild` |
+| Limbo | `limbo` (não trafega) |
+| Ferramenta (tipo) / zonas onde vasculha / ferramenta que coleta a carta | `toolKind` / `scavengeZoneTypes` / `scavengeTool` |
+| Cartas que se pode pedir no Vasculhar | `scavengeTargets` |
+| Resultado do último Vasculhar | `lastScavenge` |
+
+*(Cofre = `vault`, §2.3; Usar cofre = `useVault` e Vasculhar = `scavenge`, §2.5; deck de recompensas = `rewardDeck`, §2.2.)*
+
 ## 3. Features
 
 Uma seção por FEAT do roadmap, criada com `/contrato` (no frontend) ou pelo equivalente no backend. Modelo:
@@ -359,6 +374,10 @@ interface GameConfigValues {
   // FEAT-10
   inventoryCapacity: number // README 6.2
   purseCapacity: number // README 5.3
+  // FEAT-32
+  vaultCapacity: number // README 6.4
+  vaultDeckSlots: number // README 6.4 (a build em uso ocupa um)
+  vaultGoldCapacity: number // README 6.4
 }
 
 type GameConfigKey = keyof GameConfigValues
@@ -413,6 +432,7 @@ Padrões e limites:
 | `recoverHandSize` (FEAT-09) | 7 | 0–200 |
 | `inventoryCapacity` (FEAT-10) | 10 | 0–100 |
 | `purseCapacity` (FEAT-10) | 300 | 0–1000000 |
+| `vaultCapacity` / `vaultDeckSlots` / `vaultGoldCapacity` (FEAT-32) | 30 / 10 / 2000 | 0–1000 / 1–100 / 0–10000000 |
 
 #### Cenários de validação
 
@@ -1479,6 +1499,211 @@ Contra a `fixture` (com as cartas que o backend acrescenta nesta FEAT), laborat�
 
 Só nos e2e do backend: leitura de saves antigos e o Pico abaixo do requisito com o equipamento já em uso (o Pico ainda não muda no jogo).
 
+### FEAT-32 — Cofre, limbo, deck de recompensas e Vasculhar — `proposto (FE)`
+
+Regras: README 3.4 (deck de recompensas por tipo de zona; Vasculhar não usa o deck de reserva; toda Urbana tem Usar cofre), 4.4 (passos ao mexer na build), 6.4 (cofre: slots, slots de decks com a build em uso, ouro, cópias físicas, Descartar), 6.5 (limbo: nada volta), 8.2, 12.2 (Usar cofre e Vasculhar: 1 ponto, repetíveis) e 12.6 (Vasculhar), B 12 e B 35.
+
+**Fora desta FEAT:** abrir booster no cofre e as expansões (FEAT-16); "compre N recompensas", "busque a carta X" e o deck de reserva (FEAT-12); "quebra após N usos" das ferramentas (FEATs 13/17); itens de conclusão (FEAT-19); montaria (FEAT-18).
+
+**Decisões que o frontend precisa saber:**
+- **Usar cofre é um lote:** um pedido com a lista de operações, aplicadas em ordem e de uma vez, por 1 ponto de ação. Se uma falha, nada muda e o erro diz qual (`operationIndex`). O frontend monta o lote na tela do cofre e envia ao confirmar.
+- **O limbo não é guardado nem exibido** (README 6.5): descartar do cofre só remove a carta.
+- **Vasculhar numa etapa só:** o jogador escolhe uma carta de `scavengeTargets` (o que a ferramenta dele coleta naquela zona, segundo a Carta de Dimensão) **sem ver o deck**. Se a carta não está mais no deck, o ponto é gasto e nada vem. O resultado vem pronto em `PlayerState.lastScavenge` (v0.45, pedido do FE).
+- **Vasculhar com o inventário cheio é recusado** (`inventoryFull`), sem gastar o ponto, até a FEAT-12 trazer a escolha de README 6.6.
+- **Mover ouro nunca perde ouro:** o que não cabe na bolsa ou no cofre é recusado.
+
+**Mudanças em outras seções:**
+- **FEAT-03 (`validado`):** `GameConfigValues` ganha `vaultCapacity`, `vaultDeckSlots`, `vaultGoldCapacity` (tabela de limites atualizada lá).
+- **FEAT-04 (`validado`):** `ItemCard` ganha `toolKind`, `scavengeZoneTypes`, `scavengeTool`; `EquipmentCard` ganha `scavengeTool`; `DimensionCard` ganha `rewardDecks`. A `fixture` muda (abaixo).
+- **FEAT-06/07/08/09/10 (`validado`):** `PlayerState` ganha `vault`, `vaultCapacity`, `vaultDeckSlots`, `vaultGoldCapacity`, `scavengeTargets`, `lastScavenge`; `PartyAction` ganha `UseVaultAction` e `ScavengeAction`; `availableActions` ganha `scavenge` e `useVault` (ordem nova); motivos novos em `ActionInvalidDetails` e `ActionNotAllowedDetails`. Saves de antes desta versão continuam: cofre vazio, valores novos nos padrões do laboratório, `lastScavenge: null` e **sem deck de recompensas** (ali o Vasculhar nunca acha nada). **Cenários antigos mudam:** a cidade inicial da `fixture` (e toda Urbana) tem `useVault`, então o `availableActions` esperado na cidade nos cenários das FEATs 08, 09 e 10 ganha `useVault` antes de `endTurn` (com `actionPoints ≥ 1`), e `scavenge` quando houver vara de pesca no inventário.
+- **FEAT-31 (`validado`):** o editor valida os campos novos (`CONTENT_INVALID`, `path` no campo); carta citada em `rewardDecks` → `CONTENT_REFERENCED` ao excluir ou renomear; cartas do cofre e dos decks de recompensas de um save estão **em uso** (`CONTENT_IN_USE`).
+
+#### Endpoints
+
+| Método | Rota | Corpo | Sucesso | Erros |
+|---|---|---|---|---|
+| POST | `/parties/:partyId/actions` (FEAT-07) | `UseVaultAction`, `ScavengeAction` | `200` `Party` | os da FEAT-07 |
+
+Ordem das conferências: 404 → pedido malformado (400) → sem sessão (409 `PARTY_SESSION_NOT_ACTIVE`) → `noActionPoints` → `zoneActionUnavailable` → regra. No `useVault`, a regra é a da **primeira operação** que falha, simulando em ordem. No `scavenge`: `notScavengeable` → `inventoryFull`.
+
+#### Tipos
+
+```ts
+interface GameConfigValues {
+  // … chaves das FEATs 03 a 10 …
+  // FEAT-32
+  vaultCapacity: number     // README 6.4: padrão 30, limites 0–1000
+  vaultDeckSlots: number    // README 6.4: padrão 10, limites 1–100 (a build em uso ocupa um)
+  vaultGoldCapacity: number // README 6.4: padrão 2000, limites 0–10000000
+}
+
+interface ItemCard {
+  // … campos da FEAT-04 …
+  /** FEAT-32. Só em `itemCategory: "tool"` (senão `null`). Texto kebab-case, ex.: "pickaxe". */
+  toolKind: string | null
+  /** FEAT-32. Tipos de zona onde a ferramenta vasculha. Não vazia se e só se `toolKind` não é `null`; sem repetição. */
+  scavengeZoneTypes: ZoneType[]
+  /** FEAT-32. `toolKind` da ferramenta que coleta esta carta (o "ícone da ferramenta", README 12.6); `null` = não coletável. */
+  scavengeTool: string | null
+}
+
+interface EquipmentCard {
+  // … campos da FEAT-04 …
+  /** FEAT-32. Como em ItemCard. */
+  scavengeTool: string | null
+}
+
+interface DimensionCard {
+  // … campos da FEAT-06 …
+  /** FEAT-32. Composição do deck de recompensas de cada tipo de zona (README 3.4). Tipo sem entrada não tem deck. */
+  rewardDecks: {
+    zoneType: ZoneType // sem repetição
+    /** Pelo menos 1; cartas `attribute`, `equipment` ou `item`, sem `cardId` repetido; `copies` inteiro ≥ 1. */
+    cards: { cardId: string; copies: number }[]
+  }[]
+}
+
+interface PlayerState {
+  // … campos das FEATs 06 a 10 …
+  /** FEAT-32. Começa `{ slots: [], decks: [], gold: 0 }`. */
+  vault: Vault
+  /** FEAT-32. Da config do grupo. `vault.slots.length ≤ vaultCapacity`. */
+  vaultCapacity: number
+  /** FEAT-32. Da config do grupo. `vault.decks.length + 1 ≤ vaultDeckSlots` (a build em uso é um slot). */
+  vaultDeckSlots: number
+  /** FEAT-32. Da config do grupo. `vault.gold ≤ vaultGoldCapacity`. */
+  vaultGoldCapacity: number
+  /**
+   * FEAT-32. Cartas que o jogador pode pedir no Vasculhar, em ordem de `cardId`. Vazio se a zona não tem `scavenge`.
+   * Senão: cartas do `rewardDecks` da Carta de Dimensão para o tipo da zona cuja `scavengeTool` é o `toolKind` de
+   * uma ferramenta no `inventory` que vasculha esse tipo de zona. Vem da composição, não do deck atual.
+   */
+  scavengeTargets: string[]
+  /**
+   * FEAT-32 (v0.45). Resultado do Vasculhar aceito mais recente deste jogador: a carta pedida e se veio para o `inventory`.
+   * `null` na criação e em saves antigos. Cada `scavenge` aceito o substitui; as demais ações não mexem nele.
+   */
+  lastScavenge: { cardId: string; found: boolean } | null
+  /**
+   * Ordem fixa: `move`, `recover`, `prepare`, `adjustDeck`, `scavenge`, `useVault`, `endTurn`.
+   * FEAT-32, para o membro da vez com `actionPoints ≥ 1`: `scavenge` se `scavengeTargets` não é vazio;
+   * `useVault` se a zona atual tem `useVault` em `zoneActions`.
+   */
+  availableActions: PartyActionType[]
+}
+
+interface Vault {
+  /** Atributos, equipamentos e itens. **Tudo empilha:** 1 slot por `cardId`, na ordem de chegada; slot que esvazia sai. */
+  slots: { cardId: string; quantity: number }[] // quantity ≥ 1
+  /** Decks guardados (não incluem a build em uso). Cada um só com cartas `attribute`, em ordem de `cardId`. */
+  decks: { cardId: string; copies: number }[][]
+  gold: number
+}
+
+type PartyAction =
+  | MoveAction | EndTurnAction | RecoverAction | AdjustDeckAction | PrepareAction
+  | UseVaultAction | ScavengeAction
+
+/** Usar cofre (README 6.4, 12.2). 1 ponto; só numa zona com `useVault`; repetível. Operações aplicadas em ordem. */
+interface UseVaultAction {
+  type: 'useVault'
+  operations: VaultOperation[] // 1 a 50
+}
+
+type VaultOperation =
+  /** Atributo: sai da `tcgFolder`. Equipamento/item: sai do `inventory` (slots de 1 cópia: os primeiros). Entra em `vault.slots`. */
+  | { operation: 'store'; cardId: string; quantity: number }
+  /** Sai de `vault.slots`. Atributo → `tcgFolder`; equipamento/item → `inventory` (empilhamento de InventorySlot). */
+  | { operation: 'take'; cardId: string; quantity: number }
+  /** Bolsa → cofre. */
+  | { operation: 'storeGold'; amount: number }
+  /** Cofre → bolsa. */
+  | { operation: 'takeGold'; amount: number }
+  /** Sai de `vault.slots` para o limbo (destruída, README 6.5). */
+  | { operation: 'discard'; cardId: string; quantity: number }
+  /** Cartas de atributo de `vault.slots` viram um deck guardado novo (no fim de `vault.decks`). Não é validado. */
+  | { operation: 'saveDeck'; cards: { cardId: string; copies: number }[] }
+  /** O deck volta para `vault.slots`; os decks seguintes sobem uma posição. */
+  | { operation: 'unpackDeck'; deckIndex: number }
+  /** O deck vira a build; a build atual fica guardada no lugar dele. */
+  | { operation: 'swapBuild'; deckIndex: number }
+  /** Build nova inteira (como AdjustDeckAction), com as cartas da build + as de atributo de `vault.slots`; a sobra vai para `vault.slots`. */
+  | { operation: 'editBuild'; build: { cardId: string; copies: number }[] }
+// Com `swapBuild` ou `editBuild` no lote, no fim acontece uma vez o mesmo que no Ajustar deck (README 4.4):
+// mão e descarte voltam ao deck, embaralha e compra tantas cartas quantas havia na mão; travas e modificadores recalculados.
+// Quantidades, `amount` e `copies`: inteiros ≥ 1. `deckIndex`: inteiro ≥ 0.
+
+/** Vasculhar (README 12.6). 1 ponto; repetível. Achando, a carta vai para o `inventory`; com ou sem achado, o deck é embaralhado e `lastScavenge` é atualizado. */
+interface ScavengeAction {
+  type: 'scavenge'
+  cardId: string // um de `scavengeTargets`
+}
+
+/** `details` do erro ACTION_INVALID, motivos acrescentados. */
+interface ActionInvalidDetails {
+  fields: {
+    /** FEAT-32: campos das operações com o índice, ex.: "operations", "operations.0", "operations.2.amount", "operations.1.cards.0.copies". */
+    field: string | null
+    reason:
+      | /* … motivos das FEATs 07 a 10 … */ 'invalidBody' | 'required' | 'notString' | 'unknownAction' | 'unknownKey'
+      | 'notArray' | 'invalidItem' | 'notPositiveInteger' | 'duplicateCard' | 'unknownOperation'
+      | 'invalidLength'          // FEAT-32: `operations` vazia ou com mais de 50
+      | 'notNonNegativeInteger'  // FEAT-32: `deckIndex` não é inteiro ≥ 0
+  }[]
+}
+
+/** `details` do erro ACTION_NOT_ALLOWED, motivos e campo acrescentados. */
+interface ActionNotAllowedDetails {
+  reason:
+    | /* … motivos das FEATs 07 a 10 … */ 'notConnected' | 'noActionPoints' | 'notInInventory' | 'inventoryFull'
+    | 'notOwned' | 'copyLimitExceeded' | 'buildBelowMinimum' | 'tcgFolderFull'
+    | 'zoneActionUnavailable' // FEAT-32: a zona atual não tem `useVault` / `scavenge`
+    | 'notInTcgFolder'        // FEAT-32: store de atributo sem as cópias na pasta
+    | 'notStorable'           // FEAT-32: carta que não existe no catálogo
+    | 'notInVault'            // FEAT-32: take/discard/saveDeck sem as unidades no cofre
+    | 'vaultFull'             // FEAT-32: não há slot livre no cofre
+    | 'notEnoughGold'         // FEAT-32: storeGold acima do ouro da bolsa
+    | 'vaultGoldFull'         // FEAT-32: storeGold passaria de `vaultGoldCapacity`
+    | 'notEnoughVaultGold'    // FEAT-32: takeGold acima do ouro do cofre
+    | 'purseFull'             // FEAT-32: takeGold passaria de `purseCapacity`
+    | 'notAttribute'          // FEAT-32: saveDeck com carta que não é de atributo
+    | 'deckSlotsFull'         // FEAT-32: saveDeck sem slot de deck livre
+    | 'deckNotFound'          // FEAT-32: deckIndex inexistente
+    | 'notScavengeable'       // FEAT-32: cardId fora de `scavengeTargets`
+  cardId?: string
+  /** FEAT-32: só no useVault, índice da operação recusada (a partir de 0). */
+  operationIndex?: number
+}
+```
+
+`CONTENT_INVALID` dos campos novos (editor e boot): `toolKind` fora de `tool`; `scavengeZoneTypes` vazia com `toolKind` ou preenchida sem; tipo de zona desconhecido ou repetido; texto fora de kebab-case; em `rewardDecks.i`: `zoneType` repetido, `cards` vazia, `cardId` repetido ou inexistente, carta de tipo que não entra em deck de recompensas, `copies` inválido; ao publicar, carta citada não publicada. Os `fields[].message` (pt-BR) vêm prontos do backend, como na FEAT-31. Mensagem de `CONTENT_REFERENCED` para deck de recompensas: "Esta carta está no deck de recompensas de uma Carta de Dimensão.".
+
+#### Cenários de validação
+
+Contra a `fixture` com as mudanças desta FEAT, laboratório no padrão:
+- `fixture.gray-harbor` (Porto Cinzento, `urban`, cidade inicial) ganha `scavenge`: `zoneActions = ["startEvent", "scavenge", "useVault", "saveRespawnPoint"]`.
+- `fixture.pickaxe` ganha `toolKind: "pickaxe"`, `scavengeZoneTypes: ["underground", "mountainous"]`.
+- Cartas novas (item): `fixture.fishing-rod` (Vara de Pesca, `tool`, `toolKind: "fishing-rod"`, `scavengeZoneTypes: ["coastal", "fluvial", "lacustrine", "urban"]`), `fixture.silver-fish` (Peixe Prateado, `material`, `scavengeTool: "fishing-rod"`) e `fixture.iron-ore` (Minério de Ferro, `material`, `scavengeTool: "pickaxe"`). As demais cartas ganham os campos novos com `null`/`[]`.
+- `fixture.test-dimension` ganha `rewardDecks = [{ "zoneType": "urban", "cards": [{ "cardId": "fixture.silver-fish", "copies": 1 }, { "cardId": "fixture.iron-ore", "copies": 1 }, { "cardId": "fixture.healing-potion", "copies": 2 }] }]`.
+- `cardCounts` da `fixture`: `item` passa de 2 para 5 (20 cartas no total).
+
+Seja `G` criado com `{ "name": "Os Teimosos", "characterName": "Lia", "playerClass": "warrior" }` (build `fixture.endurance-basic` 30 + `fixture.strength-basic` 30) e posto em sessão, `M` o membro e `/grants` a rota de doação (FEAT-10). `F` = `fixture.fishing-rod`, `K` = `fixture.pickaxe`, `S` = `fixture.silver-fish`, `I` = `fixture.iron-ore`, `P` = `fixture.healing-potion`, `STR` = `fixture.strength-basic`.
+
+- Quando `POST /parties`, então `player` traz `vault = { "slots": [], "decks": [], "gold": 0 }`, `vaultCapacity: 30`, `vaultDeckSlots: 10`, `vaultGoldCapacity: 2000`, `scavengeTargets: []`, `lastScavenge: null` e `availableActions = ["move", "recover", "adjustDeck", "useVault", "endTurn"]`.
+- Com `K` doado: `scavengeTargets` continua `[]` (a picareta não vasculha `urban`). Com `F` doado: `scavengeTargets = ["fixture.silver-fish"]` e `availableActions` com `scavenge` antes de `useVault`.
+- Quando `{ "type": "scavenge", "cardId": S }`, então `200` com `S` no fim do `inventory`, `lastScavenge = { "cardId": S, "found": true }` e `actionPoints: 2`; um segundo `scavenge` de `S` → `200`, `actionPoints: 1`, o `inventory` sem outro `S` e `lastScavenge = { "cardId": S, "found": false }` (nada achado). `{ "type": "scavenge", "cardId": I }` → `409` `ACTION_NOT_ALLOWED` `{ "reason": "notScavengeable" }` e `lastScavenge` sem mudança.
+- Com o inventário cheio (10 slots, nenhum de `S`) num grupo novo com `F`, `scavenge` de `S` → `409` `{ "reason": "inventoryFull" }` e `actionPoints` sem mudança.
+- Com `P` ×3 e `gold: 100` (doações), quando `{ "type": "useVault", "operations": [{ "operation": "store", "cardId": P, "quantity": 2 }, { "operation": "storeGold", "amount": 60 }, { "operation": "discard", "cardId": P, "quantity": 1 }] }`, então `200` com `inventory` com `P` ×1, `vault = { "slots": [{ "cardId": P, "quantity": 1 }], "decks": [], "gold": 60 }`, `gold: 40` e `actionPoints: 2`.
+- Em seguida, `{ "type": "useVault", "operations": [{ "operation": "takeGold", "amount": 10 }, { "operation": "take", "cardId": P, "quantity": 5 }] }` → `409` `{ "reason": "notInVault", "operationIndex": 1 }` e nada muda (`gold` continua 40).
+- Com `gold: 300` e `vault.gold: 60`, `takeGold` 1 → `409` `{ "reason": "purseFull", "operationIndex": 0 }`.
+- Com `STR` ×4 na pasta (doação), quando `useVault` com `[{ "operation": "store", "cardId": STR, "quantity": 4 }, { "operation": "editBuild", "build": [{ "cardId": "fixture.endurance-basic", "copies": 30 }, { "cardId": STR, "copies": 32 }] }]`, então `200` com `buildSize: 62`, `tcgFolder: []`, `vault.slots` com `STR` ×2, 7 cartas na mão e `actionPoints − 1`.
+- Em seguida, `useVault` com `[{ "operation": "saveDeck", "cards": [{ "cardId": STR, "copies": 2 }] }]` → `200` com `vault.decks = [[{ "cardId": STR, "copies": 2 }]]`; `[{ "operation": "swapBuild", "deckIndex": 0 }]` → `409` `{ "reason": "buildBelowMinimum", "operationIndex": 0 }`; `[{ "operation": "unpackDeck", "deckIndex": 3 }]` → `409` `{ "reason": "deckNotFound", "operationIndex": 0 }`.
+- Quando `{ "type": "useVault", "operations": [] }`, então `400` `ACTION_INVALID` com `fields = [{ "field": "operations", "reason": "invalidLength" }]`; `[{ "operation": "store", "cardId": P, "quantity": 0 }]` → `fields = [{ "field": "operations.0.quantity", "reason": "notPositiveInteger" }]`; `[{ "operation": "pack" }]` → `fields = [{ "field": "operations.0.operation", "reason": "unknownOperation" }]`.
+- Depois de um `move` para fora de Porto Cinzento, `useVault` e `scavenge` → `409` `{ "reason": "zoneActionUnavailable" }` e nenhum dos dois em `availableActions`.
+- Quando `DELETE /lab/content/cards/fixture.silver-fish` (FEAT-31), então `409` `CONTENT_REFERENCED` (está no `rewardDecks`); com `P` no cofre de `G`, `DELETE` de `P` → `409` `CONTENT_IN_USE`.
+
+Só nos e2e do backend: ordem exata dos decks de recompensas (sorteio), saves antigos, `deckSlotsFull`, `vaultFull` e `vaultGoldFull` com capacidades baixas no laboratório, e a validação completa dos campos novos no editor.
+
 ## 4. Códigos de erro
 
 | Código | Quando acontece | FEAT |
@@ -1498,7 +1723,7 @@ Só nos e2e do backend: leitura de saves antigos e o Pico abaixo do requisito co
 | `CONTENT_LOCKED` | Mudar o identificador de uma carta publicada (409). | FEAT-31 |
 | `DIMENSION_INVALID` | Não há Carta de Dimensão publicada, a composição da dimensão falhou (README 3.5) ou o gerador passou do limite de tentativas, ao criar um grupo (409: o conteúdo publicado no servidor não permite preparar a partida); `details` com `dimensionCardId` e `problems`. Erro de conteúdo, para o designer. | FEAT-06 |
 | `CLASS_NOT_FOUND` | Classe inexistente no editor (404). | FEAT-06 |
-| `CONTENT_REFERENCED` | Excluir ou renomear uma carta de atributo que está no deck pré-pronto de uma classe (409). | FEAT-06 |
+| `CONTENT_REFERENCED` | Excluir ou renomear uma carta de atributo que está no deck pré-pronto de uma classe (409), ou (FEAT-32) uma carta citada no `rewardDecks` de uma Carta de Dimensão. | FEAT-06 |
 | `ACTION_INVALID` | Intenção malformada (400): corpo, `type` ou campos inválidos, ou zona fora do mapa; `details.fields` diz cada campo e o motivo. | FEAT-07 |
 | `ACTION_NOT_ALLOWED` | Intenção bem formada recusada pela regra (409), ex.: zona sem travessia com a atual, sem pontos de ação (FEAT-08), build irregular ou pasta cheia (FEAT-09); `details.reason`. | FEAT-07 |
 | `LAB_GRANT_INVALID` | Doação do laboratório malformada ou de carta que não se doa (400); `details.fields`. | FEAT-10 |
@@ -1552,3 +1777,5 @@ Só nos e2e do backend: leitura de saves antigos e o Pico abaixo do requisito co
 | 0.41 | 2026-11-17 | BE | FEAT-10 `implementado (BE)`: rota de doação, Preparar e os campos novos do `PlayerState` no ar; cenários cobertos pelos e2e `grant-to-member/index.controller.e2e-spec.ts` e `take-party-action/index.prepare.controller.e2e-spec.ts`. A `fixture` ganhou `fixture.short-sword`, `fixture.oak-shield`, `fixture.iron-helm`, `fixture.arcane-wand` e `fixture.pickaxe`. Save antigo com ouro acima da bolsa é lido com o ouro limitado à `purseCapacity`. Sem mudança de formato. |
 | 0.42 | 2026-11-18 | FE | FEAT-10 `validado` (sem mudança de formato): 26 conferências passaram contra o backend real (`http://localhost:3333`, conteúdo `base`: `base.wooden-shield` no lugar de `B`/`W`/`D` e `base.healing-herb` no de `P`/`K`): criação, empilhamento, ouro com perda, pasta, `prepare` em `availableActions`, equip e troca, unequip, `notEquipment`, `notInInventory`, `slotEmpty`, `inventoryFull` (doação e unequip), 0 pontos, `unknownOperation`, `unknownSlot`, sem sessão, `notGrantable`, `CARD_NOT_FOUND`, `MEMBER_NOT_FOUND`, `notPositiveInteger`. Sem carta que bloqueie escudo, com requisito de Pico ou com restrição de classe na `base`: `shieldBlocked`, `peakRequirementNotMet`, `classRestricted` e os valores da arma ficam com os e2e do backend (decisão do autor). `CONTENT_IN_USE` não rodado (apagaria conteúdo se falhasse). Tela com o MSW desligado: doação, `notPositiveInteger`, Equipar e Guardar. |
 | 0.43 | 2026-11-18 | BE | Título da seção FEAT-10 corrigido para `validado` (a v0.42 registrou a validação no histórico, mas não mudou o título). Sem mudança de formato. |
+| 0.44 | 2026-11-18 | BE | FEAT-32 proposta (`proposto (BE)`): `PlayerState.vault` (`Vault`), `vaultCapacity`, `vaultDeckSlots`, `vaultGoldCapacity`, `scavengeTargets` (altera FEAT-06); `PartyAction` ganha `UseVaultAction` (lote de 1 a 50 `VaultOperation`: `store`, `take`, `storeGold`, `takeGold`, `discard`, `saveDeck`, `unpackDeck`, `swapBuild`, `editBuild`) e `ScavengeAction`; `availableActions` ganha `scavenge` e `useVault` (ordem nova); motivos novos em `ActionInvalidDetails` (`invalidLength`, `notNonNegativeInteger`) e `ActionNotAllowedDetails` (13 motivos e o campo `operationIndex`); 3 chaves novas em `GameConfigValues` (altera FEAT-03); `ItemCard.toolKind`/`scavengeZoneTypes`/`scavengeTool`, `EquipmentCard.scavengeTool`, `DimensionCard.rewardDecks` (altera FEAT-04/06) e a `fixture` com 3 itens novos; `CONTENT_REFERENCED` também por deck de recompensas e "em uso" estendido (altera FEAT-31); glossário §2.15. Sem rota nem código de erro novos. |
+| 0.45 | 2026-11-18 | FE | FEAT-32 → `proposto (FE)`, um pedido de mudança: o resultado do Vasculhar vem pronto em `PlayerState.lastScavenge` (`{ cardId, found }` ou `null`), em vez de o frontend comparar o inventário (princípio "o backend decide"; com carta que empilha, a comparação depende de regra de empilhamento). Cenários do Vasculhar atualizados. O resto da proposta aceito sem mudanças. |
