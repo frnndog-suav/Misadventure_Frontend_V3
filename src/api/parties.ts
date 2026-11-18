@@ -7,7 +7,7 @@ import {
 } from '@tanstack/react-query'
 import { z } from 'zod'
 import { modifierValuesSchema, playerClassSchema } from './catalog'
-import type { PlayerClass } from './catalog'
+import type { EquipmentSlot, PlayerClass } from './catalog'
 import { ApiError, requestJson } from './http'
 
 /**
@@ -57,10 +57,11 @@ export const partyDimensionSchema = z.object({
 })
 export type PartyDimension = z.infer<typeof partyDimensionSchema>
 
-/** Tipos de `PartyAction`, na ordem fixa do contrato (FEAT-08, FEAT-09). */
+/** Tipos de `PartyAction`, na ordem fixa do contrato (FEAT-08 a FEAT-10). */
 export const partyActionTypeSchema = z.enum([
   'move',
   'recover',
+  'prepare',
   'adjustDeck',
   'endTurn',
 ])
@@ -80,6 +81,25 @@ export const cardCopiesSchema = z.object({
   copies: z.number().int().min(1),
 })
 export type CardCopies = z.infer<typeof cardCopiesSchema>
+
+/** Slot do inventário; `quantity` > 1 só em carta que empilha (FEAT-10). */
+export const inventorySlotSchema = z.object({
+  cardId: z.string(),
+  quantity: z.number().int().min(1),
+})
+export type InventorySlot = z.infer<typeof inventorySlotSchema>
+
+/** As 8 categorias de equipamento em uso; `null` = slot vazio (FEAT-10). */
+const equipmentInUseSchema = z.object({
+  head: z.string().nullable(),
+  torso: z.string().nullable(),
+  legs: z.string().nullable(),
+  feet: z.string().nullable(),
+  cape: z.string().nullable(),
+  weapon: z.string().nullable(),
+  shield: z.string().nullable(),
+  accessory: z.string().nullable(),
+}) satisfies z.ZodType<Record<EquipmentSlot, string | null>>
 
 /** Estado do jogador na partida; tudo calculado pelo backend (§1.3). */
 export const playerStateSchema = z.object({
@@ -107,6 +127,12 @@ export const playerStateSchema = z.object({
   buildSize: nonNegativeInt,
   tcgFolder: z.array(cardCopiesSchema),
   tcgFolderCapacity: nonNegativeInt,
+  /** Inventário, equipamentos, bolsa e modificadores efetivos, prontos (FEAT-10, D-58). */
+  inventory: z.array(inventorySlotSchema),
+  inventoryCapacity: nonNegativeInt,
+  equipment: equipmentInUseSchema,
+  purseCapacity: nonNegativeInt,
+  effectiveModifiers: modifierValuesSchema,
 })
 export type PlayerState = z.infer<typeof playerStateSchema>
 
@@ -204,7 +230,7 @@ async function getParties(): Promise<PartySummary[]> {
 }
 
 /** `details` de um erro esperado validado; fora do contrato → erro genérico. */
-function parseDetails<T>(error: ApiError, schema: z.ZodType<T>): T {
+export function parseDetails<T>(error: ApiError, schema: z.ZodType<T>): T {
   const details = schema.safeParse(error.details)
   if (!details.success) {
     throw new Error(`${error.code} com details fora do contrato`, {
@@ -243,6 +269,17 @@ export function useParties(): UseQueryResult<PartySummary[], Error> {
   return useQuery({ queryKey: partiesKey, queryFn: getParties, retry: false })
 }
 
+/** Um grupo (`GET /parties/:partyId`); `null` deixa a consulta parada. */
+export function useParty(partyId: string | null): UseQueryResult<Party, Error> {
+  return useQuery({
+    queryKey: [...partiesKey, partyId],
+    queryFn: async () =>
+      partySchema.parse(await requestJson('GET', partyPath(partyId ?? ''))),
+    enabled: partyId !== null,
+    retry: false,
+  })
+}
+
 /**
  * Cria o grupo de 1, já preparado; erro de campo vira `PartyInvalidError` e
  * dimensão inválida vira `DimensionInvalidError`.
@@ -270,7 +307,7 @@ export function useStartSession(
 
 /** Intenção de jogo (CONTRATO §1.6); as FEATs seguintes acrescentam variantes. */
 export type PartyAction =
-  MoveAction | EndTurnAction | RecoverAction | AdjustDeckAction
+  MoveAction | EndTurnAction | RecoverAction | AdjustDeckAction | PrepareAction
 
 /** Movimentar (README 12.2); `zoneId` vem de `moveTargets`. */
 export interface MoveAction {
@@ -295,6 +332,11 @@ export interface AdjustDeckAction {
   build: CardCopies[]
 }
 
+/** Preparar (README 12.2, parte a): equipar uma carta ou guardar um slot. */
+export type PrepareAction =
+  | { type: 'prepare'; operation: 'equip'; cardId: string }
+  | { type: 'prepare'; operation: 'unequip'; slot: EquipmentSlot }
+
 export const actionNotAllowedDetailsSchema = z.object({
   reason: z.enum([
     'notConnected',
@@ -303,6 +345,14 @@ export const actionNotAllowedDetailsSchema = z.object({
     'copyLimitExceeded',
     'buildBelowMinimum',
     'tcgFolderFull',
+    // FEAT-10
+    'notInInventory',
+    'notEquipment',
+    'peakRequirementNotMet',
+    'classRestricted',
+    'shieldBlocked',
+    'inventoryFull',
+    'slotEmpty',
   ]),
   /** Só em `notOwned` e `copyLimitExceeded`. */
   cardId: z.string().optional(),

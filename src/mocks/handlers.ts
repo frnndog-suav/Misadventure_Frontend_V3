@@ -59,9 +59,18 @@ import {
 import {
   actionBuildBelowMinimumFixture,
   actionInvalidUnknownActionFixture,
+  actionInvalidUnknownOperationFixture,
   actionInvalidUnknownOptionFixture,
   actionInvalidZoneNotInMapFixture,
   actionNotOwnedFixture,
+  actionPrepareNotAllowedFixture,
+  labGrantNotGrantableFixture,
+  memberNotFoundFixture,
+  partyBladeEquippedFixture,
+  partyBladeUnequippedFixture,
+  partyGearInSessionFixture,
+  partyGrantedCardFixture,
+  partyGrantedGoldFixture,
   partyDeckAdjustedFixture,
   partyRecoveredDrawFixture,
   partyRecoveredShuffleDiscardFixture,
@@ -150,13 +159,19 @@ async function partyActionScenario(
   const body: unknown = await request.json().catch(() => undefined)
   const type = field(body, 'type')
   if (type === 'endTurn') return HttpResponse.json(partyNextRoundFixture)
-  if (type !== 'move' && type !== 'recover' && type !== 'adjustDeck') {
+  if (
+    type !== 'move' &&
+    type !== 'recover' &&
+    type !== 'adjustDeck' &&
+    type !== 'prepare'
+  ) {
     return HttpResponse.json(actionInvalidUnknownActionFixture, { status: 400 })
   }
   const option = field(body, 'option')
   if (type === 'recover' && !recoverOptions.includes(option)) {
     return HttpResponse.json(actionInvalidUnknownOptionFixture, { status: 400 })
   }
+  if (type === 'prepare') return prepareScenario(body)
   if (partyId === partyNoPointsFixture.id) {
     return HttpResponse.json(actionNoActionPointsFixture, { status: 409 })
   }
@@ -175,6 +190,68 @@ async function partyActionScenario(
       return HttpResponse.json(actionInvalidZoneNotInMapFixture, {
         status: 400,
       })
+  }
+}
+
+/**
+ * `prepare`: tabela dos cenários do contrato pelo `cardId` ou `slot` do pedido
+ * (D-58 item 4). Gratuita: não olha os pontos; sem estado nem conferência de
+ * Pico, classe, escudo ou espaço (Princípio 3).
+ */
+function prepareScenario(body: unknown): Response {
+  const refuse = (
+    reason: Parameters<typeof actionPrepareNotAllowedFixture>[0],
+  ) =>
+    HttpResponse.json(actionPrepareNotAllowedFixture(reason), { status: 409 })
+  switch (field(body, 'operation')) {
+    case 'equip':
+      switch (field(body, 'cardId')) {
+        case 'fixture.blade-of-dusk':
+          return HttpResponse.json(partyBladeEquippedFixture)
+        case 'fixture.oak-shield':
+          return refuse('shieldBlocked')
+        case 'fixture.iron-helm':
+          return refuse('peakRequirementNotMet')
+        case 'fixture.arcane-wand':
+          return refuse('classRestricted')
+        case 'fixture.healing-potion':
+          return refuse('notEquipment')
+        default:
+          return refuse('notInInventory')
+      }
+    case 'unequip':
+      return field(body, 'slot') === 'weapon'
+        ? HttpResponse.json(partyBladeUnequippedFixture)
+        : refuse('slotEmpty')
+    default:
+      return HttpResponse.json(actionInvalidUnknownOperationFixture, {
+        status: 400,
+      })
+  }
+}
+
+/**
+ * POST /lab/parties/:partyId/members/:memberId/grants: tabela dos cenários do
+ * contrato (D-58 item 4), na ordem do contrato: membro, corpo, carta.
+ */
+async function labGrantScenario(
+  memberId: unknown,
+  request: Request,
+): Promise<Response> {
+  if (memberId !== partyCreatedFixture.members[0].id) {
+    return HttpResponse.json(memberNotFoundFixture, { status: 404 })
+  }
+  const body = await jsonBody(request)
+  if (field(body, 'type') === 'gold') {
+    return HttpResponse.json(partyGrantedGoldFixture)
+  }
+  switch (field(body, 'cardId')) {
+    case 'fixture.gray-harbor':
+      return HttpResponse.json(labGrantNotGrantableFixture, { status: 400 })
+    case 'fixture.nope':
+      return HttpResponse.json(catalogCardNotFoundFixture, { status: 404 })
+    default:
+      return HttpResponse.json(partyGrantedCardFixture)
   }
 }
 
@@ -253,7 +330,8 @@ function knownParty(
   ok: () => Response | Promise<Response>,
 ): Response | Promise<Response> {
   return partyId === partyCreatedFixture.id ||
-    partyId === partyNoPointsFixture.id
+    partyId === partyNoPointsFixture.id ||
+    partyId === partyGearInSessionFixture.id
     ? ok()
     : HttpResponse.json(partyNotFoundFixture, { status: 404 })
 }
@@ -589,12 +667,23 @@ export const handlers: RequestHandler[] = [
   http.get('*/catalog/classes', () => HttpResponse.json(classesFixture)),
   http.get('*/parties', () => HttpResponse.json(partiesFixture)),
   http.post('*/parties', ({ request }) => createPartyScenario(request)),
+  http.get('*/parties/:partyId', ({ params }) =>
+    knownParty(params.partyId, () =>
+      HttpResponse.json(
+        [partyNoPointsFixture, partyGearInSessionFixture].find(
+          (party) => party.id === params.partyId,
+        ) ?? partyCreatedFixture,
+      ),
+    ),
+  ),
   http.post('*/parties/:partyId/session', ({ params }) =>
     knownParty(params.partyId, () =>
       HttpResponse.json(
         params.partyId === partyNoPointsFixture.id
           ? partyNoPointsFixture
-          : partyInSessionFixture,
+          : params.partyId === partyGearInSessionFixture.id
+            ? partyGearInSessionFixture
+            : partyInSessionFixture,
       ),
     ),
   ),
@@ -605,6 +694,13 @@ export const handlers: RequestHandler[] = [
     knownParty(params.partyId, () =>
       partyActionScenario(params.partyId, request),
     ),
+  ),
+  http.post(
+    '*/lab/parties/:partyId/members/:memberId/grants',
+    ({ params, request }) =>
+      knownParty(params.partyId, () =>
+        labGrantScenario(params.memberId, request),
+      ),
   ),
   http.delete('*/parties/:partyId', ({ params }) =>
     knownParty(params.partyId, () => new HttpResponse(null, { status: 204 })),

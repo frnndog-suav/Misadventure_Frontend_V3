@@ -89,3 +89,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 057 | T-43 | [Recuperar](057-T-43-recuperar.md) | concluída |
 | 058 | T-44 | [Ajustar deck](058-T-44-ajustar-deck.md) | concluída |
 | 059 | RETORNO | [FEAT-09 validada contra o backend real](059-RETORNO-feat-09-validada.md) | concluída |
+| 060 | T-45 | [Cliente da FEAT-10](060-T-45-cliente-feat-10.md) | concluída |

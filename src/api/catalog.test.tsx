@@ -158,7 +158,7 @@ describe('REQ-08: useCollections (GET /catalog/collections)', () => {
 })
 
 describe('REQ-08: useCards (GET /catalog/collections/:collectionId/cards)', () => {
-  it('REQ-08: sem type, pede sem query e entrega as 12 cartas na ordem recebida', async () => {
+  it('REQ-08: sem type, pede sem query e entrega as 17 cartas na ordem recebida', async () => {
     let search = 'x'
     server.use(
       http.get('*/catalog/collections/:collectionId/cards', ({ request }) => {
@@ -170,13 +170,18 @@ describe('REQ-08: useCards (GET /catalog/collections/:collectionId/cards)', () =
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(search).toBe('')
     expect(result.current.data?.map((card) => card.id)).toEqual([
+      'fixture.arcane-wand',
       'fixture.blade-of-dusk',
       'fixture.dexterity-basic',
       'fixture.endurance-basic',
       'fixture.gray-harbor',
       'fixture.healing-potion',
       'fixture.howling-wolves',
+      'fixture.iron-helm',
+      'fixture.oak-shield',
       'fixture.old-mine',
+      'fixture.pickaxe',
+      'fixture.short-sword',
       'fixture.stone-bend',
       'fixture.strength-basic',
       'fixture.test-dimension',

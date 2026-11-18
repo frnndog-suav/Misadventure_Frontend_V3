@@ -15,6 +15,11 @@ import type {
 const partyId = 'party-os-teimosos'
 const strength = 'fixture.strength-basic'
 const endurance = 'fixture.endurance-basic'
+const blade = 'fixture.blade-of-dusk'
+const shield = 'fixture.oak-shield'
+const helm = 'fixture.iron-helm'
+const wand = 'fixture.arcane-wand'
+const potion = 'fixture.healing-potion'
 
 const member: Party['members'][number] = {
   id: 'member-lia',
@@ -60,6 +65,29 @@ const member: Party['members'][number] = {
     buildSize: 60,
     tcgFolder: [],
     tcgFolderCapacity: 30,
+    // FEAT-10 (CONTRATO v0.41): ⌊modificador × (100 + Pico) ÷ 100⌋, pronto do backend.
+    inventory: [],
+    inventoryCapacity: 10,
+    equipment: {
+      head: null,
+      torso: null,
+      legs: null,
+      feet: null,
+      cape: null,
+      weapon: null,
+      shield: null,
+      accessory: null,
+    },
+    purseCapacity: 300,
+    effectiveModifiers: {
+      attack: 6,
+      defense: 5,
+      accuracy: 49,
+      evasion: 16,
+      celerity: 8,
+      piercing: 0,
+      reflection: 0,
+    },
   },
 }
 
@@ -212,6 +240,110 @@ export const partyDeckAdjustedFixture = partyAfterDeckAction(
   '2026-11-14T21:44:00.000Z',
 )
 
+/**
+ * Grupo de exemplo com equipamentos no inventário (CONTRATO §3 FEAT-10):
+ * `B`, `D`, `H`, `R` e 2 poções; `prepare` disponível. O `id` próprio é a
+ * chave do cenário no handler (D-58 item 4).
+ */
+export const partyGearInSessionFixture: Party = {
+  ...partyInSessionFixture,
+  id: 'party-com-equipamento',
+  members: [
+    {
+      ...member,
+      player: {
+        ...member.player,
+        inventory: [
+          { cardId: blade, quantity: 1 },
+          { cardId: shield, quantity: 1 },
+          { cardId: helm, quantity: 1 },
+          { cardId: wand, quantity: 1 },
+          { cardId: potion, quantity: 2 },
+        ],
+        availableActions: [
+          'move',
+          'recover',
+          'prepare',
+          'adjustDeck',
+          'endTurn',
+        ],
+      },
+    },
+  ],
+  savedAt: '2026-11-14T21:55:00.000Z',
+}
+
+const gearPlayer = partyGearInSessionFixture.members[0].player
+
+/** 200 de `prepare` `equip` de `B`: arma em uso, `B` fora do inventário, Ataque 9, Precisão 50, pontos intactos. */
+export const partyBladeEquippedFixture: Party = {
+  ...partyGearInSessionFixture,
+  members: [
+    {
+      ...member,
+      player: {
+        ...gearPlayer,
+        inventory: [
+          { cardId: shield, quantity: 1 },
+          { cardId: helm, quantity: 1 },
+          { cardId: wand, quantity: 1 },
+          { cardId: potion, quantity: 2 },
+        ],
+        equipment: { ...gearPlayer.equipment, weapon: blade },
+        effectiveModifiers: {
+          ...gearPlayer.effectiveModifiers,
+          attack: 9,
+          accuracy: 50,
+        },
+      },
+    },
+  ],
+  savedAt: '2026-11-14T21:56:00.000Z',
+}
+
+/** 200 de `prepare` `unequip` de `weapon`: arma no fim do inventário, Ataque 6. */
+export const partyBladeUnequippedFixture: Party = {
+  ...partyGearInSessionFixture,
+  members: [
+    {
+      ...member,
+      player: {
+        ...gearPlayer,
+        inventory: [
+          { cardId: shield, quantity: 1 },
+          { cardId: helm, quantity: 1 },
+          { cardId: wand, quantity: 1 },
+          { cardId: potion, quantity: 2 },
+          { cardId: blade, quantity: 1 },
+        ],
+      },
+    },
+  ],
+  savedAt: '2026-11-14T21:57:00.000Z',
+}
+
+/** 200 da doação de `P` × 2 (laboratório): inventário com `P` em 2. */
+export const partyGrantedCardFixture: Party = {
+  ...partyCreatedFixture,
+  members: [
+    {
+      ...member,
+      player: {
+        ...member.player,
+        inventory: [{ cardId: potion, quantity: 2 }],
+      },
+    },
+  ],
+  savedAt: '2026-11-14T21:58:00.000Z',
+}
+
+/** 200 da doação de 295 de ouro (laboratório): ouro 300, 5 perdidas. */
+export const partyGrantedGoldFixture: Party = {
+  ...partyCreatedFixture,
+  members: [{ ...member, player: { ...member.player, gold: 300 } }],
+  savedAt: '2026-11-14T21:59:00.000Z',
+}
+
 /** 200 de GET /parties com o grupo criado. */
 export const partiesFixture: PartySummary[] = [
   {
@@ -346,6 +478,52 @@ export function actionNotOwnedFixture(cardId: string) {
     },
   } as const
 }
+
+/** 409 de `prepare` recusado pela regra (CONTRATO §3 FEAT-10). */
+export function actionPrepareNotAllowedFixture(
+  reason:
+    | 'notInInventory'
+    | 'notEquipment'
+    | 'peakRequirementNotMet'
+    | 'classRestricted'
+    | 'shieldBlocked'
+    | 'inventoryFull'
+    | 'slotEmpty',
+) {
+  return {
+    error: {
+      code: 'ACTION_NOT_ALLOWED',
+      message: 'Esta ação não é permitida agora.',
+      details: { reason },
+    },
+  } as const
+}
+
+/** 400 de `prepare` com `operation` desconhecida (CONTRATO §3 FEAT-10). */
+export const actionInvalidUnknownOperationFixture = {
+  error: {
+    code: 'ACTION_INVALID',
+    message: 'Ação inválida.',
+    details: { fields: [{ field: 'operation', reason: 'unknownOperation' }] },
+  },
+} as const
+
+/** 400 da doação de carta que não se doa (CONTRATO §3 FEAT-10). */
+export const labGrantNotGrantableFixture = {
+  error: {
+    code: 'LAB_GRANT_INVALID',
+    message: 'Doação inválida.',
+    details: { fields: [{ field: 'cardId', reason: 'notGrantable' }] },
+  },
+} as const
+
+/** 404 da doação para um membro que não é do grupo. */
+export const memberNotFoundFixture = {
+  error: {
+    code: 'MEMBER_NOT_FOUND',
+    message: 'Membro não encontrado neste grupo.',
+  },
+} as const
 
 /** 400 de `recover` com opção desconhecida (CONTRATO §3 FEAT-09). */
 export const actionInvalidUnknownOptionFixture = {

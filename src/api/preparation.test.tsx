@@ -161,8 +161,8 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
     expect(collectionsFixture[0].cardCounts).toEqual({
       zone: 4,
       attribute: 3,
-      equipment: 1,
-      item: 1,
+      equipment: 5,
+      item: 2,
       randomEvent: 1,
       combatEvent: 1,
       dimension: 1,
@@ -179,7 +179,7 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
     ).toBe(false)
   })
 
-  it('REQ-28: o handler padrão da coleção fixture lista as 12 cartas na ordem de id', async () => {
+  it('REQ-28: o handler padrão da coleção fixture lista as 17 cartas na ordem de id', async () => {
     const response = await fetch(
       'http://localhost:3000/catalog/collections/fixture/cards',
     )
@@ -187,20 +187,25 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
       (card) => card.id,
     )
     expect(ids).toEqual([
+      'fixture.arcane-wand',
       'fixture.blade-of-dusk',
       'fixture.dexterity-basic',
       'fixture.endurance-basic',
       'fixture.gray-harbor',
       'fixture.healing-potion',
       'fixture.howling-wolves',
+      'fixture.iron-helm',
+      'fixture.oak-shield',
       'fixture.old-mine',
+      'fixture.pickaxe',
+      'fixture.short-sword',
       'fixture.stone-bend',
       'fixture.strength-basic',
       'fixture.test-dimension',
       'fixture.whispering-grove',
       'fixture.wounded-traveler',
     ])
-    expect(fixtureCardsFixture).toHaveLength(12)
+    expect(fixtureCardsFixture).toHaveLength(17)
   })
 })
 
@@ -452,6 +457,29 @@ describe('REQ-30: Party preparado (dimension, turnOrder, player)', () => {
       buildSize: 60,
       tcgFolder: [],
       tcgFolderCapacity: 30,
+      // FEAT-10 (CONTRATO v0.41, cenário de criação)
+      inventory: [],
+      inventoryCapacity: 10,
+      equipment: {
+        head: null,
+        torso: null,
+        legs: null,
+        feet: null,
+        cape: null,
+        weapon: null,
+        shield: null,
+        accessory: null,
+      },
+      purseCapacity: 300,
+      effectiveModifiers: {
+        attack: 6,
+        defense: 5,
+        accuracy: 49,
+        evasion: 16,
+        celerity: 8,
+        piercing: 0,
+        reflection: 0,
+      },
     })
     expect(hand).toHaveLength(7)
     for (const id of hand) {

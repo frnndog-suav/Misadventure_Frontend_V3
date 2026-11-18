@@ -69,7 +69,7 @@ test('REQ-08: o Catálogo filtra por tipo e mostra a carta escolhida (MSW)', asy
     section.getByRole('radio', { name: 'Coleção de Teste' }),
   ).toBeChecked()
   const list = section.getByRole('list', { name: 'Cartas' })
-  await expect(list.getByRole('button')).toHaveCount(12)
+  await expect(list.getByRole('button')).toHaveCount(17)
 
   await section.getByRole('radio', { name: 'Zona (4)' }).check()
   await expect(list.getByRole('button')).toHaveCount(4)

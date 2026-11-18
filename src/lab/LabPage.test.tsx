@@ -97,6 +97,9 @@ const labels = [
   ['recoverHealthPercent', 'Recuperar: % da vida máxima'],
   ['recoverVigorPercent', 'Recuperar: % do Pico em Vigor'],
   ['recoverHandSize', 'Recuperar: comprar até (cartas na mão)'],
+  // FEAT-10 (REQ-43)
+  ['inventoryCapacity', 'Capacidade do inventário'],
+  ['purseCapacity', 'Capacidade da bolsa'],
 ] as const
 
 async function loaded(): Promise<void> {
@@ -157,7 +160,7 @@ describe('REQ-06: configuração ajustável do jogo', () => {
     const names = within(region)
       .getAllByRole('spinbutton')
       .map((input) => (input as HTMLInputElement).labels?.[0]?.textContent)
-    expect(names.slice(-5)).toEqual([
+    expect(names.slice(-7, -2)).toEqual([
       'Cópias máximas por carta no deck',
       'Capacidade da pasta de TCG',
       'Recuperar: % da vida máxima',

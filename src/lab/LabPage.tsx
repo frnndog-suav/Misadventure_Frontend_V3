@@ -46,6 +46,9 @@ const fieldLabels: Record<GameConfigKey, string> = {
   recoverHealthPercent: 'Recuperar: % da vida máxima',
   recoverVigorPercent: 'Recuperar: % do Pico em Vigor',
   recoverHandSize: 'Recuperar: comprar até (cartas na mão)',
+  // FEAT-10 (REQ-43)
+  inventoryCapacity: 'Capacidade do inventário',
+  purseCapacity: 'Capacidade da bolsa',
 }
 
 const fieldKeys = Object.keys(fieldLabels) as GameConfigKey[]

@@ -20,8 +20,8 @@ export const collectionsFixture: CollectionSummary[] = [
     cardCounts: {
       zone: 4,
       attribute: 3,
-      equipment: 1,
-      item: 1,
+      equipment: 5,
+      item: 2,
       randomEvent: 1,
       combatEvent: 1,
       dimension: 1,
@@ -251,15 +251,118 @@ export const woundedTravelerFixture: Card = {
   collectionId: 'fixture',
 }
 
-/** GET /catalog/collections/fixture/cards — 12 cartas na ordem de `id`. */
+/**
+ * Cartas acrescentadas à `fixture` na FEAT-10 (CONTRATO v0.41). Montadas só
+ * com o que os cenários do contrato fixam (slot, modificadores, requisito de
+ * Pico, restrição de classe, bloqueio de escudo, categoria); nomes, raridade,
+ * tags e textos são de exemplo, não cópia do backend (decisão do autor, T-45).
+ */
+export const shortSwordFixture: Card = {
+  id: 'fixture.short-sword',
+  name: 'Espada Curta',
+  flavorText: null,
+  rarity: 'common',
+  slot: 'weapon',
+  tags: ['espada'],
+  modifiers: [{ modifier: 'attack', value: 2 }],
+  peakRequirement: null,
+  classRestriction: [],
+  blocksShield: false,
+  abilities: [],
+  effects: [],
+  refinement: null,
+  enchantment: null,
+  priceMultiplier: 1,
+  type: 'equipment',
+  collectionId: 'fixture',
+}
+
+export const oakShieldFixture: Card = {
+  id: 'fixture.oak-shield',
+  name: 'Escudo de Carvalho',
+  flavorText: null,
+  rarity: 'common',
+  slot: 'shield',
+  tags: ['escudo'],
+  modifiers: [{ modifier: 'defense', value: 2 }],
+  peakRequirement: null,
+  classRestriction: [],
+  blocksShield: false,
+  abilities: [],
+  effects: [],
+  refinement: null,
+  enchantment: null,
+  priceMultiplier: 1,
+  type: 'equipment',
+  collectionId: 'fixture',
+}
+
+export const ironHelmFixture: Card = {
+  id: 'fixture.iron-helm',
+  name: 'Elmo de Ferro',
+  flavorText: null,
+  rarity: 'uncommon',
+  slot: 'head',
+  tags: ['elmo'],
+  modifiers: [{ modifier: 'defense', value: 1 }],
+  peakRequirement: 50,
+  classRestriction: [],
+  blocksShield: false,
+  abilities: [],
+  effects: [],
+  refinement: null,
+  enchantment: null,
+  priceMultiplier: 1,
+  type: 'equipment',
+  collectionId: 'fixture',
+}
+
+export const arcaneWandFixture: Card = {
+  id: 'fixture.arcane-wand',
+  name: 'Varinha Arcana',
+  flavorText: null,
+  rarity: 'uncommon',
+  slot: 'weapon',
+  tags: ['varinha'],
+  modifiers: [{ modifier: 'attack', value: 1 }],
+  peakRequirement: null,
+  classRestriction: ['mage'],
+  blocksShield: false,
+  abilities: [],
+  effects: [],
+  refinement: null,
+  enchantment: null,
+  priceMultiplier: 1,
+  type: 'equipment',
+  collectionId: 'fixture',
+}
+
+export const pickaxeFixture: Card = {
+  id: 'fixture.pickaxe',
+  name: 'Picareta',
+  flavorText: null,
+  rarity: 'common',
+  itemCategory: 'tool',
+  tags: ['ferramenta'],
+  effects: [],
+  type: 'item',
+  collectionId: 'fixture',
+}
+
+/** GET /catalog/collections/fixture/cards — 17 cartas na ordem de `id`. */
 export const fixtureCardsFixture: Card[] = [
+  arcaneWandFixture,
   bladeOfDuskFixture,
   dexterityBasicFixture,
   enduranceBasicFixture,
   grayHarborFixture,
   healingPotionFixture,
   howlingWolvesFixture,
+  ironHelmFixture,
+  oakShieldFixture,
   oldMineFixture,
+  pickaxeFixture,
+  shortSwordFixture,
   stoneBendFixture,
   strengthBasicFixture,
   testDimensionFixture,
@@ -280,8 +383,14 @@ export const fixtureCardsByTypeFixture: Record<CardType, Card[]> = {
     enduranceBasicFixture,
     strengthBasicFixture,
   ],
-  equipment: [bladeOfDuskFixture],
-  item: [healingPotionFixture],
+  equipment: [
+    arcaneWandFixture,
+    bladeOfDuskFixture,
+    ironHelmFixture,
+    oakShieldFixture,
+    shortSwordFixture,
+  ],
+  item: [healingPotionFixture, pickaxeFixture],
   randomEvent: [woundedTravelerFixture],
   combatEvent: [howlingWolvesFixture],
   dimension: [testDimensionFixture],

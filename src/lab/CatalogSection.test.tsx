@@ -52,15 +52,20 @@ const status = () => screen.getByRole('status')
 const cardsUrl = '*/catalog/collections/:collectionId/cards'
 const unavailable = 'Servidor indisponível. Tente novamente.'
 
-/** As 12 cartas da `fixture` (CONTRATO §3 FEAT-04, contagens da FEAT-06). */
+/** As 17 cartas da `fixture` (CONTRATO §3 FEAT-04, FEAT-06 e FEAT-10). */
 const expectedOrder = [
+  'Varinha Arcana · Equipamento',
   'Lâmina do Crepúsculo · Equipamento',
   'Destreza · Atributo',
   'Resistência · Atributo',
   'Porto Cinzento · Zona',
   'Poção de Cura · Item',
   'Lobos Uivantes · Evento de combate',
+  'Elmo de Ferro · Equipamento',
+  'Escudo de Carvalho · Equipamento',
   'Mina Velha · Zona',
+  'Picareta · Item',
+  'Espada Curta · Equipamento',
   'Curva de Pedra · Zona',
   'Força · Atributo',
   'Dimensão de Teste · Dimensão',
@@ -91,17 +96,17 @@ describe('CatalogSection', () => {
       .getAllByRole('radio')
       .map((r) => r.closest('label')?.textContent)
     expect(options).toEqual([
-      'Todos (12)',
+      'Todos (17)',
       'Zona (4)',
       'Atributo (3)',
-      'Equipamento (1)',
-      'Item (1)',
+      'Equipamento (5)',
+      'Item (2)',
       'Evento aleatório (1)',
       'Evento de combate (1)',
       'Dimensão (1)',
     ])
     expect(
-      within(filter).getByRole('radio', { name: 'Todos (12)' }),
+      within(filter).getByRole('radio', { name: 'Todos (17)' }),
     ).toBeChecked()
   })
 

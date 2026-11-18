@@ -131,7 +131,10 @@ const recoverOptions: { option: RecoverAction['option']; label: string }[] = [
   { option: 'shuffleDiscard', label: 'Descarte no deck' },
 ]
 
-/** Texto de cada motivo de recusa do "Ajustar deck" (REQ-42); outro motivo → só a `message`. */
+/**
+ * Texto de cada motivo de recusa do "Ajustar deck" (REQ-42); outro motivo → só
+ * a `message`. Os motivos do Preparar (FEAT-10) têm o texto na T-47 (REQ-45).
+ */
 function reasonText(error: ActionNotAllowedError, cards: Cards): string {
   const name = nameOf(cards, error.cardId ?? '')
   switch (error.reason) {
@@ -145,6 +148,13 @@ function reasonText(error: ActionNotAllowedError, cards: Cards): string {
       return 'Não há espaço na pasta de TCG para as cartas que saíram da build.'
     case 'notConnected':
     case 'noActionPoints':
+    case 'notInInventory':
+    case 'notEquipment':
+    case 'peakRequirementNotMet':
+    case 'classRestricted':
+    case 'shieldBlocked':
+    case 'inventoryFull':
+    case 'slotEmpty':
       return ''
     default: {
       const _exhaustive: never = error.reason
