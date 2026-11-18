@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.42 · **Data:** 2026-11-18
+> **Versão do contrato:** 0.43 · **Data:** 2026-11-18
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -1337,7 +1337,7 @@ Contra a `fixture`, laboratório no padrão. Seja `G` criado com `{ "name": "Os 
 
 Só nos e2e do backend (a pasta não enche no jogo ainda): trocar `S` por cartas da pasta, tirar cartas para a pasta, `tcgFolderFull`, `copyLimitExceeded`, `shuffleDiscard` com pilha não vazia e a leitura de saves antigos.
 
-### FEAT-10 — Inventário, equipar e bolsa — `implementado (BE)`
+### FEAT-10 — Inventário, equipar e bolsa — `validado`
 
 Regras: README 5.1 (1 equipamento por categoria; equipamento guardado não funciona; arma que bloqueia escudo, B J1), 5.3 (bolsa; ouro acima da capacidade é perdido), 6.2 (inventário de 10 slots; empilhamento), 7.3 item 8 (requisito de Pico), 7.4 (pipeline do modificador), 8.2 (classe inativa ainda equipa item restrito), 9.1 (começa sem equipamentos nem recursos), 11.1 item 5 e B K2 (Preparar é gratuita, também com 0 pontos), 12.2 (Preparar, parte a: trocar equipamentos) e 17.3 item 1.
 
@@ -1551,3 +1551,4 @@ Só nos e2e do backend: leitura de saves antigos e o Pico abaixo do requisito co
 | 0.40 | 2026-11-17 | FE | FEAT-10 `acordado` sem mudanças: modificadores efetivos, ações disponíveis (`prepare`) e motivos de recusa chegam prontos; o frontend só exibe e envia a intenção (não confere Pico, classe, escudo nem capacidade). A doação fica só no laboratório (fora do release, D-08). O FE alinha os schemas (`PlayerState`, `availableActions`, `GameConfigValues`, motivos de erro) e as fixtures do MSW nas tarefas da FEAT-10. |
 | 0.41 | 2026-11-17 | BE | FEAT-10 `implementado (BE)`: rota de doação, Preparar e os campos novos do `PlayerState` no ar; cenários cobertos pelos e2e `grant-to-member/index.controller.e2e-spec.ts` e `take-party-action/index.prepare.controller.e2e-spec.ts`. A `fixture` ganhou `fixture.short-sword`, `fixture.oak-shield`, `fixture.iron-helm`, `fixture.arcane-wand` e `fixture.pickaxe`. Save antigo com ouro acima da bolsa é lido com o ouro limitado à `purseCapacity`. Sem mudança de formato. |
 | 0.42 | 2026-11-18 | FE | FEAT-10 `validado` (sem mudança de formato): 26 conferências passaram contra o backend real (`http://localhost:3333`, conteúdo `base`: `base.wooden-shield` no lugar de `B`/`W`/`D` e `base.healing-herb` no de `P`/`K`): criação, empilhamento, ouro com perda, pasta, `prepare` em `availableActions`, equip e troca, unequip, `notEquipment`, `notInInventory`, `slotEmpty`, `inventoryFull` (doação e unequip), 0 pontos, `unknownOperation`, `unknownSlot`, sem sessão, `notGrantable`, `CARD_NOT_FOUND`, `MEMBER_NOT_FOUND`, `notPositiveInteger`. Sem carta que bloqueie escudo, com requisito de Pico ou com restrição de classe na `base`: `shieldBlocked`, `peakRequirementNotMet`, `classRestricted` e os valores da arma ficam com os e2e do backend (decisão do autor). `CONTENT_IN_USE` não rodado (apagaria conteúdo se falhasse). Tela com o MSW desligado: doação, `notPositiveInteger`, Equipar e Guardar. |
+| 0.43 | 2026-11-18 | BE | Título da seção FEAT-10 corrigido para `validado` (a v0.42 registrou a validação no histórico, mas não mudou o título). Sem mudança de formato. |
