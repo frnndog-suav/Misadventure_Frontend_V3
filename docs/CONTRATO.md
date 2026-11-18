@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.40 · **Data:** 2026-11-17
+> **Versão do contrato:** 0.41 · **Data:** 2026-11-17
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -1337,7 +1337,7 @@ Contra a `fixture`, laboratório no padrão. Seja `G` criado com `{ "name": "Os 
 
 Só nos e2e do backend (a pasta não enche no jogo ainda): trocar `S` por cartas da pasta, tirar cartas para a pasta, `tcgFolderFull`, `copyLimitExceeded`, `shuffleDiscard` com pilha não vazia e a leitura de saves antigos.
 
-### FEAT-10 — Inventário, equipar e bolsa — `acordado`
+### FEAT-10 — Inventário, equipar e bolsa — `implementado (BE)`
 
 Regras: README 5.1 (1 equipamento por categoria; equipamento guardado não funciona; arma que bloqueia escudo, B J1), 5.3 (bolsa; ouro acima da capacidade é perdido), 6.2 (inventário de 10 slots; empilhamento), 7.3 item 8 (requisito de Pico), 7.4 (pipeline do modificador), 8.2 (classe inativa ainda equipa item restrito), 9.1 (começa sem equipamentos nem recursos), 11.1 item 5 e B K2 (Preparar é gratuita, também com 0 pontos), 12.2 (Preparar, parte a: trocar equipamentos) e 17.3 item 1.
 
@@ -1549,3 +1549,4 @@ Só nos e2e do backend: leitura de saves antigos e o Pico abaixo do requisito co
 | 0.38 | 2026-11-17 | FE | FEAT-09 `validado`: os 10 cenários (15 conferências) passaram contra o backend real (`http://localhost:3333`, conteúdo `base`: a build pré-pronta do guerreiro tem 9 cartas somando 60, então `S` 29/31 virou Força − 1/+ 1 e o `notOwned` de carta a mais virou Resistência + 1; invariantes iguais). A tela do grupo com o MSW desligado passou: Recuperar, "Ajustar deck" com as 9 linhas, `buildBelowMinimum`, `notOwned`, `200` "Build salva: 60 cartas." e, com 0 pontos, sem Recuperar nem "Ajustar deck". Sem mudança de formato. |
 | 0.39 | 2026-11-17 | BE | FEAT-10 proposta (`proposto (BE)`): `PlayerState.inventory` (`InventorySlot`), `inventoryCapacity`, `equipment`, `purseCapacity`, `effectiveModifiers` (altera FEAT-06); `PartyAction` ganha `PrepareAction` (`equip`/`unequip`, gratuita); `availableActions` ganha `prepare` (ordem nova); motivos novos em `ActionInvalidDetails` (`unknownOperation`, `unknownSlot`) e `ActionNotAllowedDetails` (`notInInventory`, `notEquipment`, `peakRequirementNotMet`, `classRestricted`, `shieldBlocked`, `inventoryFull`, `slotEmpty`); `inventoryCapacity` e `purseCapacity` em `GameConfigValues` (altera FEAT-03); rota do laboratório `POST /lab/parties/:partyId/members/:memberId/grants` (`LabGrantRequest`); códigos `LAB_GRANT_INVALID`, `MEMBER_NOT_FOUND`, `LAB_GRANT_NO_SPACE` (§4); "em uso" estendido (altera FEAT-31); glossário §2.14. Cofre, limbo e Vasculhar foram para a FEAT-32 (ROADMAP v0.45). |
 | 0.40 | 2026-11-17 | FE | FEAT-10 `acordado` sem mudanças: modificadores efetivos, ações disponíveis (`prepare`) e motivos de recusa chegam prontos; o frontend só exibe e envia a intenção (não confere Pico, classe, escudo nem capacidade). A doação fica só no laboratório (fora do release, D-08). O FE alinha os schemas (`PlayerState`, `availableActions`, `GameConfigValues`, motivos de erro) e as fixtures do MSW nas tarefas da FEAT-10. |
+| 0.41 | 2026-11-17 | BE | FEAT-10 `implementado (BE)`: rota de doação, Preparar e os campos novos do `PlayerState` no ar; cenários cobertos pelos e2e `grant-to-member/index.controller.e2e-spec.ts` e `take-party-action/index.prepare.controller.e2e-spec.ts`. A `fixture` ganhou `fixture.short-sword`, `fixture.oak-shield`, `fixture.iron-helm`, `fixture.arcane-wand` e `fixture.pickaxe`. Save antigo com ouro acima da bolsa é lido com o ouro limitado à `purseCapacity`. Sem mudança de formato. |

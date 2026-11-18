@@ -1,6 +1,6 @@
 # Misadventures — Roadmap de desenvolvimento
 
-> **Versão:** 0.47 · **Data:** 2026-11-17
+> **Versão:** 0.48 · **Data:** 2026-11-17
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend; o autor copia o arquivo inteiro quando ele muda. Base: README Parte III (III.2 e III.4). As regras estão em [`README.md`](README.md); o que trafega entre os lados, em [`CONTRATO.md`](CONTRATO.md).
 
@@ -61,7 +61,7 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | FEAT-07 | Mapa e Movimentar | 3.5, 12.2 | validado | validado |
 | FEAT-08 | A vez: pontos de ação, ações de zona disponíveis, encerrar a vez, rodadas | 11.1, 11.2, 12 | validado | validado |
 | FEAT-09 | Deck de atributos: mão, Recuperar, Ajustar deck, build e trava | 4, 8.2, 12.5 | validado | validado |
-| FEAT-10 | Inventário, equipar e bolsa: inventário e empilhamento, Preparar (trocar equipamentos), modificadores com equipamentos, bolsa de ouro; doação do laboratório para montar o estado | 5, 6.1, 6.2, 9.1, 12.2 | a fazer | a fazer |
+| FEAT-10 | Inventário, equipar e bolsa: inventário e empilhamento, Preparar (trocar equipamentos), modificadores com equipamentos, bolsa de ouro; doação do laboratório para montar o estado | 5, 6.1, 6.2, 9.1, 12.2 | a fazer | pronto |
 | FEAT-32 | Cofre e Vasculhar: Usar cofre (slots, slots de decks, ouro, Descartar), limbo, deck de recompensas na Carta de Dimensão, Vasculhar | 3.4, 6.4, 6.5, 12.6 | a fazer | a fazer |
 | FEAT-11 | Efeitos e status: exibição de efeitos, buffs e debuffs; catálogo de variações de efeitos validado pelo autor (BE/design) | 13, III.3 | a fazer | a fazer |
 | FEAT-12 | Eventos aleatórios: fases, pagamento por partes, desistência, reposição, fuga | 14, 15 | a fazer | a fazer |
@@ -160,3 +160,4 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | 0.45 | 2026-11-17 | FEAT-10 dividida (decisão do autor): a FEAT-10 fica com inventário, equipar (Preparar parte a), bolsa e a doação do laboratório; a FEAT-32 nova (logo depois da FEAT-10) fica com Usar cofre, limbo, deck de recompensas e Vasculhar. Decisões para a FEAT-32: deck de recompensas na Carta de Dimensão; Vasculhar numa etapa só. |
 | 0.46 | 2026-11-17 | FEAT-10: lado BE `aguardando outro lado` (spec v0.39 planejada; CONTRATO v0.39 com a seção FEAT-10 `proposto (BE)`). Falta o FE confirmar o contrato. |
 | 0.47 | 2026-11-17 | FEAT-10: contrato `acordado` pelo FE (CONTRATO v0.40); FE `a fazer` (falta planejar REQs e tarefas na spec); BE sai de `aguardando outro lado` para `a fazer`. |
+| 0.48 | 2026-11-17 | FEAT-10: BE `pronto` (CONTRATO v0.41, `implementado (BE)`); falta o FE implementar e validar contra o backend real. |
