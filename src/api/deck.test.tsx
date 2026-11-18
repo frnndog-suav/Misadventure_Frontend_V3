@@ -156,6 +156,7 @@ describe('REQ-41/REQ-42: availableActions da FEAT-09', () => {
       'move',
       'recover',
       'adjustDeck',
+      'useVault',
       'endTurn',
     ])
     expect(actions(partyMovedToStoneBendFixture)).toEqual([

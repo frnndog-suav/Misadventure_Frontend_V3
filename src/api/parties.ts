@@ -57,12 +57,14 @@ export const partyDimensionSchema = z.object({
 })
 export type PartyDimension = z.infer<typeof partyDimensionSchema>
 
-/** Tipos de `PartyAction`, na ordem fixa do contrato (FEAT-08 a FEAT-10). */
+/** Tipos de `PartyAction`, na ordem fixa do contrato (FEAT-08 a FEAT-10, FEAT-32). */
 export const partyActionTypeSchema = z.enum([
   'move',
   'recover',
   'prepare',
   'adjustDeck',
+  'scavenge',
+  'useVault',
   'endTurn',
 ])
 export type PartyActionType = z.infer<typeof partyActionTypeSchema>
@@ -101,6 +103,14 @@ const equipmentInUseSchema = z.object({
   accessory: z.string().nullable(),
 }) satisfies z.ZodType<Record<EquipmentSlot, string | null>>
 
+/** Cofre do jogador (FEAT-32, README 6.4): slots empilhados, decks guardados e ouro. */
+export const vaultSchema = z.object({
+  slots: z.array(inventorySlotSchema),
+  decks: z.array(z.array(cardCopiesSchema)),
+  gold: nonNegativeInt,
+})
+export type Vault = z.infer<typeof vaultSchema>
+
 /** Estado do jogador na partida; tudo calculado pelo backend (§1.3). */
 export const playerStateSchema = z.object({
   playerClasses: z.array(
@@ -133,6 +143,13 @@ export const playerStateSchema = z.object({
   equipment: equipmentInUseSchema,
   purseCapacity: nonNegativeInt,
   effectiveModifiers: modifierValuesSchema,
+  /** Cofre, capacidades, alvos e resultado do Vasculhar, prontos (FEAT-32, D-59). */
+  vault: vaultSchema,
+  vaultCapacity: nonNegativeInt,
+  vaultDeckSlots: nonNegativeInt,
+  vaultGoldCapacity: nonNegativeInt,
+  scavengeTargets: z.array(z.string()),
+  lastScavenge: z.object({ cardId: z.string(), found: z.boolean() }).nullable(),
 })
 export type PlayerState = z.infer<typeof playerStateSchema>
 
@@ -307,7 +324,13 @@ export function useStartSession(
 
 /** Intenção de jogo (CONTRATO §1.6); as FEATs seguintes acrescentam variantes. */
 export type PartyAction =
-  MoveAction | EndTurnAction | RecoverAction | AdjustDeckAction | PrepareAction
+  | MoveAction
+  | EndTurnAction
+  | RecoverAction
+  | AdjustDeckAction
+  | PrepareAction
+  | UseVaultAction
+  | ScavengeAction
 
 /** Movimentar (README 12.2); `zoneId` vem de `moveTargets`. */
 export interface MoveAction {
@@ -337,6 +360,30 @@ export type PrepareAction =
   | { type: 'prepare'; operation: 'equip'; cardId: string }
   | { type: 'prepare'; operation: 'unequip'; slot: EquipmentSlot }
 
+/** Usar cofre (README 6.4, 12.2): lote aplicado em ordem pelo backend (D-59). */
+export interface UseVaultAction {
+  type: 'useVault'
+  operations: VaultOperation[]
+}
+
+/** Uma operação do lote do Usar cofre (CONTRATO §3 FEAT-32). */
+export type VaultOperation =
+  | { operation: 'store'; cardId: string; quantity: number }
+  | { operation: 'take'; cardId: string; quantity: number }
+  | { operation: 'storeGold'; amount: number }
+  | { operation: 'takeGold'; amount: number }
+  | { operation: 'discard'; cardId: string; quantity: number }
+  | { operation: 'saveDeck'; cards: CardCopies[] }
+  | { operation: 'unpackDeck'; deckIndex: number }
+  | { operation: 'swapBuild'; deckIndex: number }
+  | { operation: 'editBuild'; build: CardCopies[] }
+
+/** Vasculhar (README 12.6); `cardId` vem de `scavengeTargets`. */
+export interface ScavengeAction {
+  type: 'scavenge'
+  cardId: string
+}
+
 export const actionNotAllowedDetailsSchema = z.object({
   reason: z.enum([
     'notConnected',
@@ -353,9 +400,25 @@ export const actionNotAllowedDetailsSchema = z.object({
     'shieldBlocked',
     'inventoryFull',
     'slotEmpty',
+    // FEAT-32
+    'zoneActionUnavailable',
+    'notInTcgFolder',
+    'notStorable',
+    'notInVault',
+    'vaultFull',
+    'notEnoughGold',
+    'vaultGoldFull',
+    'notEnoughVaultGold',
+    'purseFull',
+    'notAttribute',
+    'deckSlotsFull',
+    'deckNotFound',
+    'notScavengeable',
   ]),
   /** Só em `notOwned` e `copyLimitExceeded`. */
   cardId: z.string().optional(),
+  /** FEAT-32: só no `useVault`, índice da operação recusada (a partir de 0). */
+  operationIndex: nonNegativeInt.optional(),
 })
 export type ActionNotAllowedDetails = z.infer<
   typeof actionNotAllowedDetailsSchema
@@ -365,12 +428,14 @@ export type ActionNotAllowedDetails = z.infer<
 export class ActionNotAllowedError extends ApiError {
   readonly reason: ActionNotAllowedDetails['reason']
   readonly cardId: string | undefined
+  readonly operationIndex: number | undefined
 
   constructor(message: string, details: ActionNotAllowedDetails) {
     super('ACTION_NOT_ALLOWED', message, details)
     this.name = 'ActionNotAllowedError'
     this.reason = details.reason
     this.cardId = details.cardId
+    this.operationIndex = details.operationIndex
   }
 }
 

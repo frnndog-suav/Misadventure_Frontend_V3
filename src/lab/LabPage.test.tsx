@@ -100,6 +100,10 @@ const labels = [
   // FEAT-10 (REQ-43)
   ['inventoryCapacity', 'Capacidade do inventário'],
   ['purseCapacity', 'Capacidade da bolsa'],
+  // FEAT-32 (REQ-47)
+  ['vaultCapacity', 'Capacidade do cofre'],
+  ['vaultDeckSlots', 'Slots de decks do cofre (a build em uso ocupa um)'],
+  ['vaultGoldCapacity', 'Capacidade de ouro do cofre'],
 ] as const
 
 async function loaded(): Promise<void> {
@@ -160,7 +164,7 @@ describe('REQ-06: configuração ajustável do jogo', () => {
     const names = within(region)
       .getAllByRole('spinbutton')
       .map((input) => (input as HTMLInputElement).labels?.[0]?.textContent)
-    expect(names.slice(-7, -2)).toEqual([
+    expect(names.slice(-10, -5)).toEqual([
       'Cópias máximas por carta no deck',
       'Capacidade da pasta de TCG',
       'Recuperar: % da vida máxima',
@@ -179,13 +183,37 @@ describe('REQ-06: configuração ajustável do jogo', () => {
     const names = within(region)
       .getAllByRole('spinbutton')
       .map((input) => (input as HTMLInputElement).labels?.[0]?.textContent)
-    expect(names.slice(-3)).toEqual([
+    expect(names.slice(-6, -3)).toEqual([
       'Recuperar: comprar até (cartas na mão)',
       'Capacidade do inventário',
       'Capacidade da bolsa',
     ])
     expect(field('Capacidade da bolsa')).toHaveAccessibleDescription(
       'Padrão: 300 · Mín. 0 · Máx. 1000000',
+    )
+  })
+
+  it('REQ-47: os 3 campos da FEAT-32 vêm depois dos do REQ-43, nesta ordem, com padrão e limites', async () => {
+    renderLab()
+    await loaded()
+    const region = screen.getByRole('region', { name: 'Configuração' })
+    const names = within(region)
+      .getAllByRole('spinbutton')
+      .map((input) => (input as HTMLInputElement).labels?.[0]?.textContent)
+    expect(names.slice(-4)).toEqual([
+      'Capacidade da bolsa',
+      'Capacidade do cofre',
+      'Slots de decks do cofre (a build em uso ocupa um)',
+      'Capacidade de ouro do cofre',
+    ])
+    expect(field('Capacidade do cofre')).toHaveAccessibleDescription(
+      'Padrão: 30 · Mín. 0 · Máx. 1000',
+    )
+    expect(
+      field('Slots de decks do cofre (a build em uso ocupa um)'),
+    ).toHaveAccessibleDescription('Padrão: 10 · Mín. 1 · Máx. 100')
+    expect(field('Capacidade de ouro do cofre')).toHaveAccessibleDescription(
+      'Padrão: 2000 · Mín. 0 · Máx. 10000000',
     )
   })
 

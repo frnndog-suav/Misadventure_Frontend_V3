@@ -76,6 +76,8 @@ export interface EquipmentForm {
   /** Desligado = não encantável. */
   enchantment: { enabled: boolean; text: string }
   priceMultiplier: string
+  /** FEAT-32: vazio = `null`. */
+  scavengeTool: string
 }
 
 export interface ItemForm {
@@ -87,6 +89,11 @@ export interface ItemForm {
   itemCategory: ItemCategory | ''
   tags: string[]
   effects: string[]
+  /** FEAT-32: vazio = `null`. */
+  toolKind: string
+  scavengeZoneTypes: ZoneType[]
+  /** FEAT-32: vazio = `null`. */
+  scavengeTool: string
 }
 
 export interface RandomEventForm {
@@ -137,6 +144,11 @@ export interface DimensionForm {
   /** Vazio = `null` (sorteada pelo backend, REQ-31). */
   arrivalZoneTitle: string
   effects: string[]
+  /** FEAT-32 (README 3.4). */
+  rewardDecks: {
+    zoneType: ZoneType | ''
+    cards: { cardId: string; copies: string }[]
+  }[]
 }
 
 export type CardForm =
@@ -220,6 +232,7 @@ export function emptyForm(type: FormCardType): CardForm {
         refinement: { enabled: false, maxLevel: '', materials: '' },
         enchantment: { enabled: false, text: '' },
         priceMultiplier: '1',
+        scavengeTool: '',
       }
     case 'item':
       return {
@@ -231,6 +244,9 @@ export function emptyForm(type: FormCardType): CardForm {
         itemCategory: '',
         tags: [],
         effects: [],
+        toolKind: '',
+        scavengeZoneTypes: [],
+        scavengeTool: '',
       }
     case 'randomEvent':
       return {
@@ -263,6 +279,7 @@ export function emptyForm(type: FormCardType): CardForm {
         releaseOrder: '',
         arrivalZoneTitle: '',
         effects: [],
+        rewardDecks: [],
       }
     default: {
       const _exhaustive: never = type
@@ -348,6 +365,7 @@ export function formFromCard(card: Card): CardForm {
             ? { enabled: false, text: '' }
             : { enabled: true, text: card.enchantment.text },
         priceMultiplier: String(card.priceMultiplier),
+        scavengeTool: card.scavengeTool ?? '',
       }
     case 'item':
       return {
@@ -359,6 +377,9 @@ export function formFromCard(card: Card): CardForm {
         itemCategory: card.itemCategory,
         tags: [...card.tags],
         effects: card.effects.map((e) => e.text),
+        toolKind: card.toolKind ?? '',
+        scavengeZoneTypes: [...card.scavengeZoneTypes],
+        scavengeTool: card.scavengeTool ?? '',
       }
     case 'randomEvent':
       return {
@@ -408,6 +429,13 @@ export function formFromCard(card: Card): CardForm {
         releaseOrder: String(card.releaseOrder),
         arrivalZoneTitle: card.arrivalZoneTitle ?? '',
         effects: card.effects.map((e) => e.text),
+        rewardDecks: card.rewardDecks.map(({ zoneType, cards }) => ({
+          zoneType,
+          cards: cards.map(({ cardId, copies }) => ({
+            cardId,
+            copies: String(copies),
+          })),
+        })),
       }
     default: {
       const _exhaustive: never = card
@@ -566,6 +594,7 @@ export function toInput(form: CardForm): CardInput | null {
           ? { text: form.enchantment.text }
           : null,
         priceMultiplier: price,
+        scavengeTool: filled(form.scavengeTool) ? form.scavengeTool : null,
       }
     }
     case 'item': {
@@ -587,6 +616,9 @@ export function toInput(form: CardForm): CardInput | null {
         itemCategory: form.itemCategory,
         tags: form.tags,
         effects: form.effects.map((text) => ({ text })),
+        toolKind: filled(form.toolKind) ? form.toolKind : null,
+        scavengeZoneTypes: form.scavengeZoneTypes,
+        scavengeTool: filled(form.scavengeTool) ? form.scavengeTool : null,
       }
     }
     case 'randomEvent': {
@@ -636,6 +668,20 @@ export function toInput(form: CardForm): CardInput | null {
     }
     case 'dimension': {
       const releaseOrder = parseNumber(form.releaseOrder)
+      const rewardDecks: {
+        zoneType: ZoneType
+        cards: { cardId: string; copies: number }[]
+      }[] = []
+      for (const deck of form.rewardDecks) {
+        const cards: { cardId: string; copies: number }[] = []
+        for (const entry of deck.cards) {
+          const copies = parseNumber(entry.copies)
+          if (!filled(entry.cardId) || copies === null) return null
+          cards.push({ cardId: entry.cardId, copies })
+        }
+        if (deck.zoneType === '') return null
+        rewardDecks.push({ zoneType: deck.zoneType, cards })
+      }
       if (
         !filled(form.slug) ||
         !filled(form.name) ||
@@ -653,6 +699,7 @@ export function toInput(form: CardForm): CardInput | null {
           ? form.arrivalZoneTitle
           : null,
         effects: form.effects.map((text) => ({ text })),
+        rewardDecks,
       }
     }
     default: {

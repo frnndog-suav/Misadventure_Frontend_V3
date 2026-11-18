@@ -288,6 +288,8 @@ export const equipmentCardSchema = z.object({
     .nullable(),
   enchantment: ruleTextSchema.nullable(),
   priceMultiplier: z.number().min(0.8).max(1.5),
+  /** FEAT-32: `toolKind` da ferramenta que coleta esta carta; `null` = não coletável. */
+  scavengeTool: z.string().nullable(),
 })
 
 /** README 5.2 */
@@ -300,6 +302,12 @@ export const itemCardSchema = z.object({
   itemCategory: itemCategorySchema,
   tags: z.array(z.string()),
   effects: z.array(ruleTextSchema),
+  /** FEAT-32: só em ferramenta (texto kebab-case, exibido como recebido, D-59). */
+  toolKind: z.string().nullable(),
+  /** FEAT-32: tipos de zona onde a ferramenta vasculha. */
+  scavengeZoneTypes: z.array(zoneTypeSchema),
+  /** FEAT-32: como em `equipmentCardSchema`. */
+  scavengeTool: z.string().nullable(),
 })
 
 /** README 14.1 */
@@ -353,6 +361,17 @@ export const dimensionCardSchema = z.object({
   /** `null` = sorteada pelo backend entre as `urban` sem efeito negativo. */
   arrivalZoneTitle: z.string().nullable(),
   effects: z.array(ruleTextSchema),
+  /** FEAT-32 (README 3.4): composição do deck de recompensas por tipo de zona. */
+  rewardDecks: z.array(
+    z.object({
+      zoneType: zoneTypeSchema,
+      cards: z
+        .array(
+          z.object({ cardId: z.string(), copies: z.number().int().min(1) }),
+        )
+        .min(1),
+    }),
+  ),
 })
 
 export const cardSchema = z.discriminatedUnion('type', [

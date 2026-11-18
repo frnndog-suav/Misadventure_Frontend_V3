@@ -57,7 +57,8 @@ const member: Party['members'][number] = {
     zoneId: 'fixture.gray-harbor',
     respawnZoneId: 'fixture.gray-harbor',
     moveTargets: ['fixture.stone-bend', 'fixture.whispering-grove'],
-    availableActions: ['move', 'recover', 'adjustDeck', 'endTurn'],
+    // FEAT-32: a cidade inicial tem `useVault` (CONTRATO v0.46).
+    availableActions: ['move', 'recover', 'adjustDeck', 'useVault', 'endTurn'],
     build: [
       { cardId: endurance, copies: 30 },
       { cardId: strength, copies: 30 },
@@ -88,6 +89,13 @@ const member: Party['members'][number] = {
       piercing: 0,
       reflection: 0,
     },
+    // FEAT-32 (CONTRATO v0.46): cofre vazio e capacidades do laboratório.
+    vault: { slots: [], decks: [], gold: 0 },
+    vaultCapacity: 30,
+    vaultDeckSlots: 10,
+    vaultGoldCapacity: 2000,
+    scavengeTargets: [],
+    lastScavenge: null,
   },
 }
 
@@ -153,7 +161,18 @@ export const partyIdleFixture: Party = {
 function partyMovedTo(zoneId: string, moveTargets: string[]): Party {
   return {
     ...partyInSessionFixture,
-    members: [{ ...member, player: { ...member.player, zoneId, moveTargets } }],
+    members: [
+      {
+        ...member,
+        player: {
+          ...member.player,
+          zoneId,
+          moveTargets,
+          // Fora da cidade: sem `useVault` (FEAT-32).
+          availableActions: ['move', 'recover', 'adjustDeck', 'endTurn'],
+        },
+      },
+    ],
     turn: { ...partyInSessionFixture.turn, actionPoints: 2 },
     savedAt: '2026-11-14T21:40:00.000Z',
   }
@@ -265,6 +284,7 @@ export const partyGearInSessionFixture: Party = {
           'recover',
           'prepare',
           'adjustDeck',
+          'useVault',
           'endTurn',
         ],
       },
@@ -342,6 +362,81 @@ export const partyGrantedGoldFixture: Party = {
   ...partyCreatedFixture,
   members: [{ ...member, player: { ...member.player, gold: 300 } }],
   savedAt: '2026-11-14T21:59:00.000Z',
+}
+
+const fishingRod = 'fixture.fishing-rod'
+const silverFish = 'fixture.silver-fish'
+
+/**
+ * 200 da doação de `F` (laboratório, CONTRATO §3 FEAT-32): `scavengeTargets`
+ * com `S` e `scavenge` antes de `useVault`, prontos do backend.
+ */
+export const partyFishingRodGrantedFixture: Party = {
+  ...partyCreatedFixture,
+  members: [
+    {
+      ...member,
+      player: {
+        ...member.player,
+        inventory: [{ cardId: fishingRod, quantity: 1 }],
+        scavengeTargets: [silverFish],
+        availableActions: [
+          'move',
+          'recover',
+          'adjustDeck',
+          'scavenge',
+          'useVault',
+          'endTurn',
+        ],
+      },
+    },
+  ],
+  savedAt: '2026-11-18T21:00:00.000Z',
+}
+
+/** 200 de `scavenge` de `S` com `F` no inventário: `S` achado, 2 pontos. */
+export const partyScavengedFixture: Party = {
+  ...partyInSessionFixture,
+  members: [
+    {
+      ...member,
+      player: {
+        ...partyFishingRodGrantedFixture.members[0].player,
+        inventory: [
+          { cardId: fishingRod, quantity: 1 },
+          { cardId: silverFish, quantity: 1 },
+        ],
+        lastScavenge: { cardId: silverFish, found: true },
+      },
+    },
+  ],
+  turn: { ...partyInSessionFixture.turn, actionPoints: 2 },
+  savedAt: '2026-11-18T21:01:00.000Z',
+}
+
+/**
+ * 200 de `useVault` com `P` ×3 e 100 de ouro: guardar 2 `P`, guardar 60 de
+ * ouro e descartar 1 `P` (CONTRATO §3 FEAT-32). Valores prontos do backend.
+ */
+export const partyVaultUsedFixture: Party = {
+  ...partyInSessionFixture,
+  members: [
+    {
+      ...member,
+      player: {
+        ...member.player,
+        gold: 40,
+        inventory: [{ cardId: potion, quantity: 1 }],
+        vault: {
+          slots: [{ cardId: potion, quantity: 1 }],
+          decks: [],
+          gold: 60,
+        },
+      },
+    },
+  ],
+  turn: { ...partyInSessionFixture.turn, actionPoints: 2 },
+  savedAt: '2026-11-18T21:02:00.000Z',
 }
 
 /** 200 de GET /parties com o grupo criado. */
@@ -505,6 +600,33 @@ export const actionInvalidUnknownOperationFixture = {
     code: 'ACTION_INVALID',
     message: 'Ação inválida.',
     details: { fields: [{ field: 'operation', reason: 'unknownOperation' }] },
+  },
+} as const
+
+/** 409 de `scavenge` de carta fora de `scavengeTargets` (CONTRATO §3 FEAT-32). */
+export const actionNotScavengeableFixture = {
+  error: {
+    code: 'ACTION_NOT_ALLOWED',
+    message: 'Esta ação não é permitida agora.',
+    details: { reason: 'notScavengeable' },
+  },
+} as const
+
+/** 409 do lote com `take` de 5 `P` na 2ª operação (CONTRATO §3 FEAT-32). */
+export const actionNotInVaultFixture = {
+  error: {
+    code: 'ACTION_NOT_ALLOWED',
+    message: 'Esta ação não é permitida agora.',
+    details: { reason: 'notInVault', operationIndex: 1 },
+  },
+} as const
+
+/** 400 de `useVault` com `operations: []` (CONTRATO §3 FEAT-32). */
+export const actionInvalidOperationsLengthFixture = {
+  error: {
+    code: 'ACTION_INVALID',
+    message: 'Ação inválida.',
+    details: { fields: [{ field: 'operations', reason: 'invalidLength' }] },
   },
 } as const
 

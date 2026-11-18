@@ -225,11 +225,25 @@ function reasonText(error: ActionNotAllowedError, name: string): string {
       return 'A arma em uso não deixa usar escudo.'
     case 'inventoryFull':
       return 'Não há espaço no inventário para o que sairia do equipamento.'
+    // FEAT-32 (zoneActionUnavailable em diante): textos nas T-52 e T-53.
     case 'notConnected':
     case 'noActionPoints':
     case 'notInInventory':
     case 'notEquipment':
     case 'slotEmpty':
+    case 'zoneActionUnavailable':
+    case 'notInTcgFolder':
+    case 'notStorable':
+    case 'notInVault':
+    case 'vaultFull':
+    case 'notEnoughGold':
+    case 'vaultGoldFull':
+    case 'notEnoughVaultGold':
+    case 'purseFull':
+    case 'notAttribute':
+    case 'deckSlotsFull':
+    case 'deckNotFound':
+    case 'notScavengeable':
       return ''
     default: {
       const _exhaustive: never = error.reason

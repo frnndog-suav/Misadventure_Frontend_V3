@@ -720,6 +720,7 @@ describe('REQ-21: equipamento', () => {
       refinement: null,
       enchantment: null,
       priceMultiplier: 1,
+      scavengeTool: null,
     })
   })
 
@@ -855,6 +856,9 @@ describe('REQ-21: item', () => {
       itemCategory: 'consumable',
       tags: [],
       effects: [],
+      toolKind: null,
+      scavengeZoneTypes: [],
+      scavengeTool: null,
     })
   })
 
@@ -1434,6 +1438,7 @@ describe('REQ-31: Carta de Dimensão e forma das setas', () => {
       releaseOrder: 2,
       arrivalZoneTitle: null,
       effects: [{ text: 'Chove sempre.' }],
+      rewardDecks: [],
     })
   })
 

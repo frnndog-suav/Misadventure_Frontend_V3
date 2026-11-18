@@ -154,6 +154,7 @@ describe('REQ-44: PlayerState com inventário, equipamentos, bolsa e modificador
       'move',
       'recover',
       'adjustDeck',
+      'useVault',
       'endTurn',
     ])
   })
@@ -233,6 +234,7 @@ describe('REQ-44: PlayerState com inventário, equipamentos, bolsa e modificador
       'recover',
       'prepare',
       'adjustDeck',
+      'useVault',
       'endTurn',
     ])
   })
@@ -243,6 +245,8 @@ describe('REQ-44: PlayerState com inventário, equipamentos, bolsa e modificador
       'recover',
       'prepare',
       'adjustDeck',
+      'scavenge',
+      'useVault',
       'endTurn',
     ])
     expect(partyActionTypeSchema.safeParse('wear').success).toBe(false)
@@ -250,7 +254,7 @@ describe('REQ-44: PlayerState com inventário, equipamentos, bolsa e modificador
 })
 
 describe('REQ-44: cartas novas da fixture', () => {
-  it('REQ-44: as 5 cartas novas validam e a coleção tem 17 cartas na ordem de id', async () => {
+  it('REQ-44: as 5 cartas novas validam e a coleção tem 20 cartas (FEAT-32) na ordem de id', async () => {
     for (const card of [
       shortSwordFixture,
       oakShieldFixture,
@@ -267,8 +271,8 @@ describe('REQ-44: cartas novas da fixture', () => {
       (card) => card.id,
     )
     expect(ids).toEqual([...ids].sort())
-    expect(ids).toHaveLength(17)
-    expect(fixtureCardsFixture).toHaveLength(17)
+    expect(ids).toHaveLength(20)
+    expect(fixtureCardsFixture).toHaveLength(20)
     expect(ids).toEqual(expect.arrayContaining([W, D, H, R, K]))
   })
 
@@ -306,7 +310,7 @@ describe('REQ-44: cartas novas da fixture', () => {
       zone: 4,
       attribute: 3,
       equipment: 5,
-      item: 2,
+      item: 5,
       randomEvent: 1,
       combatEvent: 1,
       dimension: 1,
@@ -321,7 +325,13 @@ describe('REQ-44: cartas novas da fixture', () => {
       D,
       W,
     ])
-    expect(fixtureCardsByTypeFixture.item.map((c) => c.id)).toEqual([P, K])
+    expect(fixtureCardsByTypeFixture.item.map((c) => c.id)).toEqual([
+      'fixture.fishing-rod',
+      P,
+      'fixture.iron-ore',
+      K,
+      'fixture.silver-fish',
+    ])
   })
 })
 

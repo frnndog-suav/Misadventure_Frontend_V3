@@ -21,7 +21,7 @@ export const collectionsFixture: CollectionSummary[] = [
       zone: 4,
       attribute: 3,
       equipment: 5,
-      item: 2,
+      item: 5,
       randomEvent: 1,
       combatEvent: 1,
       dimension: 1,
@@ -62,6 +62,7 @@ export const bladeOfDuskFixture: Card = {
     text: 'Encantamento: causa dano sombrio extra.',
   },
   priceMultiplier: 1,
+  scavengeTool: null,
   type: 'equipment',
   collectionId: 'fixture',
 }
@@ -79,6 +80,9 @@ export const healingPotionFixture: Card = {
       text: 'Recupera 5 de vida.',
     },
   ],
+  toolKind: null,
+  scavengeZoneTypes: [],
+  scavengeTool: null,
   type: 'item',
   collectionId: 'fixture',
 }
@@ -160,7 +164,7 @@ export const grayHarborFixture: Card = {
   location: 'Costa Cinzenta',
   connectionArrows: 4,
   arrowLayout: null,
-  zoneActions: ['startEvent', 'useVault', 'saveRespawnPoint'],
+  zoneActions: ['startEvent', 'scavenge', 'useVault', 'saveRespawnPoint'],
   effects: [],
 }
 
@@ -228,6 +232,17 @@ export const testDimensionFixture: Card = {
   releaseOrder: 1,
   arrivalZoneTitle: 'Porto Cinzento',
   effects: [],
+  // FEAT-32 (CONTRATO v0.46)
+  rewardDecks: [
+    {
+      zoneType: 'urban',
+      cards: [
+        { cardId: 'fixture.silver-fish', copies: 1 },
+        { cardId: 'fixture.iron-ore', copies: 1 },
+        { cardId: 'fixture.healing-potion', copies: 2 },
+      ],
+    },
+  ],
 }
 
 /** Cópia exata do backend (coleção `fixture`, CONTRATO v0.12). */
@@ -273,6 +288,7 @@ export const shortSwordFixture: Card = {
   refinement: null,
   enchantment: null,
   priceMultiplier: 1,
+  scavengeTool: null,
   type: 'equipment',
   collectionId: 'fixture',
 }
@@ -293,6 +309,7 @@ export const oakShieldFixture: Card = {
   refinement: null,
   enchantment: null,
   priceMultiplier: 1,
+  scavengeTool: null,
   type: 'equipment',
   collectionId: 'fixture',
 }
@@ -313,6 +330,7 @@ export const ironHelmFixture: Card = {
   refinement: null,
   enchantment: null,
   priceMultiplier: 1,
+  scavengeTool: null,
   type: 'equipment',
   collectionId: 'fixture',
 }
@@ -333,6 +351,7 @@ export const arcaneWandFixture: Card = {
   refinement: null,
   enchantment: null,
   priceMultiplier: 1,
+  scavengeTool: null,
   type: 'equipment',
   collectionId: 'fixture',
 }
@@ -345,24 +364,81 @@ export const pickaxeFixture: Card = {
   itemCategory: 'tool',
   tags: ['ferramenta'],
   effects: [],
+  // FEAT-32 (CONTRATO v0.46)
+  toolKind: 'pickaxe',
+  scavengeZoneTypes: ['underground', 'mountainous'],
+  scavengeTool: null,
   type: 'item',
   collectionId: 'fixture',
 }
 
-/** GET /catalog/collections/fixture/cards — 17 cartas na ordem de `id`. */
+/**
+ * Cartas acrescentadas à `fixture` na FEAT-32 (CONTRATO v0.46). Montadas com
+ * o que o contrato fixa (nome, categoria, ferramenta e coleta); raridade, tags
+ * e textos são de exemplo, como na T-45.
+ */
+export const fishingRodFixture: Card = {
+  id: 'fixture.fishing-rod',
+  name: 'Vara de Pesca',
+  flavorText: null,
+  rarity: 'common',
+  itemCategory: 'tool',
+  tags: ['ferramenta'],
+  effects: [],
+  toolKind: 'fishing-rod',
+  scavengeZoneTypes: ['coastal', 'fluvial', 'lacustrine', 'urban'],
+  scavengeTool: null,
+  type: 'item',
+  collectionId: 'fixture',
+}
+
+export const silverFishFixture: Card = {
+  id: 'fixture.silver-fish',
+  name: 'Peixe Prateado',
+  flavorText: null,
+  rarity: 'common',
+  itemCategory: 'material',
+  tags: ['peixe'],
+  effects: [],
+  toolKind: null,
+  scavengeZoneTypes: [],
+  scavengeTool: 'fishing-rod',
+  type: 'item',
+  collectionId: 'fixture',
+}
+
+export const ironOreFixture: Card = {
+  id: 'fixture.iron-ore',
+  name: 'Minério de Ferro',
+  flavorText: null,
+  rarity: 'common',
+  itemCategory: 'material',
+  tags: ['minério'],
+  effects: [],
+  toolKind: null,
+  scavengeZoneTypes: [],
+  scavengeTool: 'pickaxe',
+  type: 'item',
+  collectionId: 'fixture',
+}
+
+/** GET /catalog/collections/fixture/cards — 20 cartas na ordem de `id`. */
 export const fixtureCardsFixture: Card[] = [
   arcaneWandFixture,
   bladeOfDuskFixture,
   dexterityBasicFixture,
   enduranceBasicFixture,
+  fishingRodFixture,
   grayHarborFixture,
   healingPotionFixture,
   howlingWolvesFixture,
   ironHelmFixture,
+  ironOreFixture,
   oakShieldFixture,
   oldMineFixture,
   pickaxeFixture,
   shortSwordFixture,
+  silverFishFixture,
   stoneBendFixture,
   strengthBasicFixture,
   testDimensionFixture,
@@ -390,7 +466,13 @@ export const fixtureCardsByTypeFixture: Record<CardType, Card[]> = {
     oakShieldFixture,
     shortSwordFixture,
   ],
-  item: [healingPotionFixture, pickaxeFixture],
+  item: [
+    fishingRodFixture,
+    healingPotionFixture,
+    ironOreFixture,
+    pickaxeFixture,
+    silverFishFixture,
+  ],
   randomEvent: [woundedTravelerFixture],
   combatEvent: [howlingWolvesFixture],
   dimension: [testDimensionFixture],

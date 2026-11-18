@@ -220,7 +220,14 @@ describe('REQ-37: PlayerState.availableActions', () => {
       party.members[0].player.availableActions
     // FEAT-09 (CONTRATO v0.37): recover e adjustDeck entre move e endTurn
     const full = ['move', 'recover', 'adjustDeck', 'endTurn']
-    expect(actions(partyInSessionFixture)).toEqual(full)
+    // FEAT-32 (CONTRATO v0.46): useVault na cidade, antes de endTurn
+    expect(actions(partyInSessionFixture)).toEqual([
+      'move',
+      'recover',
+      'adjustDeck',
+      'useVault',
+      'endTurn',
+    ])
     expect(actions(partyMovedToStoneBendFixture)).toEqual(full)
     expect(actions(partyNoPointsFixture)).toEqual(['endTurn'])
     expect(partyNoPointsFixture.turn.actionPoints).toBe(0)

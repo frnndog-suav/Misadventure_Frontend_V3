@@ -62,7 +62,13 @@ import {
   actionInvalidUnknownOperationFixture,
   actionInvalidUnknownOptionFixture,
   actionInvalidZoneNotInMapFixture,
+  actionInvalidOperationsLengthFixture,
+  actionNotInVaultFixture,
   actionNotOwnedFixture,
+  actionNotScavengeableFixture,
+  partyFishingRodGrantedFixture,
+  partyScavengedFixture,
+  partyVaultUsedFixture,
   actionPrepareNotAllowedFixture,
   labGrantNotGrantableFixture,
   memberNotFoundFixture,
@@ -163,7 +169,9 @@ async function partyActionScenario(
     type !== 'move' &&
     type !== 'recover' &&
     type !== 'adjustDeck' &&
-    type !== 'prepare'
+    type !== 'prepare' &&
+    type !== 'scavenge' &&
+    type !== 'useVault'
   ) {
     return HttpResponse.json(actionInvalidUnknownActionFixture, { status: 400 })
   }
@@ -171,12 +179,28 @@ async function partyActionScenario(
   if (type === 'recover' && !recoverOptions.includes(option)) {
     return HttpResponse.json(actionInvalidUnknownOptionFixture, { status: 400 })
   }
+  const operations = field(body, 'operations')
+  if (
+    type === 'useVault' &&
+    Array.isArray(operations) &&
+    operations.length === 0
+  ) {
+    return HttpResponse.json(actionInvalidOperationsLengthFixture, {
+      status: 400,
+    })
+  }
   if (type === 'prepare') return prepareScenario(body)
   if (partyId === partyNoPointsFixture.id) {
     return HttpResponse.json(actionNoActionPointsFixture, { status: 409 })
   }
   if (type === 'recover') return recoverScenario(option)
   if (type === 'adjustDeck') return adjustDeckScenario(field(body, 'build'))
+  if (type === 'scavenge') {
+    return field(body, 'cardId') === 'fixture.silver-fish'
+      ? HttpResponse.json(partyScavengedFixture)
+      : HttpResponse.json(actionNotScavengeableFixture, { status: 409 })
+  }
+  if (type === 'useVault') return vaultBatchScenario(operations)
   switch (field(body, 'zoneId')) {
     case 'fixture.stone-bend':
       return HttpResponse.json(partyMovedToStoneBendFixture)
@@ -231,6 +255,23 @@ function prepareScenario(body: unknown): Response {
 }
 
 /**
+ * `useVault`: tabela dos cenários do contrato (D-59 item 6). Lote com um
+ * `take` de 5 → a recusa fixa do cenário (`notInVault`, `operationIndex` 1);
+ * qualquer outro → o `Party` do lote de exemplo. Sem simular o lote.
+ */
+function vaultBatchScenario(operations: unknown): Response {
+  const takesFive =
+    Array.isArray(operations) &&
+    operations.some(
+      (item) =>
+        field(item, 'operation') === 'take' && field(item, 'quantity') === 5,
+    )
+  return takesFive
+    ? HttpResponse.json(actionNotInVaultFixture, { status: 409 })
+    : HttpResponse.json(partyVaultUsedFixture)
+}
+
+/**
  * POST /lab/parties/:partyId/members/:memberId/grants: tabela dos cenários do
  * contrato (D-58 item 4), na ordem do contrato: membro, corpo, carta.
  */
@@ -250,6 +291,8 @@ async function labGrantScenario(
       return HttpResponse.json(labGrantNotGrantableFixture, { status: 400 })
     case 'fixture.nope':
       return HttpResponse.json(catalogCardNotFoundFixture, { status: 404 })
+    case 'fixture.fishing-rod':
+      return HttpResponse.json(partyFishingRodGrantedFixture)
     default:
       return HttpResponse.json(partyGrantedCardFixture)
   }

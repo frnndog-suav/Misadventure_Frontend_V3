@@ -46,6 +46,10 @@ export const gameConfigValuesSchema = z.object({
   // FEAT-10
   inventoryCapacity: gameConfigInt,
   purseCapacity: gameConfigInt,
+  // FEAT-32
+  vaultCapacity: gameConfigInt,
+  vaultDeckSlots: gameConfigInt,
+  vaultGoldCapacity: gameConfigInt,
 })
 
 export type GameConfigValues = z.infer<typeof gameConfigValuesSchema>
@@ -83,6 +87,9 @@ export const labConfigSchema = z.object({
     recoverHandSize: limitSchema,
     inventoryCapacity: limitSchema,
     purseCapacity: limitSchema,
+    vaultCapacity: limitSchema,
+    vaultDeckSlots: limitSchema,
+    vaultGoldCapacity: limitSchema,
   }) satisfies z.ZodType<Record<GameConfigKey, { min: number; max: number }>>,
 })
 

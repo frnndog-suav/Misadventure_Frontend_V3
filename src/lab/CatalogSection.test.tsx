@@ -58,14 +58,17 @@ const expectedOrder = [
   'Lâmina do Crepúsculo · Equipamento',
   'Destreza · Atributo',
   'Resistência · Atributo',
+  'Vara de Pesca · Item',
   'Porto Cinzento · Zona',
   'Poção de Cura · Item',
   'Lobos Uivantes · Evento de combate',
   'Elmo de Ferro · Equipamento',
+  'Minério de Ferro · Item',
   'Escudo de Carvalho · Equipamento',
   'Mina Velha · Zona',
   'Picareta · Item',
   'Espada Curta · Equipamento',
+  'Peixe Prateado · Item',
   'Curva de Pedra · Zona',
   'Força · Atributo',
   'Dimensão de Teste · Dimensão',
@@ -96,17 +99,17 @@ describe('CatalogSection', () => {
       .getAllByRole('radio')
       .map((r) => r.closest('label')?.textContent)
     expect(options).toEqual([
-      'Todos (17)',
+      'Todos (20)',
       'Zona (4)',
       'Atributo (3)',
       'Equipamento (5)',
-      'Item (2)',
+      'Item (5)',
       'Evento aleatório (1)',
       'Evento de combate (1)',
       'Dimensão (1)',
     ])
     expect(
-      within(filter).getByRole('radio', { name: 'Todos (17)' }),
+      within(filter).getByRole('radio', { name: 'Todos (20)' }),
     ).toBeChecked()
   })
 

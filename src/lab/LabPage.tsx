@@ -50,6 +50,10 @@ const fieldLabels: Record<GameConfigKey, string> = {
   // FEAT-10 (REQ-43)
   inventoryCapacity: 'Capacidade do inventário',
   purseCapacity: 'Capacidade da bolsa',
+  // FEAT-32 (REQ-47)
+  vaultCapacity: 'Capacidade do cofre',
+  vaultDeckSlots: 'Slots de decks do cofre (a build em uso ocupa um)',
+  vaultGoldCapacity: 'Capacidade de ouro do cofre',
 }
 
 const fieldKeys = Object.keys(fieldLabels) as GameConfigKey[]

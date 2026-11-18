@@ -57,6 +57,10 @@ const defaultValues: LabConfig['values'] = {
   // FEAT-10 (CONTRATO v0.41)
   inventoryCapacity: 10,
   purseCapacity: 300,
+  // FEAT-32 (CONTRATO v0.46)
+  vaultCapacity: 30,
+  vaultDeckSlots: 10,
+  vaultGoldCapacity: 2000,
 }
 
 const modifierDefaultLimit = { min: 0, max: 1000 }
@@ -91,6 +95,9 @@ export const labConfigDefaultsFixture: LabConfig = {
     recoverHandSize: { min: 0, max: 200 },
     inventoryCapacity: { min: 0, max: 100 },
     purseCapacity: { min: 0, max: 1000000 },
+    vaultCapacity: { min: 0, max: 1000 },
+    vaultDeckSlots: { min: 1, max: 100 },
+    vaultGoldCapacity: { min: 0, max: 10000000 },
   },
 }
 

@@ -131,6 +131,16 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
       releaseOrder: 1,
       arrivalZoneTitle: 'Porto Cinzento',
       effects: [],
+      rewardDecks: [
+        {
+          zoneType: 'urban',
+          cards: [
+            { cardId: 'fixture.silver-fish', copies: 1 },
+            { cardId: 'fixture.iron-ore', copies: 1 },
+            { cardId: 'fixture.healing-potion', copies: 2 },
+          ],
+        },
+      ],
     })
     expect(cardSchema.safeParse(stoneBendFixture).success).toBe(true)
     expect(cardSchema.safeParse(grayHarborFixture).success).toBe(true)
@@ -162,7 +172,7 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
       zone: 4,
       attribute: 3,
       equipment: 5,
-      item: 2,
+      item: 5,
       randomEvent: 1,
       combatEvent: 1,
       dimension: 1,
@@ -179,7 +189,7 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
     ).toBe(false)
   })
 
-  it('REQ-28: o handler padrão da coleção fixture lista as 17 cartas na ordem de id', async () => {
+  it('REQ-28: o handler padrão da coleção fixture lista as 20 cartas na ordem de id', async () => {
     const response = await fetch(
       'http://localhost:3000/catalog/collections/fixture/cards',
     )
@@ -191,21 +201,24 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
       'fixture.blade-of-dusk',
       'fixture.dexterity-basic',
       'fixture.endurance-basic',
+      'fixture.fishing-rod',
       'fixture.gray-harbor',
       'fixture.healing-potion',
       'fixture.howling-wolves',
       'fixture.iron-helm',
+      'fixture.iron-ore',
       'fixture.oak-shield',
       'fixture.old-mine',
       'fixture.pickaxe',
       'fixture.short-sword',
+      'fixture.silver-fish',
       'fixture.stone-bend',
       'fixture.strength-basic',
       'fixture.test-dimension',
       'fixture.whispering-grove',
       'fixture.wounded-traveler',
     ])
-    expect(fixtureCardsFixture).toHaveLength(17)
+    expect(fixtureCardsFixture).toHaveLength(20)
   })
 })
 
@@ -448,7 +461,13 @@ describe('REQ-30: Party preparado (dimension, turnOrder, player)', () => {
       zoneId: 'fixture.gray-harbor',
       respawnZoneId: 'fixture.gray-harbor',
       moveTargets: ['fixture.stone-bend', 'fixture.whispering-grove'],
-      availableActions: ['move', 'recover', 'adjustDeck', 'endTurn'],
+      availableActions: [
+        'move',
+        'recover',
+        'adjustDeck',
+        'useVault',
+        'endTurn',
+      ],
       // FEAT-09 (CONTRATO v0.37, cenário de criação)
       build: [
         { cardId: 'fixture.endurance-basic', copies: 30 },
@@ -480,6 +499,13 @@ describe('REQ-30: Party preparado (dimension, turnOrder, player)', () => {
         piercing: 0,
         reflection: 0,
       },
+      // FEAT-32 (CONTRATO v0.46, cenário de criação)
+      vault: { slots: [], decks: [], gold: 0 },
+      vaultCapacity: 30,
+      vaultDeckSlots: 10,
+      vaultGoldCapacity: 2000,
+      scavengeTargets: [],
+      lastScavenge: null,
     })
     expect(hand).toHaveLength(7)
     for (const id of hand) {

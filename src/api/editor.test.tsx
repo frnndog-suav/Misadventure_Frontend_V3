@@ -787,6 +787,7 @@ describe('REQ-31: Carta de Dimensão e forma das setas no CardInput', () => {
       flavorText: null,
       releaseOrder: 2,
       arrivalZoneTitle: null,
+      rewardDecks: [],
       effects: [],
     }
     const zone: CardInput = {
