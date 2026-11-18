@@ -97,4 +97,5 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 065 | T-49 | [Cliente da FEAT-32](065-T-49-cliente-feat-32.md) | concluída |
 | 066 | T-50 | [Laboratório e catálogo da FEAT-32](066-T-50-laboratorio-catalogo-feat-32.md) | concluída |
 | 067 | T-51 | [Editor: ferramentas e decks de recompensas](067-T-51-editor-ferramentas-decks.md) | concluída |
-| 068 | T-52 | [Cofre na tela do grupo e Vasculhar](068-T-52-cofre-e-vasculhar.md) | aguardando revisão |
+| 068 | T-52 | [Cofre na tela do grupo e Vasculhar](068-T-52-cofre-e-vasculhar.md) | concluída |
+| 069 | T-53 | [Usar cofre](069-T-53-usar-cofre.md) | aguardando revisão |

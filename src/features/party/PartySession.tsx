@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   equipmentSlotSchema,
@@ -20,6 +20,7 @@ import {
   type PartyMember,
   type PartyStatus,
   type RecoverAction,
+  type VaultOperation,
 } from '../../api/parties'
 import { FullCard } from '../../ui/cards/FullCard'
 import { categoryCatalog } from '../../ui/categories'
@@ -268,7 +269,7 @@ function reasonText(error: ActionNotAllowedError, name: string): string {
       return 'A arma em uso não deixa usar escudo.'
     case 'inventoryFull':
       return 'Não há espaço no inventário para o que sairia do equipamento.'
-    // FEAT-32 (zoneActionUnavailable em diante): textos do Usar cofre na T-53;
+    // FEAT-32: os textos do Usar cofre ficam em `vaultReasonText` (REQ-52);
     // o Vasculhar só tem texto para inventoryFull, tratado à parte (REQ-51).
     case 'notConnected':
     case 'noActionPoints':
@@ -391,7 +392,496 @@ function AdjustDeck({
   )
 }
 
-/** Região "A vez" (REQ-36) com "Recuperar" (REQ-41), "Ajustar deck" (REQ-42), "Vasculhar" (REQ-51) e "Encerrar a vez" (REQ-37, REQ-38). */
+/**
+ * Texto de cada motivo de recusa do Usar cofre (REQ-52); outro motivo → ''
+ * (só a `message`). `name`: a carta de `details.cardId` ou a da operação recusada.
+ */
+function vaultReasonText(error: ActionNotAllowedError, name: string): string {
+  switch (error.reason) {
+    case 'notInInventory':
+      return `${name} não está no inventário nessa quantidade.`
+    case 'notInTcgFolder':
+      return `Não há essas cópias de ${name} na pasta de TCG.`
+    case 'notStorable':
+      return `${name} não pode ir para o cofre.`
+    case 'notInVault':
+      return `Não há essa quantidade de ${name} no cofre.`
+    case 'vaultFull':
+      return 'O cofre está cheio.'
+    case 'notEnoughGold':
+      return 'Não há ouro suficiente na bolsa.'
+    case 'vaultGoldFull':
+      return 'O ouro passaria da capacidade do cofre.'
+    case 'notEnoughVaultGold':
+      return 'Não há ouro suficiente no cofre.'
+    case 'purseFull':
+      return 'O ouro passaria da capacidade da bolsa.'
+    case 'notAttribute':
+      return `${name} não é carta de atributo.`
+    case 'deckSlotsFull':
+      return 'Não há slot de deck livre.'
+    case 'deckNotFound':
+      return 'Esse deck guardado não existe.'
+    case 'inventoryFull':
+      return 'Não há espaço no inventário.'
+    case 'tcgFolderFull':
+    case 'buildBelowMinimum':
+    case 'notOwned':
+    case 'copyLimitExceeded':
+      return reasonText(error, name)
+    case 'peakRequirementNotMet':
+    case 'classRestricted':
+    case 'shieldBlocked':
+    case 'notConnected':
+    case 'noActionPoints':
+    case 'notEquipment':
+    case 'slotEmpty':
+    case 'zoneActionUnavailable':
+    case 'notScavengeable':
+      return ''
+    default: {
+      const _exhaustive: never = error.reason
+      return _exhaustive
+    }
+  }
+}
+
+const invalidQuantity = 'Use um número inteiro a partir de 1.'
+
+/** Inteiro ≥ `min` digitado num campo (formato, não regra do jogo). */
+function isIntFrom(value: string, min: number): boolean {
+  return /^\d+$/.test(value) && Number(value) >= min
+}
+
+function byCardId(a: string, b: string): number {
+  return a < b ? -1 : a > b ? 1 : 0
+}
+
+/** Descrição de uma operação na lista "Operações" (REQ-52). */
+function describeOperation(op: VaultOperation, cards: Cards): string {
+  const total = (list: CardCopies[]) =>
+    list.reduce((sum, { copies }) => sum + copies, 0)
+  switch (op.operation) {
+    case 'store':
+      return `Guardar ${op.quantity}× ${nameOf(cards, op.cardId)}`
+    case 'take':
+      return `Retirar ${op.quantity}× ${nameOf(cards, op.cardId)}`
+    case 'discard':
+      return `Descartar ${op.quantity}× ${nameOf(cards, op.cardId)}`
+    case 'storeGold':
+      return `Guardar ${op.amount} de ouro`
+    case 'takeGold':
+      return `Retirar ${op.amount} de ouro`
+    case 'saveDeck':
+      return `Guardar deck de ${total(op.cards)} cartas`
+    case 'unpackDeck':
+      return `Desmontar deck ${op.deckIndex + 1}`
+    case 'swapBuild':
+      return `Usar deck ${op.deckIndex + 1} como build`
+    case 'editBuild':
+      return `Editar a build (${total(op.build)} cartas)`
+    default: {
+      const _exhaustive: never = op
+      return _exhaustive
+    }
+  }
+}
+
+/** Campo numérico com o erro ligado por `aria-describedby` (REQ-52). */
+function NumberField({
+  label,
+  value,
+  onChange,
+  min,
+  error,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  min: number
+  error: string
+}) {
+  const id = useId()
+  const errorId = `${id}-error`
+  return (
+    <>
+      <label htmlFor={id}>{label}</label>
+      <input
+        id={id}
+        type="number"
+        min={min}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        aria-invalid={error !== ''}
+        aria-describedby={error !== '' ? errorId : undefined}
+      />
+      {error !== '' && <p id={errorId}>{error}</p>}
+    </>
+  )
+}
+
+/** "Guardar no cofre", "Retirar do cofre", "Descartar do cofre": carta + quantidade. */
+function CardOperationForm({
+  legend,
+  cardIds,
+  cards,
+  warning,
+  onAdd,
+  pending,
+}: {
+  legend: string
+  cardIds: string[]
+  cards: Cards
+  warning?: string
+  onAdd: (cardId: string, quantity: number) => void
+  pending: boolean
+}) {
+  const selectId = useId()
+  const [cardId, setCardId] = useState('')
+  const [quantity, setQuantity] = useState('1')
+  const [error, setError] = useState('')
+  function add(): void {
+    if (!isIntFrom(quantity, 1)) {
+      setError(invalidQuantity)
+      return
+    }
+    setError('')
+    onAdd(cardId, Number(quantity))
+  }
+  return (
+    <fieldset>
+      <legend>{legend}</legend>
+      <label htmlFor={selectId}>Carta</label>
+      <select
+        id={selectId}
+        value={cardId}
+        onChange={(e) => setCardId(e.target.value)}
+      >
+        <option value="">Escolha uma carta</option>
+        {cardIds.map((id) => (
+          <option key={id} value={id}>
+            {nameOf(cards, id)}
+          </option>
+        ))}
+      </select>
+      <NumberField
+        label="Quantidade"
+        value={quantity}
+        onChange={setQuantity}
+        min={1}
+        error={error}
+      />
+      {warning !== undefined && <p>{warning}</p>}
+      <button type="button" onClick={add} disabled={pending || cardId === ''}>
+        Acrescentar
+      </button>
+    </fieldset>
+  )
+}
+
+/** "Ouro": "Guardar ouro" e "Retirar ouro" com o mesmo campo (REQ-52). */
+function GoldForm({
+  onAdd,
+  pending,
+}: {
+  onAdd: (op: VaultOperation) => void
+  pending: boolean
+}) {
+  const [amount, setAmount] = useState('')
+  const [error, setError] = useState('')
+  function add(operation: 'storeGold' | 'takeGold'): void {
+    if (!isIntFrom(amount, 1)) {
+      setError(invalidQuantity)
+      return
+    }
+    setError('')
+    onAdd({ operation, amount: Number(amount) })
+  }
+  return (
+    <fieldset>
+      <legend>Ouro</legend>
+      <NumberField
+        label="Quantidade de ouro"
+        value={amount}
+        onChange={setAmount}
+        min={1}
+        error={error}
+      />
+      <button type="button" onClick={() => add('storeGold')} disabled={pending}>
+        Guardar ouro
+      </button>
+      <button type="button" onClick={() => add('takeGold')} disabled={pending}>
+        Retirar ouro
+      </button>
+    </fieldset>
+  )
+}
+
+/**
+ * Formulário de cópias por carta ("Guardar deck", "Editar build"): campos
+ * inteiros ≥ 0; "Acrescentar" leva as linhas ≥ 1, em ordem de `cardId`.
+ */
+function CopiesForm({
+  legend,
+  rows,
+  fieldLabel,
+  details,
+  initial,
+  onAdd,
+  pending,
+}: {
+  legend: string
+  rows: string[]
+  fieldLabel: (cardId: string) => string
+  details?: (cardId: string) => string[]
+  initial: (cardId: string) => number
+  onAdd: (list: CardCopies[]) => void
+  pending: boolean
+}) {
+  const [draft, setDraft] = useState<Record<string, string>>({})
+  const [invalid, setInvalid] = useState<string[]>([])
+  const valueOf = (cardId: string) => draft[cardId] ?? String(initial(cardId))
+  function add(): void {
+    const wrong = rows.filter((id) => !isIntFrom(valueOf(id), 0))
+    setInvalid(wrong)
+    if (wrong.length > 0) return
+    onAdd(
+      rows
+        .map((cardId) => ({ cardId, copies: Number(valueOf(cardId)) }))
+        .filter(({ copies }) => copies >= 1),
+    )
+  }
+  return (
+    <fieldset>
+      <legend>{legend}</legend>
+      {rows.map((cardId) => (
+        <div key={cardId}>
+          {details?.(cardId).map((text) => (
+            <p key={text}>{text}</p>
+          ))}
+          <NumberField
+            label={fieldLabel(cardId)}
+            value={valueOf(cardId)}
+            onChange={(value) => setDraft({ ...draft, [cardId]: value })}
+            min={0}
+            error={invalid.includes(cardId) ? invalidCopies : ''}
+          />
+        </div>
+      ))}
+      <button type="button" onClick={add} disabled={pending}>
+        Acrescentar
+      </button>
+    </fieldset>
+  )
+}
+
+/** Recusa ou erro do último "Confirmar", mostrado na seção (REQ-52). */
+type VaultFailure = { error: Error; operations: VaultOperation[] }
+
+/** Seção "Usar cofre" (REQ-52): monta a lista de operações e envia o lote. */
+function UseVault({
+  player,
+  cards,
+  onConfirm,
+  onCancel,
+  pending,
+}: {
+  player: PartyMember['player']
+  cards: Cards
+  onConfirm: (
+    operations: VaultOperation[],
+    onError: (error: Error) => void,
+  ) => void
+  onCancel: () => void
+  pending: boolean
+}) {
+  const [operations, setOperations] = useState<VaultOperation[]>([])
+  const [failure, setFailure] = useState<VaultFailure | null>(null)
+
+  // Editar a lista tira a marca e o texto da recusa: o índice deixaria de valer.
+  function edit(next: VaultOperation[]): void {
+    setOperations(next)
+    setFailure(null)
+  }
+  const append = (op: VaultOperation) => edit([...operations, op])
+  function swap(i: number, j: number): void {
+    const next = [...operations]
+    ;[next[i], next[j]] = [next[j], next[i]]
+    edit(next)
+  }
+
+  // Escolhas pelo estado recebido, sem descontar a lista (D-59 item 1).
+  const storable = [
+    ...new Set([
+      ...player.inventory.map(({ cardId }) => cardId),
+      ...player.tcgFolder.map(({ cardId }) => cardId),
+    ]),
+  ].sort(byCardId)
+  const vaultCardIds = [
+    ...new Set(player.vault.slots.map(({ cardId }) => cardId)),
+  ]
+  // Tipo da carta do catálogo: dado de exibição, não regra (D-58).
+  const vaultAttributes = [
+    ...new Set(
+      vaultCardIds.filter((id) => cards.get(id)?.type === 'attribute'),
+    ),
+  ].sort(byCardId)
+  const buildRows = [
+    ...new Set([
+      ...player.build.map(({ cardId }) => cardId),
+      ...vaultAttributes,
+    ]),
+  ].sort(byCardId)
+  const inBuild = (cardId: string) =>
+    player.build.find((entry) => entry.cardId === cardId)?.copies ?? 0
+  const inVault = (cardId: string) =>
+    player.vault.slots
+      .filter((slot) => slot.cardId === cardId)
+      .reduce((sum, { quantity }) => sum + quantity, 0)
+
+  const refusedIndex =
+    failure?.error instanceof ActionNotAllowedError
+      ? failure.error.operationIndex
+      : undefined
+  let failureText = ''
+  if (failure !== null) {
+    const { error } = failure
+    if (error instanceof ActionNotAllowedError) {
+      const refused =
+        refusedIndex === undefined
+          ? undefined
+          : failure.operations[refusedIndex]
+      const cardId =
+        error.cardId ??
+        (refused !== undefined && 'cardId' in refused ? refused.cardId : '')
+      const reason = vaultReasonText(error, nameOf(cards, cardId))
+      failureText = reason === '' ? error.message : `${error.message} ${reason}`
+    } else failureText = errorText(error)
+  }
+
+  return (
+    <section aria-labelledby="use-vault-title">
+      <h2 id="use-vault-title">Usar cofre</h2>
+      <h3 id="vault-operations-title">Operações</h3>
+      {operations.length === 0 && <p>Nenhuma operação.</p>}
+      <ol aria-labelledby="vault-operations-title">
+        {operations.map((op, i) => (
+          <li key={i}>
+            <span>
+              {i + 1}. {describeOperation(op, cards)}
+            </span>
+            {failure !== null && refusedIndex === i && (
+              <strong>Recusada</strong>
+            )}
+            <button
+              type="button"
+              onClick={() => edit(operations.filter((_, j) => j !== i))}
+              disabled={pending}
+            >
+              Remover
+            </button>
+            <button
+              type="button"
+              onClick={() => swap(i, i - 1)}
+              disabled={pending || i === 0}
+            >
+              Subir
+            </button>
+            <button
+              type="button"
+              onClick={() => swap(i, i + 1)}
+              disabled={pending || i === operations.length - 1}
+            >
+              Descer
+            </button>
+          </li>
+        ))}
+      </ol>
+      {failureText !== '' && <p>{failureText}</p>}
+      <button
+        type="button"
+        onClick={() =>
+          onConfirm(operations, (error) => setFailure({ error, operations }))
+        }
+        disabled={pending || operations.length === 0}
+      >
+        Confirmar (1 ponto de ação)
+      </button>
+      <button type="button" onClick={onCancel} disabled={pending}>
+        Cancelar
+      </button>
+      <CardOperationForm
+        legend="Guardar no cofre"
+        cardIds={storable}
+        cards={cards}
+        onAdd={(cardId, quantity) =>
+          append({ operation: 'store', cardId, quantity })
+        }
+        pending={pending}
+      />
+      <CardOperationForm
+        legend="Retirar do cofre"
+        cardIds={vaultCardIds}
+        cards={cards}
+        onAdd={(cardId, quantity) =>
+          append({ operation: 'take', cardId, quantity })
+        }
+        pending={pending}
+      />
+      <CardOperationForm
+        legend="Descartar do cofre"
+        cardIds={vaultCardIds}
+        cards={cards}
+        warning="A carta descartada vai para o limbo e não volta."
+        onAdd={(cardId, quantity) =>
+          append({ operation: 'discard', cardId, quantity })
+        }
+        pending={pending}
+      />
+      <GoldForm onAdd={append} pending={pending} />
+      <CopiesForm
+        legend="Guardar deck"
+        rows={vaultAttributes}
+        fieldLabel={(cardId) => `Cópias de ${nameOf(cards, cardId)}`}
+        initial={() => 0}
+        onAdd={(list) => append({ operation: 'saveDeck', cards: list })}
+        pending={pending}
+      />
+      {player.vault.decks.map((_, i) => (
+        <div key={i}>
+          <button
+            type="button"
+            onClick={() => append({ operation: 'unpackDeck', deckIndex: i })}
+            disabled={pending}
+          >
+            Desmontar deck {i + 1}
+          </button>
+          <button
+            type="button"
+            onClick={() => append({ operation: 'swapBuild', deckIndex: i })}
+            disabled={pending}
+          >
+            Usar deck {i + 1} como build
+          </button>
+        </div>
+      ))}
+      <CopiesForm
+        legend="Editar build"
+        rows={buildRows}
+        fieldLabel={(cardId) => `Cópias na build de ${nameOf(cards, cardId)}`}
+        details={(cardId) => [
+          `Na build: ${inBuild(cardId)}`,
+          `No cofre: ${inVault(cardId)}`,
+        ]}
+        initial={inBuild}
+        onAdd={(build) => append({ operation: 'editBuild', build })}
+        pending={pending}
+      />
+    </section>
+  )
+}
+
+/** Região "A vez" (REQ-36) com "Recuperar" (REQ-41), "Ajustar deck" (REQ-42), "Vasculhar" (REQ-51), "Usar cofre" (REQ-52) e "Encerrar a vez" (REQ-37, REQ-38). */
 function TurnState({
   party,
   cards,
@@ -399,7 +889,9 @@ function TurnState({
   onRecover,
   onAdjust,
   onScavenge,
+  onVault,
   adjusting,
+  vaulting,
   pending,
 }: {
   party: Party
@@ -408,7 +900,9 @@ function TurnState({
   onRecover: (option: RecoverAction['option']) => void
   onAdjust: () => void
   onScavenge: (cardId: string) => void
+  onVault: () => void
   adjusting: boolean
+  vaulting: boolean
   pending: boolean
 }) {
   const { round, memberId, actionPoints } = party.turn
@@ -463,6 +957,11 @@ function TurnState({
           ))}
         </div>
       )}
+      {host?.player.availableActions.includes('useVault') && (
+        <button type="button" onClick={onVault} disabled={pending || vaulting}>
+          Usar cofre
+        </button>
+      )}
       {host?.player.availableActions.includes('endTurn') && (
         <button type="button" onClick={onEndTurn} disabled={pending}>
           Encerrar a vez
@@ -482,11 +981,14 @@ function PreparedMatch({
   onRecover,
   onScavenge,
   onSaveBuild,
+  onUseVault,
   onEquip,
   onUnequip,
   adjustError,
   adjusting,
   setAdjusting,
+  vaulting,
+  setVaulting,
   moving,
 }: {
   party: Party
@@ -497,11 +999,17 @@ function PreparedMatch({
   onRecover: (option: RecoverAction['option']) => void
   onScavenge: (cardId: string) => void
   onSaveBuild: (build: CardCopies[]) => void
+  onUseVault: (
+    operations: VaultOperation[],
+    onError: (error: Error) => void,
+  ) => void
   onEquip: PrepareControls['onEquip']
   onUnequip: PrepareControls['onUnequip']
   adjustError: string
   adjusting: boolean
   setAdjusting: (open: boolean) => void
+  vaulting: boolean
+  setVaulting: (open: boolean) => void
   moving: boolean
 }) {
   const names = new Map(party.members.map((m) => [m.id, m.characterName]))
@@ -517,7 +1025,9 @@ function PreparedMatch({
         onRecover={onRecover}
         onAdjust={() => setAdjusting(true)}
         onScavenge={onScavenge}
+        onVault={() => setVaulting(true)}
         adjusting={adjusting}
+        vaulting={vaulting}
         pending={moving}
       />
       {adjusting && host !== undefined && (
@@ -528,6 +1038,15 @@ function PreparedMatch({
           onCancel={() => setAdjusting(false)}
           pending={moving}
           error={adjustError}
+        />
+      )}
+      {vaulting && host !== undefined && (
+        <UseVault
+          player={host.player}
+          cards={cards}
+          onConfirm={onUseVault}
+          onCancel={() => setVaulting(false)}
+          pending={moving}
         />
       )}
       <PartyMap
@@ -613,10 +1132,13 @@ export function PartySession() {
   const preparedName = nameOf(cards.cards, preparedCardId)
   // Erros do "Ajustar deck" aparecem na seção, não na área de status (REQ-42).
   const adjustFailed = action.isError && action.variables.type === 'adjustDeck'
+  const [vaulting, setVaulting] = useState(false)
+  // Erros do "Usar cofre" também ficam na seção (REQ-52).
+  const vaultFailed = action.isError && action.variables.type === 'useVault'
 
   let status = ''
   if (end.isError) status = errorText(end.error)
-  else if (action.isError && !adjustFailed) {
+  else if (action.isError && !adjustFailed && !vaultFailed) {
     if (action.variables.type === 'prepare') {
       status = refusalText(action.error, preparedName)
     } else if (
@@ -628,7 +1150,10 @@ export function PartySession() {
       status = `${action.error.message} Não há espaço no inventário.`
     } else status = errorText(action.error)
   } else if (action.isSuccess && party !== undefined && host !== undefined) {
-    if (action.variables.type === 'scavenge') {
+    if (action.variables.type === 'useVault') {
+      const n = action.variables.operations.length
+      status = `Cofre: ${n} ${n === 1 ? 'operação feita' : 'operações feitas'}.`
+    } else if (action.variables.type === 'scavenge') {
       // O resultado vem de `lastScavenge`, nunca do inventário (D-59 item 2).
       const last = host.player.lastScavenge
       if (last !== null) {
@@ -696,6 +1221,12 @@ export function PartySession() {
                 { onSuccess: () => setAdjusting(false) },
               )
             }
+            onUseVault={(operations, onError) =>
+              action.mutate(
+                { type: 'useVault', operations },
+                { onSuccess: () => setVaulting(false), onError },
+              )
+            }
             onEquip={(cardId) => {
               setPreparedCardId(cardId)
               action.mutate({ type: 'prepare', operation: 'equip', cardId })
@@ -719,6 +1250,8 @@ export function PartySession() {
             }
             adjusting={adjusting}
             setAdjusting={setAdjusting}
+            vaulting={vaulting}
+            setVaulting={setVaulting}
             moving={action.isPending}
           />
         </>

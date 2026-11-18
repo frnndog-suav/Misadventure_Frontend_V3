@@ -36,6 +36,7 @@ import {
   partyNextRoundFixture,
   partyScavengedFixture,
   partySessionNotActiveFixture,
+  partyVaultUsedFixture,
 } from '../../mocks/partyFixtures'
 
 const server = setupServer(...handlers)
@@ -2080,5 +2081,542 @@ describe('REQ-51: Vasculhar', () => {
         'Servidor indisponível. Tente novamente.',
       ),
     )
+  })
+})
+
+describe('REQ-52: Usar cofre', () => {
+  const [base] = partyInSessionFixture.members
+  const potion = 'fixture.healing-potion'
+  const strength = 'fixture.strength-basic'
+  const endurance = 'fixture.endurance-basic'
+  const turnRegion = () => screen.getByRole('region', { name: 'A vez' })
+  const vaultButton = () =>
+    within(turnRegion()).queryByRole('button', { name: 'Usar cofre' })
+  const section = () => screen.queryByRole('region', { name: 'Usar cofre' })
+  const form = (name: string) => within(section()!).getByRole('group', { name })
+  const opsList = () =>
+    within(section()!).getByRole('list', { name: 'Operações' })
+  const opTexts = () =>
+    within(opsList())
+      .queryAllByRole('listitem')
+      .map((li) => li.firstChild?.textContent)
+  const inSection = (name: string) =>
+    within(section()!).getByRole('button', { name })
+
+  /** Lia com inventário, pasta, cofre com slots, um deck e ouro. */
+  function richSession(): void {
+    server.use(
+      http.post('*/parties/:partyId/session', () =>
+        HttpResponse.json({
+          ...partyInSessionFixture,
+          members: [
+            {
+              ...base,
+              player: {
+                ...base.player,
+                inventory: [{ cardId: potion, quantity: 3 }],
+                tcgFolder: [{ cardId: 'fixture.dexterity-basic', copies: 2 }],
+                vault: {
+                  slots: [
+                    { cardId: potion, quantity: 1 },
+                    { cardId: strength, quantity: 10 },
+                  ],
+                  decks: [[{ cardId: endurance, copies: 60 }]],
+                  gold: 100,
+                },
+              },
+            },
+          ],
+        }),
+      ),
+    )
+  }
+
+  async function openSection(): Promise<void> {
+    renderParty()
+    await screen.findByRole('region', { name: 'A vez' })
+    await waitFor(() => expect(status()).toHaveTextContent(''))
+    fireEvent.click(vaultButton()!)
+    await screen.findByRole('region', { name: 'Usar cofre' })
+  }
+
+  function addGold(button: 'Guardar ouro' | 'Retirar ouro', amount: string) {
+    const gold = form('Ouro')
+    fireEvent.change(
+      within(gold).getByRole('spinbutton', { name: 'Quantidade de ouro' }),
+      { target: { value: amount } },
+    )
+    fireEvent.click(within(gold).getByRole('button', { name: button }))
+  }
+
+  async function addCard(
+    formName: string,
+    cardName: string,
+    quantity: string,
+  ): Promise<void> {
+    const group = form(formName)
+    const select = within(group).getByRole('combobox', { name: 'Carta' })
+    const option = await within(select).findByRole('option', { name: cardName })
+    fireEvent.change(select, {
+      target: { value: (option as HTMLOptionElement).value },
+    })
+    fireEvent.change(
+      within(group).getByRole('spinbutton', { name: 'Quantidade' }),
+      { target: { value: quantity } },
+    )
+    fireEvent.click(within(group).getByRole('button', { name: 'Acrescentar' }))
+  }
+
+  function rejectWith(details: Record<string, unknown>): void {
+    server.use(
+      http.post('*/parties/:partyId/actions', () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: 'ACTION_NOT_ALLOWED',
+              message: 'Esta ação não é permitida agora.',
+              details,
+            },
+          },
+          { status: 409 },
+        ),
+      ),
+    )
+  }
+
+  it('REQ-52: com useVault, "Usar cofre" fica em "A vez", depois do grupo "Vasculhar"', async () => {
+    renderParty(partyFishingRodInSessionFixture.id)
+    const group = await screen.findByRole('group', { name: 'Vasculhar' })
+    expect(
+      group.compareDocumentPosition(vaultButton()!) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('REQ-52: sem useVault não há botão', async () => {
+    server.use(
+      http.post('*/parties/:partyId/session', () =>
+        HttpResponse.json(partyMovedToStoneBendFixture),
+      ),
+    )
+    renderParty()
+    await screen.findByRole('region', { name: 'A vez' })
+    expect(vaultButton()).toBeNull()
+  })
+
+  it('REQ-52: abre a seção abaixo de "A vez" com "Nenhuma operação.", desabilita o botão e o Confirmar', async () => {
+    await openSection()
+    expect(vaultButton()).toBeDisabled()
+    expect(
+      turnRegion().compareDocumentPosition(section()!) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(section()).toHaveTextContent('Nenhuma operação.')
+    expect(inSection('Confirmar (1 ponto de ação)')).toBeDisabled()
+    for (const name of [
+      'Guardar no cofre',
+      'Retirar do cofre',
+      'Descartar do cofre',
+      'Ouro',
+      'Guardar deck',
+      'Editar build',
+    ]) {
+      expect(form(name)).toBeInTheDocument()
+    }
+  })
+
+  it('REQ-52: as seleções mostram o estado recebido; sem carta escolhida, "Acrescentar" fica desabilitado', async () => {
+    richSession()
+    await openSection()
+    const options = (name: string) =>
+      within(within(form(name)).getByRole('combobox', { name: 'Carta' }))
+        .getAllByRole('option')
+        .slice(1)
+        .map((o) => o.textContent)
+    await waitFor(() =>
+      expect(options('Guardar no cofre')).toEqual([
+        'Destreza',
+        'Poção de Cura',
+      ]),
+    )
+    expect(options('Retirar do cofre')).toEqual(['Poção de Cura', 'Força'])
+    expect(options('Descartar do cofre')).toEqual(['Poção de Cura', 'Força'])
+    expect(
+      within(form('Guardar no cofre')).getByRole('spinbutton', {
+        name: 'Quantidade',
+      }),
+    ).toHaveValue(1)
+    expect(
+      within(form('Guardar no cofre')).getByRole('button', {
+        name: 'Acrescentar',
+      }),
+    ).toBeDisabled()
+    expect(form('Descartar do cofre')).toHaveTextContent(
+      'A carta descartada vai para o limbo e não volta.',
+    )
+  })
+
+  it('REQ-52: cada formulário só acrescenta à lista, com a descrição da operação; nada é enviado', async () => {
+    const sent = vi.fn()
+    server.use(
+      http.post('*/parties/:partyId/actions', () => {
+        sent()
+        return HttpResponse.json(partyVaultUsedFixture)
+      }),
+    )
+    richSession()
+    await openSection()
+    await addCard('Guardar no cofre', 'Poção de Cura', '2')
+    await addCard('Retirar do cofre', 'Força', '3')
+    await addCard('Descartar do cofre', 'Poção de Cura', '1')
+    addGold('Guardar ouro', '60')
+    addGold('Retirar ouro', '5')
+    const deck = form('Guardar deck')
+    fireEvent.change(
+      within(deck).getByRole('spinbutton', { name: 'Cópias de Força' }),
+      { target: { value: '7' } },
+    )
+    fireEvent.click(within(deck).getByRole('button', { name: 'Acrescentar' }))
+    fireEvent.click(inSection('Desmontar deck 1'))
+    fireEvent.click(inSection('Usar deck 1 como build'))
+    const build = form('Editar build')
+    expect(build).toHaveTextContent('Na build: 30')
+    expect(build).toHaveTextContent('No cofre: 10')
+    fireEvent.change(
+      within(build).getByRole('spinbutton', {
+        name: 'Cópias na build de Resistência',
+      }),
+      { target: { value: '0' } },
+    )
+    fireEvent.click(within(build).getByRole('button', { name: 'Acrescentar' }))
+    expect(opTexts()).toEqual([
+      '1. Guardar 2× Poção de Cura',
+      '2. Retirar 3× Força',
+      '3. Descartar 1× Poção de Cura',
+      '4. Guardar 60 de ouro',
+      '5. Retirar 5 de ouro',
+      '6. Guardar deck de 7 cartas',
+      '7. Desmontar deck 1',
+      '8. Usar deck 1 como build',
+      '9. Editar a build (30 cartas)',
+    ])
+    expect(section()).not.toHaveTextContent('Nenhuma operação.')
+    expect(sent).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    [
+      'Guardar no cofre',
+      'Quantidade',
+      '0',
+      'Use um número inteiro a partir de 1.',
+    ],
+    ['Ouro', 'Quantidade de ouro', '', 'Use um número inteiro a partir de 1.'],
+    [
+      'Guardar deck',
+      'Cópias de Força',
+      '-1',
+      'Use um número inteiro a partir de 0.',
+    ],
+    [
+      'Editar build',
+      'Cópias na build de Força',
+      '1.5',
+      'Use um número inteiro a partir de 0.',
+    ],
+  ])(
+    'REQ-52: em "%s", "%s" com "%s" não acrescenta e mostra "%s" por aria-describedby',
+    async (formName, fieldName, value, message) => {
+      richSession()
+      await openSection()
+      const group = form(formName)
+      if (formName === 'Guardar no cofre') {
+        const select = within(group).getByRole('combobox', { name: 'Carta' })
+        await within(select).findByRole('option', { name: 'Poção de Cura' })
+        fireEvent.change(select, { target: { value: potion } })
+      }
+      const field = await within(group).findByRole('spinbutton', {
+        name: fieldName,
+      })
+      fireEvent.change(field, { target: { value } })
+      fireEvent.click(
+        within(group).getByRole('button', {
+          name: formName === 'Ouro' ? 'Guardar ouro' : 'Acrescentar',
+        }),
+      )
+      expect(field).toHaveAccessibleDescription(message)
+      expect(opTexts()).toEqual([])
+    },
+  )
+
+  it('REQ-52: "Remover", "Subir" e "Descer" mudam a lista; nas pontas, Subir/Descer ficam desabilitados', async () => {
+    await openSection()
+    addGold('Guardar ouro', '1')
+    addGold('Guardar ouro', '2')
+    addGold('Guardar ouro', '3')
+    const item = (i: number) => within(opsList()).getAllByRole('listitem')[i]
+    expect(
+      within(item(0)).getByRole('button', { name: 'Subir' }),
+    ).toBeDisabled()
+    expect(
+      within(item(2)).getByRole('button', { name: 'Descer' }),
+    ).toBeDisabled()
+    fireEvent.click(within(item(0)).getByRole('button', { name: 'Descer' }))
+    expect(opTexts()).toEqual([
+      '1. Guardar 2 de ouro',
+      '2. Guardar 1 de ouro',
+      '3. Guardar 3 de ouro',
+    ])
+    fireEvent.click(within(item(2)).getByRole('button', { name: 'Subir' }))
+    expect(opTexts()).toEqual([
+      '1. Guardar 2 de ouro',
+      '2. Guardar 3 de ouro',
+      '3. Guardar 1 de ouro',
+    ])
+    fireEvent.click(within(item(1)).getByRole('button', { name: 'Remover' }))
+    expect(opTexts()).toEqual(['1. Guardar 2 de ouro', '2. Guardar 1 de ouro'])
+  })
+
+  it('REQ-52: "Cancelar" fecha a seção sem enviar; ao reabrir, a lista começa vazia', async () => {
+    const sent = vi.fn()
+    server.use(
+      http.post('*/parties/:partyId/actions', () => {
+        sent()
+        return HttpResponse.json(partyVaultUsedFixture)
+      }),
+    )
+    await openSection()
+    addGold('Guardar ouro', '60')
+    fireEvent.click(inSection('Cancelar'))
+    expect(section()).toBeNull()
+    expect(vaultButton()).toBeEnabled()
+    fireEvent.click(vaultButton()!)
+    expect(section()).toHaveTextContent('Nenhuma operação.')
+    expect(sent).not.toHaveBeenCalled()
+  })
+
+  it('REQ-52: "Confirmar" envia o lote na ordem da lista, com os botões desabilitados; com 200 fecha e mostra "Cofre: 3 operações feitas."', async () => {
+    let release: () => void = () => {}
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    let body: unknown
+    server.use(
+      http.post('*/parties/:partyId/actions', async ({ request }) => {
+        body = await request.json()
+        await gate
+        return HttpResponse.json(partyVaultUsedFixture)
+      }),
+    )
+    richSession()
+    await openSection()
+    await addCard('Guardar no cofre', 'Poção de Cura', '2')
+    addGold('Guardar ouro', '60')
+    await addCard('Descartar do cofre', 'Poção de Cura', '1')
+    fireEvent.click(inSection('Confirmar (1 ponto de ação)'))
+    await waitFor(() =>
+      expect(inSection('Confirmar (1 ponto de ação)')).toBeDisabled(),
+    )
+    expect(inSection('Cancelar')).toBeDisabled()
+    expect(
+      within(opsList()).getAllByRole('button', { name: 'Remover' })[0],
+    ).toBeDisabled()
+    expect(
+      within(turnRegion()).getByRole('button', { name: 'Encerrar a vez' }),
+    ).toBeDisabled()
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(body).toEqual({
+      type: 'useVault',
+      operations: [
+        { operation: 'store', cardId: potion, quantity: 2 },
+        { operation: 'storeGold', amount: 60 },
+        { operation: 'discard', cardId: potion, quantity: 1 },
+      ],
+    })
+    release()
+    await waitFor(() =>
+      expect(status()).toHaveTextContent('Cofre: 3 operações feitas.'),
+    )
+    expect(section()).toBeNull()
+    expect(
+      screen.getByText('Ouro no cofre 60 (capacidade 2000)'),
+    ).toBeInTheDocument()
+  })
+
+  it('REQ-52: as operações de deck e de build vão no formato do contrato', async () => {
+    let body: unknown
+    server.use(
+      http.post('*/parties/:partyId/actions', async ({ request }) => {
+        body = await request.json()
+        return HttpResponse.json(partyVaultUsedFixture)
+      }),
+    )
+    richSession()
+    await openSection()
+    const deck = form('Guardar deck')
+    fireEvent.change(
+      await within(deck).findByRole('spinbutton', { name: 'Cópias de Força' }),
+      { target: { value: '7' } },
+    )
+    fireEvent.click(within(deck).getByRole('button', { name: 'Acrescentar' }))
+    fireEvent.click(inSection('Desmontar deck 1'))
+    fireEvent.click(inSection('Usar deck 1 como build'))
+    const build = form('Editar build')
+    fireEvent.change(
+      within(build).getByRole('spinbutton', {
+        name: 'Cópias na build de Força',
+      }),
+      { target: { value: '40' } },
+    )
+    fireEvent.click(within(build).getByRole('button', { name: 'Acrescentar' }))
+    fireEvent.click(inSection('Confirmar (1 ponto de ação)'))
+    await waitFor(() =>
+      expect(status()).toHaveTextContent('Cofre: 4 operações feitas.'),
+    )
+    expect(body).toEqual({
+      type: 'useVault',
+      operations: [
+        { operation: 'saveDeck', cards: [{ cardId: strength, copies: 7 }] },
+        { operation: 'unpackDeck', deckIndex: 0 },
+        { operation: 'swapBuild', deckIndex: 0 },
+        {
+          operation: 'editBuild',
+          build: [
+            { cardId: endurance, copies: 30 },
+            { cardId: strength, copies: 40 },
+          ],
+        },
+      ],
+    })
+  })
+
+  it('REQ-52: "1 operação feita" no singular', async () => {
+    await openSection()
+    addGold('Guardar ouro', '60')
+    fireEvent.click(inSection('Confirmar (1 ponto de ação)'))
+    await waitFor(() =>
+      expect(status()).toHaveTextContent('Cofre: 1 operação feita.'),
+    )
+  })
+
+  it('REQ-52: pelo MSW, o take de 5 é recusado: a seção fica aberta, o item 2 marcado "Recusada" e o texto de notInVault', async () => {
+    richSession()
+    await openSection()
+    addGold('Retirar ouro', '10')
+    await addCard('Retirar do cofre', 'Poção de Cura', '5')
+    fireEvent.click(inSection('Confirmar (1 ponto de ação)'))
+    await waitFor(() =>
+      expect(section()).toHaveTextContent(
+        'Esta ação não é permitida agora. Não há essa quantidade de Poção de Cura no cofre.',
+      ),
+    )
+    const items = within(opsList()).getAllByRole('listitem')
+    expect(items[0]).not.toHaveTextContent('Recusada')
+    expect(items[1]).toHaveTextContent('Recusada')
+    expect(status()).not.toHaveTextContent('Cofre:')
+    expect(status()).not.toHaveTextContent('Esta ação')
+  })
+
+  it.each([
+    [
+      'notInInventory',
+      'Poção de Cura não está no inventário nessa quantidade.',
+    ],
+    ['notInTcgFolder', 'Não há essas cópias de Poção de Cura na pasta de TCG.'],
+    ['notStorable', 'Poção de Cura não pode ir para o cofre.'],
+    ['vaultFull', 'O cofre está cheio.'],
+    ['notEnoughGold', 'Não há ouro suficiente na bolsa.'],
+    ['vaultGoldFull', 'O ouro passaria da capacidade do cofre.'],
+    ['notEnoughVaultGold', 'Não há ouro suficiente no cofre.'],
+    ['purseFull', 'O ouro passaria da capacidade da bolsa.'],
+    ['notAttribute', 'Poção de Cura não é carta de atributo.'],
+    ['deckSlotsFull', 'Não há slot de deck livre.'],
+    ['deckNotFound', 'Esse deck guardado não existe.'],
+    ['inventoryFull', 'Não há espaço no inventário.'],
+    [
+      'tcgFolderFull',
+      'Não há espaço na pasta de TCG para as cartas que saíram da build.',
+    ],
+    ['buildBelowMinimum', 'A build ficou abaixo do mínimo de cartas.'],
+    ['notOwned', 'Você não tem cópias suficientes de Poção de Cura.'],
+    ['copyLimitExceeded', 'Poção de Cura passou do limite de cópias no deck.'],
+  ])(
+    'REQ-52: 409 %s, sem cardId, usa a carta da operação recusada: "%s"',
+    async (reason, text) => {
+      rejectWith({ reason, operationIndex: 0 })
+      richSession()
+      await openSection()
+      await addCard('Guardar no cofre', 'Poção de Cura', '1')
+      fireEvent.click(inSection('Confirmar (1 ponto de ação)'))
+      await waitFor(() =>
+        expect(section()).toHaveTextContent(
+          `Esta ação não é permitida agora. ${text}`,
+        ),
+      )
+    },
+  )
+
+  it('REQ-52: 409 com cardId usa a carta de details.cardId', async () => {
+    rejectWith({ reason: 'notStorable', cardId: strength, operationIndex: 0 })
+    richSession()
+    await openSection()
+    await addCard('Guardar no cofre', 'Poção de Cura', '1')
+    fireEvent.click(inSection('Confirmar (1 ponto de ação)'))
+    await waitFor(() =>
+      expect(section()).toHaveTextContent('Força não pode ir para o cofre.'),
+    )
+  })
+
+  it('REQ-52: 409 com outro motivo (noActionPoints) mostra só a message, sem marca', async () => {
+    rejectWith({ reason: 'noActionPoints' })
+    await openSection()
+    addGold('Guardar ouro', '1')
+    fireEvent.click(inSection('Confirmar (1 ponto de ação)'))
+    await waitFor(() =>
+      expect(section()).toHaveTextContent('Esta ação não é permitida agora.'),
+    )
+    expect(opsList()).not.toHaveTextContent('Recusada')
+    expect(opTexts()).toEqual(['1. Guardar 1 de ouro'])
+  })
+
+  it('REQ-52: editar a lista depois da recusa tira a marca e o texto', async () => {
+    rejectWith({ reason: 'purseFull', operationIndex: 0 })
+    await openSection()
+    addGold('Retirar ouro', '1')
+    addGold('Retirar ouro', '2')
+    fireEvent.click(inSection('Confirmar (1 ponto de ação)'))
+    await waitFor(() => expect(opsList()).toHaveTextContent('Recusada'))
+    fireEvent.click(
+      within(within(opsList()).getAllByRole('listitem')[1]).getByRole(
+        'button',
+        { name: 'Remover' },
+      ),
+    )
+    expect(opsList()).not.toHaveTextContent('Recusada')
+    expect(section()).not.toHaveTextContent('Esta ação não é permitida agora.')
+  })
+
+  it('REQ-52: outro erro §1.4 e falha de rede mantêm a seção com a lista', async () => {
+    server.use(
+      http.post('*/parties/:partyId/actions', () =>
+        HttpResponse.json(partySessionNotActiveFixture, { status: 409 }),
+      ),
+    )
+    await openSection()
+    addGold('Guardar ouro', '1')
+    fireEvent.click(inSection('Confirmar (1 ponto de ação)'))
+    await waitFor(() =>
+      expect(section()).toHaveTextContent(
+        'Não há sessão em andamento neste grupo.',
+      ),
+    )
+    server.use(
+      http.post('*/parties/:partyId/actions', () => HttpResponse.error()),
+    )
+    fireEvent.click(inSection('Confirmar (1 ponto de ação)'))
+    await waitFor(() =>
+      expect(section()).toHaveTextContent(
+        'Servidor indisponível. Tente novamente.',
+      ),
+    )
+    expect(opTexts()).toEqual(['1. Guardar 1 de ouro'])
   })
 })

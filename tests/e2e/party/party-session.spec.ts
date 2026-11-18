@@ -410,3 +410,56 @@ test.describe('REQ-50/REQ-51: cofre e Vasculhar (MSW)', () => {
     ).toHaveText(['1× Vara de Pesca', '1× Peixe Prateado'])
   })
 })
+
+test.describe('REQ-52: Usar cofre (MSW)', () => {
+  test('REQ-52: confirmar um lote e, com o cofre devolvido, ver a recusa do take de 5', async ({
+    page,
+  }) => {
+    await page.goto('/grupo/party-os-teimosos')
+    const turn = page.getByRole('region', { name: 'A vez' })
+    await turn.getByRole('button', { name: 'Usar cofre' }).click()
+    const vault = page.getByRole('region', { name: 'Usar cofre' })
+    await expect(vault).toContainText('Nenhuma operação.')
+
+    const gold = vault.getByRole('group', { name: 'Ouro' })
+    await gold
+      .getByRole('spinbutton', { name: 'Quantidade de ouro' })
+      .fill('60')
+    await gold.getByRole('button', { name: 'Guardar ouro' }).click()
+    await expect(
+      vault.getByRole('list', { name: 'Operações' }).getByRole('listitem'),
+    ).toContainText(['1. Guardar 60 de ouro'])
+    await vault
+      .getByRole('button', { name: 'Confirmar (1 ponto de ação)' })
+      .click()
+    await expect(page.getByRole('status')).toHaveText(
+      'Cofre: 1 operação feita.',
+    )
+    await expect(vault).toHaveCount(0)
+    await expect(turn).toContainText('2 pontos de ação')
+
+    await turn.getByRole('button', { name: 'Usar cofre' }).click()
+    await gold
+      .getByRole('spinbutton', { name: 'Quantidade de ouro' })
+      .fill('10')
+    await gold.getByRole('button', { name: 'Retirar ouro' }).click()
+    const take = vault.getByRole('group', { name: 'Retirar do cofre' })
+    await take
+      .getByRole('combobox', { name: 'Carta' })
+      .selectOption({ label: 'Poção de Cura' })
+    await take.getByRole('spinbutton', { name: 'Quantidade' }).fill('5')
+    await take.getByRole('button', { name: 'Acrescentar' }).click()
+    await vault
+      .getByRole('button', { name: 'Confirmar (1 ponto de ação)' })
+      .click()
+    await expect(vault).toContainText(
+      'Esta ação não é permitida agora. Não há essa quantidade de Poção de Cura no cofre.',
+    )
+    const items = vault
+      .getByRole('list', { name: 'Operações' })
+      .getByRole('listitem')
+    await expect(items.nth(0)).not.toContainText('Recusada')
+    await expect(items.nth(1)).toContainText('2. Retirar 5× Poção de Cura')
+    await expect(items.nth(1)).toContainText('Recusada')
+  })
+})
