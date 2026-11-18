@@ -62,7 +62,7 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | FEAT-08 | A vez: pontos de ação, ações de zona disponíveis, encerrar a vez, rodadas | 11.1, 11.2, 12 | validado | validado |
 | FEAT-09 | Deck de atributos: mão, Recuperar, Ajustar deck, build e trava | 4, 8.2, 12.5 | validado | validado |
 | FEAT-10 | Inventário, equipar e bolsa: inventário e empilhamento, Preparar (trocar equipamentos), modificadores com equipamentos, bolsa de ouro; doação do laboratório para montar o estado | 5, 6.1, 6.2, 9.1, 12.2 | validado | validado |
-| FEAT-32 | Cofre e Vasculhar: Usar cofre (slots, slots de decks, ouro, Descartar), limbo, deck de recompensas na Carta de Dimensão, Vasculhar | 3.4, 6.4, 6.5, 12.6 | a fazer | a fazer |
+| FEAT-32 | Cofre e Vasculhar: Usar cofre (slots, slots de decks, ouro, Descartar), limbo, deck de recompensas na Carta de Dimensão, Vasculhar | 3.4, 6.4, 6.5, 12.6 | em andamento | a fazer |
 | FEAT-11 | Efeitos e status: exibição de efeitos, buffs e debuffs; catálogo de variações de efeitos validado pelo autor (BE/design) | 13, III.3 | a fazer | a fazer |
 | FEAT-12 | Eventos aleatórios: fases, pagamento por partes, desistência, reposição, fuga | 14, 15 | a fazer | a fazer |
 | FEAT-13 | Combate 1 jogador × 1 ou mais inimigos: inimigos e IA deles, habilidades, elementos, cálculo de dano | 16, 17, 18, 19.1 a 19.4, 19.6 | a fazer | a fazer |
