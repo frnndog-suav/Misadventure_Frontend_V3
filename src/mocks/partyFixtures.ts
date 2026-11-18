@@ -394,6 +394,16 @@ export const partyFishingRodGrantedFixture: Party = {
   savedAt: '2026-11-18T21:00:00.000Z',
 }
 
+/**
+ * Grupo de exemplo com `F` no inventário, em sessão: o `id` próprio é a chave
+ * do cenário no handler (D-59 item 11), para o Vasculhar aparecer no dev.
+ */
+export const partyFishingRodInSessionFixture: Party = {
+  ...partyFishingRodGrantedFixture,
+  id: 'party-com-vara',
+  status: 'inSession',
+}
+
 /** 200 de `scavenge` de `S` com `F` no inventário: `S` achado, 2 pontos. */
 export const partyScavengedFixture: Party = {
   ...partyInSessionFixture,

@@ -360,3 +360,53 @@ test.describe('REQ-45: Preparar (MSW)', () => {
     await expect(lia.getByText('Arma: vazio')).toBeVisible()
   })
 })
+
+test.describe('REQ-50/REQ-51: cofre e Vasculhar (MSW)', () => {
+  test('REQ-50: cofre vazio na seção do membro; REQ-51: sem scavenge não há "Vasculhar"', async ({
+    page,
+  }) => {
+    await page.goto('/grupo/party-os-teimosos')
+    const lia = page.getByRole('region', { name: 'Lia' })
+    await expect(
+      lia.getByRole('heading', { name: 'Cofre (0 de 30 slots)' }),
+    ).toBeVisible()
+    await expect(lia.getByText('Cofre vazio.')).toBeVisible()
+    await expect(
+      lia.getByText('Ouro no cofre 0 (capacidade 2000)'),
+    ).toBeVisible()
+    await expect(
+      lia.getByRole('heading', {
+        name: 'Decks guardados (até 10 slots de deck, contando a build em uso)',
+      }),
+    ).toBeVisible()
+    await expect(lia.getByText('Nenhum deck guardado.')).toBeVisible()
+    await expect(
+      page.getByRole('button', { name: 'Ajustar deck' }),
+    ).toBeVisible()
+    await expect(page.getByRole('group', { name: 'Vasculhar' })).toHaveCount(0)
+  })
+
+  test('REQ-51: vasculhar o Peixe Prateado com a vara de pesca', async ({
+    page,
+  }) => {
+    await page.goto('/grupo/party-com-vara')
+    const turn = page.getByRole('region', { name: 'A vez' })
+    const group = turn.getByRole('group', { name: 'Vasculhar' })
+    await expect(group.getByRole('button')).toHaveText([
+      'Vasculhar Peixe Prateado',
+    ])
+    await group
+      .getByRole('button', { name: 'Vasculhar Peixe Prateado' })
+      .click()
+    await expect(page.getByRole('status')).toHaveText(
+      'Você achou Peixe Prateado.',
+    )
+    await expect(turn).toContainText('2 pontos de ação')
+    await expect(
+      page
+        .getByRole('region', { name: 'Lia' })
+        .getByRole('list', { name: /^Inventário/ })
+        .getByRole('listitem'),
+    ).toHaveText(['1× Vara de Pesca', '1× Peixe Prateado'])
+  })
+})

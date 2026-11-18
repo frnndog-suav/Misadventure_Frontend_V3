@@ -43,6 +43,10 @@ function cardIdsOf(party: Party): string[] {
       ...player.tcgFolder.map(({ cardId }) => cardId),
       ...player.inventory.map(({ cardId }) => cardId),
       ...Object.values(player.equipment).filter((id) => id !== null),
+      ...player.vault.slots.map(({ cardId }) => cardId),
+      ...player.vault.decks.flat().map(({ cardId }) => cardId),
+      ...player.scavengeTargets,
+      ...(player.lastScavenge === null ? [] : [player.lastScavenge.cardId]),
     ]),
   ]
 }
@@ -80,6 +84,8 @@ function MemberState({
   const folderId = `folder-${member.id}`
   const equipmentId = `equipment-${member.id}`
   const inventoryId = `inventory-${member.id}`
+  const vaultId = `vault-${member.id}`
+  const decksId = `vault-decks-${member.id}`
   return (
     <section aria-labelledby={titleId}>
       <h2 id={titleId}>{member.characterName}</h2>
@@ -163,6 +169,43 @@ function MemberState({
           ))}
         </ul>
       )}
+      <h3 id={vaultId}>
+        Cofre ({player.vault.slots.length} de {player.vaultCapacity} slots)
+      </h3>
+      {player.vault.slots.length === 0 ? (
+        <p>Cofre vazio.</p>
+      ) : (
+        <ul aria-labelledby={vaultId}>
+          {player.vault.slots.map(({ cardId, quantity }, i) => (
+            <li key={i}>
+              {quantity}× {nameOf(cards, cardId)}
+            </li>
+          ))}
+        </ul>
+      )}
+      <p>{`Ouro no cofre ${player.vault.gold} (capacidade ${player.vaultGoldCapacity})`}</p>
+      <h3 id={decksId}>
+        Decks guardados (até {player.vaultDeckSlots} slots de deck, contando a
+        build em uso)
+      </h3>
+      {player.vault.decks.length === 0 ? (
+        <p>Nenhum deck guardado.</p>
+      ) : (
+        <ul aria-labelledby={decksId}>
+          {player.vault.decks.map((deck, i) => (
+            <li key={i}>
+              Deck {i + 1}
+              <ul aria-label={`Deck ${i + 1}`}>
+                {deck.map(({ cardId, copies }) => (
+                  <li key={cardId}>
+                    {copies}× {nameOf(cards, cardId)}
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
+      )}
       <h3 id={buildId}>Build ({player.buildSize} cartas)</h3>
       <ul aria-labelledby={buildId}>
         {player.build.map(({ cardId, copies }) => (
@@ -225,7 +268,8 @@ function reasonText(error: ActionNotAllowedError, name: string): string {
       return 'A arma em uso não deixa usar escudo.'
     case 'inventoryFull':
       return 'Não há espaço no inventário para o que sairia do equipamento.'
-    // FEAT-32 (zoneActionUnavailable em diante): textos nas T-52 e T-53.
+    // FEAT-32 (zoneActionUnavailable em diante): textos do Usar cofre na T-53;
+    // o Vasculhar só tem texto para inventoryFull, tratado à parte (REQ-51).
     case 'notConnected':
     case 'noActionPoints':
     case 'notInInventory':
@@ -347,19 +391,23 @@ function AdjustDeck({
   )
 }
 
-/** Região "A vez" (REQ-36) com "Recuperar" (REQ-41), "Ajustar deck" (REQ-42) e "Encerrar a vez" (REQ-37, REQ-38). */
+/** Região "A vez" (REQ-36) com "Recuperar" (REQ-41), "Ajustar deck" (REQ-42), "Vasculhar" (REQ-51) e "Encerrar a vez" (REQ-37, REQ-38). */
 function TurnState({
   party,
+  cards,
   onEndTurn,
   onRecover,
   onAdjust,
+  onScavenge,
   adjusting,
   pending,
 }: {
   party: Party
+  cards: Cards
   onEndTurn: () => void
   onRecover: (option: RecoverAction['option']) => void
   onAdjust: () => void
+  onScavenge: (cardId: string) => void
   adjusting: boolean
   pending: boolean
 }) {
@@ -401,6 +449,20 @@ function TurnState({
           Ajustar deck
         </button>
       )}
+      {host?.player.availableActions.includes('scavenge') && (
+        <div role="group" aria-label="Vasculhar">
+          {host.player.scavengeTargets.map((cardId) => (
+            <button
+              key={cardId}
+              type="button"
+              onClick={() => onScavenge(cardId)}
+              disabled={pending}
+            >
+              Vasculhar {nameOf(cards, cardId)}
+            </button>
+          ))}
+        </div>
+      )}
       {host?.player.availableActions.includes('endTurn') && (
         <button type="button" onClick={onEndTurn} disabled={pending}>
           Encerrar a vez
@@ -418,6 +480,7 @@ function PreparedMatch({
   onMove,
   onEndTurn,
   onRecover,
+  onScavenge,
   onSaveBuild,
   onEquip,
   onUnequip,
@@ -432,6 +495,7 @@ function PreparedMatch({
   onMove: (zoneId: string) => void
   onEndTurn: () => void
   onRecover: (option: RecoverAction['option']) => void
+  onScavenge: (cardId: string) => void
   onSaveBuild: (build: CardCopies[]) => void
   onEquip: PrepareControls['onEquip']
   onUnequip: PrepareControls['onUnequip']
@@ -448,9 +512,11 @@ function PreparedMatch({
       <p>Cidade inicial: {nameOf(cards, party.dimension.startingCityZoneId)}</p>
       <TurnState
         party={party}
+        cards={cards}
         onEndTurn={onEndTurn}
         onRecover={onRecover}
         onAdjust={() => setAdjusting(true)}
+        onScavenge={onScavenge}
         adjusting={adjusting}
         pending={moving}
       />
@@ -551,12 +617,27 @@ export function PartySession() {
   let status = ''
   if (end.isError) status = errorText(end.error)
   else if (action.isError && !adjustFailed) {
-    status =
-      action.variables.type === 'prepare'
-        ? refusalText(action.error, preparedName)
-        : errorText(action.error)
-  } else if (action.isSuccess && party !== undefined && host !== undefined) {
     if (action.variables.type === 'prepare') {
+      status = refusalText(action.error, preparedName)
+    } else if (
+      action.variables.type === 'scavenge' &&
+      action.error instanceof ActionNotAllowedError &&
+      action.error.reason === 'inventoryFull'
+    ) {
+      // Texto próprio do Vasculhar (REQ-51); o do `reasonText` é o do Preparar.
+      status = `${action.error.message} Não há espaço no inventário.`
+    } else status = errorText(action.error)
+  } else if (action.isSuccess && party !== undefined && host !== undefined) {
+    if (action.variables.type === 'scavenge') {
+      // O resultado vem de `lastScavenge`, nunca do inventário (D-59 item 2).
+      const last = host.player.lastScavenge
+      if (last !== null) {
+        const name = nameOf(cards.cards, last.cardId)
+        status = last.found
+          ? `Você achou ${name}.`
+          : `${name} não estava no deck de recompensas.`
+      }
+    } else if (action.variables.type === 'prepare') {
       status =
         action.variables.operation === 'equip'
           ? `Equipou ${preparedName}.`
@@ -608,6 +689,7 @@ export function PartySession() {
             onMove={(zoneId) => action.mutate({ type: 'move', zoneId })}
             onEndTurn={() => action.mutate({ type: 'endTurn' })}
             onRecover={(option) => action.mutate({ type: 'recover', option })}
+            onScavenge={(cardId) => action.mutate({ type: 'scavenge', cardId })}
             onSaveBuild={(build) =>
               action.mutate(
                 { type: 'adjustDeck', build },

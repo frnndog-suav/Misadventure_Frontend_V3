@@ -29,10 +29,12 @@ import {
   partyBladeEquippedFixture,
   partyBladeUnequippedFixture,
   partyCreatedFixture,
+  partyFishingRodInSessionFixture,
   partyGearInSessionFixture,
   partyInSessionFixture,
   partyMovedToStoneBendFixture,
   partyNextRoundFixture,
+  partyScavengedFixture,
   partySessionNotActiveFixture,
 } from '../../mocks/partyFixtures'
 
@@ -1801,5 +1803,282 @@ describe('REQ-45: Preparar (equipar e guardar)', () => {
       ),
     )
     expect(screen.getByText('Arma: vazio')).toBeInTheDocument()
+  })
+})
+
+describe('REQ-50: cofre na tela do grupo', () => {
+  const [base] = partyInSessionFixture.members
+  const lia = () => screen.findByRole('region', { name: 'Lia' })
+  const follows = (a: Node, b: Node) =>
+    a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING
+  const texts = (list: HTMLElement) =>
+    within(list)
+      .getAllByRole('listitem')
+      .map((li) => li.textContent)
+
+  function sessionWithVault(
+    vault: Party['members'][number]['player']['vault'],
+  ): void {
+    server.use(
+      http.post('*/parties/:partyId/session', () =>
+        HttpResponse.json({
+          ...partyInSessionFixture,
+          members: [{ ...base, player: { ...base.player, vault } }],
+        }),
+      ),
+    )
+  }
+
+  it('REQ-50: cofre vazio mostra "Cofre vazio.", o ouro com a capacidade e "Nenhum deck guardado.", depois do inventário e antes da build', async () => {
+    renderParty()
+    const section = await lia()
+    const vaultTitle = await within(section).findByRole('heading', {
+      name: 'Cofre (0 de 30 slots)',
+    })
+    const gold = within(section).getByText('Ouro no cofre 0 (capacidade 2000)')
+    const decksTitle = within(section).getByRole('heading', {
+      name: 'Decks guardados (até 10 slots de deck, contando a build em uso)',
+    })
+    expect(within(section).getByText('Cofre vazio.')).toBeInTheDocument()
+    expect(
+      within(section).getByText('Nenhum deck guardado.'),
+    ).toBeInTheDocument()
+    const inventory = within(section).getByRole('heading', {
+      name: 'Inventário (0 de 10 slots)',
+    })
+    const build = within(section).getByRole('heading', { name: /^Build/ })
+    expect(follows(inventory, vaultTitle)).toBeTruthy()
+    expect(follows(vaultTitle, gold)).toBeTruthy()
+    expect(follows(gold, decksTitle)).toBeTruthy()
+    expect(follows(decksTitle, build)).toBeTruthy()
+  })
+
+  it('REQ-50: slots e decks na ordem recebida, com "{quantity}× {nome}", "Deck {n}" e "{copies}× {nome}"', async () => {
+    sessionWithVault({
+      slots: [
+        { cardId: 'fixture.silver-fish', quantity: 2 },
+        { cardId: 'fixture.healing-potion', quantity: 1 },
+      ],
+      decks: [
+        [
+          { cardId: 'fixture.strength-basic', copies: 30 },
+          { cardId: 'fixture.endurance-basic', copies: 30 },
+        ],
+        [{ cardId: 'fixture.endurance-basic', copies: 60 }],
+      ],
+      gold: 60,
+    })
+    renderParty()
+    const section = await lia()
+    const slots = await within(section).findByRole('list', {
+      name: 'Cofre (2 de 30 slots)',
+    })
+    await waitFor(() =>
+      expect(texts(slots)).toEqual(['2× Peixe Prateado', '1× Poção de Cura']),
+    )
+    expect(
+      within(section).getByText('Ouro no cofre 60 (capacidade 2000)'),
+    ).toBeInTheDocument()
+    const decks = within(section).getByRole('list', {
+      name: 'Decks guardados (até 10 slots de deck, contando a build em uso)',
+    })
+    expect(texts(within(decks).getByRole('list', { name: 'Deck 1' }))).toEqual([
+      '30× Força',
+      '30× Resistência',
+    ])
+    expect(texts(within(decks).getByRole('list', { name: 'Deck 2' }))).toEqual([
+      '60× Resistência',
+    ])
+    expect(within(section).queryByText('Cofre vazio.')).not.toBeInTheDocument()
+    expect(
+      within(section).queryByText('Nenhum deck guardado.'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('REQ-50: o nome mostra "…" até a carta chegar', async () => {
+    sessionWithVault({
+      slots: [{ cardId: 'fixture.silver-fish', quantity: 1 }],
+      decks: [],
+      gold: 0,
+    })
+    server.use(
+      http.get('*/catalog/cards/fixture.silver-fish', async () => {
+        await new Promise(() => {})
+      }),
+    )
+    renderParty()
+    const slots = await within(await lia()).findByRole('list', {
+      name: 'Cofre (1 de 30 slots)',
+    })
+    expect(within(slots).getByRole('listitem')).toHaveTextContent('1× …')
+  })
+})
+
+describe('REQ-51: Vasculhar', () => {
+  const fish = 'fixture.silver-fish'
+  const fishName = 'Peixe Prateado'
+  const [rod] = partyFishingRodInSessionFixture.members
+  const scavengeButton = (name = fishName) =>
+    screen.getByRole('button', { name: `Vasculhar ${name}` })
+
+  function sessionWithTargets(scavengeTargets: string[]): void {
+    server.use(
+      http.post('*/parties/:partyId/session', () =>
+        HttpResponse.json({
+          ...partyFishingRodInSessionFixture,
+          members: [{ ...rod, player: { ...rod.player, scavengeTargets } }],
+        }),
+      ),
+    )
+  }
+
+  async function openRod(): Promise<void> {
+    renderParty(partyFishingRodInSessionFixture.id)
+    await screen.findByRole('button', { name: `Vasculhar ${fishName}` })
+  }
+
+  it('REQ-51: com scavenge, o grupo "Vasculhar" fica em "A vez", depois de "Ajustar deck", com um botão por carta de scavengeTargets, na ordem recebida', async () => {
+    sessionWithTargets([fish, 'fixture.healing-potion'])
+    renderParty(partyFishingRodInSessionFixture.id)
+    const group = await screen.findByRole('group', { name: 'Vasculhar' })
+    await waitFor(() =>
+      expect(
+        within(group)
+          .getAllByRole('button')
+          .map((b) => b.textContent),
+      ).toEqual([`Vasculhar ${fishName}`, 'Vasculhar Poção de Cura']),
+    )
+    const adjust = screen.getByRole('button', { name: 'Ajustar deck' })
+    expect(
+      adjust.compareDocumentPosition(group) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(
+      within(screen.getByRole('region', { name: 'A vez' })).getByRole('group', {
+        name: 'Vasculhar',
+      }),
+    ).toBe(group)
+  })
+
+  it('REQ-51: sem scavenge não há o grupo', async () => {
+    renderParty()
+    await screen.findByRole('button', { name: 'Ajustar deck' })
+    expect(
+      screen.queryByRole('group', { name: 'Vasculhar' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('REQ-51: envia { scavenge, cardId } sem confirmação, desabilita os botões de ação e, com 200, mostra o Party e "Você achou {nome}."', async () => {
+    let body: unknown
+    let release: () => void = () => {}
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    server.use(
+      http.post('*/parties/:partyId/actions', async ({ request }) => {
+        body = await request.json()
+        await gate
+        return HttpResponse.json(partyScavengedFixture)
+      }),
+    )
+    await openRod()
+    fireEvent.click(scavengeButton())
+    await waitFor(() => expect(scavengeButton()).toBeDisabled())
+    expect(screen.getByRole('button', { name: 'Ajustar deck' })).toBeDisabled()
+    expect(
+      screen.getByRole('button', { name: 'Encerrar a vez' }),
+    ).toBeDisabled()
+    expect(body).toEqual({ type: 'scavenge', cardId: fish })
+    release()
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(`Você achou ${fishName}.`),
+    )
+    expect(
+      within(screen.getByRole('list', { name: /^Inventário/ }))
+        .getAllByRole('listitem')
+        .map((li) => li.textContent),
+    ).toEqual(['1× Vara de Pesca', `1× ${fishName}`])
+    expect(screen.getByRole('region', { name: 'A vez' })).toHaveTextContent(
+      '2 pontos de ação',
+    )
+  })
+
+  it('REQ-51: com found false, "{nome} não estava no deck de recompensas."', async () => {
+    const [scavenged] = partyScavengedFixture.members
+    server.use(
+      http.post('*/parties/:partyId/actions', () =>
+        HttpResponse.json({
+          ...partyScavengedFixture,
+          members: [
+            {
+              ...scavenged,
+              player: {
+                ...scavenged.player,
+                inventory: [{ cardId: 'fixture.fishing-rod', quantity: 1 }],
+                lastScavenge: { cardId: fish, found: false },
+              },
+            },
+          ],
+        }),
+      ),
+    )
+    await openRod()
+    fireEvent.click(scavengeButton())
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(
+        `${fishName} não estava no deck de recompensas.`,
+      ),
+    )
+  })
+
+  it('REQ-51: 409 inventoryFull mostra a message e "Não há espaço no inventário."; nada muda', async () => {
+    server.use(
+      http.post('*/parties/:partyId/actions', () =>
+        HttpResponse.json(actionPrepareNotAllowedFixture('inventoryFull'), {
+          status: 409,
+        }),
+      ),
+    )
+    await openRod()
+    fireEvent.click(scavengeButton())
+    await waitFor(() =>
+      expect(status().textContent).toBe(
+        'Esta ação não é permitida agora. Não há espaço no inventário.',
+      ),
+    )
+    expect(scavengeButton()).toBeEnabled()
+    expect(screen.getByRole('region', { name: 'A vez' })).toHaveTextContent(
+      '3 pontos de ação',
+    )
+  })
+
+  it('REQ-51: 409 com outro motivo (notScavengeable, pelo MSW) mostra só a message', async () => {
+    sessionWithTargets(['fixture.healing-potion'])
+    renderParty(partyFishingRodInSessionFixture.id)
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Vasculhar Poção de Cura' }),
+    )
+    await waitFor(() =>
+      expect(status().textContent).toBe('Esta ação não é permitida agora.'),
+    )
+  })
+
+  it('REQ-51: outro erro §1.4 mostra a message e falha de rede o texto genérico (REQ-35)', async () => {
+    server.use(
+      http.post('*/parties/:partyId/actions', () =>
+        HttpResponse.json(internalErrorFixture, { status: 500 }),
+      ),
+    )
+    await openRod()
+    fireEvent.click(scavengeButton())
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(internalErrorFixture.error.message),
+    )
+    server.use(
+      http.post('*/parties/:partyId/actions', () => HttpResponse.error()),
+    )
+    fireEvent.click(scavengeButton())
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(
+        'Servidor indisponível. Tente novamente.',
+      ),
+    )
   })
 })

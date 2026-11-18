@@ -96,4 +96,5 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 064 | RETORNO | [FEAT-10 validada contra o backend real](064-RETORNO-feat-10-validada.md) | concluída |
 | 065 | T-49 | [Cliente da FEAT-32](065-T-49-cliente-feat-32.md) | concluída |
 | 066 | T-50 | [Laboratório e catálogo da FEAT-32](066-T-50-laboratorio-catalogo-feat-32.md) | concluída |
-| 067 | T-51 | [Editor: ferramentas e decks de recompensas](067-T-51-editor-ferramentas-decks.md) | aguardando revisão |
+| 067 | T-51 | [Editor: ferramentas e decks de recompensas](067-T-51-editor-ferramentas-decks.md) | concluída |
+| 068 | T-52 | [Cofre na tela do grupo e Vasculhar](068-T-52-cofre-e-vasculhar.md) | aguardando revisão |

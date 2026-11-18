@@ -68,6 +68,7 @@ import {
   actionNotScavengeableFixture,
   partyFishingRodGrantedFixture,
   partyScavengedFixture,
+  partyFishingRodInSessionFixture,
   partyVaultUsedFixture,
   actionPrepareNotAllowedFixture,
   labGrantNotGrantableFixture,
@@ -374,7 +375,8 @@ function knownParty(
 ): Response | Promise<Response> {
   return partyId === partyCreatedFixture.id ||
     partyId === partyNoPointsFixture.id ||
-    partyId === partyGearInSessionFixture.id
+    partyId === partyGearInSessionFixture.id ||
+    partyId === partyFishingRodInSessionFixture.id
     ? ok()
     : HttpResponse.json(partyNotFoundFixture, { status: 404 })
 }
@@ -713,20 +715,22 @@ export const handlers: RequestHandler[] = [
   http.get('*/parties/:partyId', ({ params }) =>
     knownParty(params.partyId, () =>
       HttpResponse.json(
-        [partyNoPointsFixture, partyGearInSessionFixture].find(
-          (party) => party.id === params.partyId,
-        ) ?? partyCreatedFixture,
+        [
+          partyNoPointsFixture,
+          partyGearInSessionFixture,
+          partyFishingRodInSessionFixture,
+        ].find((party) => party.id === params.partyId) ?? partyCreatedFixture,
       ),
     ),
   ),
   http.post('*/parties/:partyId/session', ({ params }) =>
     knownParty(params.partyId, () =>
       HttpResponse.json(
-        params.partyId === partyNoPointsFixture.id
-          ? partyNoPointsFixture
-          : params.partyId === partyGearInSessionFixture.id
-            ? partyGearInSessionFixture
-            : partyInSessionFixture,
+        [
+          partyNoPointsFixture,
+          partyGearInSessionFixture,
+          partyFishingRodInSessionFixture,
+        ].find((party) => party.id === params.partyId) ?? partyInSessionFixture,
       ),
     ),
   ),
