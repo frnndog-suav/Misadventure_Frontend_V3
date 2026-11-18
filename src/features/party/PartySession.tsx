@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
+  equipmentSlotSchema,
   modifierSchema,
   useCatalogCards,
   useClasses,
@@ -20,6 +21,7 @@ import {
   type RecoverAction,
 } from '../../api/parties'
 import { FullCard } from '../../ui/cards/FullCard'
+import { categoryCatalog } from '../../ui/categories'
 import { formatSavedAt } from '../../ui/formatSavedAt'
 import { Term } from '../../ui/Term'
 import { PartyMap } from './PartyMap'
@@ -38,6 +40,8 @@ function cardIdsOf(party: Party): string[] {
       ...player.hand,
       ...player.build.map(({ cardId }) => cardId),
       ...player.tcgFolder.map(({ cardId }) => cardId),
+      ...player.inventory.map(({ cardId }) => cardId),
+      ...Object.values(player.equipment).filter((id) => id !== null),
     ]),
   ]
 }
@@ -64,6 +68,8 @@ function MemberState({
   const handId = `hand-${member.id}`
   const buildId = `build-${member.id}`
   const folderId = `folder-${member.id}`
+  const equipmentId = `equipment-${member.id}`
+  const inventoryId = `inventory-${member.id}`
   return (
     <section aria-labelledby={titleId}>
       <h2 id={titleId}>{member.characterName}</h2>
@@ -80,8 +86,17 @@ function MemberState({
       <p>Vida base {player.baseHealth}</p>
       <p>Pico {player.peak}</p>
       <p>Vigor {player.vigor}</p>
-      <p>Ouro {player.gold}</p>
+      <p>
+        Ouro {player.gold} (bolsa para {player.purseCapacity})
+      </p>
       <ul aria-label="Modificadores">
+        {modifierSchema.options.map((m) => (
+          <li key={m}>
+            {player.effectiveModifiers[m]} <Term id={m} />
+          </li>
+        ))}
+      </ul>
+      <ul aria-label="Modificadores da classe">
         {modifierSchema.options.map((m) => (
           <li key={m}>
             {player.modifiers[m]} <Term id={m} />
@@ -92,6 +107,33 @@ function MemberState({
       <p>Ponto de respawn: {nameOf(cards, player.respawnZoneId)}</p>
       <p>Deck de atributos: {player.attributeDeckCount} cartas</p>
       <p>Descarte de atributos: {player.attributeDiscardPileCount} cartas</p>
+      <h3 id={equipmentId}>Equipamentos</h3>
+      <ul aria-labelledby={equipmentId}>
+        {equipmentSlotSchema.options.map((slot) => {
+          const cardId = player.equipment[slot]
+          return (
+            <li key={slot}>
+              {categoryCatalog[slot].label}:{' '}
+              {cardId === null ? 'vazio' : nameOf(cards, cardId)}
+            </li>
+          )
+        })}
+      </ul>
+      <h3 id={inventoryId}>
+        Inventário ({player.inventory.length} de {player.inventoryCapacity}{' '}
+        slots)
+      </h3>
+      {player.inventory.length === 0 ? (
+        <p>Inventário vazio.</p>
+      ) : (
+        <ul aria-labelledby={inventoryId}>
+          {player.inventory.map(({ cardId, quantity }, i) => (
+            <li key={i}>
+              {quantity}× {nameOf(cards, cardId)}
+            </li>
+          ))}
+        </ul>
+      )}
       <h3 id={buildId}>Build ({player.buildSize} cartas)</h3>
       <ul aria-labelledby={buildId}>
         {player.build.map(({ cardId, copies }) => (

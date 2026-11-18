@@ -53,6 +53,74 @@ test.describe('REQ-16: grupo em sessão (MSW)', () => {
     await expect(page.getByRole('status')).toHaveText('')
   })
 
+  test('REQ-44: ouro com a bolsa, modificadores, equipamentos e inventário', async ({
+    page,
+  }) => {
+    await page.goto('/grupo/party-com-equipamento')
+    const lia = page.getByRole('region', { name: 'Lia' })
+    await expect(lia.getByText('Ouro 10 (bolsa para 300)')).toBeVisible()
+    await expect(
+      lia
+        .getByRole('list', { name: 'Modificadores', exact: true })
+        .getByRole('listitem'),
+    ).toHaveText([
+      '6 Ataque',
+      '5 Defesa',
+      '49 Precisão',
+      '16 Esquiva',
+      '8 Celeridade',
+      '0 Perfuração',
+      '0 Reflexão',
+    ])
+    await expect(
+      lia
+        .getByRole('list', { name: 'Modificadores da classe' })
+        .getByRole('listitem'),
+    ).toHaveText([
+      '6 Ataque',
+      '5 Defesa',
+      '45 Precisão',
+      '15 Esquiva',
+      '8 Celeridade',
+      '0 Perfuração',
+      '0 Reflexão',
+    ])
+    await expect(
+      lia.getByRole('list', { name: 'Equipamentos' }).getByRole('listitem'),
+    ).toHaveText([
+      'Cabeça: vazio',
+      'Tronco: vazio',
+      'Inferior: vazio',
+      'Calçado: vazio',
+      'Capa: vazio',
+      'Arma: vazio',
+      'Escudo: vazio',
+      'Acessório: vazio',
+    ])
+    await expect(
+      lia
+        .getByRole('list', { name: 'Inventário (5 de 10 slots)' })
+        .getByRole('listitem'),
+    ).toHaveText([
+      '1× Lâmina do Crepúsculo',
+      '1× Escudo de Carvalho',
+      '1× Elmo de Ferro',
+      '1× Varinha Arcana',
+      '2× Poção de Cura',
+    ])
+  })
+
+  test('REQ-44: inventário vazio mostra "Inventário vazio."', async ({
+    page,
+  }) => {
+    await page.goto('/grupo/party-os-teimosos')
+    const lia = page.getByRole('region', { name: 'Lia' })
+    await expect(
+      lia.getByRole('heading', { name: 'Inventário (0 de 10 slots)' }),
+    ).toBeVisible()
+    await expect(lia.getByText('Inventário vazio.')).toBeVisible()
+  })
+
   test('REQ-16: grupo inexistente mostra a message e "Voltar ao início"', async ({
     page,
   }) => {

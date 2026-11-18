@@ -172,6 +172,23 @@ describe('REQ-06: configuração ajustável do jogo', () => {
     )
   })
 
+  it('REQ-43: os 2 campos da FEAT-10 vêm depois dos do REQ-39, nesta ordem, com padrão e limites', async () => {
+    renderLab()
+    await loaded()
+    const region = screen.getByRole('region', { name: 'Configuração' })
+    const names = within(region)
+      .getAllByRole('spinbutton')
+      .map((input) => (input as HTMLInputElement).labels?.[0]?.textContent)
+    expect(names.slice(-3)).toEqual([
+      'Recuperar: comprar até (cartas na mão)',
+      'Capacidade do inventário',
+      'Capacidade da bolsa',
+    ])
+    expect(field('Capacidade da bolsa')).toHaveAccessibleDescription(
+      'Padrão: 300 · Mín. 0 · Máx. 1000000',
+    )
+  })
+
   it('REQ-06: "Salvar" fica desabilitado sem campo alterado e com campo vazio', async () => {
     renderLab()
     await loaded()

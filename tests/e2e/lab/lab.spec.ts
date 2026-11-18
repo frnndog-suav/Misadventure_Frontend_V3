@@ -107,3 +107,15 @@ test('REQ-28: o filtro "Dimensão" mostra a Carta de Dimensão (MSW)', async ({
   await expect(card.getByText('Ordem de lançamento 1')).toBeVisible()
   await expect(card.getByText('Zona de chegada: Porto Cinzento')).toBeVisible()
 })
+
+test('REQ-43: "Capacidade do inventário" e "Capacidade da bolsa" com padrão e limites (MSW)', async ({
+  page,
+}) => {
+  await page.goto('/lab')
+  await expect(
+    page.getByRole('spinbutton', { name: 'Capacidade do inventário' }),
+  ).toHaveValue('10')
+  await expect(
+    page.getByRole('spinbutton', { name: 'Capacidade da bolsa' }),
+  ).toHaveAccessibleDescription('Padrão: 300 · Mín. 0 · Máx. 1000000')
+})

@@ -26,6 +26,7 @@ import { handlers } from '../../mocks/handlers'
 import {
   actionNoActionPointsFixture,
   partyCreatedFixture,
+  partyGearInSessionFixture,
   partyInSessionFixture,
   partyMovedToStoneBendFixture,
   partyNextRoundFixture,
@@ -244,6 +245,129 @@ describe('REQ-16: grupo em sessão', () => {
   })
 })
 
+describe('REQ-44: inventário, equipamentos e bolsa na tela do grupo', () => {
+  const items = (list: HTMLElement) =>
+    within(list)
+      .getAllByRole('listitem')
+      .map((li) => li.textContent)
+
+  it('REQ-44: "Ouro {gold} (bolsa para {purseCapacity})"', async () => {
+    renderParty()
+    const section = await screen.findByRole('region', { name: 'Lia' })
+    expect(
+      within(section).getByText('Ouro 10 (bolsa para 300)'),
+    ).toBeInTheDocument()
+  })
+
+  it('REQ-44: "Modificadores" mostra effectiveModifiers e, logo depois, "Modificadores da classe" mostra modifiers', async () => {
+    renderParty()
+    const section = await screen.findByRole('region', { name: 'Lia' })
+    const effective = within(section).getByRole('list', {
+      name: 'Modificadores',
+    })
+    const own = within(section).getByRole('list', {
+      name: 'Modificadores da classe',
+    })
+    expect(items(effective)).toEqual([
+      '6 Ataque',
+      '5 Defesa',
+      '49 Precisão',
+      '16 Esquiva',
+      '8 Celeridade',
+      '0 Perfuração',
+      '0 Reflexão',
+    ])
+    expect(items(own)).toEqual([
+      '6 Ataque',
+      '5 Defesa',
+      '45 Precisão',
+      '15 Esquiva',
+      '8 Celeridade',
+      '0 Perfuração',
+      '0 Reflexão',
+    ])
+    expect(effective.nextElementSibling).toBe(own)
+  })
+
+  it('REQ-44: "Equipamentos" com as 8 categorias e "Inventário (0 de 10 slots)" com "Inventário vazio." vêm antes de "Build"', async () => {
+    renderParty()
+    const section = await screen.findByRole('region', { name: 'Lia' })
+    const equipment = within(section).getByRole('list', {
+      name: 'Equipamentos',
+    })
+    expect(items(equipment)).toEqual([
+      'Cabeça: vazio',
+      'Tronco: vazio',
+      'Inferior: vazio',
+      'Calçado: vazio',
+      'Capa: vazio',
+      'Arma: vazio',
+      'Escudo: vazio',
+      'Acessório: vazio',
+    ])
+    const inventoryTitle = within(section).getByRole('heading', {
+      name: 'Inventário (0 de 10 slots)',
+    })
+    expect(within(section).getByText('Inventário vazio.')).toBeInTheDocument()
+    expect(
+      within(section).queryByRole('list', {
+        name: 'Inventário (0 de 10 slots)',
+      }),
+    ).not.toBeInTheDocument()
+    const buildTitle = within(section).getByRole('heading', {
+      name: 'Build (60 cartas)',
+    })
+    expect(
+      equipment.compareDocumentPosition(inventoryTitle) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(
+      inventoryTitle.compareDocumentPosition(buildTitle) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+  })
+
+  it('REQ-44: o inventário lista "{quantity}× {nome}" por slot na ordem recebida; slot ocupado mostra o nome da carta', async () => {
+    const [gear] = partyGearInSessionFixture.members
+    server.use(
+      http.post('*/parties/:partyId/session', () =>
+        HttpResponse.json({
+          ...partyGearInSessionFixture,
+          members: [
+            {
+              ...gear,
+              player: {
+                ...gear.player,
+                equipment: {
+                  ...gear.player.equipment,
+                  shield: 'fixture.oak-shield',
+                },
+              },
+            },
+          ],
+        } satisfies Party),
+      ),
+    )
+    renderParty(partyGearInSessionFixture.id)
+    const inventory = await screen.findByRole('list', {
+      name: 'Inventário (5 de 10 slots)',
+    })
+    await waitFor(() =>
+      expect(items(inventory)).toEqual([
+        '1× Lâmina do Crepúsculo',
+        '1× Escudo de Carvalho',
+        '1× Elmo de Ferro',
+        '1× Varinha Arcana',
+        '2× Poção de Cura',
+      ]),
+    )
+    expect(screen.queryByText('Inventário vazio.')).not.toBeInTheDocument()
+    expect(items(screen.getByRole('list', { name: 'Equipamentos' }))).toContain(
+      'Escudo: Escudo de Carvalho',
+    )
+  })
+})
+
 describe('REQ-30: partida preparada na tela do grupo', () => {
   const lia = partyInSessionFixture.members[0]
 
@@ -294,20 +418,10 @@ describe('REQ-30: partida preparada na tela do grupo', () => {
     expect(within(section).getByText('Vida base 20')).toBeInTheDocument()
     expect(within(section).getByText('Pico 10')).toBeInTheDocument()
     expect(within(section).getByText('Vigor 10')).toBeInTheDocument()
-    expect(within(section).getByText('Ouro 10')).toBeInTheDocument()
+    // REQ-44 alinha o ouro e os modificadores (testados no describe do REQ-44).
     expect(
-      within(within(section).getByRole('list', { name: 'Modificadores' }))
-        .getAllByRole('listitem')
-        .map((li) => li.textContent),
-    ).toEqual([
-      '6 Ataque',
-      '5 Defesa',
-      '45 Precisão',
-      '15 Esquiva',
-      '8 Celeridade',
-      '0 Perfuração',
-      '0 Reflexão',
-    ])
+      within(section).getByText('Ouro 10 (bolsa para 300)'),
+    ).toBeInTheDocument()
     expect(
       within(section).getByText('Ponto de respawn: Porto Cinzento'),
     ).toBeInTheDocument()
