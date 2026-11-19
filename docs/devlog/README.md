@@ -100,3 +100,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 068 | T-52 | [Cofre na tela do grupo e Vasculhar](068-T-52-cofre-e-vasculhar.md) | concluída |
 | 069 | T-53 | [Usar cofre](069-T-53-usar-cofre.md) | aguardando revisão |
 | 070 | RETORNO | [FEAT-32 validada contra o backend real](070-RETORNO-feat-32-validada.md) | concluída |
+| 071 | RETORNO | [FEAT-11 recebida, validação integrada pendente](071-RETORNO-feat-11-pendente.md) | aguardando revisão |

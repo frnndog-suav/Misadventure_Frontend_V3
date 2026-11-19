@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.51 · **Data:** 2026-11-18
+> **Versão do contrato:** 0.52 · **Data:** 2026-11-19
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -1696,7 +1696,7 @@ interface ActionNotAllowedDetails {
 
 #### Cenários de validação
 
-Contra a `fixture` com as mudanças desta FEAT, laboratório no padrão:
+Contra a `fixture` com as mudanças desta FEAT, use os valores padrão do laboratório e configure `initialGold: 0` para reproduzir os saldos absolutos do cenário do amuleto.
 - `fixture.gray-harbor` (Porto Cinzento, `urban`, cidade inicial) ganha `scavenge`: `zoneActions = ["startEvent", "scavenge", "useVault", "saveRespawnPoint"]`.
 - `fixture.pickaxe` ganha `toolKind: "pickaxe"`, `scavengeZoneTypes: ["underground", "mountainous"]`.
 - Cartas novas (item): `fixture.fishing-rod` (Vara de Pesca, `tool`, `toolKind: "fishing-rod"`, `scavengeZoneTypes: ["coastal", "fluvial", "lacustrine", "urban"]`), `fixture.silver-fish` (Peixe Prateado, `material`, `scavengeTool: "fishing-rod"`) e `fixture.iron-ore` (Minério de Ferro, `material`, `scavengeTool: "pickaxe"`). As demais cartas ganham os campos novos com `null`/`[]`.
@@ -1720,7 +1720,7 @@ Seja `G` criado com `{ "name": "Os Teimosos", "characterName": "Lia", "playerCla
 
 Só nos e2e do backend: ordem exata dos decks de recompensas (sorteio), saves antigos, `deckSlotsFull`, `vaultFull` e `vaultGoldFull` com capacidades baixas no laboratório, e a validação completa dos campos novos no editor.
 
-### FEAT-11 — Efeitos e status — `acordado`
+### FEAT-11 — Efeitos e status — `implementado (BE)`
 
 Regras: README 13 (as quatro partes; tabela gatilho × custo; "Usar um recurso"; momentos de uso; o que um efeito pode citar), 13.1 a 13.4 (variações), 13.6 (buff, debuff, marcação, remover), 5.2 (consumível usado vai para o limbo), 6.5, 7.3 (teto do Vigor; requisito de Pico desliga efeitos), 7.4 (pipeline, etapas 1, 3 e 5) e 12.2 (Preparar, parte b). O catálogo de variações foi validado pelo autor (README III.3).
 
@@ -2233,9 +2233,10 @@ Só nos e2e do backend: Pico abaixo do requisito com passivo, `removeDebuffs`/`r
 | 0.43 | 2026-11-18 | BE | Título da seção FEAT-10 corrigido para `validado` (a v0.42 registrou a validação no histórico, mas não mudou o título). Sem mudança de formato. |
 | 0.44 | 2026-11-18 | BE | FEAT-32 proposta (`proposto (BE)`): `PlayerState.vault` (`Vault`), `vaultCapacity`, `vaultDeckSlots`, `vaultGoldCapacity`, `scavengeTargets` (altera FEAT-06); `PartyAction` ganha `UseVaultAction` (lote de 1 a 50 `VaultOperation`: `store`, `take`, `storeGold`, `takeGold`, `discard`, `saveDeck`, `unpackDeck`, `swapBuild`, `editBuild`) e `ScavengeAction`; `availableActions` ganha `scavenge` e `useVault` (ordem nova); motivos novos em `ActionInvalidDetails` (`invalidLength`, `notNonNegativeInteger`) e `ActionNotAllowedDetails` (13 motivos e o campo `operationIndex`); 3 chaves novas em `GameConfigValues` (altera FEAT-03); `ItemCard.toolKind`/`scavengeZoneTypes`/`scavengeTool`, `EquipmentCard.scavengeTool`, `DimensionCard.rewardDecks` (altera FEAT-04/06) e a `fixture` com 3 itens novos; `CONTENT_REFERENCED` também por deck de recompensas e "em uso" estendido (altera FEAT-31); glossário §2.15. Sem rota nem código de erro novos. |
 | 0.45 | 2026-11-18 | FE | FEAT-32 → `proposto (FE)`, um pedido de mudança: o resultado do Vasculhar vem pronto em `PlayerState.lastScavenge` (`{ cardId, found }` ou `null`), em vez de o frontend comparar o inventário (princípio "o backend decide"; com carta que empilha, a comparação depende de regra de empilhamento). Cenários do Vasculhar atualizados. O resto da proposta aceito sem mudanças. |
-| 0.46 | 2026-11-18 | BE | FEAT-32 `acordado`: `lastScavenge` aceito sem mudanças. Sem mudança de formato. |
+| 0.46 | 2026-11-18 | BE | FEAT-32 `acordado`: `lastScavenge` aceito sem mudanças (o caso de uso já sabe se a carta estava no deck; saves antigos lidos com `null`). Sem outras mudanças de formato. |
 | 0.47 | 2026-11-18 | BE | FEAT-32 `implementado (BE)` (T-30 a T-33; e2e de todos os cenários de validação). Esclarecimento no cenário de `DELETE` de `fixture.silver-fish`: `CONTENT_REFERENCED` só sem grupo; com um grupo vivo a carta está no deck de recompensas dele → `CONTENT_IN_USE` (ordem da FEAT-31, REQ-94). Sem mudança de tipos. |
 | 0.48 | 2026-11-18 | FE | FEAT-32 `validado`: cenários com chamadas HTTP (conteúdo temporário criado pelo editor sobre a `base` e desfeito no fim) e as telas do Vasculhar e do Usar cofre contra o backend real. Sem mudança de formato. |
 | 0.49 | 2026-11-18 | BE | FEAT-11 proposta (`proposto (BE)`): `Effect`/`ZoneEffect` com `trigger`, `cost`, `activation`, `duration` (uniões por `kind`, as 172 variações do catálogo validado) e `mark`/`polarity` nos `effects` das cartas (altera FEAT-04/06; `DimensionCard.effects` ganha `polarity`); `PlayerState.statuses` (`PlayerStatus`) e `activatableEffects`, `effectiveModifiers` com passivos e status, `prepare` em `availableActions` também com efeito ativável (altera FEAT-06 a 32); `PrepareAction` ganha `activate` (gratuita, `payment.handCards`); motivo novo `notObject` em `ActionInvalidDetails` e 9 em `ActionNotAllowedDetails`; regras de efeito em `CONTENT_INVALID` (altera FEAT-31); `fixture` com 4 cartas novas e ferramentas sem efeito; glossário §2.16. Exceção a §1.2: `kind` como discriminante dentro do efeito. Sem rota nem código de erro novos. |
 | 0.50 | 2026-11-18 | FE | FEAT-11 → `proposto (FE)`, dois pedidos de mudança (princípio "o backend decide"): (1) `PlayerStatus.text`, cópia do texto do efeito na ativação (o status é uma cópia; o texto da carta pode mudar depois); (2) `activatableEffects[]` vira `ActivatableEffect` com `handPayment: { count, text } \| null`, para o frontend não interpretar `cost[]`/`HandRequirement` ao pedir a escolha de cartas da mão. Cenários e glossário §2.16 atualizados. O resto da proposta aceito sem mudanças. |
 | 0.51 | 2026-11-18 | BE | FEAT-11 `acordado`: `PlayerStatus.text` e `ActivatableEffect.handPayment` aceitos sem mudanças. Os textos exatos de `handPayment.text` ficam definidos na spec do backend (o cenário só exige a instrução pt-BR). Sem mudança de formato além da v0.50. |
+| 0.52 | 2026-11-19 | BE | FEAT-11 `implementado (BE)`: efeitos e status no catálogo e no grupo, ativação em Preparar, save v7 compatível com v2 a v6 e cenários Supertest. O cenário do amuleto explicita `initialGold: 0`. |
