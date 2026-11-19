@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.48 · **Data:** 2026-11-18
+> **Versão do contrato:** 0.50 · **Data:** 2026-11-18
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -277,6 +277,22 @@ Base dos nomes no código dos dois lados e dos termos com destaque e tooltip (RE
 | Resultado do último Vasculhar | `lastScavenge` |
 
 *(Cofre = `vault`, §2.3; Usar cofre = `useVault` e Vasculhar = `scavenge`, §2.5; deck de recompensas = `rewardDeck`, §2.2.)*
+
+### 2.16 Efeitos e status (README 13, 13.1 a 13.6) — FEAT-11
+
+| Termo | Identificador | Observação |
+|---|---|---|
+| Efeito / texto do efeito | `effect` / `text` | `text` é só para exibir |
+| Tipo de gatilho / custo / ativação / duração | `kind` | discriminante dentro de `trigger`, `cost[]`, `activation[]`, `duration` |
+| Marcação (buff/debuff) | `mark` (`buff`, `debuff`) | zona e dimensão usam `polarity` |
+| Efeito passivo | — | sem `trigger` e sem `cost` |
+| Efeito ativável agora | `activatableEffects` | lista pronta do backend |
+| Status do jogador | `statuses` / `statusId` | criado ao ativar efeito com duração |
+| Ativar efeito (Preparar, parte b) | `prepare` (`operation`: `activate`) | |
+| Pagamento escolhido | `payment` (`handCards`) | cartas da mão para o custo de descartar |
+| Escolha de cartas da mão pedida | `handPayment` (`count`, `text`) | pronta do backend (v0.50) |
+| Quantidade variável (13.2) | `Quantity` (`base`, `multiplier`, `minimum`) | "mín. N" = `minimum` |
+| Fase do evento aleatório | `EventPhase` (`anticipation`, `encounter`, `success`, `setback`) | executada na FEAT-12 |
 
 ## 3. Features
 
@@ -1704,6 +1720,444 @@ Seja `G` criado com `{ "name": "Os Teimosos", "characterName": "Lia", "playerCla
 
 Só nos e2e do backend: ordem exata dos decks de recompensas (sorteio), saves antigos, `deckSlotsFull`, `vaultFull` e `vaultGoldFull` com capacidades baixas no laboratório, e a validação completa dos campos novos no editor.
 
+### FEAT-11 — Efeitos e status — `proposto (FE)`
+
+Regras: README 13 (as quatro partes; tabela gatilho × custo; "Usar um recurso"; momentos de uso; o que um efeito pode citar), 13.1 a 13.4 (variações), 13.6 (buff, debuff, marcação, remover), 5.2 (consumível usado vai para o limbo), 6.5, 7.3 (teto do Vigor; requisito de Pico desliga efeitos), 7.4 (pipeline, etapas 1, 3 e 5) e 12.2 (Preparar, parte b). O catálogo de variações foi validado pelo autor (README III.3).
+
+**Fora desta FEAT:** executar gatilhos (13.1), efeitos de zona, de dimensão e de cartas de atributo aprimoradas; custos e ativações que dependem de combate, evento, dado ou outro jogador (cada FEAT que traz o momento os executa: 12, 13, 14, 15…); habilidades, requisitos e coisa boa/ruim de evento, refino e encantamento continuam `RuleText` (FEATs 12, 13 e 17); ordem de resolução de 13.5; Exaustão no pipeline (FEAT-13).
+
+**Decisões que o frontend precisa saber:**
+- **Efeito estruturado + texto.** Cada efeito traz `text` (pt-BR, pronto para exibir) e as quatro partes tipadas. Para mostrar a carta, o frontend usa só `text` (e `mark`/`polarity`). As partes servem ao formulário do editor e a quem precisar ler o efeito; o frontend nunca calcula nada a partir delas.
+- **`kind` em vez de `type` dentro do efeito** (exceção registrada a §1.2): o objeto da carta já usa `type`, e as quatro partes são uniões discriminadas por `kind`. Tudo o mais segue §1.2.
+- **Modelado não é executado.** Toda variação do catálogo pode aparecer numa carta; o que esta FEAT não executa é exibido normalmente, mas não aparece em `activatableEffects` e o `activate` recusa com `notActivatableYet`.
+- **O que dá para ativar vem pronto** em `activatableEffects` (já conferidos posse, Pico, se o efeito é ativável e se o custo cabe). **v0.50 (pedido do FE):** cada item traz `handPayment` pronto: `null` quando não há cartas da mão a escolher (omita `payment`); senão, quantas cartas escolher e a instrução em pt-BR. O frontend não lê `cost[]` para decidir isso.
+- **Status com texto (v0.50, pedido do FE):** `PlayerStatus.text` é a cópia do `text` do efeito no momento da ativação; a tela mostra esse texto, não o da carta (que pode ter sido editada).
+- **Ativar é gratuito** (Preparar, B K2): não gasta ponto de ação, vale com 0 pontos, só o jogador da vez, repetível.
+- **Doar vida até 0 não nocauteia** nesta FEAT (o nocaute é da FEAT-14).
+- **Parâmetros sempre presentes:** parâmetro opcional de lista vem `[]` quando não usado; opcional escalar vem `null`; os que têm padrão vêm com o padrão.
+
+**Mudanças em outras seções:**
+- **FEAT-04 (`validado`):** `effects` de `ZoneCard`, `AttributeCard`, `EquipmentCard`, `ItemCard` e `DimensionCard` trocam `RuleText` por `Effect` (zona e dimensão: `ZoneEffect`, com `polarity`). `DimensionCard.effects` **ganha `polarity`**. `RuleText` continua para habilidades, eventos, refino e encantamento. A `fixture` muda (abaixo).
+- **FEAT-06/07/08/09/10/32 (`validado`):** `PlayerState` ganha `statuses` e `activatableEffects`; `effectiveModifiers` passa a somar passivos e status; `PrepareAction` ganha `activate`; `availableActions` passa a ter `prepare` também quando `activatableEffects` não é vazio; motivos novos em `ActionInvalidDetails` e `ActionNotAllowedDetails`. Saves de antes desta versão continuam: são lidos com `statuses: []`.
+- **FEAT-31 (`validado`):** `CardInput` e `EditorCard` usam `Effect`/`ZoneEffect`; as regras de efeito viram problemas de `CONTENT_INVALID` (abaixo) ao salvar, publicar e importar.
+
+#### Endpoints
+
+| Método | Rota | Corpo | Sucesso | Erros |
+|---|---|---|---|---|
+| POST | `/parties/:partyId/actions` (FEAT-07) | `PrepareAction` (`activate`) | `200` `Party` | os da FEAT-07 |
+| GET | `/catalog/*` (FEAT-04), `/lab/content/*` (FEAT-31) | — | formato novo de `effects` | sem mudança |
+
+Ordem das conferências do `activate`: 404 → pedido malformado (400) → sem sessão (409 `PARTY_SESSION_NOT_ACTIVE`) → `notOwned` → `peakRequirementNotMet` → `equipmentNotInUse` → `effectNotFound` → `notActivatable` → `notActivatableYet` → custo, na ordem de `cost` (`notEnoughGold`, `notEnoughVigor`, `notEnoughLife`, `notEnoughPeak`, `paymentInvalid`, `minimumNotMet`). Se a mesma carta está em uso e no inventário, vale a que está em uso. Não existe `noActionPoints` (gratuita).
+
+#### Tipos
+
+```ts
+// ---------- Efeito (cartas) ----------
+
+/** README 13. `text`: pt-BR, não vazio. */
+interface Effect {
+  text: string
+  /** `null` = sem gatilho. */
+  trigger: Trigger | null
+  /** Vazio = sem custo. Pago na ordem. */
+  cost: Cost[]
+  /** Pelo menos 1. Aplicadas na ordem. */
+  activation: Activation[]
+  duration: Duration
+  /** README 13.6. `null` só com `duration.kind: "immediate"`; com outra duração, obrigatório em atributo, equipamento e item. */
+  mark: 'buff' | 'debuff' | null
+}
+
+/** Efeitos de zona e de dimensão: `polarity` no lugar de `mark` (README 13.6). */
+type ZoneEffect = Omit<Effect, 'mark'> & { polarity: 'positive' | 'negative' }
+
+type Comparison = 'eq' | 'lt' | 'lte' | 'gt' | 'gte'
+type EventPhase = 'anticipation' | 'encounter' | 'success' | 'setback'
+
+/** Quantidade de um custo (README 13.2): número fixo (≥ 0) ou fórmula. Metades arredondam para cima. */
+type Quantity = number | {
+  base:
+    | 'equipmentInUseCount' | 'equipmentInInventoryCount' | 'resourcesInInventoryCount'
+    | 'relicsAndDocumentsInInventoryCount' | 'attributeDiscardCount' | 'halfHealth' | 'halfGold'
+    | 'halfVigor' | 'allVigor' | 'highestModifier' | 'lowestModifier' | 'perEnemy'
+  multiplier: number // ≥ 1 (padrão 1)
+  minimum: number    // ≥ 0 (padrão 0); "mín. N": se o valor não alcança, não dá para ativar
+}
+
+/** Exigência de cartas da mão (custo `discardFromHand` e ativação `discardHandCards`). */
+interface HandRequirement {
+  /** 1 a 9 itens. `attribute: "any"` = carta qualquer. `count` ≥ 1. */
+  requirements: { attribute: Attribute | 'any'; count: number }[]
+  excludeAttributes: Attribute[]
+  constraint: 'none' | 'distinct' | 'same'
+  /** `true`: o backend sorteia as cartas; o jogador não escolhe. */
+  random: boolean
+}
+
+interface EquipmentSelection {
+  slots: EquipmentSlot[]
+  excludeSlots: EquipmentSlot[]
+  count: number // 1 a 8
+  random: boolean
+}
+
+interface ResourceOffer {
+  /** `resource`: 'item' | 'equipment' | 'any' | ItemCategory | 'tag:<texto>'. Pelo menos 1 item. */
+  requirements: { resource: string; count: number }[]
+  constraint: 'none' | 'distinct' | 'same'
+  /** 'item' | 'equipment' | ItemCategory | EquipmentSlot | 'tag:<texto>'. */
+  exclude: string[]
+}
+
+interface ModifierComparison {
+  left: Modifier[] // 1 a 7, somados
+  op: Comparison
+  /** Exatamente um de `right` (soma) e `value` (≥ 0) não é nulo. */
+  right: Modifier[] | null
+  value: number | null
+}
+
+// Faixas: "≥ N" e "a..b" são inteiros. Listas com faixa [a..b] não têm repetição.
+
+/** README 13.1. Nenhum gatilho é executado na FEAT-11. */
+type Trigger =
+  // zona
+  | { kind: 'onEnterThisZone' }
+  | { kind: 'onEnterZoneTitle'; zoneTitle: string }
+  | { kind: 'onEnterZoneFilter'; zoneTypes: ZoneType[]; excludeZoneTypes: ZoneType[]; locations: string[]; excludeLocations: string[] } // pelo menos 1 lista não vazia
+  // ação de zona e missões
+  | { kind: 'onZoneActionUsed'; action: ZoneAction; times: number; consecutive: boolean }
+  | { kind: 'onZoneActionSkipped'; action: ZoneAction; zones: number }
+  | { kind: 'whileZoneActionCountBelow'; action: ZoneAction; max: number }
+  | { kind: 'onQuestCompleted' }
+  | { kind: 'onZoneQuestsCompleted' }
+  | { kind: 'onQuestCountReached'; count: number; perZone: boolean }
+  | { kind: 'onQuestAbandoned' }
+  // evento aleatório
+  | { kind: 'onEventPhase'; phases: EventPhase[]; exclude: boolean }
+  // evento de combate
+  | { kind: 'onEnemyDefeated'; count: number; distinct: boolean }
+  | { kind: 'onCombatFleeAttempt' }
+  // habilidade
+  | { kind: 'onAbilityUsed'; slots: EquipmentSlot[]; excludeSlots: EquipmentSlot[]; tags: string[]; cardId: string | null } // pelo menos 1 filtro
+  // recurso, inventário, efeito
+  | { kind: 'onResourceEffectActivated'; source: 'any' | 'inventory' | 'equipment'; count: number; distinct: boolean }
+  | { kind: 'whileResourceActivationCountBelow'; max: number; distinct: boolean }
+  | { kind: 'whileInventoryResourceCount'; count: number; op: Comparison; distinct: boolean }
+  | { kind: 'whileEffectUseCount'; source: 'any' | 'inventory' | 'equipment'; slots: EquipmentSlot[]; excludeSlots: EquipmentSlot[]; itemCategories: ItemCategory[]; count: number; op: Comparison; distinct: boolean }
+  // classe/especialização
+  | { kind: 'whileClassIs'; classes: PlayerClass[]; mode: 'anyOf' | 'allOf' }
+  | { kind: 'whileSpecializationOf'; classes: PlayerClass[] }
+  | { kind: 'whilePrimaryClassCount'; min: number; max: number | null }
+  | { kind: 'whileSpecializationCount'; min: number; max: number | null }
+  // modificador
+  | { kind: 'whileHighestModifier'; modifiers: Modifier[] }
+  | { kind: 'whileLowestModifier'; modifiers: Modifier[] }
+  | ({ kind: 'whileModifierComparison' } & ModifierComparison)
+  // atributo e jogador
+  | { kind: 'whileHandAttributeCount'; attributes: Attribute[]; mode: 'each' | 'any'; count: number; op: Comparison }
+  | { kind: 'whileHandDistinctAttributes'; count: number; op: Comparison }
+  | { kind: 'whileHandCount'; count: number; op: Comparison }
+  | { kind: 'whileAttributeDiscardCount'; count: number; op: Comparison }
+  | { kind: 'whileAttributeDeckCount'; count: number; op: Comparison }
+  | { kind: 'whileHealth'; value: number; op: Comparison }
+  | { kind: 'whileGold'; value: number; op: Comparison }
+  // energia
+  | { kind: 'whileVigorRatio'; percent: number; op: Comparison } // 0..100 do Pico
+  | { kind: 'onVigorReached'; value: number }
+  | { kind: 'whilePeak'; value: number; op: Comparison }
+  | { kind: 'onVigorSpent'; amount: number }
+  | { kind: 'onPeakLost' }
+  // elemento
+  | { kind: 'onElementAbilityUsed'; element: Element }
+  | { kind: 'onElementalAdvantageHit' }
+  | { kind: 'onElementDamageTaken'; element: Element | null } // null = qualquer elemento
+  | { kind: 'whileUsedAbilitiesSameElement' }
+  | { kind: 'onEngageEnemyElement'; element: Element }
+  // inimigo
+  | { kind: 'onEngageEnemyType'; enemyTypes: EnemyType[] }
+  | { kind: 'onEnemyCategoryDefeated'; category: EnemyCategory }
+  | { kind: 'whileEnemyCount'; count: number; op: Comparison }
+  | { kind: 'onAttackedByEnemyBehavior'; behavior: EnemyBehavior }
+
+/** README 13.2 e 13 ("Usar um recurso"). Executados na FEAT-11: consumeSelf, discardFromHand, donateLife, payGold, spendVigor, reducePeak. */
+type Cost =
+  | { kind: 'consumeSelf' } // só em item; obrigatório em todo efeito de item `consumable`
+  | ({ kind: 'discardFromHand' } & HandRequirement)
+  | { kind: 'discardHandDownTo'; leave: number; minimum: number }
+  | { kind: 'discardWholeHand'; minimum: number }
+  | { kind: 'donateLife'; amount: Quantity }
+  | { kind: 'payGold'; amount: Quantity }
+  | ({ kind: 'abandonEquipment' } & EquipmentSelection)
+  | ({ kind: 'offerResources' } & ResourceOffer)
+  | { kind: 'manipulateAttributeCards'; mode: 'millTop' | 'millBottom' | 'reshuffleDiscard' | 'reshuffleHand' | 'handToTop' | 'handToBottom'; count: number; minimum: number | null }
+  | { kind: 'spendVigor'; amount: Quantity }
+  /** Exatamente um de `amount` (≥ 1) e `percent` (1..100) não é nulo. */
+  | { kind: 'reducePeak'; amount: number | null; percent: number | null }
+
+/** README 13.3 e 13.6. Executadas na FEAT-11: gainGold, loseGold, heal, loseLife, gainPeak, restoreVigor,
+ *  modifierFlat e modifierPercent (só com duração ≠ immediate), drawCards, removeDebuffs e removeBuffs (só `self`). */
+type Activation =
+  // matemática
+  | { kind: 'gainGold'; amount: number }
+  | { kind: 'loseGold'; amount: number }
+  | { kind: 'heal'; amount: number }
+  | { kind: 'loseLife'; amount: number | 'halfHealth' }
+  | { kind: 'gainPeak'; amount: number }
+  | { kind: 'restoreVigor'; amount: number }
+  | { kind: 'modifierFlat'; changes: { modifier: Modifier; amount: number }[] }    // 1 a 7; negativo reduz
+  | { kind: 'modifierPercent'; changes: { modifier: Modifier; percent: number }[] } // 1 a 7; negativo reduz
+  | { kind: 'zeroModifiers'; modifiers: Modifier[] }
+  | { kind: 'attributeValueMultiplier'; attribute: Attribute; factor: number } // ≥ 2
+  | { kind: 'effectDamage'; amount: number }
+  | { kind: 'enemyModifierFlat'; changes: { modifier: Modifier; amount: number }[] }
+  | { kind: 'gainBaseHealth'; amount: number }
+  // cartas
+  | { kind: 'drawCards'; count: number }
+  | ({ kind: 'discardHandCards' } & HandRequirement)
+  | { kind: 'returnDiscardToDeckTop'; count: number }
+  | { kind: 'millDeck'; count: number; from: 'top' | 'bottom' }
+  | { kind: 'searchAttribute'; attribute: Attribute; count: number; source: 'deck' | 'discardPile'; shuffle: boolean }
+  | { kind: 'handToDeckTop'; count: number }
+  // efeito e habilidade
+  | { kind: 'nullifyEffects'; target: 'equipment' | 'item' | 'attributeCard'; slots: EquipmentSlot[]; itemCategories: ItemCategory[] }
+  | { kind: 'nullifyAbilities'; slots: EquipmentSlot[]; tags: string[] } // pelo menos 1 filtro
+  // regra
+  | { kind: 'keepPeakOnKnockout' }
+  | { kind: 'actionPointsOverride'; value: number }
+  | { kind: 'actionPointsBonus'; amount: number }
+  | { kind: 'moveDistanceBonus'; zones: number } // ≥ 2
+  | { kind: 'recoverHealPercentOverride'; percent: number } // 1..100
+  | { kind: 'skipEventBackfire' }
+  | { kind: 'handLimit'; max: number }
+  | { kind: 'fleeTargetOverride'; value: number }
+  | { kind: 'fleeTargetModifier'; amount: number | 'minusHandCount' }
+  | { kind: 'marketShowcaseModifier'; mode: 'add' | 'set'; value: number }
+  // dados
+  | { kind: 'diceChooseResult' }
+  | { kind: 'diceResultModifier'; amount: number | 'minusHandCount' }
+  // recursos
+  | { kind: 'breakEquipment'; slots: EquipmentSlot[] } // só inimigos (README 17.5)
+  | ({ kind: 'abandonOwnEquipment' } & EquipmentSelection)
+  | { kind: 'repairEquipment'; target: 'self' | 'allyInZone' }
+  | ({ kind: 'offerResourcesAsEffect' } & ResourceOffer)
+  // elemento
+  | { kind: 'changeNextAbilityElement'; element: Element }
+  | { kind: 'grantElementToAbility'; element: Element }
+  | { kind: 'removeEnemyElement' }
+  | { kind: 'ignoreElementalDisadvantage' }
+  | { kind: 'elementalAdvantageOverride'; percent: number }
+  | { kind: 'invertElementalRelations' }
+  | { kind: 'elementResistance'; element: Element }
+  | { kind: 'elementImmunity'; element: Element }
+  | { kind: 'elementVulnerability'; element: Element }
+  | { kind: 'elementVigorCostModifier'; element: Element; percent: number }
+  // combate e movimento
+  | { kind: 'defeatEnemy' }
+  | { kind: 'extraAttack'; count: number }
+  | { kind: 'skipEnemyTurn'; count: number }
+  | { kind: 'swapCombatOrder' }
+  | { kind: 'reviveAlly'; healthPercent: number } // 1..100
+  | { kind: 'teleportToRespawn' }
+  | { kind: 'moveToZoneOfType'; zoneType: ZoneType | 'sameAsCurrent' }
+  // remover status (13.6)
+  | { kind: 'removeDebuffs'; target: 'self' | 'allyInZone' | 'enemy' }
+  | { kind: 'removeBuffs'; target: 'self' | 'allyInZone' | 'enemy' }
+
+/** README 13.4 e 13 (tabela). Executadas na FEAT-11: immediate, whileSourceActive (passivo de equipamento), infinite,
+ *  untilEndOfTurn, untilStartOfNextTurn, forOwnTurns, untilEndOfRound, forRounds, untilLeaveZone, untilPartyEnd. */
+type Duration =
+  | { kind: 'immediate' }
+  | { kind: 'whileSourceActive' }
+  | { kind: 'infinite' }
+  | { kind: 'untilThisCardDiscarded' }
+  | { kind: 'untilCardDiscarded'; cardId: string }
+  | { kind: 'untilHandCount'; count: number; op: Comparison }
+  | { kind: 'untilResourcesInLimbo'; count: number }
+  | { kind: 'untilEndOfTurn' }
+  | { kind: 'untilStartOfNextTurn' }
+  | { kind: 'forOwnTurns'; turns: number }
+  | { kind: 'untilEndOfNextPlayerTurn' }
+  | { kind: 'untilEndOfRound' }
+  | { kind: 'forRounds'; rounds: number }
+  | { kind: 'untilStartOfNextRound' }
+  | { kind: 'whileInThisZone' }
+  | { kind: 'untilLeaveZone' }
+  | { kind: 'untilEnterZoneType'; zoneTypes: ZoneType[] }
+  | { kind: 'forZonesPassed'; count: number }
+  | { kind: 'untilEventEnd' }
+  | { kind: 'forEvents'; count: number }
+  | { kind: 'untilEventSuccess' }
+  | { kind: 'untilEventFailure' }
+  | { kind: 'untilNextCombatEnd' }
+  | { kind: 'forCombats'; count: number }
+  | { kind: 'untilCombatWon' }
+  | { kind: 'untilEventPhaseEnd'; phase: EventPhase }
+  | { kind: 'duringEventPhases'; phases: EventPhase[] }
+  | { kind: 'untilZoneActionUsed'; action: ZoneAction; count: number }
+  | { kind: 'forZoneActions'; count: number }
+  | { kind: 'untilOwnCombatTurnEnd' }
+  | { kind: 'forOwnCombatTurns'; turns: number }
+  | { kind: 'forCombatCycles'; cycles: number }
+  | { kind: 'untilDamageTaken' }
+  | { kind: 'untilAttackMade' }
+  | { kind: 'untilAttackMissed' }
+  | { kind: 'untilAbilityUsed'; element: Element | null }
+  | { kind: 'forAbilitiesUsed'; count: number }
+  | { kind: 'whileAbilityActive'; cardId: string }
+  | { kind: 'untilOtherResourceEffectActivated' }
+  | { kind: 'untilAnyEffectNullified' }
+  | { kind: 'whileEffectActive'; cardId: string; effectIndex: number }
+  | { kind: 'whileAttributeInHand'; attribute: Attribute; count: number }
+  | { kind: 'untilAttributeDiscarded'; attribute: Attribute }
+  | { kind: 'untilAttributeInDiscard'; attribute: Attribute; count: number }
+  | { kind: 'untilKnockout' }
+  | { kind: 'whileHealthThreshold'; value: number; op: Comparison }
+  | { kind: 'untilHandEmpty' }
+  | { kind: 'untilGoldSpent'; amount: number }
+  | { kind: 'whileResourceInInventory'; cardId: string }
+  | { kind: 'untilInventoryFull' }
+  | { kind: 'untilResourceOffered' }
+  | { kind: 'whileHighestModifierIs'; modifiers: Modifier[] }
+  | { kind: 'untilVigorBelow'; value: number }
+  | ({ kind: 'whileModifierComparison' } & ModifierComparison)
+  | { kind: 'whileHasClass'; classes: PlayerClass[] }
+  | { kind: 'untilSpecializationGained' }
+  | { kind: 'whileSinglePrimaryClass' }
+  | { kind: 'untilPartyEnd' }
+  | { kind: 'untilLeaveDimension' }
+
+// ---------- Cartas (altera FEAT-04/06) ----------
+interface ZoneCard      { /* … */ effects: ZoneEffect[] }
+interface DimensionCard { /* … */ effects: ZoneEffect[] } // ganha `polarity`
+interface AttributeCard { /* … */ effects: Effect[] }     // vazio em basic/synergy; ≥ 1 em enhanced
+interface EquipmentCard { /* … */ effects: Effect[] }
+interface ItemCard      { /* … */ effects: Effect[] }
+
+// ---------- Estado do jogador (altera FEAT-06 a 32) ----------
+interface PlayerState {
+  // … campos das FEATs 06 a 32 …
+  /**
+   * FEAT-11. Pipeline de README 7.4, para cada modificador m:
+   * ⌊max(0, (modifiers[m] + equipamentos que funcionam + `modifierFlat`) × (100 + peak) ÷ 100 × max(0, 100 + soma dos `modifierPercent`) ÷ 100)⌋.
+   * Entram os passivos de equipamento em uso que funciona (sem gatilho, sem custo, `whileSourceActive`) e os `statuses`.
+   */
+  effectiveModifiers: Record<Modifier, number>
+  /** FEAT-11. Status ativos, na ordem em que foram aplicados. Começa `[]`. */
+  statuses: PlayerStatus[]
+  /**
+   * FEAT-11. Efeitos que o jogador pode ativar agora (Preparar, parte b): primeiro os do `inventory` (na ordem dos slots),
+   * depois os dos equipamentos em uso (na ordem das 8 categorias de EquipmentSlot). Já conferidos: posse, Pico, efeito
+   * ativável e executado nesta FEAT, e custo que cabe (há cartas na mão que atendem `discardFromHand`, sem olhar a escolha).
+   * `[]` para quem não é o membro da vez.
+   */
+  activatableEffects: ActivatableEffect[]
+  /**
+   * Ordem fixa sem mudança (FEAT-32). `prepare` entra também quando `activatableEffects` não é vazio.
+   */
+  availableActions: PartyActionType[]
+}
+
+interface ActivatableEffect {
+  cardId: string
+  effectIndex: number
+  source: 'inventory' | 'equipment'
+  /**
+   * v0.50. Escolha de cartas da mão que o `activate` pede (custos `discardFromHand` sem `random`, somados).
+   * `null` = não há escolha: omita `payment`. Senão, `count` (≥ 1) é o total de ids a enviar em `payment.handCards`
+   * e `text` a instrução pt-BR pronta (ex.: "Escolha 1 carta de Força."). A validação da escolha é do backend (`paymentInvalid`).
+   */
+  handPayment: { count: number; text: string } | null
+}
+
+/** README 13.4/13.6. Cópia do efeito no momento da ativação: editar a carta depois não muda o status. */
+interface PlayerStatus {
+  statusId: string
+  /** Só para exibir a origem. */
+  sourceCardId: string
+  effectIndex: number
+  /** v0.50. Cópia do `text` do efeito no momento da ativação (pt-BR, para exibir). */
+  text: string
+  mark: 'buff' | 'debuff'
+  activation: Activation[]
+  duration: Duration
+  /** Vezes/rodadas que faltam (`forOwnTurns`, `forRounds`); `null` nas durações sem contagem. */
+  remaining: number | null
+}
+
+// ---------- Ação (altera FEAT-10) ----------
+type PrepareAction =
+  | { type: 'prepare'; operation: 'equip'; cardId: string }
+  | { type: 'prepare'; operation: 'unequip'; slot: EquipmentSlot }
+  /**
+   * FEAT-11. Ativa o efeito `effectIndex` (a partir de 0) da carta `cardId` do inventário ou em uso.
+   * Paga o custo na ordem, aplica cada ativação em ordem e, se a duração não é `immediate`, cria um status.
+   * Item `consumable`: 1 unidade do slot vai para o limbo. Gratuita; repetível.
+   * `payment.handCards`: ids das cartas da mão escolhidas para os `discardFromHand` sem `random`, na ordem dos custos
+   * (repita o id para cada cópia). Vão para a pilha de descarte. Omita `payment` quando `handPayment` é `null`.
+   */
+  | { type: 'prepare'; operation: 'activate'; cardId: string; effectIndex: number; payment?: { handCards: string[] } }
+
+/** `details` do erro ACTION_INVALID, motivos acrescentados. */
+interface ActionInvalidDetails {
+  fields: {
+    field: string | null // FEAT-11: "cardId", "effectIndex", "payment", "payment.handCards", "payment.handCards.0"
+    reason:
+      | /* … motivos das FEATs 07 a 32 … */ 'required' | 'notString' | 'unknownKey' | 'notArray' | 'invalidItem'
+      | 'unknownOperation' | 'notNonNegativeInteger'
+      | 'notObject' // FEAT-11: `payment` não é objeto
+  }[]
+}
+
+/** `details` do erro ACTION_NOT_ALLOWED, motivos acrescentados. */
+interface ActionNotAllowedDetails {
+  reason:
+    | /* … motivos das FEATs 07 a 32 … */ 'notOwned' | 'peakRequirementNotMet' | 'notEnoughGold'
+    | 'equipmentNotInUse' // FEAT-11: equipamento no inventário (só funciona em uso, README 5.1)
+    | 'effectNotFound'    // FEAT-11: `effectIndex` inexistente na carta
+    | 'notActivatable'    // FEAT-11: efeito com gatilho, ou passivo (sem custo) — README 13, tabela
+    | 'notActivatableYet' // FEAT-11: custo, ativação ou duração que esta FEAT ainda não executa
+    | 'notEnoughVigor'    // FEAT-11
+    | 'notEnoughLife'     // FEAT-11: doar mais vida do que tem
+    | 'notEnoughPeak'     // FEAT-11
+    | 'paymentInvalid'    // FEAT-11: `handCards` ausente quando há escolha, presente sem escolha, carta que não está na mão, quantidade ou atributo diferentes do pedido
+    | 'minimumNotMet'     // FEAT-11: "mín. N" não alcançado (README 13.2)
+  cardId?: string // `notOwned` e, quando houver, `paymentInvalid`
+}
+```
+
+Ativar recusado não grava nada. `notOwned` também vale para o `activate` (carta fora do inventário e do equipamento em uso).
+
+`CONTENT_INVALID` (editor ao salvar, publicar e importar; boot), `path` no campo (ex.: `effects.0.activation.1.amount`), texto pt-BR pronto como na FEAT-31: `kind` desconhecido ou parâmetro fora da faixa; `activation` vazia; `text` vazio; `duration` `immediate` com `mark`, ou outra duração sem `mark` em atributo, equipamento ou item; efeito passivo em item `consumable`; efeito de item `consumable` sem o custo `consumeSelf`, ou `consumeSelf` fora de item; citação fora do que README 13 permite; ao publicar, carta ou título de zona citado que não existe. Ex.: poção com `cost: []` → `path` `effects.0.cost`, "Consumível precisa ter o custo de usar a própria carta.".
+
+#### Cenários de validação
+
+Contra a `fixture` com as mudanças desta FEAT, laboratório no padrão:
+- Todos os efeitos passam ao formato novo com o mesmo `text`. `fixture.healing-potion` (`P`): `effects = [{ "text": "Recupera 5 de vida.", "trigger": null, "cost": [{ "kind": "consumeSelf" }], "activation": [{ "kind": "heal", "amount": 5 }], "duration": { "kind": "immediate" }, "mark": null }]`.
+- `fixture.pickaxe` e `fixture.fishing-rod` ficam com `effects: []` ("Permite minerar/pescar" já é dito por `toolKind`, FEAT-32).
+- Cartas novas: `fixture.strength-tonic` (`T`, Tônico de Força, item `consumable`): "+3 de Ataque durante 2 vezes suas." = custo `consumeSelf`, `modifierFlat` `[{ attack, 3 }]`, `forOwnTurns` 2, `buff`. `fixture.guardian-armor` (`A`, Armadura do Guardião, `torso`, +10 de Defesa, sem requisito de Pico): passivo "+20% de Defesa enquanto estiver em uso." = sem gatilho e custo, `modifierPercent` `[{ defense, 20 }]`, `whileSourceActive`, `buff`. `fixture.focus-amulet` (`U`, Amuleto do Foco, `accessory`, +1 de Esquiva) com 3 efeitos imediatos: 0 "Gaste 5 de Vigor: ganhe 10 moedas de ouro." (`spendVigor` 5 → `gainGold` 10); 1 "Doe 5 de vida: restaure 5 de Vigor." (`donateLife` 5 → `restoreVigor` 5); 2 "Pague um de Força: compre 2 cartas." (`discardFromHand` `[{ strength, 1 }]` → `drawCards` 2). `fixture.lucky-coin` (`C`, Moeda da Sorte, item `treasure`): "Pague 5 moedas: some 3 ao resultado do dado até o fim do evento." (`payGold` 5 → `diceResultModifier` 3, `untilEventEnd`, `buff`; não executado nesta FEAT).
+- `cardCounts` da `fixture`: `equipment` +2, `item` +2 (24 cartas no total).
+
+Seja `G` criado com `{ "name": "Os Teimosos", "characterName": "Lia", "playerClass": "warrior" }` e posto em sessão (vida 22/22, Pico 10, Vigor 10, ouro 0), `M` o membro e `/grants` a doação (FEAT-10).
+
+- Quando `POST /parties`, então `player` traz `statuses: []` e `activatableEffects: []`.
+- Quando `GET /catalog/cards/fixture.healing-potion`, então `effects` como acima.
+- Com `P` ×2 doado, então `activatableEffects = [{ "cardId": P, "effectIndex": 0, "source": "inventory", "handPayment": null }]` e `prepare` em `availableActions`.
+- Com `U` doado e equipado, `activatableEffects` traz `U` 0, 1 e 2 com `source: "equipment"` (2 só se houver Força na mão); `U` 0 e 1 com `handPayment: null`, `U` 2 com `handPayment = { "count": 1, "text": <instrução pt-BR> }`. Quando `{ "type": "prepare", "operation": "activate", "cardId": U, "effectIndex": 0 }`, então `200` com `vigor: 5`, `gold: 10` e `turn.actionPoints: 3`; de novo → `vigor: 0`, `gold: 20`, e `U` 0 sai de `activatableEffects`; uma terceira → `409` `ACTION_NOT_ALLOWED` `{ "reason": "notEnoughVigor" }` e nada muda.
+- Em seguida, `activate` `U` 1 → `200` com `health: 17`, `vigor: 5`. Depois `activate` `P` 0 → `200` com `health: 22` e `P` com `quantity: 1`; de novo (vida cheia) → `200`, `health: 22` e `P` fora do `inventory`.
+- Com uma Força na mão (id `fixture.strength-basic`), `activate` `U` 2 com `"payment": { "handCards": ["fixture.strength-basic"] }` → `200`: a mão perde essa carta e ganha 2, `attributeDiscardPileCount` +1, `attributeDeckCount` −2. Sem `payment` → `409` `{ "reason": "paymentInvalid" }`; com `["fixture.endurance-basic"]` → `409` `{ "reason": "paymentInvalid", "cardId": "fixture.endurance-basic" }`.
+- Com `T` doado, `activate` `T` 0 → `200` com `effectiveModifiers.attack: 9`, `T` fora do `inventory` e `statuses = [{ "statusId": <id>, "sourceCardId": T, "effectIndex": 0, "text": "+3 de Ataque durante 2 vezes suas.", "mark": "buff", "activation": [{ "kind": "modifierFlat", "changes": [{ "modifier": "attack", "amount": 3 }] }], "duration": { "kind": "forOwnTurns", "turns": 2 }, "remaining": 2 }]`. `endTurn` → `remaining: 1`, `attack: 9`; `endTurn` de novo → `statuses: []`, `attack: 6`.
+- Com `A` equipado, `effectiveModifiers.defense: 19` (⌊15 × 1,10 × 1,20⌋) e nenhum efeito de `A` em `activatableEffects`; `activate` `A` 0 → `409` `{ "reason": "notActivatable" }`.
+- Com `C` doado, `C` não aparece em `activatableEffects`; `activate` `C` 0 → `409` `{ "reason": "notActivatableYet" }`.
+- Com `U` no inventário (não equipado), `activate` `U` 0 → `409` `{ "reason": "equipmentNotInUse" }`; `activate` de carta que o jogador não tem → `409` `{ "reason": "notOwned", "cardId": <id> }`; `activate` `P` 5 → `409` `{ "reason": "effectNotFound" }`.
+- Com 0 pontos de ação, `activate` continua `200` e `prepare` continua em `availableActions` enquanto houver efeito ativável.
+- `{ "type": "prepare", "operation": "activate", "cardId": P, "effectIndex": -1 }` → `400` `ACTION_INVALID` `fields = [{ "field": "effectIndex", "reason": "notNonNegativeInteger" }]`; com `"payment": 3` → `[{ "field": "payment", "reason": "notObject" }]`; com `"payment": { "handCards": [1] }` → `[{ "field": "payment.handCards.0", "reason": "invalidItem" }]`; com `"times": 2` → `[{ "field": "times", "reason": "unknownKey" }]`.
+- Com o grupo sem sessão, `activate` → `409` `PARTY_SESSION_NOT_ACTIVE`.
+- Editor: `POST /lab/content/collections/bosque/cards` com um item `consumable` cujo efeito tem `cost: []` → `400` `CONTENT_INVALID` com `fields = [{ "path": "effects.0.cost", "message": "Consumível precisa ter o custo de usar a própria carta." }]`.
+
+Só nos e2e do backend: Pico abaixo do requisito com passivo, `removeDebuffs`/`removeBuffs`, as demais durações executadas (vencimento no `move` e na virada da rodada), `donateLife`/`reducePeak`/`payGold` com `Quantity` em fórmula e `minimumNotMet`, `random` no descarte, saves antigos e cada regra de `CONTENT_INVALID`.
+
 ## 4. Códigos de erro
 
 | Código | Quando acontece | FEAT |
@@ -1782,3 +2236,5 @@ Só nos e2e do backend: ordem exata dos decks de recompensas (sorteio), saves an
 | 0.46 | 2026-11-18 | BE | FEAT-32 `acordado`: `lastScavenge` aceito sem mudanças. Sem mudança de formato. |
 | 0.47 | 2026-11-18 | BE | FEAT-32 `implementado (BE)` (T-30 a T-33; e2e de todos os cenários de validação). Esclarecimento no cenário de `DELETE` de `fixture.silver-fish`: `CONTENT_REFERENCED` só sem grupo; com um grupo vivo a carta está no deck de recompensas dele → `CONTENT_IN_USE` (ordem da FEAT-31, REQ-94). Sem mudança de tipos. |
 | 0.48 | 2026-11-18 | FE | FEAT-32 `validado`: cenários com chamadas HTTP (conteúdo temporário criado pelo editor sobre a `base` e desfeito no fim) e as telas do Vasculhar e do Usar cofre contra o backend real. Sem mudança de formato. |
+| 0.49 | 2026-11-18 | BE | FEAT-11 proposta (`proposto (BE)`): `Effect`/`ZoneEffect` com `trigger`, `cost`, `activation`, `duration` (uniões por `kind`, as 172 variações do catálogo validado) e `mark`/`polarity` nos `effects` das cartas (altera FEAT-04/06; `DimensionCard.effects` ganha `polarity`); `PlayerState.statuses` (`PlayerStatus`) e `activatableEffects`, `effectiveModifiers` com passivos e status, `prepare` em `availableActions` também com efeito ativável (altera FEAT-06 a 32); `PrepareAction` ganha `activate` (gratuita, `payment.handCards`); motivo novo `notObject` em `ActionInvalidDetails` e 9 em `ActionNotAllowedDetails`; regras de efeito em `CONTENT_INVALID` (altera FEAT-31); `fixture` com 4 cartas novas e ferramentas sem efeito; glossário §2.16. Exceção a §1.2: `kind` como discriminante dentro do efeito. Sem rota nem código de erro novos. |
+| 0.50 | 2026-11-18 | FE | FEAT-11 → `proposto (FE)`, dois pedidos de mudança (princípio "o backend decide"): (1) `PlayerStatus.text`, cópia do texto do efeito na ativação (o status é uma cópia; o texto da carta pode mudar depois); (2) `activatableEffects[]` vira `ActivatableEffect` com `handPayment: { count, text } \| null`, para o frontend não interpretar `cost[]`/`HandRequirement` ao pedir a escolha de cartas da mão. Cenários e glossário §2.16 atualizados. O resto da proposta aceito sem mudanças. |
