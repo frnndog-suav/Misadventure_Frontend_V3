@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.50 · **Data:** 2026-11-18
+> **Versão do contrato:** 0.51 · **Data:** 2026-11-18
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -1720,7 +1720,7 @@ Seja `G` criado com `{ "name": "Os Teimosos", "characterName": "Lia", "playerCla
 
 Só nos e2e do backend: ordem exata dos decks de recompensas (sorteio), saves antigos, `deckSlotsFull`, `vaultFull` e `vaultGoldFull` com capacidades baixas no laboratório, e a validação completa dos campos novos no editor.
 
-### FEAT-11 — Efeitos e status — `proposto (FE)`
+### FEAT-11 — Efeitos e status — `acordado`
 
 Regras: README 13 (as quatro partes; tabela gatilho × custo; "Usar um recurso"; momentos de uso; o que um efeito pode citar), 13.1 a 13.4 (variações), 13.6 (buff, debuff, marcação, remover), 5.2 (consumível usado vai para o limbo), 6.5, 7.3 (teto do Vigor; requisito de Pico desliga efeitos), 7.4 (pipeline, etapas 1, 3 e 5) e 12.2 (Preparar, parte b). O catálogo de variações foi validado pelo autor (README III.3).
 
@@ -2238,3 +2238,4 @@ Só nos e2e do backend: Pico abaixo do requisito com passivo, `removeDebuffs`/`r
 | 0.48 | 2026-11-18 | FE | FEAT-32 `validado`: cenários com chamadas HTTP (conteúdo temporário criado pelo editor sobre a `base` e desfeito no fim) e as telas do Vasculhar e do Usar cofre contra o backend real. Sem mudança de formato. |
 | 0.49 | 2026-11-18 | BE | FEAT-11 proposta (`proposto (BE)`): `Effect`/`ZoneEffect` com `trigger`, `cost`, `activation`, `duration` (uniões por `kind`, as 172 variações do catálogo validado) e `mark`/`polarity` nos `effects` das cartas (altera FEAT-04/06; `DimensionCard.effects` ganha `polarity`); `PlayerState.statuses` (`PlayerStatus`) e `activatableEffects`, `effectiveModifiers` com passivos e status, `prepare` em `availableActions` também com efeito ativável (altera FEAT-06 a 32); `PrepareAction` ganha `activate` (gratuita, `payment.handCards`); motivo novo `notObject` em `ActionInvalidDetails` e 9 em `ActionNotAllowedDetails`; regras de efeito em `CONTENT_INVALID` (altera FEAT-31); `fixture` com 4 cartas novas e ferramentas sem efeito; glossário §2.16. Exceção a §1.2: `kind` como discriminante dentro do efeito. Sem rota nem código de erro novos. |
 | 0.50 | 2026-11-18 | FE | FEAT-11 → `proposto (FE)`, dois pedidos de mudança (princípio "o backend decide"): (1) `PlayerStatus.text`, cópia do texto do efeito na ativação (o status é uma cópia; o texto da carta pode mudar depois); (2) `activatableEffects[]` vira `ActivatableEffect` com `handPayment: { count, text } \| null`, para o frontend não interpretar `cost[]`/`HandRequirement` ao pedir a escolha de cartas da mão. Cenários e glossário §2.16 atualizados. O resto da proposta aceito sem mudanças. |
+| 0.51 | 2026-11-18 | BE | FEAT-11 `acordado`: `PlayerStatus.text` e `ActivatableEffect.handPayment` aceitos sem mudanças. Os textos exatos de `handPayment.text` ficam definidos na spec do backend (o cenário só exige a instrução pt-BR). Sem mudança de formato além da v0.50. |
