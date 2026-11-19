@@ -31,6 +31,10 @@ import {
   partySessionNotActiveFixture,
 } from '../mocks/partyFixtures'
 import { handlers } from '../mocks/handlers'
+import {
+  partyPotionActivatedFixture,
+  partyTonicActivatedFixture,
+} from '../mocks/effectFixtures'
 
 /**
  * CONTRATO §3 FEAT-07 (v0.28): rota única de ações e `moveTargets`; FEAT-08
@@ -92,6 +96,103 @@ describe('REQ-34: PlayerState.moveTargets', () => {
 })
 
 describe('REQ-35: usePartyAction (POST /parties/:partyId/actions)', () => {
+  it.each([
+    ['fixture.healing-potion', partyPotionActivatedFixture],
+    ['fixture.strength-tonic', partyTonicActivatedFixture],
+  ] as const)(
+    'REQ-54: MSW entrega estado pronto para %s com zero pontos',
+    async (cardId, expected) => {
+      const { result } = renderHook(() => usePartyAction(partyId), { wrapper })
+      act(() =>
+        result.current.mutate({
+          type: 'prepare',
+          operation: 'activate',
+          cardId,
+          effectIndex: 0,
+        }),
+      )
+      await waitFor(() => expect(result.current.isSuccess).toBe(true))
+      expect(result.current.data).toEqual(expected)
+    },
+  )
+
+  it('REQ-54: recusa de efeito não executado preserva motivo e mensagem', async () => {
+    const { result } = renderHook(() => usePartyAction(partyId), { wrapper })
+    act(() =>
+      result.current.mutate({
+        type: 'prepare',
+        operation: 'activate',
+        cardId: 'fixture.lucky-coin',
+        effectIndex: 0,
+      }),
+    )
+    await waitFor(() => expect(result.current.isError).toBe(true))
+    expect(result.current.error).toMatchObject({
+      code: 'ACTION_NOT_ALLOWED',
+      reason: 'notActivatableYet',
+      message: 'Este efeito ainda não pode ser ativado.',
+    })
+    expect(result.current.data).toBeUndefined()
+  })
+  it.each([
+    undefined,
+    { handCards: ['fixture.strength-basic', 'fixture.strength-basic'] },
+  ])(
+    'REQ-54: envia activate preservando pagamento por cópia: %j',
+    async (payment) => {
+      let body: unknown
+      server.use(
+        http.post('*/parties/:id/actions', async ({ request }) => {
+          body = await request.json()
+          return HttpResponse.json(partyNoPointsFixture)
+        }),
+      )
+      const action: PartyAction = {
+        type: 'prepare',
+        operation: 'activate',
+        cardId: 'fixture.focus-amulet',
+        effectIndex: 2,
+        ...(payment ? { payment } : {}),
+      }
+      const { result } = renderHook(() => usePartyAction(partyId), { wrapper })
+      act(() => result.current.mutate(action))
+      await waitFor(() => expect(result.current.isSuccess).toBe(true))
+      expect(body).toEqual(action)
+      expect(result.current.data).toEqual(partyNoPointsFixture)
+    },
+  )
+
+  it('REQ-54: preserva ACTION_INVALID com notObject e caminho de payment', async () => {
+    server.use(
+      http.post('*/parties/:id/actions', () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: 'ACTION_INVALID',
+              message: 'Pagamento inválido.',
+              details: { fields: [{ field: 'payment', reason: 'notObject' }] },
+            },
+          },
+          { status: 400 },
+        ),
+      ),
+    )
+    const { result } = renderHook(() => usePartyAction(partyId), { wrapper })
+    act(() =>
+      result.current.mutate({
+        type: 'prepare',
+        operation: 'activate',
+        cardId: 'fixture.focus-amulet',
+        effectIndex: 2,
+      }),
+    )
+    await waitFor(() => expect(result.current.isError).toBe(true))
+    expect(result.current.error).toMatchObject({
+      code: 'ACTION_INVALID',
+      details: { fields: [{ field: 'payment', reason: 'notObject' }] },
+    })
+  })
+
   it('REQ-35: envia { type: "move", zoneId } e entrega o Party validado', async () => {
     let body: unknown
     server.use(

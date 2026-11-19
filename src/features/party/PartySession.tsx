@@ -289,6 +289,15 @@ function reasonText(error: ActionNotAllowedError, name: string): string {
     case 'deckSlotsFull':
     case 'deckNotFound':
     case 'notScavengeable':
+    case 'equipmentNotInUse':
+    case 'effectNotFound':
+    case 'notActivatable':
+    case 'notActivatableYet':
+    case 'notEnoughVigor':
+    case 'notEnoughLife':
+    case 'notEnoughPeak':
+    case 'paymentInvalid':
+    case 'minimumNotMet':
       return ''
     default: {
       const _exhaustive: never = error.reason
@@ -438,6 +447,15 @@ function vaultReasonText(error: ActionNotAllowedError, name: string): string {
     case 'slotEmpty':
     case 'zoneActionUnavailable':
     case 'notScavengeable':
+    case 'equipmentNotInUse':
+    case 'effectNotFound':
+    case 'notActivatable':
+    case 'notActivatableYet':
+    case 'notEnoughVigor':
+    case 'notEnoughLife':
+    case 'notEnoughPeak':
+    case 'paymentInvalid':
+    case 'minimumNotMet':
       return ''
     default: {
       const _exhaustive: never = error.reason

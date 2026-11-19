@@ -1,4 +1,8 @@
 import { http, HttpResponse, type RequestHandler } from 'msw'
+import {
+  partyPotionActivatedFixture,
+  partyTonicActivatedFixture,
+} from './effectFixtures'
 import { cardTypeSchema } from '../api/catalog'
 import {
   catalogCardNotFoundFixture,
@@ -229,6 +233,24 @@ function prepareScenario(body: unknown): Response {
   ) =>
     HttpResponse.json(actionPrepareNotAllowedFixture(reason), { status: 409 })
   switch (field(body, 'operation')) {
+    case 'activate':
+      switch (field(body, 'cardId')) {
+        case 'fixture.healing-potion':
+          return HttpResponse.json(partyPotionActivatedFixture)
+        case 'fixture.strength-tonic':
+          return HttpResponse.json(partyTonicActivatedFixture)
+        default:
+          return HttpResponse.json(
+            {
+              error: {
+                code: 'ACTION_NOT_ALLOWED',
+                message: 'Este efeito ainda não pode ser ativado.',
+                details: { reason: 'notActivatableYet' },
+              },
+            },
+            { status: 409 },
+          )
+      }
     case 'equip':
       switch (field(body, 'cardId')) {
         case 'fixture.blade-of-dusk':

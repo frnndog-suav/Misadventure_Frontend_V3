@@ -1,72 +1,66 @@
-# AGENTS.md — mapa para agentes de IA
+﻿# AGENTS.md — instruções para o Codex
 
-Este repositório foi montado para o **Claude Code** (`.claude/`, `CLAUDE.md`).
-Eu (Kimi Code CLI) atuo aqui com o usuário como orquestrador entre as duas IAs.
-Este arquivo existe para que eu saiba, a cada sessão, onde está o que.
-**Nada aqui duplica regras: a fonte da verdade é `CLAUDE.md` e `docs/`.**
+Este arquivo ensina o Codex a trabalhar no projeto. `docs/` contém o conhecimento técnico compartilhado e o progresso do desenvolvimento. Não duplique esse conteúdo aqui nem transforme este arquivo em diário.
 
-## O projeto
+## Gestão de contexto
 
-Misadventures — frontend web (depois executável Tauri) de um TCG/RPG cooperativo
-jogado em vezes alternadas. O frontend **exibe o estado** que vem do backend
-autoritativo e **envia as intenções** do jogador; não existe motor de regras aqui.
-Stack: TypeScript 6, Vite 8, React 19 (+ React Compiler), TanStack Query,
-React Router DOM, Zod, Vitest, Playwright, MSW, ESLint, Prettier.
+- Leia somente a documentação relevante à tarefa atual. Não carregue toda a documentação por padrão.
+- Não releia arquivos ou trechos já disponíveis no contexto, salvo mudança, lacuna concreta ou perda do contexto necessário.
+- Prefira buscas direcionadas e seções relevantes à leitura integral de arquivos.
+- Consulte `CLAUDE.md` e os arquivos pertinentes de `.claude/` para conhecer convenções, diretrizes e estrutura. Não os recarregue a cada etapa nem percorra todos os agentes e skills como preparação obrigatória.
+- Quando o usuário invocar um fluxo pelo nome, consulte `.claude/skills/<fluxo>/SKILL.md` se ainda não estiver no contexto.
+- Estas instruções de consulta pontual prevalecem sobre rotinas de leitura repetitiva. Preserve as convenções de implementação já conhecidas.
 
-## Mapa (onde está o que)
+## Mapa de consultas pontuais
 
-| Onde                              | O que guarda                                                                                                                                                            | Quando leio                                                                         |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `CLAUDE.md`                       | Constituição (14 princípios), fluxos de trabalho, comandos                                                                                                              | Antes do primeiro trabalho de código da sessão                                      |
-| `docs/SPEC-FRONTEND.md`           | Spec do frontend: REQ, decisões D, tarefas T, telas — **fonte do comportamento**                                                                                        | Em toda tarefa T-xx (só as partes citadas)                                          |
-| `docs/README.md`                  | Manual de regras do jogo. Citar por seção (README 19.2); o Apêndice B são decisões fechadas que não se reabrem                                                          | Quando a tarefa tocar regras                                                        |
-| `docs/CONTRATO.md`                | Contrato com o backend: §1 convenções, §2 glossário, §4 códigos de erro, seções por FEAT com situação                                                                   | Ao mexer em `src/api/`                                                              |
-| `docs/ROADMAP.md`                 | Momentos e features (FEAT-nn); §2 = protocolo da ponte entre os repositórios                                                                                            | Ao planejar                                                                         |
-| `docs/devlog/`                    | Registro de cada etapa (formato e índice no `README.md`); `tempo.html` + `tempo-eventos.log` = registro de tempo                                                        | Antes de alterar funcionalidade/visual                                              |
-| `docs/PROMPT-AGENTES-E-SKILLS.md` | Meta-prompt que montou este sistema de agentes/skills (referência para replicar em outro projeto; não é fluxo de trabalho)                                              | Só se o autor pedir para replicar/adaptar o sistema                                 |
-| `.claude/skills/*/SKILL.md`       | Workflows: `/tarefa`, `/mudar-spec`, `/checar`, `/testar`, `/registrar-etapa`, `/contrato`, `/retorno-backend`, `/visual`, `/revisar-visual`, `/guia-visual`, `/assets` | Quando o usuário pedir um fluxo pelo nome; `$ARGUMENTS` = o que vem depois          |
-| `.claude/agents/*.md`             | Papéis: `client-dev`, `ui-dev`, `motion-dev`, `ux-designer`, `test-writer`, `spec-reviewer`                                                                             | Como instrução ao implementar ou ao delegar a subagente                             |
-| `.claude/hooks/client-guard.mjs`  | Guarda das proibições em `src/` (D-08)                                                                                                                                  | ESLint aplica as mesmas regras; manual: `node .claude/hooks/client-guard.mjs --all` |
+| Fonte | Quando consultar |
+| --- | --- |
+| `docs/SPEC-FRONTEND.md` | REQ, decisão e tarefa envolvidos no comportamento solicitado. |
+| `docs/README.md` | Seções das regras afetadas; Apêndice B ao investigar decisões fechadas. |
+| `docs/CONTRATO.md` | Seção e situação do contrato usado na comunicação com o backend. |
+| `docs/ROADMAP.md` | Planejamento da feature ou protocolo da ponte entre repositórios (§2). |
+| `docs/devlog/README.md` e entrada da área | Histórico e ponto de retomada antes de alterar funcionalidade ou visual. |
+| `CLAUDE.md` e `.claude/` | Convenção ou procedimento específico ainda desconhecido. |
 
-## Invariantes (resumo — a fonte autoritativa é `CLAUDE.md`)
+O mapa é uma referência, não uma lista de leituras obrigatórias. Não copie regras, contratos, requisitos ou registros de `docs/` para cá.
 
-1. **O backend decide, o frontend mostra.** Nunca reimplementar regra do jogo na UI.
-2. **Contrato primeiro:** toda comunicação passa por `src/api/`; sem `fetch`/socket fora dele; dado externo entra como `unknown` + validação. Sem `any`, sem `Math.random`.
-3. **Spec-anchored + TDD:** mudança de comportamento começa em `docs/SPEC-FRONTEND.md`; testes (Dado/Quando/Então) antes da implementação; nome de teste cita o REQ.
-4. **Escopo fechado:** só o que a tarefa pede; ambiguidade real vira pergunta com opção recomendada. Uma tarefa por vez; ao terminar, entregar roteiro de testes e parar.
-5. **Idioma:** identificadores e contrato em inglês; textos do jogador em pt-BR.
-6. **Histórico antes de mudar:** devlog da área + `git log --oneline -- <arquivos>`.
-7. **Commits:** quem faz é o autor; eu só sugiro (`tipo/descrição curta em minúsculas`). Datas absolutas (AAAA-MM-DD) no que for registrado.
+## Exploração do repositório
 
-## Coordenação usuário ↔ Kimi ↔ Claude
+- Identifique primeiro o módulo relevante e o conjunto mínimo de arquivos.
+- Inspecione implementação e testes relacionados antes de editar.
+- Prefira buscas direcionadas com `rg` e o histórico dos arquivos envolvidos (`git log --oneline -- <arquivos>`).
+- Amplie a exploração somente quando uma dependência ou dúvida concreta exigir.
+- Não explore módulos sem relação nem faça varreduras completas para tarefas isoladas.
+- Ao retomar, use o contexto disponível e as alterações locais; consulte o registro pertinente se necessário. Não suponha que toda alteração local foi feita pelo Codex.
 
-- O usuário orquestra e leva informações de um lado para o outro; eu não falo
-  com o backend nem com o Claude.
+## Convenções de implementação
 
-### Ponte frontend ↔ backend (outro repositório, NestJS)
+- Siga a arquitetura e as convenções de nomes existentes.
+- Reutilize serviços, componentes e utilitários existentes quando aplicável.
+- Preserve as responsabilidades do frontend e do backend e consulte o contrato antes de alterar a comunicação.
+- Siga requisitos e fluxo de testes da tarefa sem reinventar decisões documentadas.
 
-- **Arquivos compartilhados** (cópias idênticas nos dois repositórios):
-  `docs/README.md`, `docs/ROADMAP.md`, `docs/CONTRATO.md`. Ao alterar um:
-  incremento a versão, registro no histórico e termino com Aviso de backend —
-  **quem copia o arquivo inteiro para o outro lado é o autor**.
-- **Seção do contrato tem ciclo de vida:** `proposto (FE/BE)` → `acordado` →
-  `implementado (BE)` → `validado`. Antes de usar uma seção em código, confiro a
-  situação dela. Se não estiver `acordado` ou adiante, **paro**: proponho via
-  `/contrato` ou mostro o Aviso de backend. Formato de resposta nunca é inventado.
-- **Só um lado altera o contrato por vez.** Se os dois mexerem na mesma seção,
-  vale a versão maior e o autor junta (ROADMAP §2).
-- **FEAT só fecha em `validado`.** O lado frontend pronto com MSW é metade; falta
-  rodar os cenários contra o backend real. Quando o autor disser "backend no ar
-  em <url>", quem recebe é a `/retorno-backend`.
-- **Mudança de regra do jogo começa no README** (nova revisão do Apêndice B, com
-  aprovação do autor) e também gera Aviso de backend, para a cópia chegar lá.
-- Qualquer dependência do outro lado termina a resposta com o **Aviso de
-  backend** (formato em `CLAUDE.md`).
+## Controle de escopo
 
-### Fluxos e tempo
+- Modifique apenas o necessário para concluir a tarefa solicitada.
+- Não refatore código sem relação com ela.
+- Não altere regras de negócio sem autorização.
+- Não crie documentação adicional sem necessidade; use os registros existentes quando o fluxo exigir rastreabilidade.
+- Preserve alterações locais do usuário. Commits são feitos pelo autor.
+- Trabalhe em uma tarefa por vez; não avance para outra sem autorização.
+- Pergunte apenas quando uma ambiguidade real impedir a execução correta.
 
-- Fluxos pedidos por nome ("faz a /tarefa T-xx", "roda a /checar"): ler o
-  `SKILL.md` correspondente em `.claude/skills/` e segui-lo.
-- Registro de tempo é automático só no Claude (hooks `time-log`). Se eu rodar a
-  `/registrar-etapa`, as horas da sessão ficam `null` ("a preencher") — quem
-  fecha o `tempo.html` continua sendo o autor.
+## Execução
+
+1. Entenda a tarefa solicitada e seus critérios de conclusão.
+2. Identifique os arquivos mínimos necessários.
+3. Inspecione implementações relacionadas e consulte somente os trechos de documentação ainda necessários.
+4. Implemente a menor solução completa, seguindo o fluxo de testes da tarefa.
+5. Execute testes e validações pertinentes às alterações.
+6. Relate arquivos alterados, resultados das verificações e roteiro de testes quando aplicável. Informe pendências sem declarar concluído o que falta validar.
+
+## Coordenação
+
+- O usuário faz a ponte com o backend e com outras IAs.
+- Ao alterar documentos compartilhados ou encontrar dependência do backend, consulte o protocolo em `docs/ROADMAP.md` §2 e o formato de Aviso de backend em `CLAUDE.md`, sem copiá-los para cá.
+- No fluxo `/registrar-etapa`, horas da sessão ficam `null` quando não houver medição; o autor fecha o registro de tempo.

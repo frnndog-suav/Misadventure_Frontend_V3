@@ -171,8 +171,8 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
     expect(collectionsFixture[0].cardCounts).toEqual({
       zone: 4,
       attribute: 3,
-      equipment: 5,
-      item: 5,
+      equipment: 7,
+      item: 7,
       randomEvent: 1,
       combatEvent: 1,
       dimension: 1,
@@ -189,7 +189,7 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
     ).toBe(false)
   })
 
-  it('REQ-28: o handler padrão da coleção fixture lista as 20 cartas na ordem de id', async () => {
+  it('REQ-28: o handler padrão da coleção fixture lista as 24 cartas na ordem de id', async () => {
     const response = await fetch(
       'http://localhost:3000/catalog/collections/fixture/cards',
     )
@@ -202,11 +202,14 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
       'fixture.dexterity-basic',
       'fixture.endurance-basic',
       'fixture.fishing-rod',
+      'fixture.focus-amulet',
       'fixture.gray-harbor',
+      'fixture.guardian-armor',
       'fixture.healing-potion',
       'fixture.howling-wolves',
       'fixture.iron-helm',
       'fixture.iron-ore',
+      'fixture.lucky-coin',
       'fixture.oak-shield',
       'fixture.old-mine',
       'fixture.pickaxe',
@@ -214,11 +217,12 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
       'fixture.silver-fish',
       'fixture.stone-bend',
       'fixture.strength-basic',
+      'fixture.strength-tonic',
       'fixture.test-dimension',
       'fixture.whispering-grove',
       'fixture.wounded-traveler',
     ])
-    expect(fixtureCardsFixture).toHaveLength(20)
+    expect(fixtureCardsFixture).toHaveLength(24)
   })
 })
 
@@ -440,6 +444,8 @@ describe('REQ-30: Party preparado (dimension, turnOrder, player)', () => {
     expect(party.turnOrder).toEqual([party.members[0].id])
     const { hand, ...player } = party.members[0].player
     expect(player).toEqual({
+      statuses: [],
+      activatableEffects: [],
       playerClasses: [{ playerClass: 'warrior', deckLockMet: true }],
       gold: 10,
       baseHealth: 20,

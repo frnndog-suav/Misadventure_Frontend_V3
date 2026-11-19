@@ -101,3 +101,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 069 | T-53 | [Usar cofre](069-T-53-usar-cofre.md) | aguardando revisão |
 | 070 | RETORNO | [FEAT-32 validada contra o backend real](070-RETORNO-feat-32-validada.md) | concluída |
 | 071 | RETORNO | [FEAT-11 recebida, validação integrada pendente](071-RETORNO-feat-11-pendente.md) | aguardando revisão |
+| 072 | T-54 | [Cliente e fixtures de efeitos](072-T-54-cliente-efeitos.md) | aguardando revisão |

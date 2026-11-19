@@ -80,6 +80,8 @@ const member: Party['members'][number] = {
       accessory: null,
     },
     purseCapacity: 300,
+    statuses: [],
+    activatableEffects: [],
     effectiveModifiers: {
       attack: 6,
       defense: 5,

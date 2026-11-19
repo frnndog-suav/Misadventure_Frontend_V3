@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.69 · **Data:** 2026-11-18
+> **Versão da spec:** 0.70 · **Data:** 2026-11-19
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -536,6 +536,23 @@ Alinha o REQ-44.
 - **Dado** `409` `ACTION_NOT_ALLOWED`, **então** a seção continua aberta com a lista, o item de posição `operationIndex + 1` fica marcado "Recusada" e, abaixo da lista, aparece a `message` seguida do texto do motivo ({nome} = carta de `details.cardId`; sem `cardId`, a da operação recusada): `notInInventory` → "{nome} não está no inventário nessa quantidade."; `notInTcgFolder` → "Não há essas cópias de {nome} na pasta de TCG."; `notStorable` → "{nome} não pode ir para o cofre."; `notInVault` → "Não há essa quantidade de {nome} no cofre."; `vaultFull` → "O cofre está cheio."; `notEnoughGold` → "Não há ouro suficiente na bolsa."; `vaultGoldFull` → "O ouro passaria da capacidade do cofre."; `notEnoughVaultGold` → "Não há ouro suficiente no cofre."; `purseFull` → "O ouro passaria da capacidade da bolsa."; `notAttribute` → "{nome} não é carta de atributo."; `deckSlotsFull` → "Não há slot de deck livre."; `deckNotFound` → "Esse deck guardado não existe."; `inventoryFull` → "Não há espaço no inventário."; `tcgFolderFull`, `buildBelowMinimum`, `notOwned`, `copyLimitExceeded` → os textos do REQ-42; outro motivo (ex.: `noActionPoints`, `zoneActionUnavailable`) → só a `message`.
 - **Dado** outro erro §1.4 ou falha de rede/validação, **então** a seção continua aberta com a lista e mostra a `message` ou "Servidor indisponível. Tente novamente.". Nenhuma exceção chega à tela.
 
+### REQ-53 — Efeitos estruturados nas cartas (FEAT-11)
+- **Dado** um efeito do CONTRATO v0.52, **quando** recebido no catálogo/editor, **então** as quatro partes são validadas por formato e preservadas, incluindo variantes ainda não executadas pelo backend. Campos obrigatórios ausentes, `kind` desconhecido e parâmetros de tipo errado são dados inválidos (D-14).
+- **Dada** uma carta, **então** mostra o `text` recebido e, quando presente, "Buff"/"Debuff"; zona e dimensão mostram "Positivo"/"Negativo". Não interpreta as partes para gerar texto ou calcular valores. Listas vazias não aparecem.
+
+### REQ-54 — Status e ativação em Preparar (FEAT-11)
+- **Dado** o estado de um membro, **então** a seção "Status" mostra, em ordem, a marca "Buff"/"Debuff", o `text` copiado no status, a carta de origem (id como fallback) e "Restantes: {remaining}" quando não nulo. Lista vazia: "Nenhum status ativo.". Modificadores continuam mostrando `effectiveModifiers` recebido.
+- **Dado** o host com `prepare` em `availableActions`, **então** a seção "Ativar efeitos" lista somente `activatableEffects`, na ordem recebida, com origem "Inventário"/"Equipamento", nome da carta, texto do efeito e botão "Ativar {nome} — efeito {n}" (n = índice + 1). Funciona também com 0 pontos. Sem carta carregada, não permite enviar. Não deduz disponibilidade de `cost`, Pico ou Vigor.
+- **Dado** `handPayment: null`, **quando** ativar, **então** envia `{ type: 'prepare', operation: 'activate', cardId, effectIndex }`, sem `payment`.
+- **Dado** `handPayment` não nulo, **então** mostra sua instrução `text` e uma caixa por cópia da mão (nome e número da cópia). Só permite confirmar após selecionar `count` cópias; envia os ids em `payment.handCards`, repetidos quando necessário. Não filtra por atributo nem valida regra de pagamento.
+- **Durante** um pedido, **então** todos os controles de ação ficam desabilitados. Sucesso substitui o estado inteiro pelo `Party` devolvido, limpa a escolha de pagamento e mostra "Efeito ativado.". Recusa mostra a `message` do backend e preserva o último estado e a escolha; falha de rede/validação mostra "Servidor indisponível. Tente novamente.". Nenhum status expira por relógio local.
+
+### REQ-55 — Editor de efeitos estruturados (FEAT-11)
+- **Dada** uma carta de zona, dimensão, atributo, equipamento ou item, **então** "Efeitos" permite adicionar, remover e reordenar efeitos. Cada efeito tem "Texto do efeito {n}", "Gatilho do efeito {n} (JSON)", "Custo do efeito {n} (JSON)", "Ativação do efeito {n} (JSON)", "Duração do efeito {n} (JSON)" e "Marcação do efeito {n}" (Sem marca/Buff/Debuff) ou "Polaridade do efeito {n}" (Positivo/Negativo).
+- **Dado** um efeito carregado, **quando** editar e salvar, **então** preserva todos os parâmetros estruturados, ordem e valores nulos. Novo efeito começa com texto vazio, gatilho `null`, custo `[]`, ativação `[]`, duração `{"kind":"immediate"}`, sem marca (polaridade positiva em zona/dimensão).
+- **Dado** JSON inválido ou formato incompatível com o contrato, **então** informa "Formato de efeito inválido." e impede salvar/pré-visualizar esse conteúdo. Não valida regras entre campos: consumível sem `consumeSelf`, por exemplo, é enviado ao backend, que devolve `CONTENT_INVALID` com mensagem junto ao campo indicado, inclusive caminhos de parâmetros aninhados.
+- **Dada** a pré-visualização, **então** usa a mesma apresentação do REQ-53. Habilidades, requisitos e desfechos continuam como texto simples.
+
 Formato:
 
 ### REQ-nn — <nome>
@@ -726,6 +743,15 @@ A T-48 fecha o lado FE da FEAT-10 com MSW; depois, `/retorno-backend` contra o b
 
 A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o backend real, quando o BE chegar a `implementado (BE)`. Valores do Apêndice A: `vaultCapacity`, `vaultDeckSlots`, `vaultGoldCapacity` (REQ-47).
 
+**FEAT-11 — Efeitos e status** (CONTRATO v0.52 `implementado (BE)`; README 13 e 13.6, B K2). Implementação e validação integral autorizadas pelo autor em 2026-11-19.
+
+- [ ] **T-54 — Cliente e fixtures de efeitos** (REQ-53/54/55): schemas das quatro partes, efeitos, status, efeitos ativáveis, ação e erros; fixtures estáticas compatíveis. `src/api/effects.ts` centraliza schemas; nenhuma regra de execução.
+- [ ] **T-55 — Cartas e editor de efeitos** (REQ-53/55): marcação e polaridade; campos JSON validados escolhidos pelo autor; testes unitários e e2e `lab`/`editor`.
+- [ ] **T-56 — Status e ativação na partida** (REQ-54): apresentação, pagamento por cópia e atualização autoritativa; testes unitários e e2e `party`.
+- [ ] **T-57 — Validar FEAT-11 contra o backend real**: todos os cenários do contrato com MSW desligado, incluindo telas, editor e recusas; registrar resultados e só marcar validado se todos passarem.
+
+**D-60 — FEAT-11:** os schemas verificam formato; regras cruzadas pertencem ao backend. Editor usa campos JSON por parte, opção escolhida pelo autor em 2026-11-19. Valores iniciais são apenas rascunhos editáveis. Telas afetadas (3.5): catálogo em `/lab`, editor em `/lab/editor`, partida em `/grupo/:partyId`; áreas e2e `lab`, `editor`, `party`. Sem valores novos do Apêndice A. `PlayerStatus.text` é independente do catálogo; `handPayment` é a única fonte da instrução e quantidade de pagamento. Tipos compartilhados de enumeração podem ser extraídos de `catalog.ts` para evitar ciclo entre catálogo e efeitos.
+
 ## 8. Histórico
 
 | Versão | Data | Mudança |
@@ -799,3 +825,4 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 | 0.67 | 2026-11-18 | T-51 concluída: REQ-49 no editor ("Tipo de ferramenta", "Vasculha em", "Coletada com" no item; "Coletada com" no equipamento; "Decks de recompensas" na Carta de Dimensão); D-59 item 10. |
 | 0.68 | 2026-11-18 | T-52 concluída: REQ-50 (cofre na seção do membro) e REQ-51 (Vasculhar na região "A vez", resultado por `lastScavenge`, `inventoryFull` com texto próprio); grupo `party-com-vara` no MSW; D-59 item 11. |
 | 0.69 | 2026-11-18 | T-53 concluída: REQ-52 (seção "Usar cofre" com os formulários, a lista "Operações", o envio do lote e a recusa marcada por `operationIndex`); D-59 item 12. Lado FE da FEAT-32 pronto com MSW. |
+| 0.70 | 2026-11-19 | FEAT-11 planejada dentro do retorno autorizado: REQ-53 a REQ-55, D-60, T-54 a T-57. Editor com campos JSON por parte escolhido pelo autor; contrato v0.52 recebido sem divergências entre cópias. |

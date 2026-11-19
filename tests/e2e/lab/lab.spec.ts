@@ -69,7 +69,7 @@ test('REQ-08: o Catálogo filtra por tipo e mostra a carta escolhida (MSW)', asy
     section.getByRole('radio', { name: 'Coleção de Teste' }),
   ).toBeChecked()
   const list = section.getByRole('list', { name: 'Cartas' })
-  await expect(list.getByRole('button')).toHaveCount(20)
+  await expect(list.getByRole('button')).toHaveCount(24)
 
   await section.getByRole('radio', { name: 'Zona (4)' }).check()
   await expect(list.getByRole('button')).toHaveCount(4)
@@ -145,7 +145,7 @@ test('REQ-48: ferramenta, "Coletada com" e "Decks de recompensas" no catálogo (
   const section = page.getByRole('region', { name: 'Catálogo' })
   const list = section.getByRole('list', { name: 'Cartas' })
 
-  await section.getByRole('radio', { name: 'Item (5)' }).check()
+  await section.getByRole('radio', { name: 'Item (7)' }).check()
   await list.getByRole('button', { name: 'Vara de Pesca · Item' }).click()
   const rod = section.getByRole('article', { name: 'Vara de Pesca' })
   await expect(rod.getByText('Ferramenta: fishing-rod')).toBeVisible()

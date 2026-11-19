@@ -254,7 +254,7 @@ describe('REQ-44: PlayerState com inventário, equipamentos, bolsa e modificador
 })
 
 describe('REQ-44: cartas novas da fixture', () => {
-  it('REQ-44: as 5 cartas novas validam e a coleção tem 20 cartas (FEAT-32) na ordem de id', async () => {
+  it('REQ-44: as 5 cartas novas validam e a coleção tem 24 cartas (FEAT-11) na ordem de id', async () => {
     for (const card of [
       shortSwordFixture,
       oakShieldFixture,
@@ -271,8 +271,8 @@ describe('REQ-44: cartas novas da fixture', () => {
       (card) => card.id,
     )
     expect(ids).toEqual([...ids].sort())
-    expect(ids).toHaveLength(20)
-    expect(fixtureCardsFixture).toHaveLength(20)
+    expect(ids).toHaveLength(24)
+    expect(fixtureCardsFixture).toHaveLength(24)
     expect(ids).toEqual(expect.arrayContaining([W, D, H, R, K]))
   })
 
@@ -309,8 +309,8 @@ describe('REQ-44: cartas novas da fixture', () => {
     expect(collectionsFixture[0].cardCounts).toEqual({
       zone: 4,
       attribute: 3,
-      equipment: 5,
-      item: 5,
+      equipment: 7,
+      item: 7,
       randomEvent: 1,
       combatEvent: 1,
       dimension: 1,
@@ -321,6 +321,8 @@ describe('REQ-44: cartas novas da fixture', () => {
     expect(fixtureCardsByTypeFixture.equipment.map((c) => c.id)).toEqual([
       R,
       B,
+      'fixture.focus-amulet',
+      'fixture.guardian-armor',
       H,
       D,
       W,
@@ -329,8 +331,10 @@ describe('REQ-44: cartas novas da fixture', () => {
       'fixture.fishing-rod',
       P,
       'fixture.iron-ore',
+      'fixture.lucky-coin',
       K,
       'fixture.silver-fish',
+      'fixture.strength-tonic',
     ])
   })
 })

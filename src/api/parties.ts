@@ -9,6 +9,7 @@ import { z } from 'zod'
 import { modifierValuesSchema, playerClassSchema } from './catalog'
 import type { EquipmentSlot, PlayerClass } from './catalog'
 import { ApiError, requestJson } from './http'
+import { activatableEffectSchema, playerStatusSchema } from './effects'
 
 /**
  * Campanha solo (CONTRATO §3 FEAT-05) e preparação da partida (FEAT-06):
@@ -143,6 +144,8 @@ export const playerStateSchema = z.object({
   equipment: equipmentInUseSchema,
   purseCapacity: nonNegativeInt,
   effectiveModifiers: modifierValuesSchema,
+  statuses: z.array(playerStatusSchema),
+  activatableEffects: z.array(activatableEffectSchema),
   /** Cofre, capacidades, alvos e resultado do Vasculhar, prontos (FEAT-32, D-59). */
   vault: vaultSchema,
   vaultCapacity: nonNegativeInt,
@@ -359,6 +362,13 @@ export interface AdjustDeckAction {
 export type PrepareAction =
   | { type: 'prepare'; operation: 'equip'; cardId: string }
   | { type: 'prepare'; operation: 'unequip'; slot: EquipmentSlot }
+  | {
+      type: 'prepare'
+      operation: 'activate'
+      cardId: string
+      effectIndex: number
+      payment?: { handCards: string[] }
+    }
 
 /** Usar cofre (README 6.4, 12.2): lote aplicado em ordem pelo backend (D-59). */
 export interface UseVaultAction {
@@ -414,8 +424,18 @@ export const actionNotAllowedDetailsSchema = z.object({
     'deckSlotsFull',
     'deckNotFound',
     'notScavengeable',
+    // FEAT-11
+    'equipmentNotInUse',
+    'effectNotFound',
+    'notActivatable',
+    'notActivatableYet',
+    'notEnoughVigor',
+    'notEnoughLife',
+    'notEnoughPeak',
+    'paymentInvalid',
+    'minimumNotMet',
   ]),
-  /** Só em `notOwned` e `copyLimitExceeded`. */
+  /** Carta envolvida na recusa, inclusive `paymentInvalid` (FEAT-11). */
   cardId: z.string().optional(),
   /** FEAT-32: só no `useVault`, índice da operação recusada (a partir de 0). */
   operationIndex: nonNegativeInt.optional(),

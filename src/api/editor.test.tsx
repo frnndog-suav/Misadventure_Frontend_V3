@@ -473,6 +473,106 @@ describe('REQ-20: cartas da coleção', () => {
 })
 
 describe('REQ-21: criar e salvar carta', () => {
+  it('REQ-53/55: salvar preserva efeitos estruturados, ordem, parâmetros e nulos', async () => {
+    const input: CardInput = {
+      ...forcaInput,
+      attributeKind: 'enhanced',
+      effects: [
+        {
+          text: 'Ganhe 1 moeda.',
+          trigger: null,
+          cost: [],
+          activation: [{ kind: 'gainGold', amount: 1 }],
+          duration: { kind: 'immediate' },
+          mark: null,
+        },
+        {
+          text: 'Ao receber dano elemental, some 3 ao resultado do dado.',
+          trigger: { kind: 'onElementDamageTaken', element: null },
+          cost: [
+            {
+              kind: 'payGold',
+              amount: { base: 'halfGold', multiplier: 1, minimum: 2 },
+            },
+          ],
+          activation: [{ kind: 'diceResultModifier', amount: 3 }],
+          duration: { kind: 'untilAbilityUsed', element: null },
+          mark: 'buff',
+        },
+      ],
+    }
+    const expected = {
+      status: 'draft',
+      card: {
+        ...forcaDraftFixture.card,
+        attributeKind: 'enhanced',
+        effects: input.effects,
+      },
+    }
+    let sent: unknown
+    server.use(
+      http.put('*/lab/content/cards/:cardId', async ({ request }) => {
+        sent = await request.json()
+        return HttpResponse.json(expected)
+      }),
+    )
+    const { result } = renderHook(() => useSaveCard(), { wrapper })
+    act(() => result.current.mutate({ cardId: 'bosque.forca', input }))
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(sent).toEqual(input)
+    expect(result.current.data).toEqual(expected)
+  })
+
+  it('REQ-55: preserva CONTENT_INVALID com caminho de parâmetro aninhado do efeito', async () => {
+    const fields = [
+      {
+        path: 'effects.0.activation.1.amount',
+        message: 'Quantidade inválida.',
+      },
+    ]
+    server.use(
+      http.put('*/lab/content/cards/:cardId', () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: 'CONTENT_INVALID',
+              message: 'Conteúdo inválido.',
+              details: { fields },
+            },
+          },
+          { status: 400 },
+        ),
+      ),
+    )
+    const input: CardInput = {
+      ...forcaInput,
+      attributeKind: 'enhanced',
+      effects: [
+        {
+          text: 'Ganhe moedas.',
+          trigger: null,
+          cost: [],
+          activation: [
+            { kind: 'gainGold', amount: 1 },
+            { kind: 'gainGold', amount: -1 },
+          ],
+          duration: { kind: 'immediate' },
+          mark: null,
+        },
+      ],
+    }
+    const { result } = renderHook(() => useSaveCard(), { wrapper })
+    act(() => result.current.mutate({ cardId: 'bosque.forca', input }))
+    await waitFor(() => expect(result.current.isError).toBe(true))
+    expect(result.current.error).toBeInstanceOf(ContentInvalidError)
+    expect(result.current.error).toMatchObject({
+      code: 'CONTENT_INVALID',
+      message: 'Conteúdo inválido.',
+      fields,
+    })
+    expect(result.current.data).toBeUndefined()
+  })
+
   it('REQ-21: criar envia o CardInput, entrega a carta em rascunho e invalida o editor', async () => {
     let sent: unknown
     server.use(

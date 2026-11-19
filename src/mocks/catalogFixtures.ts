@@ -7,9 +7,8 @@ import type {
 import type { ErrorEnvelope } from '../api/http'
 
 /**
- * Fixtures dos cenários do CONTRATO §3 FEAT-04 e FEAT-06 (v0.25).
- * As 12 cartas são cópias exatas do conteúdo de teste do backend
- * (coleção `fixture`).
+ * Fixtures da coleção `fixture`, atualizadas até o CONTRATO v0.52 (FEAT-11).
+ * Metadados de exemplo são indicados junto das cartas correspondentes.
  * Nenhuma regra (Princípio 3).
  */
 
@@ -20,8 +19,8 @@ export const collectionsFixture: CollectionSummary[] = [
     cardCounts: {
       zone: 4,
       attribute: 3,
-      equipment: 5,
-      item: 5,
+      equipment: 7,
+      item: 7,
       randomEvent: 1,
       combatEvent: 1,
       dimension: 1,
@@ -78,6 +77,11 @@ export const healingPotionFixture: Card = {
   effects: [
     {
       text: 'Recupera 5 de vida.',
+      trigger: null,
+      cost: [{ kind: 'consumeSelf' }],
+      activation: [{ kind: 'heal', amount: 5 }],
+      duration: { kind: 'immediate' },
+      mark: null,
     },
   ],
   toolKind: null,
@@ -422,18 +426,125 @@ export const ironOreFixture: Card = {
   collectionId: 'fixture',
 }
 
-/** GET /catalog/collections/fixture/cards — 20 cartas na ordem de `id`. */
+/** FEAT-11: valores do cenário; metadados não fixados são exemplos estáticos. */
+export const strengthTonicFixture: Card = {
+  ...healingPotionFixture,
+  id: 'fixture.strength-tonic',
+  name: 'Tônico de Força',
+  effects: [
+    {
+      text: '+3 de Ataque durante 2 vezes suas.',
+      trigger: null,
+      cost: [{ kind: 'consumeSelf' }],
+      activation: [
+        { kind: 'modifierFlat', changes: [{ modifier: 'attack', amount: 3 }] },
+      ],
+      duration: { kind: 'forOwnTurns', turns: 2 },
+      mark: 'buff',
+    },
+  ],
+}
+
+export const guardianArmorFixture: Card = {
+  ...oakShieldFixture,
+  id: 'fixture.guardian-armor',
+  name: 'Armadura do Guardião',
+  slot: 'torso',
+  tags: [],
+  modifiers: [{ modifier: 'defense', value: 10 }],
+  effects: [
+    {
+      text: '+20% de Defesa enquanto estiver em uso.',
+      trigger: null,
+      cost: [],
+      activation: [
+        {
+          kind: 'modifierPercent',
+          changes: [{ modifier: 'defense', percent: 20 }],
+        },
+      ],
+      duration: { kind: 'whileSourceActive' },
+      mark: 'buff',
+    },
+  ],
+}
+
+export const focusAmuletFixture: Card = {
+  ...oakShieldFixture,
+  id: 'fixture.focus-amulet',
+  name: 'Amuleto do Foco',
+  slot: 'accessory',
+  tags: [],
+  modifiers: [{ modifier: 'evasion', value: 1 }],
+  effects: [
+    {
+      text: 'Gaste 5 de Vigor: ganhe 10 moedas de ouro.',
+      trigger: null,
+      cost: [{ kind: 'spendVigor', amount: 5 }],
+      activation: [{ kind: 'gainGold', amount: 10 }],
+      duration: { kind: 'immediate' },
+      mark: null,
+    },
+    {
+      text: 'Doe 5 de vida: restaure 5 de Vigor.',
+      trigger: null,
+      cost: [{ kind: 'donateLife', amount: 5 }],
+      activation: [{ kind: 'restoreVigor', amount: 5 }],
+      duration: { kind: 'immediate' },
+      mark: null,
+    },
+    {
+      text: 'Pague um de Força: compre 2 cartas.',
+      trigger: null,
+      cost: [
+        {
+          kind: 'discardFromHand',
+          requirements: [{ attribute: 'strength', count: 1 }],
+          excludeAttributes: [],
+          constraint: 'none',
+          random: false,
+        },
+      ],
+      activation: [{ kind: 'drawCards', count: 2 }],
+      duration: { kind: 'immediate' },
+      mark: null,
+    },
+  ],
+}
+
+export const luckyCoinFixture: Card = {
+  ...healingPotionFixture,
+  id: 'fixture.lucky-coin',
+  name: 'Moeda da Sorte',
+  itemCategory: 'treasure',
+  tags: [],
+  effects: [
+    {
+      text: 'Pague 5 moedas: some 3 ao resultado do dado até o fim do evento.',
+      trigger: null,
+      cost: [{ kind: 'payGold', amount: 5 }],
+      activation: [{ kind: 'diceResultModifier', amount: 3 }],
+      duration: { kind: 'untilEventEnd' },
+      mark: 'buff',
+    },
+  ],
+}
+
+/** GET /catalog/collections/fixture/cards — 24 cartas na ordem de `id`. */
 export const fixtureCardsFixture: Card[] = [
   arcaneWandFixture,
   bladeOfDuskFixture,
   dexterityBasicFixture,
   enduranceBasicFixture,
   fishingRodFixture,
+  focusAmuletFixture,
   grayHarborFixture,
+  guardianArmorFixture,
   healingPotionFixture,
   howlingWolvesFixture,
   ironHelmFixture,
   ironOreFixture,
+  luckyCoinFixture,
   oakShieldFixture,
   oldMineFixture,
   pickaxeFixture,
@@ -441,6 +552,7 @@ export const fixtureCardsFixture: Card[] = [
   silverFishFixture,
   stoneBendFixture,
   strengthBasicFixture,
+  strengthTonicFixture,
   testDimensionFixture,
   whisperingGroveFixture,
   woundedTravelerFixture,
@@ -462,6 +574,8 @@ export const fixtureCardsByTypeFixture: Record<CardType, Card[]> = {
   equipment: [
     arcaneWandFixture,
     bladeOfDuskFixture,
+    focusAmuletFixture,
+    guardianArmorFixture,
     ironHelmFixture,
     oakShieldFixture,
     shortSwordFixture,
@@ -470,8 +584,10 @@ export const fixtureCardsByTypeFixture: Record<CardType, Card[]> = {
     fishingRodFixture,
     healingPotionFixture,
     ironOreFixture,
+    luckyCoinFixture,
     pickaxeFixture,
     silverFishFixture,
+    strengthTonicFixture,
   ],
   randomEvent: [woundedTravelerFixture],
   combatEvent: [howlingWolvesFixture],
