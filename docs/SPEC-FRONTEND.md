@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.74 · **Data:** 2026-11-20
+> **Versão da spec:** 0.75 · **Data:** 2026-11-20
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -780,7 +780,7 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 - [x] **T-59 — Catálogo, editor e configuração** (REQ-56). Compatibilidade legada e executável, decks por zona e valores do laboratório.
 - [x] **T-60 — Encontro na tela do grupo** (REQ-57 e REQ-58). Antecipação, recarga, consumível, pagamentos por cópia, recusas, desistência e fuga.
 - [x] **T-61 — Recompensas e Vasculhar** (REQ-59). Escolhas pendentes, recarga, descarte e resultado de Vasculhar.
-- [ ] **T-62 — Validação integrada da FEAT-12.** Repetir os cenários do contrato contra o backend real com MSW desligado, quando disponíveis a seção implementada, a URL e os dados de teste. Cenários de relógio multiplayer seguem a integração FEAT-26.
+- [x] **T-62 — Validação integrada da FEAT-12.** Repetir os cenários do contrato contra o backend real com MSW desligado, quando disponíveis a seção implementada, a URL e os dados de teste. Cenários de relógio multiplayer seguem a integração FEAT-26.
 
 **D-61 — FEAT-12:** o frontend deriva opções e progresso dos campos autoritativos do contrato. As fixtures são estáticas por cenário. A apresentação de requisitos usa `handCardSelection`, IDs de cópia e recibos do backend. Áreas de teste `lab`, `editor` e `party`.
 
@@ -862,3 +862,4 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 | 0.72 | 2026-11-20 | T-57 concluída: FEAT-11 validada por HTTP e nas telas contra o backend real, sem MSW. |
 | 0.73 | 2026-11-20 | T-54 concluída após aprovação de `typecheck` e `test:build`. |
 | 0.74 | 2026-11-20 | FEAT-12 com CONTRATO v0.56 acordado. Critérios REQ-56 a REQ-59, D-61 e tarefas T-58 a T-62 aprovados pelo autor. |
+| 0.75 | 2026-11-20 | T-62 concluída. FEAT-12 validada contra a API real com MSW desligado. |

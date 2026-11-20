@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.58 · **Data:** 2026-11-20
+> **Versão do contrato:** 0.59 · **Data:** 2026-11-20
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -2170,7 +2170,7 @@ Seja `G` criado com `{ "name": "Os Teimosos", "characterName": "Lia", "playerCla
 
 Só nos e2e do backend: Pico abaixo do requisito com passivo, `removeDebuffs`/`removeBuffs`, as demais durações executadas (vencimento no `move` e na virada da rodada), `donateLife`/`reducePeak`/`payGold` com `Quantity` em fórmula e `minimumNotMet`, `random` no descarte, saves antigos e cada regra de `CONTENT_INVALID`.
 
-### FEAT-12 — Eventos aleatórios — `implementado (BE)`
+### FEAT-12 — Eventos aleatórios — `validado`
 
 Regras de README 3.4, 6.5–6.6, 11.3, 12.2, 12.6, 13 e 14–15. Usa `POST /parties/:partyId/actions` e a resposta `200 Party`. O GET devolve o mesmo estado persistido, inclusive após recarga ou retomada da sessão.
 
@@ -2480,3 +2480,4 @@ Exemplo dos campos executáveis de `cart` no cenário da última parte:
 | 0.56 | 2026-11-20 | BE | FEAT-12 `acordado`: frontend aceitou a v0.55 integralmente. Os cenários acordados incluem a reversão do RNG na última parte recusada e o consumo da cópia escolhida entre duplicatas. |
 | 0.57 | 2026-11-20 | BE | FEAT-12 `acordado`: limites de `escapeVigorPercent` e `reserveDeck` no laboratório e erro `LAB_CONFIG_INVALID` com caminho indexado a partir de zero para o peso inválido. |
 | 0.58 | 2026-11-20 | BE | FEAT-12 `implementado (BE)`: ações HTTP, projeção e save v8 validados pelo autor. Vasculhar com inventário cheio segue a FEAT-12. Validação integrada pendente. |
+| 0.59 | 2026-11-20 | FE | FEAT-12 validada na T-62 com MSW desligado. Interface com as fixtures e 23 cenários determinísticos contra API v0.58. Prazos multiplayer seguem a FEAT-26. |
