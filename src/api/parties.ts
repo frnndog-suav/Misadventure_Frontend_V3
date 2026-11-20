@@ -315,12 +315,15 @@ export function useParties(): UseQueryResult<PartySummary[], Error> {
 }
 
 /** Um grupo (`GET /parties/:partyId`); `null` deixa a consulta parada. */
-export function useParty(partyId: string | null): UseQueryResult<Party, Error> {
+export function useParty(
+  partyId: string | null,
+  enabled = true,
+): UseQueryResult<Party, Error> {
   return useQuery({
     queryKey: [...partiesKey, partyId],
     queryFn: async () =>
       partySchema.parse(await requestJson('GET', partyPath(partyId ?? ''))),
-    enabled: partyId !== null,
+    enabled: partyId !== null && enabled,
     retry: false,
   })
 }

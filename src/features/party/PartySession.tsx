@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react'
+﻿import { useEffect, useId, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   equipmentSlotSchema,
@@ -35,6 +35,7 @@ import { PartyMap } from './PartyMap'
 import { EffectsPanel, type ActivateEffect } from './EffectsPanel'
 import { nameOf } from './cardNames'
 import { RandomEventPanel } from './RandomEventPanel'
+import { RewardChoice } from './RewardChoice'
 
 type Cards = ReadonlyMap<string, Card>
 
@@ -59,6 +60,10 @@ function cardIdsOf(party: Party): string[] {
     party.dimension.startingCityZoneId,
     ...party.dimension.map.zones.map(({ zoneId }) => zoneId),
     ...eventReceiptCardIds(party.randomEventEncounter?.payments ?? []),
+    ...party.pendingRewards.flatMap(({ cardId, discardOptions }) => [
+      cardId,
+      ...discardOptions.map((option) => option.cardId),
+    ]),
     ...party.members.flatMap(({ player }) => [
       player.zoneId,
       player.respawnZoneId,
@@ -72,6 +77,7 @@ function cardIdsOf(party: Party): string[] {
       ...player.vault.slots.map(({ cardId }) => cardId),
       ...player.vault.decks.flat().map(({ cardId }) => cardId),
       ...player.scavengeTargets,
+      ...(player.lastRewardDelivery ? [player.lastRewardDelivery.cardId] : []),
       ...(player.lastRandomEvent === null
         ? []
         : [
@@ -1198,8 +1204,10 @@ export function PartySession() {
   const end = useEndSession(partyId)
   const action = usePartyAction(partyId)
   const { mutate: startSession } = start
-  const reloadEncounter = start.data?.randomEventEncounter != null
-  const restoredParty = useParty(reloadEncounter ? partyId : null)
+  const reloadChoice =
+    start.data?.randomEventEncounter != null ||
+    (start.data?.pendingRewards.length ?? 0) > 0
+  const restoredParty = useParty(start.isSuccess ? partyId : null, reloadChoice)
 
   // Continuar ao abrir; repetir não muda nada (CONTRATO §3 FEAT-05, D-37).
   useEffect(() => startSession(), [startSession])
@@ -1218,15 +1226,52 @@ export function PartySession() {
   if (action.data !== undefined && action.data !== lastActionParty) {
     setLastActionParty(action.data)
   }
-  const initialParty = reloadEncounter
+  const initialParty = reloadChoice
     ? restoredParty.isFetchedAfterMount
       ? restoredParty.data
       : undefined
     : start.data
-  const party = action.data ?? lastActionParty ?? initialParty
+  const party = lastActionParty ?? initialParty
   const classes = useClasses()
   const cards = useCatalogCards(party === undefined ? [] : cardIdsOf(party))
   const host = party?.members.find((m) => m.isHost)
+  const reward = party?.pendingRewards[0]
+  const deadline = reward?.decisionDeadlineAt
+  const { refetch } = restoredParty
+  const [expiredDeadline, setExpiredDeadline] = useState<string>()
+  const deadlineKey = deadline
+    ? JSON.stringify([reward?.id, deadline])
+    : undefined
+  const awaitingReward =
+    deadlineKey !== undefined && expiredDeadline === deadlineKey
+  const [rewardRefreshError, setRewardRefreshError] = useState<Error | null>(
+    null,
+  )
+  const [resolvingScavenge, setResolvingScavenge] = useState(false)
+
+  useEffect(() => {
+    if (!deadline || action.isPending || end.isPending || awaitingReward) return
+    const timer = window.setTimeout(
+      () => {
+        setExpiredDeadline(deadlineKey)
+        void refetch().then(({ data, error }) => {
+          setRewardRefreshError(error)
+          if (!error && data) setLastActionParty(data)
+        })
+      },
+      Math.max(0, Date.parse(deadline) - Date.now()),
+    )
+    return () => window.clearTimeout(timer)
+  }, [
+    deadline,
+    deadlineKey,
+    action.isPending,
+    end.isPending,
+    awaitingReward,
+    refetch,
+  ])
+
+  const delivery = host?.player.lastRewardDelivery
   const [adjusting, setAdjusting] = useState(false)
   // Carta do último Preparar: {nome} das mensagens do REQ-45 (no "Guardar", a
   // carta sai do slot, então o nome vem do clique, não do `Party` devolvido).
@@ -1261,14 +1306,20 @@ export function PartySession() {
     if (action.variables.type === 'useVault') {
       const n = action.variables.operations.length
       status = `Cofre: ${n} ${n === 1 ? 'operação feita' : 'operações feitas'}.`
-    } else if (action.variables.type === 'scavenge') {
+    } else if (
+      action.variables.type === 'scavenge' ||
+      (action.variables.type === 'resolveReward' && resolvingScavenge)
+    ) {
       // O resultado vem de `lastScavenge`, nunca do inventário (D-59 item 2).
       const last = host.player.lastScavenge
       if (last !== null) {
         const name = nameOf(cards.cards, last.cardId)
-        status = last.found
-          ? `Você achou ${name}.`
-          : `${name} não estava no deck de recompensas.`
+        status = {
+          inventory: `Você achou ${name}.`,
+          pending: `${name} aguarda uma escolha.`,
+          left: `Você deixou ${name}.`,
+          none: `${name} não estava no deck de recompensas.`,
+        }[last.delivery]
       }
     } else if (action.variables.type === 'prepare') {
       status =
@@ -1289,10 +1340,9 @@ export function PartySession() {
       status = `Você está em ${nameOf(cards.cards, host.player.zoneId)}.`
     }
   } else if (start.isError) status = errorText(start.error)
-  else if (reloadEncounter && restoredParty.isError && party === undefined)
+  else if (reloadChoice && restoredParty.isError && party === undefined)
     status = errorText(restoredParty.error)
-  else if (reloadEncounter && party === undefined)
-    status = 'Carregando o encontro…'
+  else if (reloadChoice && party === undefined) status = 'Carregando a escolha…'
   else if (!start.isSuccess) status = 'Abrindo o grupo…'
   else if (classes.isError) status = errorText(classes.error)
   else if (cards.error !== null) status = errorText(cards.error)
@@ -1380,6 +1430,53 @@ export function PartySession() {
             setVaulting={setVaulting}
             moving={action.isPending || end.isPending}
           />
+          {delivery && (
+            <p aria-live="polite">
+              {nameOf(cards.cards, delivery.cardId)}{' '}
+              {
+                {
+                  kept: 'foi mantido.',
+                  returnedToDeck: 'voltou ao deck de recompensas.',
+                  removed: 'saiu da reserva.',
+                  sentToLimbo: 'foi enviado ao limbo.',
+                }[delivery.disposition]
+              }
+            </p>
+          )}
+          {reward && (
+            <RewardChoice
+              key={reward.id}
+              reward={reward}
+              cards={cards.cards}
+              disabled={
+                reward.memberId !== host?.id ||
+                !host.player.availableActions.includes('resolveReward') ||
+                action.isPending ||
+                end.isPending ||
+                awaitingReward
+              }
+              onResolve={(choice) => {
+                setResolvingScavenge(reward.source.type === 'scavenge')
+                action.mutate(choice)
+              }}
+            />
+          )}
+          {awaitingReward && !restoredParty.isFetching && (
+            <p>
+              {rewardRefreshError
+                ? errorText(rewardRefreshError)
+                : 'Aguardando o resultado da escolha.'}{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  setRewardRefreshError(null)
+                  setExpiredDeadline(undefined)
+                }}
+              >
+                Consultar recompensa novamente
+              </button>
+            </p>
+          )}
         </>
       )}
       <p role="status">{status}</p>

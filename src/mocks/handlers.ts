@@ -210,12 +210,25 @@ async function partyActionScenario(
     ) {
       key += ':empty'
     }
-    const response = Object.hasOwn(scenario.actions, key)
-      ? scenario.actions[key]
+    const rewardKey = `${key}:${field(body, 'rewardId')}`
+    const scenarioKey =
+      type === 'resolveReward' && Object.hasOwn(scenario.actions, rewardKey)
+        ? rewardKey
+        : key
+    const response = Object.hasOwn(scenario.actions, scenarioKey)
+      ? scenario.actions[scenarioKey]
       : undefined
     if (response && 'reason' in response) {
       return HttpResponse.json(
-        { error: { ...eventMinimumNotMetFixture.error, details: response } },
+        {
+          error: {
+            ...eventMinimumNotMetFixture.error,
+            ...(response.reason === 'rewardDoesNotFit' && {
+              message: 'O lote não libera espaço para a recompensa.',
+            }),
+            details: response,
+          },
+        },
         { status: 409 },
       )
     }
@@ -271,6 +284,7 @@ async function partyActionScenario(
         {
           error: {
             ...eventMinimumNotMetFixture.error,
+            message: 'O lote não libera espaço para a recompensa.',
             details: { reason: 'rewardDoesNotFit' },
           },
         },

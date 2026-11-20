@@ -108,3 +108,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 076 | T-58 | [Cliente e fixtures de eventos aleatórios](076-T-58-cliente-eventos-aleatorios.md) | concluída |
 | 077 | T-59 | [Catálogo, editor e configuração de eventos aleatórios](077-T-59-catalogo-editor-configuracao-eventos.md) | concluída |
 | 078 | T-60 | [Encontro de evento aleatório na tela do grupo](078-T-60-encontro-evento-aleatorio.md) | concluída |
+| 079 | T-61 | [Recompensas pendentes e Vasculhar](079-T-61-recompensas-e-vasculhar.md) | concluída |

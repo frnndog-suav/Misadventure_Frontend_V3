@@ -983,7 +983,9 @@ export const eventScenarios: Partial<Record<string, EventScenario>> = {
     },
   },
   'party-vasculhar-pilha': {
-    party: partyScavengeWithoutSpaceFixture,
+    party: withPlayer(partyScavengeWithoutSpaceFixture, {
+      scavengeTargets: [ore],
+    }),
     actions: {
       scavenge: withPlayer(scavengeSpent, {
         availableActions: ['endTurn'],
@@ -993,12 +995,22 @@ export const eventScenarios: Partial<Record<string, EventScenario>> = {
     },
   },
   'party-vasculhar-vazio': {
-    party: partyScavengeWithoutSpaceFixture,
+    party: withPlayer(partyScavengeWithoutSpaceFixture, {
+      scavengeTargets: [ore],
+    }),
     actions: {
       scavenge: withPlayer(scavengeSpent, {
         availableActions: ['endTurn'],
         lastScavenge: { cardId: ore, found: false, delivery: 'none' },
       }),
+    },
+  },
+  'party-vasculhar-pendente': {
+    party: partyScavengePendingFixture,
+    actions: {
+      'resolveReward:leave': partyScavengeLeftFixture,
+      'resolveReward:keep:empty': { reason: 'rewardDoesNotFit' },
+      'resolveReward:keep': partyScavengeKeptFixture,
     },
   },
   'party-evento-busca-vazia': {
@@ -1028,6 +1040,18 @@ export const eventScenarios: Partial<Record<string, EventScenario>> = {
       ),
       'resolveReward:keep:empty': { reason: 'rewardDoesNotFit' },
       'resolveReward:keep': reservePending,
+      'resolveReward:leave:r2': resolved(
+        reservePending,
+        {},
+        {
+          lastRewardDelivery: {
+            rewardId: reserveReward.id,
+            cardId: reserveReward.cardId,
+            origin: reserveReward.origin,
+            disposition: 'removed',
+          },
+        },
+      ),
     },
   },
   'party-evento-premio-fixo': {

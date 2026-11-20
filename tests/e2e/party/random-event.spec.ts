@@ -1,4 +1,24 @@
-import { expect, test } from '@playwright/test'
+﻿import { expect, test } from '@playwright/test'
+
+test('REQ-59: reabre a escolha e troca a recompensa após um lote aceito', async ({
+  page,
+}) => {
+  await page.goto('/grupo/party-evento-premio-urbano')
+  await page.reload()
+  const reward = page.getByRole('region', { name: 'Recompensa pendente' })
+  await expect(reward).toContainText('Minério de Ferro')
+  await reward.getByRole('button', { name: 'Manter' }).click()
+  await expect(page.getByRole('status')).toHaveText(
+    'O lote não libera espaço para a recompensa.',
+  )
+  await reward.getByLabel('Descartar Peixe Prateado').selectOption('1')
+  await reward.getByRole('button', { name: 'Manter' }).click()
+  await expect(page.getByText('Minério de Ferro foi mantido.')).toBeVisible()
+  await expect(reward).toContainText('Poção de Cura')
+  await reward.getByRole('button', { name: 'Deixar' }).click()
+  await expect(page.getByText('Poção de Cura saiu da reserva.')).toBeVisible()
+  await expect(reward).toHaveCount(0)
+})
 
 test('REQ-57 e REQ-58: revela, paga por cópia e encerra o evento', async ({
   page,

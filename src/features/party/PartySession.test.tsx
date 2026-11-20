@@ -29,6 +29,8 @@ import {
   eventScenarios,
   partyEncounterFixture,
   partyPartialEventFixture,
+  partyScavengePendingFixture,
+  partyScavengeLeftFixture,
 } from '../../mocks/randomEventFixtures'
 import {
   actionNoActionPointsFixture,
@@ -84,6 +86,119 @@ function renderParty(id: string = partyId): void {
 
 const status = () => screen.getAllByRole('status')[0]
 const endButton = () => screen.getByRole('button', { name: 'Encerrar sessão' })
+
+it('REQ-59: abre a recompensa de Vasculhar com 0 PA e mostra a devolução ao deck', async () => {
+  renderParty('party-vasculhar-sem-espaco')
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Vasculhar Peixe Prateado' }),
+  )
+  const reward = await screen.findByRole('region', {
+    name: 'Recompensa pendente',
+  })
+  expect(within(reward).getByText(/Peixe Prateado/)).toBeInTheDocument()
+  expect(status()).toHaveTextContent('aguarda uma escolha')
+  fireEvent.click(within(reward).getByRole('button', { name: 'Deixar' }))
+  expect(
+    await screen.findByText('Peixe Prateado voltou ao deck de recompensas.'),
+  ).toBeInTheDocument()
+  expect(status()).toHaveTextContent('Você deixou Peixe Prateado.')
+})
+
+it.each([
+  ['party-vasculhar-pilha', 'Você achou Minério de Ferro.'],
+  [
+    'party-vasculhar-vazio',
+    'Minério de Ferro não estava no deck de recompensas.',
+  ],
+])(
+  'REQ-59: %s apresenta a entrega retornada pelo Vasculhar',
+  async (id, result) => {
+    renderParty(id)
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Vasculhar Minério de Ferro' }),
+    )
+    await waitFor(() => expect(status()).toHaveTextContent(result))
+    expect(
+      screen.queryByRole('region', { name: 'Recompensa pendente' }),
+    ).not.toBeInTheDocument()
+  },
+)
+
+it('REQ-59: restaura a pendência pelo GET e envia o lote escolhido sem perder a seleção após recusa', async () => {
+  const id = partyScavengePendingFixture.id
+  const requests: unknown[] = []
+  server.use(
+    http.post(`*/parties/${id}/session`, () =>
+      HttpResponse.json(partyScavengePendingFixture),
+    ),
+    http.get(`*/parties/${id}`, () =>
+      HttpResponse.json({
+        ...partyScavengePendingFixture,
+        pendingRewards: [
+          { ...partyScavengePendingFixture.pendingRewards[0], id: 'restored' },
+        ],
+      }),
+    ),
+    http.post(`*/parties/${id}/actions`, async ({ request }) => {
+      requests.push(await request.json())
+      return HttpResponse.json(
+        {
+          error: {
+            code: 'ACTION_NOT_ALLOWED',
+            message: 'O lote não libera espaço.',
+            details: { reason: 'rewardDoesNotFit' },
+          },
+        },
+        { status: 409 },
+      )
+    }),
+  )
+  renderParty(id)
+  const discard = await screen.findByLabelText('Descartar Minério de Ferro')
+  fireEvent.change(discard, { target: { value: '1' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Manter' }))
+  expect(
+    await screen.findByText('O lote não libera espaço.'),
+  ).toBeInTheDocument()
+  expect(discard).toHaveValue('1')
+  expect(requests).toEqual([
+    {
+      type: 'resolveReward',
+      rewardId: 'restored',
+      choice: 'keep',
+      discard: [{ cardId: 'fixture.iron-ore', copies: 1 }],
+    },
+  ])
+})
+
+it('REQ-59: ao vencer o prazo busca a transição no GET sem enviar Deixar', async () => {
+  const id = partyScavengePendingFixture.id
+  const decisionDeadlineAt = new Date(Date.now() + 1000).toISOString()
+  const pending = {
+    ...partyScavengePendingFixture,
+    pendingRewards: [
+      { ...partyScavengePendingFixture.pendingRewards[0], decisionDeadlineAt },
+    ],
+  }
+  const action = vi.fn()
+  let reads = 0
+  server.use(
+    http.post(`*/parties/${id}/session`, () => HttpResponse.json(pending)),
+    http.get(`*/parties/${id}`, () =>
+      HttpResponse.json(++reads === 1 ? pending : partyScavengeLeftFixture),
+    ),
+    http.post(`*/parties/${id}/actions`, () => {
+      action()
+      return HttpResponse.json(partyScavengeLeftFixture)
+    }),
+  )
+  renderParty(id)
+  expect(await screen.findByText(/Prazo da escolha/)).toBeInTheDocument()
+  expect(
+    await screen.findByText('Peixe Prateado voltou ao deck de recompensas.'),
+  ).toBeInTheDocument()
+  expect(action).not.toHaveBeenCalled()
+})
 
 it('REQ-57: inicia em antecipação e revela a carta', async () => {
   renderParty('party-evento-aleatorio')
