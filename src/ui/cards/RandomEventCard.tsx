@@ -15,6 +15,9 @@ export function RandomEventCard({ card }: { card: RandomEventCardData }) {
         badOutcome={card.badOutcome}
         noEscape={card.noEscape}
       />
+      {!card.noEscape && card.escapeThreshold != null && (
+        <p>Limiar de fuga: {card.escapeThreshold}</p>
+      )}
     </CardFrame>
   )
 }

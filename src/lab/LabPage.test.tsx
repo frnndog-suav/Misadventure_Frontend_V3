@@ -153,6 +153,7 @@ describe('REQ-06: configuração ajustável do jogo', () => {
     const region = screen.getByRole('region', { name: 'Configuração' })
     const names = within(region)
       .getAllByRole('spinbutton')
+      .slice(0, labels.length)
       .map((input) => (input as HTMLInputElement).labels?.[0]?.textContent)
     expect(names).toEqual(labels.map(([, label]) => label))
   })
@@ -163,6 +164,7 @@ describe('REQ-06: configuração ajustável do jogo', () => {
     const region = screen.getByRole('region', { name: 'Configuração' })
     const names = within(region)
       .getAllByRole('spinbutton')
+      .slice(0, labels.length)
       .map((input) => (input as HTMLInputElement).labels?.[0]?.textContent)
     expect(names.slice(-10, -5)).toEqual([
       'Cópias máximas por carta no deck',
@@ -182,6 +184,7 @@ describe('REQ-06: configuração ajustável do jogo', () => {
     const region = screen.getByRole('region', { name: 'Configuração' })
     const names = within(region)
       .getAllByRole('spinbutton')
+      .slice(0, labels.length)
       .map((input) => (input as HTMLInputElement).labels?.[0]?.textContent)
     expect(names.slice(-6, -3)).toEqual([
       'Recuperar: comprar até (cartas na mão)',
@@ -199,6 +202,7 @@ describe('REQ-06: configuração ajustável do jogo', () => {
     const region = screen.getByRole('region', { name: 'Configuração' })
     const names = within(region)
       .getAllByRole('spinbutton')
+      .slice(0, labels.length)
       .map((input) => (input as HTMLInputElement).labels?.[0]?.textContent)
     expect(names.slice(-4)).toEqual([
       'Capacidade da bolsa',
@@ -520,4 +524,47 @@ describe('REQ-07: vitrine de componentes', () => {
     expect(within(section).getByText('Categoria pendente')).toBeVisible()
     await loaded()
   })
+})
+
+it('REQ-56: shows escape configuration and links the indexed MSW error to the reserve weight', async () => {
+  renderLab()
+  expect(
+    await screen.findByLabelText('Custo de fuga (% do Pico em Vigor)'),
+  ).toHaveValue(20)
+  const weight = screen.getByLabelText('Peso da entrada 1')
+  fireEvent.change(weight, { target: { value: '0' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar' }))
+  await waitFor(() =>
+    expect(weight).toHaveAccessibleDescription('Use um peso de pelo menos 1.'),
+  )
+  expect(weight).toHaveValue(0)
+})
+
+it('REQ-56: saves a weighted gold and card reserve with MSW and restores defaults', async () => {
+  renderLab()
+  const escape = await screen.findByLabelText(
+    'Custo de fuga (% do Pico em Vigor)',
+  )
+  fireEvent.change(escape, { target: { value: '25' } })
+  fireEvent.change(screen.getByLabelText('Peso da entrada 1'), {
+    target: { value: '2' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Adicionar entrada' }))
+  fireEvent.change(screen.getByLabelText('Tipo da entrada 2'), {
+    target: { value: 'card' },
+  })
+  fireEvent.change(screen.getByLabelText('Carta da entrada 2'), {
+    target: { value: 'fixture.healing-potion' },
+  })
+  fireEvent.change(screen.getByLabelText('Peso da entrada 2'), {
+    target: { value: '3' },
+  })
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar' }))
+  await screen.findByText('Configuração salva.')
+  expect(escape).toHaveValue(25)
+  expect(screen.getByLabelText('Peso da entrada 2')).toHaveValue(3)
+  fireEvent.click(screen.getByRole('button', { name: 'Restaurar padrões' }))
+  await screen.findByText('Padrões restaurados.')
+  expect(escape).toHaveValue(20)
+  expect(screen.queryByLabelText('Peso da entrada 2')).not.toBeInTheDocument()
 })

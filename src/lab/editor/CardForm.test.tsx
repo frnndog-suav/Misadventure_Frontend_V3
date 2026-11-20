@@ -1828,3 +1828,24 @@ describe('REQ-49: ferramentas e decks de recompensas no editor', () => {
     expect(within(preview()).getByText('Ferramenta: net')).toBeInTheDocument()
   })
 })
+
+it('REQ-56: links MSW publication rejection to the legacy card reference in the zone deck', async () => {
+  renderEditor()
+  await openCard('Dimensão com evento legado · Dimensão · Rascunho')
+  fireEvent.click(within(form()).getByRole('button', { name: 'Publicar' }))
+  fireEvent.click(
+    within(screen.getByRole('dialog')).getByRole('button', {
+      name: 'Publicar',
+    }),
+  )
+  const reference = within(
+    within(form()).getByRole('group', { name: 'Decks de eventos' }),
+  ).getByLabelText('Carta 1 do deck 1 de eventos')
+  await waitFor(() =>
+    expect(reference).toHaveAccessibleDescription(
+      'Use um evento aleatório com regras executáveis.',
+    ),
+  )
+  expect(reference).toHaveValue('fixture.wounded-traveler')
+  expect(within(form()).getByText('Situação: Rascunho')).toBeVisible()
+})

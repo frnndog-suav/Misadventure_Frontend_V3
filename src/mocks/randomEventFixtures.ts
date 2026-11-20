@@ -1,3 +1,4 @@
+import { executableEventFixture } from './catalogFixtures'
 import type { Party } from '../api/parties'
 import { partyInSessionFixture } from './partyFixtures'
 
@@ -69,26 +70,7 @@ export const partyEncounterFixture: Party = {
   randomEventEncounter: {
     ...partyAnticipationFixture.randomEventEncounter!,
     phase: 'encounter',
-    card: {
-      type: 'randomEvent',
-      id: 'fixture.event-cart-test',
-      collectionId: 'fixture',
-      title: 'Carroça na estrada',
-      flavorText: null,
-      noEscape: false,
-      escapeThreshold: null,
-      requirements: [
-        {
-          id: 'attrs',
-          text: 'Entregue duas Forças.',
-          kind: 'attributes',
-          specific: { strength: 2 },
-          any: 0,
-        },
-      ],
-      goodOutcome: { text: 'A passagem está livre.', steps: [] },
-      badOutcome: { text: 'Você precisa voltar.', steps: [] },
-    },
+    card: executableEventFixture,
     requirements: [
       {
         ...requirement,

@@ -20,7 +20,9 @@ import { GrantSection } from './GrantSection'
 import './LabPage.css'
 
 /** Rótulos dos campos (REQ-06, glossário §2.6), na ordem da tela. */
-const fieldLabels: Record<GameConfigKey, string> = {
+type NumericKey = GameConfigKey | 'escapeVigorPercent'
+
+const fieldLabels: Record<NumericKey, string> = {
   minPlayers: 'Jogadores (mínimo)',
   maxPlayers: 'Jogadores (máximo)',
   actionPointsPerTurn: 'Pontos de ação por vez',
@@ -54,9 +56,143 @@ const fieldLabels: Record<GameConfigKey, string> = {
   vaultCapacity: 'Capacidade do cofre',
   vaultDeckSlots: 'Slots de decks do cofre (a build em uso ocupa um)',
   vaultGoldCapacity: 'Capacidade de ouro do cofre',
+  escapeVigorPercent: 'Custo de fuga (% do Pico em Vigor)',
 }
 
-const fieldKeys = Object.keys(fieldLabels) as GameConfigKey[]
+const fieldKeys = Object.keys(fieldLabels) as NumericKey[]
+type ReserveEntry = LabConfig['values']['reserveDeck'][number]
+type ReserveDraft = {
+  type: ReserveEntry['type']
+  weight: string
+  amount: string
+  cardId: string
+}
+
+function reserveDraft(entry: ReserveEntry): ReserveDraft {
+  return {
+    type: entry.type,
+    weight: String(entry.weight),
+    amount: entry.type === 'gold' ? String(entry.amount) : '1',
+    cardId: entry.type === 'card' ? entry.cardId : '',
+  }
+}
+
+function ReserveFields({
+  entries,
+  limits,
+  onChange,
+  errors,
+}: {
+  entries: ReserveDraft[]
+  limits: NonNullable<LabConfig['limits']['reserveDeck']>
+  onChange: (entries: ReserveDraft[]) => void
+  errors: LabConfigInvalidDetails['fields']
+}) {
+  function message(path: string) {
+    const reason = errors.find(({ field }) => field === path)?.reason
+    if (reason === 'notInteger') return 'Use um número inteiro.'
+    if (reason === 'outOfRange') {
+      if (path === 'reserveDeck')
+        return `Inclua pelo menos ${limits.minEntries} entrada(s).`
+      if (path.endsWith('.weight'))
+        return `Use um peso de pelo menos ${limits.minWeight}.`
+    }
+    if (reason) return 'Valor inválido.'
+  }
+  return (
+    <fieldset aria-describedby="lab-reserveDeck-hint">
+      <legend>Deck de reserva</legend>
+      <p id="lab-reserveDeck-hint" className="lab-hint">
+        Mínimo de entradas: {limits.minEntries}. Peso mínimo: {limits.minWeight}
+        .
+      </p>
+      {message('reserveDeck') && (
+        <p className="lab-error">{message('reserveDeck')}</p>
+      )}
+      {entries.map((entry, index) => {
+        const path = `reserveDeck.${index}`
+        const update = (next: Partial<ReserveDraft>) =>
+          onChange(
+            entries.map((old, i) => (i === index ? { ...old, ...next } : old)),
+          )
+        return (
+          <fieldset key={index}>
+            <legend>Entrada {index + 1}</legend>
+            <label>
+              Tipo da entrada {index + 1}
+              <select
+                value={entry.type}
+                onChange={(e) =>
+                  update({ type: e.target.value === 'card' ? 'card' : 'gold' })
+                }
+                aria-describedby={
+                  message(path + '.type') ? path + '.type-error' : undefined
+                }
+              >
+                <option value="gold">Ouro</option>
+                <option value="card">Carta</option>
+              </select>
+            </label>
+            {message(path + '.type') && (
+              <p id={path + '.type-error'} className="lab-error">
+                {message(path + '.type')}
+              </p>
+            )}
+            {message(path) && <p className="lab-error">{message(path)}</p>}
+            {(
+              [
+                entry.type === 'gold'
+                  ? (['amount', 'Quantidade de ouro da entrada'] as const)
+                  : (['cardId', 'Carta da entrada'] as const),
+                ['weight', 'Peso da entrada'],
+              ] as const
+            ).map(([key, label]) => {
+              const id = `lab-${path}.${key}`
+              const error = message(`${path}.${key}`)
+              return (
+                <div className="lab-field" key={key}>
+                  <label htmlFor={id}>
+                    {label} {index + 1}
+                  </label>
+                  <input
+                    id={id}
+                    type={key === 'cardId' ? 'text' : 'number'}
+                    value={entry[key]}
+                    onChange={(e) => update({ [key]: e.target.value })}
+                    aria-invalid={error ? true : undefined}
+                    aria-describedby={error ? id + '-error' : undefined}
+                  />
+                  {error && (
+                    <span id={id + '-error'} className="lab-error">
+                      {error}
+                    </span>
+                  )}
+                </div>
+              )
+            })}
+            <button
+              type="button"
+              onClick={() => onChange(entries.filter((_, i) => i !== index))}
+            >
+              Remover entrada {index + 1}
+            </button>
+          </fieldset>
+        )
+      })}
+      <button
+        type="button"
+        onClick={() =>
+          onChange([
+            ...entries,
+            reserveDraft({ type: 'gold', amount: 1, weight: limits.minWeight }),
+          ])
+        }
+      >
+        Adicionar entrada
+      </button>
+    </fieldset>
+  )
+}
 
 const unavailable = 'Servidor indisponível. Tente novamente.'
 
@@ -87,35 +223,59 @@ function fieldErrorText(
   }
 }
 
-function isFieldKey(field: string | null): field is GameConfigKey {
-  return field !== null && field in fieldLabels
+function isFieldKey(field: string | null): field is NumericKey {
+  return field !== null && Object.hasOwn(fieldLabels, field)
 }
 
 function ConfigForm({ config }: { config: LabConfig }) {
   const update = useUpdateLabConfig()
   const reset = useResetLabConfig()
   /** Só o que o jogador digitou e ainda não foi salvo. */
-  const [edits, setEdits] = useState<Partial<Record<GameConfigKey, string>>>({})
+  const [edits, setEdits] = useState<Partial<Record<NumericKey, string>>>({})
+  const [reserveEdits, setReserveEdits] = useState<ReserveDraft[] | null>(null)
   const [lastAction, setLastAction] = useState<'save' | 'reset' | null>(null)
 
-  const shown = (key: GameConfigKey) => edits[key] ?? String(config.values[key])
+  const shown = (key: NumericKey) => edits[key] ?? String(config.values[key])
 
   const patch: LabConfigPatch = {}
   let hasEmpty = false
   for (const key of fieldKeys) {
+    if (!config.limits[key]) continue
     const text = shown(key)
     if (text.trim() === '') hasEmpty = true
     else if (Number(text) !== config.values[key]) patch[key] = Number(text)
   }
+  if (reserveEdits) {
+    const reserve = reserveEdits.map(
+      ({ type, weight, amount, cardId }): ReserveEntry =>
+        type === 'gold'
+          ? { type, amount: Number(amount), weight: Number(weight) }
+          : { type, cardId, weight: Number(weight) },
+    )
+    hasEmpty ||= reserveEdits.some(
+      ({ type, amount, cardId, weight }) =>
+        !weight.trim() || !(type === 'gold' ? amount : cardId).trim(),
+    )
+    if (JSON.stringify(reserve) !== JSON.stringify(config.values.reserveDeck))
+      patch.reserveDeck = reserve
+  }
   const canSave = !hasEmpty && Object.keys(patch).length > 0
 
-  const fieldErrors: Partial<Record<GameConfigKey, string>> = {}
-  if (lastAction === 'save' && update.error instanceof LabConfigInvalidError) {
-    for (const { field, reason } of update.error.fields) {
-      if (!isFieldKey(field)) continue
-      const text = fieldErrorText(reason, config.limits[field])
-      if (text !== null) fieldErrors[field] = text
-    }
+  const backendErrors =
+    lastAction === 'save' && update.error instanceof LabConfigInvalidError
+      ? update.error.fields
+      : []
+  const fieldErrors: Partial<Record<NumericKey, string>> = {}
+  for (const { field, reason } of backendErrors) {
+    if (!isFieldKey(field)) continue
+    const limits = config.limits[field]
+    const text = limits && fieldErrorText(reason, limits)
+    if (text) fieldErrors[field] = text
+  }
+  const pending = update.isPending || reset.isPending
+  function clearEdits() {
+    setEdits({})
+    setReserveEdits(null)
   }
 
   let status = ''
@@ -132,18 +292,21 @@ function ConfigForm({ config }: { config: LabConfig }) {
       <p role="status">{status}</p>
       <form
         className="lab-config"
+        noValidate
         onSubmit={(e) => {
           e.preventDefault()
-          if (!canSave) return
+          if (!canSave || pending) return
           setLastAction('save')
-          update.mutate(patch, { onSuccess: () => setEdits({}) })
+          update.mutate(patch, { onSuccess: clearEdits })
         }}
       >
         {fieldKeys.map((key) => {
           const inputId = `lab-${key}`
           const hintId = `${inputId}-hint`
           const errorId = `${inputId}-error`
-          const { min, max } = config.limits[key]
+          const limits = config.limits[key]
+          if (!limits) return null
+          const { min, max } = limits
           const error = fieldErrors[key]
           return (
             <div className="lab-field" key={key}>
@@ -169,15 +332,26 @@ function ConfigForm({ config }: { config: LabConfig }) {
             </div>
           )
         })}
+        {config.limits.reserveDeck && (
+          <ReserveFields
+            entries={
+              reserveEdits ?? config.values.reserveDeck.map(reserveDraft)
+            }
+            limits={config.limits.reserveDeck}
+            errors={backendErrors}
+            onChange={setReserveEdits}
+          />
+        )}
         <div className="lab-actions">
-          <button type="submit" disabled={!canSave}>
+          <button type="submit" disabled={!canSave || pending}>
             Salvar
           </button>
           <button
             type="button"
+            disabled={pending}
             onClick={() => {
               setLastAction('reset')
-              reset.mutate(undefined, { onSuccess: () => setEdits({}) })
+              reset.mutate(undefined, { onSuccess: clearEdits })
             }}
           >
             Restaurar padrões

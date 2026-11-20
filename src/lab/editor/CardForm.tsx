@@ -95,6 +95,7 @@ export function TextField({
   errors,
   multiline = false,
   readOnly = false,
+  includeChildErrors = false,
   list,
 }: {
   label: string
@@ -104,6 +105,7 @@ export function TextField({
   errors: Errors
   multiline?: boolean
   readOnly?: boolean
+  includeChildErrors?: boolean
   /** `id` de um `datalist` com sugestões. */
   list?: string
 }) {
@@ -113,7 +115,7 @@ export function TextField({
     value,
     readOnly,
     list,
-    'aria-describedby': errors.describedBy(path),
+    'aria-describedby': errors.describedBy(path, includeChildErrors),
     onChange: (event: { target: { value: string } }) =>
       onChange(event.target.value),
   }
@@ -121,7 +123,7 @@ export function TextField({
     <div>
       <label htmlFor={id}>{label}</label>
       {multiline ? <textarea {...props} /> : <input type="text" {...props} />}
-      {errors.errorText(path)}
+      {errors.errorText(path, includeChildErrors)}
     </div>
   )
 }
@@ -485,16 +487,19 @@ function CheckboxField({
   label,
   checked,
   onChange,
+  describedBy,
 }: {
   label: string
   checked: boolean
   onChange: (checked: boolean) => void
+  describedBy?: string
 }) {
   return (
     <label>
       <input
         type="checkbox"
         checked={checked}
+        aria-describedby={describedBy}
         onChange={(event) => onChange(event.target.checked)}
       />
       {label}
@@ -939,8 +944,10 @@ function OutcomeFields<T extends RandomEventForm | CombatEventForm>({
       <CheckboxField
         label="Sem fuga"
         checked={values.noEscape}
+        describedBy={errors.describedBy('noEscape')}
         onChange={(noEscape) => set({ ...values, noEscape })}
       />
+      {errors.errorText('noEscape')}
     </>
   )
 }
@@ -954,6 +961,7 @@ function RandomEventFields({
   set: (values: RandomEventForm) => void
   errors: Errors
 }) {
+  const rules = values.rules
   return (
     <>
       <TextField
@@ -971,14 +979,64 @@ function RandomEventFields({
         errors={errors}
         multiline
       />
-      <TextListField
-        label="Requisitos"
-        itemLabel="Requisito"
-        path="requirements"
-        items={values.requirements}
-        onChange={(requirements) => set({ ...values, requirements })}
-        errors={errors}
-      />
+      {rules ? (
+        (
+          [
+            ['requirements', 'requirements', 'Requisitos executáveis (JSON)'],
+            ['goodSteps', 'goodOutcome.steps', 'Passos da coisa boa (JSON)'],
+            ['badSteps', 'badOutcome.steps', 'Passos da coisa ruim (JSON)'],
+            [
+              'threshold',
+              'escapeThreshold',
+              'Limiar de fuga (vazio usa o padrão)',
+            ],
+          ] as const
+        ).map(([key, path, label]) => (
+          <TextField
+            key={path}
+            label={label}
+            path={path}
+            value={rules[key]}
+            onChange={(value) =>
+              set({ ...values, rules: { ...rules, [key]: value } })
+            }
+            errors={errors}
+            multiline={key !== 'threshold'}
+            includeChildErrors
+          />
+        ))
+      ) : (
+        <>
+          <TextListField
+            label="Requisitos"
+            itemLabel="Requisito"
+            path="requirements"
+            items={values.requirements}
+            onChange={(requirements) => set({ ...values, requirements })}
+            errors={errors}
+          />
+          <button
+            type="button"
+            onClick={() =>
+              set({
+                ...values,
+                rules: {
+                  requirements: JSON.stringify(
+                    values.requirements.map((text) => ({ text })),
+                    null,
+                    2,
+                  ),
+                  goodSteps: '[]',
+                  badSteps: '[]',
+                  threshold: '',
+                },
+              })
+            }
+          >
+            Configurar regras executáveis
+          </button>
+        </>
+      )}
       <OutcomeFields values={values} set={set} errors={errors} />
     </>
   )
@@ -1227,60 +1285,91 @@ function DimensionFields({
         errors={errors}
         polarized
       />
-      <ListField
-        label="Decks de recompensas"
+      <ZoneDeckFields
         path="rewardDecks"
+        label="Decks de recompensas"
         items={values.rewardDecks}
         onChange={(rewardDecks) => set({ ...values, rewardDecks })}
-        newItem={(): DimensionForm['rewardDecks'][number] => ({
-          zoneType: '',
-          cards: [],
-        })}
         errors={errors}
-        renderItem={(deck, index, setDeck) => {
-          const suffix = ` do deck ${index + 1}`
-          const path = `rewardDecks.${index}`
-          return (
-            <>
-              <SelectField
-                label={`Tipo de zona${suffix}`}
-                path={`${path}.zoneType`}
-                value={deck.zoneType}
-                options={zoneTypeOptions}
-                onChange={(zoneType) => setDeck({ ...deck, zoneType })}
-                errors={errors}
-              />
-              <ListField
-                label={`Cartas${suffix}`}
-                path={`${path}.cards`}
-                items={deck.cards}
-                onChange={(cards) => setDeck({ ...deck, cards })}
-                newItem={() => ({ cardId: '', copies: '' })}
-                errors={errors}
-                renderItem={(entry, j, setEntry) => (
-                  <>
-                    <TextField
-                      label={`Carta ${j + 1}${suffix}`}
-                      path={`${path}.cards.${j}.cardId`}
-                      value={entry.cardId}
-                      onChange={(cardId) => setEntry({ ...entry, cardId })}
-                      errors={errors}
-                    />
-                    <TextField
-                      label={`Cópias da carta ${j + 1}${suffix}`}
-                      path={`${path}.cards.${j}.copies`}
-                      value={entry.copies}
-                      onChange={(copies) => setEntry({ ...entry, copies })}
-                      errors={errors}
-                    />
-                  </>
-                )}
-              />
-            </>
-          )
-        }}
+      />
+      <ZoneDeckFields
+        path="eventDecks"
+        label="Decks de eventos"
+        items={values.eventDecks ?? []}
+        onChange={(eventDecks) => set({ ...values, eventDecks })}
+        errors={errors}
       />
     </>
+  )
+}
+
+function ZoneDeckFields({
+  path,
+  label,
+  items,
+  onChange,
+  errors,
+}: {
+  path: 'rewardDecks' | 'eventDecks'
+  label: string
+  items: DimensionForm['rewardDecks']
+  onChange: (decks: DimensionForm['rewardDecks']) => void
+  errors: Errors
+}) {
+  return (
+    <ListField
+      label={label}
+      path={path}
+      items={items}
+      onChange={onChange}
+      newItem={(): DimensionForm['rewardDecks'][number] => ({
+        zoneType: '',
+        cards: [],
+      })}
+      errors={errors}
+      renderItem={(deck, index, setDeck) => {
+        const suffix = ` do deck ${index + 1}${path === 'eventDecks' ? ' de eventos' : ''}`
+        const deckPath = `${path}.${index}`
+        return (
+          <>
+            <SelectField
+              label={`Tipo de zona${suffix}`}
+              path={`${deckPath}.zoneType`}
+              value={deck.zoneType}
+              options={zoneTypeOptions}
+              onChange={(zoneType) => setDeck({ ...deck, zoneType })}
+              errors={errors}
+            />
+            <ListField
+              label={`Cartas${suffix}`}
+              path={`${deckPath}.cards`}
+              items={deck.cards}
+              onChange={(cards) => setDeck({ ...deck, cards })}
+              newItem={() => ({ cardId: '', copies: '' })}
+              errors={errors}
+              renderItem={(entry, j, setEntry) => (
+                <>
+                  <TextField
+                    label={`Carta ${j + 1}${suffix}`}
+                    path={`${deckPath}.cards.${j}.cardId`}
+                    value={entry.cardId}
+                    onChange={(cardId) => setEntry({ ...entry, cardId })}
+                    errors={errors}
+                  />
+                  <TextField
+                    label={`Cópias da carta ${j + 1}${suffix}`}
+                    path={`${deckPath}.cards.${j}.copies`}
+                    value={entry.copies}
+                    onChange={(copies) => setEntry({ ...entry, copies })}
+                    errors={errors}
+                  />
+                </>
+              )}
+            />
+          </>
+        )
+      }}
+    />
   )
 }
 

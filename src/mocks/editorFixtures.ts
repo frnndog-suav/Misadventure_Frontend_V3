@@ -46,8 +46,8 @@ export const editorCollectionsFixture: EditorCollectionSummary[] = [
     id: 'fixture',
     name: 'Coleção de Teste',
     description: '',
-    publishedCount: 12,
-    draftCount: 0,
+    publishedCount: 13,
+    draftCount: 1,
   },
 ]
 
@@ -61,7 +61,7 @@ export const fixtureCollectionFixture: EditorCollection = {
     attribute: 3,
     equipment: 1,
     item: 1,
-    randomEvent: 1,
+    randomEvent: 2,
     combatEvent: 1,
     dimension: 1,
   },
@@ -212,7 +212,7 @@ export const forcaBrutaCopyFixture: EditorCard = {
   card: forca('forca-bruta-copia', 'Força Bruta'),
 }
 
-/** As 12 cartas da `fixture`, publicadas. */
+/** Cartas da `fixture` publicadas no catálogo. */
 export const fixtureEditorCardsFixture: EditorCard[] = fixtureCardsFixture.map(
   (card) => ({ status: 'published', card }),
 )
@@ -226,9 +226,47 @@ function summary({ status, card }: EditorCard): EditorCardSummary {
   }
 }
 
+export const legacyEventDeckDraftFixture = {
+  status: 'draft',
+  card: {
+    type: 'dimension',
+    id: 'fixture.legacy-event-deck-test',
+    collectionId: 'fixture',
+    name: 'Dimensão com evento legado',
+    flavorText: null,
+    releaseOrder: 2,
+    arrivalZoneTitle: null,
+    effects: [],
+    rewardDecks: [],
+    eventDecks: [
+      {
+        zoneType: 'urban',
+        cards: [{ cardId: 'fixture.wounded-traveler', copies: 1 }],
+      },
+    ],
+  },
+} satisfies EditorCard
+
+export const legacyEventDeckInvalidFixture = {
+  error: {
+    code: 'CONTENT_INVALID',
+    message: 'Conteúdo inválido.',
+    details: {
+      fields: [
+        {
+          path: 'eventDecks.0.cards.0.cardId',
+          message: 'Use um evento aleatório com regras executáveis.',
+        },
+      ],
+    },
+  },
+}
+
 /** GET …/fixture/cards sem filtro. */
-export const fixtureCardSummariesFixture: EditorCardSummary[] =
-  fixtureEditorCardsFixture.map(summary)
+export const fixtureCardSummariesFixture: EditorCardSummary[] = [
+  ...fixtureEditorCardsFixture,
+  legacyEventDeckDraftFixture,
+].map(summary)
 
 /** GET …/bosque/cards?status=draft depois de duplicar. */
 export const bosqueCardsDraftFixture: EditorCardSummary[] = [

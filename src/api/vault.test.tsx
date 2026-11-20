@@ -135,11 +135,11 @@ describe('REQ-47: GameConfigValues com as chaves da FEAT-32', () => {
 })
 
 describe('REQ-48: ferramentas e decks de recompensas nas cartas', () => {
-  it('REQ-48: a fixture tem 24 cartas (item 7) em ordem de id e todas validam', () => {
+  it('REQ-48: a fixture tem 25 cartas (item 7) em ordem de id e todas validam', () => {
     expect(
       collectionSummarySchema.parse(collectionsFixture[0]).cardCounts.item,
     ).toBe(7)
-    expect(fixtureCardsFixture).toHaveLength(24)
+    expect(fixtureCardsFixture).toHaveLength(25)
     const ids = fixtureCardsFixture.map((card) => card.id)
     expect(ids).toEqual([...ids].sort())
     for (const card of fixtureCardsFixture) {

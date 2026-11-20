@@ -25,6 +25,7 @@ import {
   type ZoneType,
 } from '../../api/catalog'
 import type { CardInput } from '../../api/editor'
+import type { randomEventRulesSchema } from '../../api/randomEvents'
 import {
   enemyTypeLabels,
   playerClassLabels,
@@ -171,6 +172,12 @@ export interface RandomEventForm {
   title: string
   flavorText: string
   requirements: string[]
+  rules?: {
+    requirements: string
+    goodSteps: string
+    badSteps: string
+    threshold: string
+  }
   goodOutcome: string
   badOutcome: string
   noEscape: boolean
@@ -218,6 +225,37 @@ export interface DimensionForm {
     zoneType: ZoneType | ''
     cards: { cardId: string; copies: string }[]
   }[]
+  eventDecks?: DimensionForm['rewardDecks']
+}
+
+function deckForm(
+  decks: { zoneType: ZoneType; cards: { cardId: string; copies: number }[] }[],
+): DimensionForm['rewardDecks'] {
+  return decks.map(({ zoneType, cards }) => ({
+    zoneType,
+    cards: cards.map(({ cardId, copies }) => ({
+      cardId,
+      copies: String(copies),
+    })),
+  }))
+}
+
+function deckInput(decks: DimensionForm['rewardDecks']) {
+  const result: {
+    zoneType: ZoneType
+    cards: { cardId: string; copies: number }[]
+  }[] = []
+  for (const deck of decks) {
+    if (deck.zoneType === '') return null
+    const cards: { cardId: string; copies: number }[] = []
+    for (const entry of deck.cards) {
+      const copies = parseNumber(entry.copies)
+      if (!filled(entry.cardId) || copies === null) return null
+      cards.push({ cardId: entry.cardId, copies })
+    }
+    result.push({ zoneType: deck.zoneType, cards })
+  }
+  return result
 }
 
 export type CardForm =
@@ -457,6 +495,18 @@ export function formFromCard(card: Card): CardForm {
         title: card.title,
         flavorText: card.flavorText ?? '',
         requirements: card.requirements.map((r) => r.text),
+        rules:
+          card.escapeThreshold === undefined
+            ? undefined
+            : {
+                requirements: JSON.stringify(card.requirements, null, 2),
+                goodSteps: JSON.stringify(card.goodOutcome.steps, null, 2),
+                badSteps: JSON.stringify(card.badOutcome.steps, null, 2),
+                threshold:
+                  card.escapeThreshold === null
+                    ? ''
+                    : String(card.escapeThreshold),
+              },
         goodOutcome: card.goodOutcome.text,
         badOutcome: card.badOutcome.text,
         noEscape: card.noEscape,
@@ -498,6 +548,7 @@ export function formFromCard(card: Card): CardForm {
         releaseOrder: String(card.releaseOrder),
         arrivalZoneTitle: card.arrivalZoneTitle ?? '',
         effects: card.effects.map(effectToForm),
+        eventDecks: card.eventDecks && deckForm(card.eventDecks),
         rewardDecks: card.rewardDecks.map(({ zoneType, cards }) => ({
           zoneType,
           cards: cards.map(({ cardId, copies }) => ({
@@ -698,20 +749,42 @@ export function toInput(form: CardForm): CardInput | null {
       if (
         !filled(form.slug) ||
         !filled(form.title) ||
-        !form.requirements.every(filled) ||
+        (!form.rules && !form.requirements.every(filled)) ||
         !filled(form.goodOutcome) ||
         !filled(form.badOutcome)
       )
         return null
-      return {
+      const base = {
         slug: form.slug,
-        type: 'randomEvent',
+        type: 'randomEvent' as const,
         title: form.title,
         flavorText: filled(form.flavorText) ? form.flavorText : null,
-        requirements: form.requirements.map((text) => ({ text })),
-        goodOutcome: { text: form.goodOutcome },
-        badOutcome: { text: form.badOutcome },
         noEscape: form.noEscape,
+      }
+      if (!form.rules)
+        return {
+          ...base,
+          requirements: form.requirements.map((text) => ({ text })),
+          goodOutcome: { text: form.goodOutcome },
+          badOutcome: { text: form.badOutcome },
+        }
+      const { requirements, goodSteps, badSteps, threshold } = form.rules
+      const escapeThreshold = parseNumber(threshold)
+      if (filled(threshold) && escapeThreshold === null) return null
+      try {
+        const lists: unknown[] = [requirements, goodSteps, badSteps].map(
+          (value) => JSON.parse(value),
+        )
+        if (!lists.every(Array.isArray)) return null
+        const rules = {
+          requirements: lists[0],
+          goodOutcome: { text: form.goodOutcome, steps: lists[1] },
+          badOutcome: { text: form.badOutcome, steps: lists[2] },
+          escapeThreshold,
+        } as z.infer<typeof randomEventRulesSchema>
+        return { ...base, ...rules }
+      } catch {
+        return null
       }
     }
     case 'combatEvent': {
@@ -743,20 +816,9 @@ export function toInput(form: CardForm): CardInput | null {
       const effects = toEffects(form.effects, zoneEffectSchema)
       if (effects === undefined) return null
       const releaseOrder = parseNumber(form.releaseOrder)
-      const rewardDecks: {
-        zoneType: ZoneType
-        cards: { cardId: string; copies: number }[]
-      }[] = []
-      for (const deck of form.rewardDecks) {
-        const cards: { cardId: string; copies: number }[] = []
-        for (const entry of deck.cards) {
-          const copies = parseNumber(entry.copies)
-          if (!filled(entry.cardId) || copies === null) return null
-          cards.push({ cardId: entry.cardId, copies })
-        }
-        if (deck.zoneType === '') return null
-        rewardDecks.push({ zoneType: deck.zoneType, cards })
-      }
+      const rewardDecks = deckInput(form.rewardDecks)
+      const eventDecks = form.eventDecks && deckInput(form.eventDecks)
+      if (rewardDecks === null || eventDecks === null) return null
       if (!filled(form.slug) || !filled(form.name) || releaseOrder === null)
         return null
       return {
@@ -770,6 +832,7 @@ export function toInput(form: CardForm): CardInput | null {
           : null,
         effects,
         rewardDecks,
+        ...(eventDecks === undefined ? {} : { eventDecks }),
       }
     }
     default: {

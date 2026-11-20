@@ -63,6 +63,8 @@ import {
   fixtureCollectionFixture,
   fixtureDimensionFixture,
   fixtureEditorCardsFixture,
+  legacyEventDeckDraftFixture,
+  legacyEventDeckInvalidFixture,
   fixtureExportFixture,
   forcaBrutaCopyFixture,
   forcaBrutaDraftFixture,
@@ -78,6 +80,7 @@ import {
 import {
   healthFixture,
   labConfigDefaultsFixture,
+  labConfigEventSettingsFixture,
   labConfigReserveWeightFixture,
   labConfigUpdatedFixture,
 } from './fixtures'
@@ -579,6 +582,7 @@ const editorCollections: Record<string, EditorCollection> = {
 const editorCards: Record<string, EditorCard> = Object.fromEntries(
   [
     ...fixtureEditorCardsFixture,
+    legacyEventDeckDraftFixture,
     forcaDraftFixture,
     forcaBrutaRenamedFixture,
     forcaBrutaCopyFixture,
@@ -801,11 +805,14 @@ const editorHandlers: RequestHandler[] = [
     saveCardScenario(String(params.cardId), request),
   ),
   http.post('*/lab/content/cards/:cardId/publish', ({ params }) =>
-    knownCard(params.cardId, (id) =>
-      HttpResponse.json(
+    knownCard(params.cardId, (id) => {
+      if (id === legacyEventDeckDraftFixture.card.id) {
+        return HttpResponse.json(legacyEventDeckInvalidFixture, { status: 400 })
+      }
+      return HttpResponse.json(
         id.startsWith('bosque.') ? forcaBrutaPublishedFixture : editorCards[id],
-      ),
-    ),
+      )
+    }),
   ),
   http.post('*/lab/content/cards/:cardId/duplicate', ({ params }) =>
     knownCard(params.cardId, () =>
@@ -864,9 +871,17 @@ export const handlers: RequestHandler[] = [
   http.get('*/health', () => HttpResponse.json(healthFixture)),
   http.get('*/lab/config', () => HttpResponse.json(labConfigDefaultsFixture)),
   http.patch('*/lab/config', async ({ request }) => {
-    const reserve = field(await jsonBody(request), 'reserveDeck')
+    const body = await jsonBody(request)
+    const reserve = field(body, 'reserveDeck')
     if (Array.isArray(reserve) && field(reserve[0], 'weight') === 0) {
       return HttpResponse.json(labConfigReserveWeightFixture, { status: 400 })
+    }
+    if (
+      field(body, 'escapeVigorPercent') === 25 &&
+      JSON.stringify(reserve) ===
+        JSON.stringify(labConfigEventSettingsFixture.values.reserveDeck)
+    ) {
+      return HttpResponse.json(labConfigEventSettingsFixture)
     }
     return HttpResponse.json(labConfigUpdatedFixture)
   }),

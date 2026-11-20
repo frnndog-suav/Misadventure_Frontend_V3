@@ -106,3 +106,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 074 | T-56 | [Status e ativação na partida](074-T-56-status-e-ativacao.md) | aguardando revisão |
 | 075 | T-57 | [FEAT-11 validada contra o backend real](075-T-57-feat-11-validada.md) | concluída |
 | 076 | T-58 | [Cliente e fixtures de eventos aleatórios](076-T-58-cliente-eventos-aleatorios.md) | concluída |
+| 077 | T-59 | [Catálogo, editor e configuração de eventos aleatórios](077-T-59-catalogo-editor-configuracao-eventos.md) | concluída |

@@ -1,3 +1,4 @@
+import { partyEncounterFixture } from '../../mocks/randomEventFixtures'
 import { describe, expect, it } from 'vitest'
 import {
   fixtureCardsFixture,
@@ -39,4 +40,40 @@ describe('REQ-49: campos da FEAT-32 no CardInput do editor', () => {
       }),
     ).toBeNull()
   })
+})
+
+it('REQ-56: preserves executable rules and ordered zone decks when editing', () => {
+  const fixture = partyEncounterFixture.randomEventEncounter!.card!
+  const card = {
+    ...fixture,
+    escapeThreshold: 12,
+    noEscape: true,
+    goodOutcome: {
+      text: fixture.goodOutcome.text,
+      steps: [
+        { type: 'drawRewards' as const, count: 2 },
+        {
+          type: 'grantReward' as const,
+          cardId: 'fixture.healing-potion',
+          copies: 1,
+        },
+      ],
+    },
+    badOutcome: { text: fixture.badOutcome.text, steps: [] },
+  }
+  expect(toInput(formFromCard(card))).toMatchObject({
+    requirements: card.requirements,
+    goodOutcome: card.goodOutcome,
+    badOutcome: card.badOutcome,
+    escapeThreshold: card.escapeThreshold,
+    noEscape: true,
+  })
+  const eventDecks = [
+    { zoneType: 'urban' as const, cards: [{ cardId: card.id, copies: 2 }] },
+  ]
+  if (testDimensionFixture.type !== 'dimension')
+    throw new Error('esperava dimensão')
+  expect(
+    toInput(formFromCard({ ...testDimensionFixture, eventDecks })),
+  ).toMatchObject({ eventDecks })
 })

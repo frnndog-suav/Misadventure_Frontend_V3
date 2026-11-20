@@ -131,6 +131,15 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
       releaseOrder: 1,
       arrivalZoneTitle: 'Porto Cinzento',
       effects: [],
+      eventDecks: [
+        {
+          zoneType: 'urban',
+          cards: [
+            { cardId: 'fixture.event-cart-test', copies: 2 },
+            { cardId: 'fixture.howling-wolves', copies: 1 },
+          ],
+        },
+      ],
       rewardDecks: [
         {
           zoneType: 'urban',
@@ -173,7 +182,7 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
       attribute: 3,
       equipment: 7,
       item: 7,
-      randomEvent: 1,
+      randomEvent: 2,
       combatEvent: 1,
       dimension: 1,
     })
@@ -189,7 +198,7 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
     ).toBe(false)
   })
 
-  it('REQ-28: o handler padrão da coleção fixture lista as 24 cartas na ordem de id', async () => {
+  it('REQ-28: o handler padrão da coleção fixture lista as 25 cartas na ordem de id', async () => {
     const response = await fetch(
       'http://localhost:3000/catalog/collections/fixture/cards',
     )
@@ -201,6 +210,7 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
       'fixture.blade-of-dusk',
       'fixture.dexterity-basic',
       'fixture.endurance-basic',
+      'fixture.event-cart-test',
       'fixture.fishing-rod',
       'fixture.focus-amulet',
       'fixture.gray-harbor',
@@ -222,7 +232,7 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
       'fixture.whispering-grove',
       'fixture.wounded-traveler',
     ])
-    expect(fixtureCardsFixture).toHaveLength(24)
+    expect(fixtureCardsFixture).toHaveLength(25)
   })
 })
 

@@ -52,12 +52,13 @@ const status = () => screen.getByRole('status')
 const cardsUrl = '*/catalog/collections/:collectionId/cards'
 const unavailable = 'Servidor indisponível. Tente novamente.'
 
-/** As 24 cartas da `fixture` (CONTRATO §3, atualizado pela FEAT-11). */
+/** As 25 cartas da `fixture`, incluindo o exemplo executável da FEAT-12. */
 const expectedOrder = [
   'Varinha Arcana · Equipamento',
   'Lâmina do Crepúsculo · Equipamento',
   'Destreza · Atributo',
   'Resistência · Atributo',
+  'Carroça na estrada · Evento aleatório',
   'Vara de Pesca · Item',
   'Amuleto do Foco · Equipamento',
   'Porto Cinzento · Zona',
@@ -103,17 +104,17 @@ describe('CatalogSection', () => {
       .getAllByRole('radio')
       .map((r) => r.closest('label')?.textContent)
     expect(options).toEqual([
-      'Todos (24)',
+      'Todos (25)',
       'Zona (4)',
       'Atributo (3)',
       'Equipamento (7)',
       'Item (7)',
-      'Evento aleatório (1)',
+      'Evento aleatório (2)',
       'Evento de combate (1)',
       'Dimensão (1)',
     ])
     expect(
-      within(filter).getByRole('radio', { name: 'Todos (24)' }),
+      within(filter).getByRole('radio', { name: 'Todos (25)' }),
     ).toBeChecked()
   })
 
@@ -219,4 +220,23 @@ describe('CatalogSection', () => {
     renderCatalog()
     expect(await screen.findByText(unavailable)).toBe(status())
   })
+})
+
+it('REQ-56: displays the printed requirements and outcomes of an executable catalog event over MSW', async () => {
+  renderCatalog()
+  fireEvent.click(
+    await screen.findByRole('radio', { name: 'Evento aleatório (2)' }),
+  )
+  fireEvent.click(
+    await screen.findByRole('button', {
+      name: 'Carroça na estrada · Evento aleatório',
+    }),
+  )
+  const card = screen.getByRole('article', { name: 'Carroça na estrada' })
+  expect(within(card).getByText('Entregue duas Forças.')).toBeVisible()
+  expect(within(card).getByText('A passagem está livre.')).toBeVisible()
+  expect(within(card).getByText('Você precisa voltar.')).toBeVisible()
+  expect(
+    screen.getByRole('button', { name: 'Viajante Ferido · Evento aleatório' }),
+  ).toBeVisible()
 })

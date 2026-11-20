@@ -21,7 +21,7 @@ export const collectionsFixture: CollectionSummary[] = [
       attribute: 3,
       equipment: 7,
       item: 7,
-      randomEvent: 1,
+      randomEvent: 2,
       combatEvent: 1,
       dimension: 1,
     },
@@ -236,6 +236,15 @@ export const testDimensionFixture: Card = {
   releaseOrder: 1,
   arrivalZoneTitle: 'Porto Cinzento',
   effects: [],
+  eventDecks: [
+    {
+      zoneType: 'urban',
+      cards: [
+        { cardId: 'fixture.event-cart-test', copies: 2 },
+        { cardId: 'fixture.howling-wolves', copies: 1 },
+      ],
+    },
+  ],
   // FEAT-32 (CONTRATO v0.46)
   rewardDecks: [
     {
@@ -530,12 +539,34 @@ export const luckyCoinFixture: Card = {
   ],
 }
 
-/** GET /catalog/collections/fixture/cards — 24 cartas na ordem de `id`. */
+export const executableEventFixture = {
+  type: 'randomEvent',
+  id: 'fixture.event-cart-test',
+  collectionId: 'fixture',
+  title: 'Carroça na estrada',
+  flavorText: null,
+  noEscape: false,
+  escapeThreshold: null,
+  requirements: [
+    {
+      id: 'attrs',
+      text: 'Entregue duas Forças.',
+      kind: 'attributes',
+      specific: { strength: 2 },
+      any: 0,
+    },
+  ],
+  goodOutcome: { text: 'A passagem está livre.', steps: [] },
+  badOutcome: { text: 'Você precisa voltar.', steps: [] },
+} satisfies Card
+
+/** GET /catalog/collections/fixture/cards — 25 cartas na ordem de `id`. */
 export const fixtureCardsFixture: Card[] = [
   arcaneWandFixture,
   bladeOfDuskFixture,
   dexterityBasicFixture,
   enduranceBasicFixture,
+  executableEventFixture,
   fishingRodFixture,
   focusAmuletFixture,
   grayHarborFixture,
@@ -589,7 +620,7 @@ export const fixtureCardsByTypeFixture: Record<CardType, Card[]> = {
     silverFishFixture,
     strengthTonicFixture,
   ],
-  randomEvent: [woundedTravelerFixture],
+  randomEvent: [executableEventFixture, woundedTravelerFixture],
   combatEvent: [howlingWolvesFixture],
   dimension: [testDimensionFixture],
 }

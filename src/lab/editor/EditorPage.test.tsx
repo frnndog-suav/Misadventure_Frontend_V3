@@ -93,7 +93,7 @@ describe('REQ-19: lista de coleções', () => {
     const button = await fixtureButton()
     expect(button).toHaveTextContent('Coleção de Teste')
     expect(button).toHaveTextContent('fixture')
-    expect(button).toHaveTextContent('12 publicadas · 0 rascunhos')
+    expect(button).toHaveTextContent('13 publicadas · 1 rascunho')
     expect(button).toHaveAttribute('aria-pressed', 'false')
     expect(status()).toHaveTextContent('')
   })

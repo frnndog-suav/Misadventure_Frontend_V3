@@ -261,7 +261,7 @@ describe('REQ-44: PlayerState com inventário, equipamentos, bolsa e modificador
 })
 
 describe('REQ-44: cartas novas da fixture', () => {
-  it('REQ-44: as 5 cartas novas validam e a coleção tem 24 cartas (FEAT-11) na ordem de id', async () => {
+  it('REQ-44: as 5 cartas novas validam e o catálogo de teste está na ordem de id', async () => {
     for (const card of [
       shortSwordFixture,
       oakShieldFixture,
@@ -278,8 +278,8 @@ describe('REQ-44: cartas novas da fixture', () => {
       (card) => card.id,
     )
     expect(ids).toEqual([...ids].sort())
-    expect(ids).toHaveLength(24)
-    expect(fixtureCardsFixture).toHaveLength(24)
+    expect(ids).toHaveLength(25)
+    expect(fixtureCardsFixture).toHaveLength(25)
     expect(ids).toEqual(expect.arrayContaining([W, D, H, R, K]))
   })
 
@@ -318,7 +318,7 @@ describe('REQ-44: cartas novas da fixture', () => {
       attribute: 3,
       equipment: 7,
       item: 7,
-      randomEvent: 1,
+      randomEvent: 2,
       combatEvent: 1,
       dimension: 1,
     })

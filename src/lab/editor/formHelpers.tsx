@@ -14,13 +14,18 @@ export type FieldErrors = ContentInvalidDetails['fields']
 export function useFieldErrors(fields: FieldErrors) {
   const base = useId()
   const idOf = (path: string) => `${base}-${path.replaceAll('.', '-')}-error`
-  const messages = (path: string) =>
-    fields.filter((f) => f.path === path).map((f) => f.message)
+  const messages = (path: string, includeChildren = false) =>
+    fields
+      .filter(
+        (f) =>
+          f.path === path || (includeChildren && f.path.startsWith(path + '.')),
+      )
+      .map((f) => (f.path === path ? f.message : `${f.path}: ${f.message}`))
   return {
-    describedBy: (path: string) =>
-      messages(path).length > 0 ? idOf(path) : undefined,
-    errorText: (path: string): ReactNode => {
-      const list = messages(path)
+    describedBy: (path: string, includeChildren?: boolean) =>
+      messages(path, includeChildren).length > 0 ? idOf(path) : undefined,
+    errorText: (path: string, includeChildren?: boolean): ReactNode => {
+      const list = messages(path, includeChildren)
       return list.length > 0 ? <p id={idOf(path)}>{list.join(' ')}</p> : null
     },
   }

@@ -141,6 +141,18 @@ export const labConfigReserveWeightFixture = labConfigInvalid([
   { field: 'reserveDeck.0.weight', reason: 'outOfRange' },
 ])
 
+export const labConfigEventSettingsFixture: LabConfig = {
+  ...labConfigDefaultsFixture,
+  values: {
+    ...labConfigDefaultsFixture.values,
+    escapeVigorPercent: 25,
+    reserveDeck: [
+      { type: 'gold', amount: 1, weight: 2 },
+      { type: 'card', cardId: 'fixture.healing-potion', weight: 3 },
+    ],
+  },
+}
+
 /** PATCH com { minPlayers: 5, maxPlayers: 3 }. */
 export const labConfigMinAboveMaxFixture = labConfigInvalid([
   { field: 'minPlayers', reason: 'minAboveMax' },
