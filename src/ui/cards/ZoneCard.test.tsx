@@ -29,7 +29,16 @@ describe('ZoneCard', () => {
       <ZoneCard
         card={{
           ...grove,
-          effects: [{ text: 'Esquiva +1 nesta zona.', polarity: 'positive' }],
+          effects: [
+            {
+              trigger: null,
+              cost: [],
+              activation: [],
+              duration: { kind: 'immediate' },
+              text: 'Esquiva +1 nesta zona.',
+              polarity: 'positive',
+            },
+          ],
         }}
       />,
     )
@@ -45,8 +54,22 @@ describe('ZoneCard', () => {
         card={{
           ...grove,
           effects: [
-            { text: 'Esquiva +1.', polarity: 'positive' },
-            { text: 'Perca 1 de Vida ao entrar.', polarity: 'negative' },
+            {
+              trigger: null,
+              cost: [],
+              activation: [],
+              duration: { kind: 'immediate' },
+              text: 'Esquiva +1.',
+              polarity: 'positive',
+            },
+            {
+              trigger: null,
+              cost: [],
+              activation: [],
+              duration: { kind: 'immediate' },
+              text: 'Perca 1 de Vida ao entrar.',
+              polarity: 'negative',
+            },
           ],
         }}
       />,

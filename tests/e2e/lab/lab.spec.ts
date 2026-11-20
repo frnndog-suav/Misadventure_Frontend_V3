@@ -174,6 +174,21 @@ test('REQ-48: ferramenta, "Coletada com" e "Decks de recompensas" no catálogo (
   ])
 })
 
+test('REQ-53: mostra a marca e o texto recebido no catálogo (MSW)', async ({
+  page,
+}) => {
+  await page.goto('/lab')
+  const catalog = page.getByRole('region', { name: 'Catálogo' })
+  await catalog.getByRole('radio', { name: 'Item (7)' }).check()
+  await catalog.getByRole('button', { name: 'Tônico de Força · Item' }).click()
+  const effects = catalog
+    .getByRole('article', { name: 'Tônico de Força' })
+    .getByRole('list', { name: 'Efeitos' })
+  await expect(effects.getByRole('listitem')).toHaveText(
+    'Buff: +3 de Ataque durante 2 vezes suas.',
+  )
+})
+
 test('REQ-46: doa carta e ouro na seção "Doação" (MSW)', async ({ page }) => {
   await page.goto('/lab')
   const section = page.getByRole('region', { name: 'Doação' })

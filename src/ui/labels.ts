@@ -143,3 +143,9 @@ export const zoneActionLabels = {
   trainWithMentor: 'Treinar com mentor',
   saveRespawnPoint: 'Salvar ponto de respawn',
 } satisfies Record<ZoneAction, string>
+
+export const effectMarkLabels = { buff: 'Buff', debuff: 'Debuff' } as const
+export const effectPolarityLabels = {
+  positive: 'Positivo',
+  negative: 'Negativo',
+} as const

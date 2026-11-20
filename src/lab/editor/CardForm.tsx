@@ -29,7 +29,9 @@ import {
   type ContentStatus,
   type EditorCard,
 } from '../../api/editor'
+import { effectSchema } from '../../api/effects'
 import { ApiError } from '../../api/http'
+import { effectMarkLabels, effectPolarityLabels } from '../../ui/labels'
 import { FullCard } from '../../ui/cards/FullCard'
 import { categoryCatalog } from '../../ui/categories'
 import {
@@ -54,11 +56,15 @@ import {
 } from './formHelpers'
 import {
   classOrder,
+  effectPartLabels,
+  effectParts,
+  emptyEffect,
   emptyEnemy,
   enemyTypeOrder,
   formFromCard,
   inputToCard,
   modifierOrder,
+  parseEffectPart,
   sameForm,
   toInput,
   zoneActionOrder,
@@ -66,6 +72,7 @@ import {
   type CardForm as CardFormValues,
   type CombatEventForm,
   type DimensionForm,
+  type EffectForm,
   type EnemyForm,
   type EquipmentForm,
   type RandomEventForm,
@@ -79,8 +86,6 @@ const statusLabels = {
   draft: 'Rascunho',
   published: 'Publicada',
 } satisfies Record<ContentStatus, string>
-
-const polarityLabels = { positive: 'Positivo', negative: 'Negativo' } as const
 
 export function TextField({
   label,
@@ -138,7 +143,7 @@ export function SelectField<T extends string>({
   onChange: (value: T | '') => void
   errors: Errors
   /** Texto da opção vazia (ex.: "Sem elemento" quando vazio vira `null`). */
-  emptyLabel?: string
+  emptyLabel?: string | null
   /** Seleção somente leitura (o `select` não tem `readOnly`). */
   disabled?: boolean
 }) {
@@ -156,7 +161,7 @@ export function SelectField<T extends string>({
           onChange(next ? next.value : '')
         }}
       >
-        <option value="">{emptyLabel}</option>
+        {emptyLabel !== null && <option value="">{emptyLabel}</option>}
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
@@ -234,10 +239,85 @@ export function ListField<T>({
   )
 }
 
-const polarityOptions = options(
-  Object.keys(polarityLabels) as (keyof typeof polarityLabels)[],
-  polarityLabels,
-)
+const polarityOptions = options(['positive', 'negative'], effectPolarityLabels)
+const markOptions = options(['buff', 'debuff'], effectMarkLabels)
+
+function EffectFields({
+  items,
+  onChange,
+  polarized = false,
+  errors,
+}: {
+  items: EffectForm[]
+  onChange: (effects: EffectForm[]) => void
+  polarized?: boolean
+  errors: Errors
+}) {
+  return (
+    <ListField
+      label="Efeitos"
+      path="effects"
+      items={items}
+      onChange={onChange}
+      newItem={emptyEffect}
+      errors={errors}
+      renderItem={(effect, index, setEffect) => {
+        const path = `effects.${index}`
+        const number = index + 1
+        return (
+          <>
+            <TextField
+              label={`Texto do efeito ${number}`}
+              path={`${path}.text`}
+              value={effect.text}
+              onChange={(text) => setEffect({ ...effect, text })}
+              errors={errors}
+            />
+            {effectParts.map((part) => (
+              <TextField
+                key={part}
+                label={`${effectPartLabels[part]} do efeito ${number} (JSON)`}
+                path={`${path}.${part}`}
+                value={effect[part]}
+                onChange={(value) => setEffect({ ...effect, [part]: value })}
+                errors={errors}
+                multiline
+              />
+            ))}
+            {polarized ? (
+              <SelectField
+                label={`Polaridade do efeito ${number}`}
+                path={`${path}.polarity`}
+                value={effect.polarity}
+                options={polarityOptions}
+                onChange={(polarity) =>
+                  setEffect({
+                    ...effect,
+                    polarity: polarity || effect.polarity,
+                  })
+                }
+                errors={errors}
+                emptyLabel={null}
+              />
+            ) : (
+              <SelectField
+                label={`Marcação do efeito ${number}`}
+                path={`${path}.mark`}
+                value={effect.mark ?? ''}
+                options={markOptions}
+                onChange={(mark) =>
+                  setEffect({ ...effect, mark: mark || null })
+                }
+                errors={errors}
+                emptyLabel="Sem marca"
+              />
+            )}
+          </>
+        )
+      }}
+    />
+  )
+}
 const rarityOptions = options(raritySchema.options, rarityLabels)
 const zoneTypeOptions = options(zoneTypeSchema.options, zoneTypeLabels)
 /** "Forma das setas" (REQ-31); a opção vazia é "Não se aplica" (`null`). */
@@ -322,34 +402,11 @@ function ZoneFields({
           </label>
         ))}
       </fieldset>
-      <ListField
-        label="Efeitos"
-        path="effects"
+      <EffectFields
         items={values.effects}
         onChange={(effects) => set({ ...values, effects })}
-        newItem={() => ({ text: '', polarity: 'positive' as const })}
         errors={errors}
-        renderItem={(effect, index, setEffect) => (
-          <>
-            <TextField
-              label={`Efeito ${index + 1}`}
-              path={`effects.${index}.text`}
-              value={effect.text}
-              onChange={(text) => setEffect({ ...effect, text })}
-              errors={errors}
-            />
-            <SelectField
-              label={`Polaridade do efeito ${index + 1}`}
-              path={`effects.${index}.polarity`}
-              value={effect.polarity}
-              options={polarityOptions}
-              onChange={(polarity) =>
-                setEffect({ ...effect, polarity: polarity || effect.polarity })
-              }
-              errors={errors}
-            />
-          </>
-        )}
+        polarized
       />
     </>
   )
@@ -415,22 +472,10 @@ function AttributeFields({
           />
         )}
       />
-      <ListField
-        label="Efeitos"
-        path="effects"
+      <EffectFields
         items={values.effects}
         onChange={(effects) => set({ ...values, effects })}
-        newItem={() => ''}
         errors={errors}
-        renderItem={(text, index, setText) => (
-          <TextField
-            label={`Efeito ${index + 1}`}
-            path={`effects.${index}.text`}
-            value={text}
-            onChange={setText}
-            errors={errors}
-          />
-        )}
       />
     </>
   )
@@ -458,7 +503,7 @@ function CheckboxField({
 }
 
 /** Listas cujos itens vão como `{ text }` no corpo (o erro vem em `.text`). */
-const ruleTextLists = ['effects', 'requirements']
+const ruleTextLists = ['requirements']
 
 /** Lista de textos ("Efeito {n}"); com `list`, cada campo sugere do `datalist`. */
 function TextListField({
@@ -689,10 +734,7 @@ function EquipmentFields({
           </>
         )}
       />
-      <TextListField
-        label="Efeitos"
-        itemLabel="Efeito"
-        path="effects"
+      <EffectFields
         items={values.effects}
         onChange={(effects) => set({ ...values, effects })}
         errors={errors}
@@ -815,10 +857,7 @@ function ItemFields({
         suggestions={tags}
         errors={errors}
       />
-      <TextListField
-        label="Efeitos"
-        itemLabel="Efeito"
-        path="effects"
+      <EffectFields
         items={values.effects}
         onChange={(effects) => set({ ...values, effects })}
         errors={errors}
@@ -1182,13 +1221,11 @@ function DimensionFields({
         onChange={(arrivalZoneTitle) => set({ ...values, arrivalZoneTitle })}
         errors={errors}
       />
-      <TextListField
-        label="Efeitos"
-        itemLabel="Efeito"
-        path="effects"
+      <EffectFields
         items={values.effects}
         onChange={(effects) => set({ ...values, effects })}
         errors={errors}
+        polarized
       />
       <ListField
         label="Decks de recompensas"
@@ -1348,6 +1385,15 @@ export function CardForm({
     publish.isPending ||
     duplicate.isPending ||
     remove.isPending
+  const invalidEffectFormat =
+    'effects' in values &&
+    values.effects.some((effect) =>
+      effectParts.some(
+        (part) =>
+          !effectSchema.shape[part].safeParse(parseEffectPart(effect[part]))
+            .success,
+      ),
+    )
   const errors = useFieldErrors(fieldErrors)
   // sugestões de etiqueta: a consulta já existe para a seção "Coleções" (cache)
   const tags = useEditorCollection(collectionId).data?.tags ?? []
@@ -1408,7 +1454,17 @@ export function CardForm({
 
   function onError(error: Error): void {
     setMessage(error instanceof ApiError ? error.message : unavailable)
-    setFieldErrors(error instanceof ContentInvalidError ? error.fields : [])
+    setFieldErrors(
+      error instanceof ContentInvalidError
+        ? error.fields.map(({ path, message }) => ({
+            path: path.replace(
+              /^(effects\.\d+\.(?:trigger|cost|activation|duration))\..+$/,
+              '$1',
+            ),
+            message,
+          }))
+        : [],
+    )
   }
 
   function onSubmit(event: FormEvent): void {
@@ -1492,7 +1548,9 @@ export function CardForm({
       </section>
       <section aria-labelledby="editor-preview-title">
         <h2 id="editor-preview-title">Pré-visualização</h2>
-        {previewCard === undefined ? (
+        {invalidEffectFormat ? (
+          <p>Formato de efeito inválido.</p>
+        ) : previewCard === undefined ? (
           <p>Preencha os campos obrigatórios para ver a carta.</p>
         ) : (
           <FullCard card={previewCard} />

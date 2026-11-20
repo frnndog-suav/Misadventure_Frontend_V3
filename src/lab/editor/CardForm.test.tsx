@@ -201,6 +201,89 @@ describe('REQ-21: conferência de formato', () => {
   })
 })
 
+describe('REQ-55: efeitos estruturados', () => {
+  it('envia o consumível sem consumeSelf e mostra a recusa do backend no custo', async () => {
+    const bodies = recordBodies()
+    const message = 'Consumível precisa ter o custo de usar a própria carta.'
+    server.use(
+      http.put(cardUrl, () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: 'CONTENT_INVALID',
+              message: 'Conteúdo inválido.',
+              details: { fields: [{ path: 'effects.0.cost', message }] },
+            },
+          },
+          { status: 400 },
+        ),
+      ),
+    )
+    renderEditor()
+    await openCard('Poção de Cura · Item · Publicada')
+    type('Custo do efeito 1 (JSON)', '[]')
+    expect(saveButton()).toBeEnabled()
+    fireEvent.click(saveButton())
+    await within(form()).findByText(message)
+    expect(field('Custo do efeito 1 (JSON)')).toHaveAccessibleDescription(
+      message,
+    )
+    expect(bodies).toEqual([
+      expect.objectContaining({
+        method: 'PUT',
+        body: expect.objectContaining({
+          effects: [
+            {
+              text: 'Recupera 5 de vida.',
+              trigger: null,
+              cost: [],
+              activation: [{ kind: 'heal', amount: 5 }],
+              duration: { kind: 'immediate' },
+              mark: null,
+            },
+          ],
+        }),
+      }),
+    ])
+  })
+
+  it('valida o JSON e o formato antes de salvar ou mostrar a carta', async () => {
+    renderEditor()
+    await openCard('Força · Atributo · Publicada')
+    const effects = within(form()).getByRole('group', { name: 'Efeitos' })
+    fireEvent.click(within(effects).getByRole('button', { name: 'Adicionar' }))
+    type('Texto do efeito 1', 'Texto do autor.')
+    expect(
+      within(effects).getByLabelText('Gatilho do efeito 1 (JSON)'),
+    ).toHaveValue('null')
+    expect(
+      within(effects).getByLabelText('Custo do efeito 1 (JSON)'),
+    ).toHaveValue('[]')
+    expect(
+      within(effects).getByLabelText('Ativação do efeito 1 (JSON)'),
+    ).toHaveValue('[]')
+    expect(
+      within(effects).getByLabelText('Duração do efeito 1 (JSON)'),
+    ).toHaveValue('{"kind":"immediate"}')
+    expect(within(effects).getByLabelText('Marcação do efeito 1')).toHaveValue(
+      '',
+    )
+    for (const invalid of [
+      '[',
+      '[{"kind":"heal","amount":"5"}]',
+      '[{"kind":"unknown"}]',
+    ]) {
+      type('Ativação do efeito 1 (JSON)', invalid)
+      expect(saveButton()).toBeDisabled()
+      expect(preview()).toHaveTextContent('Formato de efeito inválido.')
+      expect(within(preview()).queryByRole('article')).toBeNull()
+    }
+    type('Ativação do efeito 1 (JSON)', '[{"kind":"heal","amount":5}]')
+    expect(saveButton()).toBeEnabled()
+    expect(preview()).toHaveTextContent('Texto do autor.')
+  })
+})
+
 describe('REQ-21: listas', () => {
   it('REQ-21: "Adicionar", "Remover", "Subir" e "Descer"', async () => {
     renderEditor()
@@ -210,18 +293,18 @@ describe('REQ-21: listas', () => {
     fireEvent.click(add)
     fireEvent.click(add)
     fireEvent.click(add)
-    fireEvent.change(within(effects).getByLabelText('Efeito 1'), {
+    fireEvent.change(within(effects).getByLabelText('Texto do efeito 1'), {
       target: { value: 'A' },
     })
-    fireEvent.change(within(effects).getByLabelText('Efeito 2'), {
+    fireEvent.change(within(effects).getByLabelText('Texto do efeito 2'), {
       target: { value: 'B' },
     })
-    fireEvent.change(within(effects).getByLabelText('Efeito 3'), {
+    fireEvent.change(within(effects).getByLabelText('Texto do efeito 3'), {
       target: { value: 'C' },
     })
     const values = () =>
       within(effects)
-        .getAllByRole('textbox')
+        .getAllByLabelText(/^Texto do efeito /)
         .map((input) => (input as HTMLInputElement).value)
     const items = () => within(effects).getAllByRole('listitem')
 
@@ -298,7 +381,7 @@ describe('REQ-21: salvar', () => {
     )
     const effects = within(form()).getByRole('group', { name: 'Efeitos' })
     fireEvent.click(within(effects).getByRole('button', { name: 'Adicionar' }))
-    fireEvent.change(within(effects).getByLabelText('Efeito 1'), {
+    fireEvent.change(within(effects).getByLabelText('Texto do efeito 1'), {
       target: { value: 'Neblina.' },
     })
     fireEvent.change(within(effects).getByLabelText('Polaridade do efeito 1'), {
@@ -315,7 +398,16 @@ describe('REQ-21: salvar', () => {
       connectionArrows: 4,
       arrowLayout: null,
       zoneActions: ['recover', 'visitMarket'],
-      effects: [{ text: 'Neblina.', polarity: 'negative' }],
+      effects: [
+        {
+          trigger: null,
+          cost: [],
+          activation: [],
+          duration: { kind: 'immediate' },
+          text: 'Neblina.',
+          polarity: 'negative',
+        },
+      ],
     })
   })
 
@@ -374,7 +466,13 @@ describe('REQ-21: salvar', () => {
               code: 'CONTENT_INVALID',
               message: 'Conteúdo inválido.',
               details: {
-                fields: [{ path: 'effects.1.text', message: 'Texto vazio.' }],
+                fields: [
+                  { path: 'effects.1.text', message: 'Texto vazio.' },
+                  {
+                    path: 'effects.1.activation.0.amount',
+                    message: 'Valor recusado.',
+                  },
+                ],
               },
             },
           },
@@ -388,21 +486,24 @@ describe('REQ-21: salvar', () => {
     const add = within(effects).getByRole('button', { name: 'Adicionar' })
     fireEvent.click(add)
     fireEvent.click(add)
-    fireEvent.change(within(effects).getByLabelText('Efeito 1'), {
+    fireEvent.change(within(effects).getByLabelText('Texto do efeito 1'), {
       target: { value: 'A' },
     })
-    fireEvent.change(within(effects).getByLabelText('Efeito 2'), {
+    fireEvent.change(within(effects).getByLabelText('Texto do efeito 2'), {
       target: { value: 'B' },
     })
     fireEvent.click(saveButton())
     const error = await within(form()).findByText('Texto vazio.')
-    expect(within(effects).getByLabelText('Efeito 2')).toHaveAttribute(
+    expect(field('Ativação do efeito 2 (JSON)')).toHaveAccessibleDescription(
+      'Valor recusado.',
+    )
+    expect(within(effects).getByLabelText('Texto do efeito 2')).toHaveAttribute(
       'aria-describedby',
       error.id,
     )
-    expect(within(effects).getByLabelText('Efeito 1')).not.toHaveAttribute(
-      'aria-describedby',
-    )
+    expect(
+      within(effects).getByLabelText('Texto do efeito 1'),
+    ).not.toHaveAttribute('aria-describedby')
   })
 })
 
@@ -689,7 +790,7 @@ describe('REQ-21: equipamento', () => {
       within(group('Efeitos')).getByRole('button', { name: 'Adicionar' }),
     )
     expect(saveButton()).toBeDisabled()
-    type('Efeito 1', 'Sangra.')
+    type('Texto do efeito 1', 'Sangra.')
     expect(saveButton()).toBeEnabled()
   })
 
@@ -827,7 +928,7 @@ describe('REQ-21: item', () => {
     expect(field('Raridade')).toHaveValue('common')
     expect(field('Categoria')).toHaveValue('consumable')
     expect(field('Etiqueta 1')).toHaveValue('poção')
-    expect(field('Efeito 1')).toHaveValue('Recupera 5 de vida.')
+    expect(field('Texto do efeito 1')).toHaveValue('Recupera 5 de vida.')
   })
 
   it('REQ-21: "Nova carta" de item só salva com o formato completo e envia o corpo', async () => {
@@ -1425,7 +1526,7 @@ describe('REQ-31: Carta de Dimensão e forma das setas', () => {
     expect(saveButton()).toBeEnabled()
     const effects = within(form()).getByRole('group', { name: 'Efeitos' })
     fireEvent.click(within(effects).getByRole('button', { name: 'Adicionar' }))
-    fireEvent.change(within(effects).getByLabelText('Efeito 1'), {
+    fireEvent.change(within(effects).getByLabelText('Texto do efeito 1'), {
       target: { value: 'Chove sempre.' },
     })
     fireEvent.click(saveButton())
@@ -1437,7 +1538,16 @@ describe('REQ-31: Carta de Dimensão e forma das setas', () => {
       flavorText: null,
       releaseOrder: 2,
       arrivalZoneTitle: null,
-      effects: [{ text: 'Chove sempre.' }],
+      effects: [
+        {
+          trigger: null,
+          cost: [],
+          activation: [],
+          duration: { kind: 'immediate' },
+          text: 'Chove sempre.',
+          polarity: 'positive',
+        },
+      ],
       rewardDecks: [],
     })
   })

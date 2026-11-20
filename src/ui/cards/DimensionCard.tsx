@@ -3,7 +3,7 @@ import {
   type DimensionCard as DimensionCardData,
 } from '../../api/catalog'
 import { zoneTypeLabels } from '../labels'
-import { CardFrame, LabeledList } from './parts'
+import { CardFrame, Effects, LabeledList } from './parts'
 
 /** Carta de Dimensão (REQ-28, README 3.2). A zona `null` é sorteada pelo backend. */
 export function DimensionCard({ card }: { card: DimensionCardData }) {
@@ -15,11 +15,7 @@ export function DimensionCard({ card }: { card: DimensionCardData }) {
         {card.arrivalZoneTitle ??
           'sorteada entre as Urbanas sem efeito negativo'}
       </p>
-      <LabeledList
-        label="Efeitos"
-        items={card.effects}
-        render={(e) => e.text}
-      />
+      <Effects effects={card.effects} />
       {card.rewardDecks.length > 0 && <RewardDecks decks={card.rewardDecks} />}
     </CardFrame>
   )

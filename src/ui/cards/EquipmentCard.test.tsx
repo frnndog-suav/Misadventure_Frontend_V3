@@ -34,7 +34,16 @@ const full: EquipmentCardData = {
   abilities: [
     { name: 'Golpe Real', text: 'Uma vez por combate, ataque duas vezes.' },
   ],
-  effects: [{ text: '−10% de Celeridade.' }],
+  effects: [
+    {
+      trigger: null,
+      cost: [],
+      activation: [],
+      duration: { kind: 'immediate' },
+      text: '−10% de Celeridade.',
+      mark: 'debuff',
+    },
+  ],
   refinement: { maxLevel: 5, materials: { text: '2 Minério de Ferro.' } },
   enchantment: { text: 'Aceita encantamento de Fogo.' },
   priceMultiplier: 1.2,
@@ -99,7 +108,7 @@ describe('EquipmentCard', () => {
     expect(
       screen.getByText('Uma vez por combate, ataque duas vezes.'),
     ).toBeVisible()
-    expect(screen.getByText('−10% de Celeridade.')).toBeVisible()
+    expect(screen.getByText('Debuff: −10% de Celeridade.')).toBeVisible()
     expect(screen.getByText('Refinável até +5')).toBeVisible()
     expect(screen.getByText('2 Minério de Ferro.')).toBeVisible()
     expect(screen.getByText('Aceita encantamento de Fogo.')).toBeVisible()

@@ -136,7 +136,9 @@ test('REQ-21: abre um item da lista com os valores recebidos (MSW)', async ({
   await expect(form.getByLabel('Identificador')).toHaveValue('healing-potion')
   await expect(form.getByLabel('Categoria')).toHaveValue('consumable')
   await expect(form.getByLabel('Etiqueta 1')).toHaveValue('poção')
-  await expect(form.getByLabel('Efeito 1')).toHaveValue('Recupera 5 de vida.')
+  await expect(form.getByLabel('Texto do efeito 1')).toHaveValue(
+    'Recupera 5 de vida.',
+  )
 })
 
 test('REQ-21: cria um evento de combate com um inimigo (MSW)', async ({
@@ -283,6 +285,71 @@ test('REQ-31: abre a Carta de Dimensão e escolhe a forma das setas da zona (MSW
   await layout.selectOption({ label: 'Vizinhas' })
   await form.getByRole('button', { name: 'Salvar rascunho' }).click()
   await expect(form.getByRole('status')).toHaveText('Carta salva.')
+})
+
+test('REQ-55: corrige o formato e salva o efeito estruturado (MSW)', async ({
+  page,
+}) => {
+  await page.goto('/lab/editor')
+  await page.getByRole('button', { name: /Coleção de Teste/ }).click()
+  await page
+    .getByRole('button', { name: 'Tônico de Força · Item · Publicada' })
+    .click()
+  const form = page.getByRole('region', { name: 'Carta', exact: true })
+  const preview = page.getByRole('region', { name: 'Pré-visualização' })
+  const save = form.getByRole('button', { name: 'Salvar rascunho' })
+  const activation = form.getByLabel('Ativação do efeito 1 (JSON)')
+  await expect(form.getByLabel('Gatilho do efeito 1 (JSON)')).toHaveValue(
+    'null',
+  )
+  await expect(form.getByLabel('Custo do efeito 1 (JSON)')).toHaveValue(
+    '[{"kind":"consumeSelf"}]',
+  )
+  await expect(
+    preview.getByText('Buff: +3 de Ataque durante 2 vezes suas.'),
+  ).toBeVisible()
+
+  await activation.fill(
+    '[{"kind":"modifierFlat","changes":[{"modifier":"attack","amount":"4"}]}]',
+  )
+  await expect(preview.getByText('Formato de efeito inválido.')).toBeVisible()
+  await expect(preview.getByRole('article')).toHaveCount(0)
+  await expect(save).toBeDisabled()
+
+  const updated =
+    '[{"kind":"modifierFlat","changes":[{"modifier":"attack","amount":4}]}]'
+  await activation.fill(updated)
+  await form
+    .getByLabel('Texto do efeito 1')
+    .fill('+4 de Ataque durante 2 vezes suas.')
+  await expect(
+    preview.getByText('Buff: +4 de Ataque durante 2 vezes suas.'),
+  ).toBeVisible()
+  const request = page.waitForRequest(
+    (request) =>
+      request.method() === 'PUT' &&
+      new URL(request.url()).pathname ===
+        '/lab/content/cards/fixture.strength-tonic',
+  )
+  await save.click()
+  await expect(form.getByRole('status')).toHaveText('Carta salva.')
+  expect((await request).postDataJSON()).toMatchObject({
+    effects: [
+      {
+        text: '+4 de Ataque durante 2 vezes suas.',
+        trigger: null,
+        cost: [{ kind: 'consumeSelf' }],
+        activation: [
+          {
+            kind: 'modifierFlat',
+            changes: [{ modifier: 'attack', amount: 4 }],
+          },
+        ],
+        duration: { kind: 'forOwnTurns', turns: 2 },
+        mark: 'buff',
+      },
+    ],
+  })
 })
 
 test('REQ-49: ferramenta do item e decks de recompensas da dimensão (MSW)', async ({

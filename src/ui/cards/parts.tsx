@@ -1,3 +1,5 @@
+import type { Effect, ZoneEffect } from '../../api/effects'
+import { effectMarkLabels, effectPolarityLabels } from '../labels'
 import { useId, type ReactNode } from 'react'
 import type { Rarity, RuleText } from '../../api/catalog'
 import { rarityLabels } from '../labels'
@@ -122,6 +124,22 @@ export function EventOutcomes({
   )
 }
 
-export function Effects({ effects }: { effects: readonly RuleText[] }) {
-  return <LabeledList label="Efeitos" items={effects} render={(e) => e.text} />
+export function Effects({
+  effects,
+}: {
+  effects: readonly (Effect | ZoneEffect)[]
+}) {
+  return (
+    <LabeledList
+      label="Efeitos"
+      items={effects}
+      render={(effect) => {
+        const label =
+          'polarity' in effect
+            ? effectPolarityLabels[effect.polarity]
+            : effect.mark && effectMarkLabels[effect.mark]
+        return label ? `${label}: ${effect.text}` : effect.text
+      }}
+    />
+  )
 }

@@ -1,3 +1,10 @@
+import { z } from 'zod'
+import {
+  effectSchema,
+  zoneEffectSchema,
+  type Effect,
+  type ZoneEffect,
+} from '../../api/effects'
 import {
   modifierSchema,
   type Attribute,
@@ -30,7 +37,69 @@ import {
  * confere formato (número, texto obrigatório, seleção feita), nunca regra.
  */
 
-type Polarity = ZoneCard['effects'][number]['polarity']
+export const effectPartLabels = {
+  trigger: 'Gatilho',
+  cost: 'Custo',
+  activation: 'Ativação',
+  duration: 'Duração',
+} as const
+
+export const effectParts = Object.keys(
+  effectPartLabels,
+) as (keyof typeof effectPartLabels)[]
+
+export type EffectForm = Record<keyof typeof effectPartLabels, string> & {
+  text: string
+  mark: Effect['mark']
+  polarity: ZoneEffect['polarity']
+}
+
+function effectToForm(effect: Effect | ZoneEffect): EffectForm {
+  return {
+    text: effect.text,
+    trigger: JSON.stringify(effect.trigger),
+    cost: JSON.stringify(effect.cost),
+    activation: JSON.stringify(effect.activation),
+    duration: JSON.stringify(effect.duration),
+    mark: 'mark' in effect ? effect.mark : null,
+    polarity: 'polarity' in effect ? effect.polarity : 'positive',
+  }
+}
+
+export function emptyEffect(): EffectForm {
+  return effectToForm({
+    text: '',
+    trigger: null,
+    cost: [],
+    activation: [],
+    duration: { kind: 'immediate' },
+    mark: null,
+  })
+}
+
+export function parseEffectPart(text: string): unknown {
+  try {
+    return JSON.parse(text)
+  } catch {
+    return undefined
+  }
+}
+
+function toEffects<T>(
+  forms: EffectForm[],
+  schema: z.ZodType<T>,
+): T[] | undefined {
+  if (!forms.every((effect) => filled(effect.text))) return undefined
+  return z.array(schema).safeParse(
+    forms.map((effect) => ({
+      ...effect,
+      trigger: parseEffectPart(effect.trigger),
+      cost: parseEffectPart(effect.cost),
+      activation: parseEffectPart(effect.activation),
+      duration: parseEffectPart(effect.duration),
+    })),
+  ).data
+}
 type AttributeKind = AttributeCard['attributeKind']
 
 export interface ZoneForm {
@@ -43,7 +112,7 @@ export interface ZoneForm {
   /** `''` = "Não se aplica" (`null`, REQ-31). */
   arrowLayout: NonNullable<ZoneCard['arrowLayout']> | ''
   zoneActions: ZoneAction[]
-  effects: { text: string; polarity: Polarity }[]
+  effects: EffectForm[]
 }
 
 export interface AttributeForm {
@@ -54,7 +123,7 @@ export interface AttributeForm {
   rarity: Rarity | ''
   attributeKind: AttributeKind | ''
   attributes: (Attribute | '')[]
-  effects: string[]
+  effects: EffectForm[]
 }
 
 export interface EquipmentForm {
@@ -70,7 +139,7 @@ export interface EquipmentForm {
   classRestriction: PlayerClass[]
   blocksShield: boolean
   abilities: { name: string; text: string }[]
-  effects: string[]
+  effects: EffectForm[]
   /** Desligado = não refinável; o que foi digitado fica guardado. */
   refinement: { enabled: boolean; maxLevel: string; materials: string }
   /** Desligado = não encantável. */
@@ -88,7 +157,7 @@ export interface ItemForm {
   rarity: Rarity | ''
   itemCategory: ItemCategory | ''
   tags: string[]
-  effects: string[]
+  effects: EffectForm[]
   /** FEAT-32: vazio = `null`. */
   toolKind: string
   scavengeZoneTypes: ZoneType[]
@@ -143,7 +212,7 @@ export interface DimensionForm {
   releaseOrder: string
   /** Vazio = `null` (sorteada pelo backend, REQ-31). */
   arrivalZoneTitle: string
-  effects: string[]
+  effects: EffectForm[]
   /** FEAT-32 (README 3.4). */
   rewardDecks: {
     zoneType: ZoneType | ''
@@ -318,7 +387,7 @@ export function formFromCard(card: Card): CardForm {
         zoneActions: zoneActionOrder.filter((a) =>
           card.zoneActions.includes(a),
         ),
-        effects: card.effects.map(({ text, polarity }) => ({ text, polarity })),
+        effects: card.effects.map(effectToForm),
       }
     case 'attribute':
       return {
@@ -329,7 +398,7 @@ export function formFromCard(card: Card): CardForm {
         rarity: card.rarity,
         attributeKind: card.attributeKind,
         attributes: [...card.attributes],
-        effects: card.effects.map((e) => e.text),
+        effects: card.effects.map(effectToForm),
       }
     case 'equipment':
       return {
@@ -351,7 +420,7 @@ export function formFromCard(card: Card): CardForm {
         ),
         blocksShield: card.blocksShield,
         abilities: card.abilities.map(({ name, text }) => ({ name, text })),
-        effects: card.effects.map((e) => e.text),
+        effects: card.effects.map(effectToForm),
         refinement:
           card.refinement === null
             ? { enabled: false, maxLevel: '', materials: '' }
@@ -376,7 +445,7 @@ export function formFromCard(card: Card): CardForm {
         rarity: card.rarity,
         itemCategory: card.itemCategory,
         tags: [...card.tags],
-        effects: card.effects.map((e) => e.text),
+        effects: card.effects.map(effectToForm),
         toolKind: card.toolKind ?? '',
         scavengeZoneTypes: [...card.scavengeZoneTypes],
         scavengeTool: card.scavengeTool ?? '',
@@ -428,7 +497,7 @@ export function formFromCard(card: Card): CardForm {
         flavorText: card.flavorText ?? '',
         releaseOrder: String(card.releaseOrder),
         arrivalZoneTitle: card.arrivalZoneTitle ?? '',
-        effects: card.effects.map((e) => e.text),
+        effects: card.effects.map(effectToForm),
         rewardDecks: card.rewardDecks.map(({ zoneType, cards }) => ({
           zoneType,
           cards: cards.map(({ cardId, copies }) => ({
@@ -503,14 +572,15 @@ function toEnemy(form: EnemyForm): Enemy | null {
 export function toInput(form: CardForm): CardInput | null {
   switch (form.type) {
     case 'zone': {
+      const effects = toEffects(form.effects, zoneEffectSchema)
+      if (effects === undefined) return null
       const arrows = parseNumber(form.connectionArrows)
       if (
         !filled(form.slug) ||
         !filled(form.title) ||
         !filled(form.location) ||
         form.zoneType === '' ||
-        arrows === null ||
-        !form.effects.every((e) => filled(e.text))
+        arrows === null
       )
         return null
       return {
@@ -522,18 +592,19 @@ export function toInput(form: CardForm): CardInput | null {
         connectionArrows: arrows,
         arrowLayout: form.arrowLayout === '' ? null : form.arrowLayout,
         zoneActions: form.zoneActions,
-        effects: form.effects,
+        effects,
       }
     }
     case 'attribute': {
+      const effects = toEffects(form.effects, effectSchema)
+      if (effects === undefined) return null
       const attributes = chosen(form.attributes)
       if (
         !filled(form.slug) ||
         !filled(form.name) ||
         form.rarity === '' ||
         form.attributeKind === '' ||
-        attributes === null ||
-        !form.effects.every(filled)
+        attributes === null
       )
         return null
       return {
@@ -544,10 +615,12 @@ export function toInput(form: CardForm): CardInput | null {
         rarity: form.rarity,
         attributeKind: form.attributeKind,
         attributes,
-        effects: form.effects.map((text) => ({ text })),
+        effects,
       }
     }
     case 'equipment': {
+      const effects = toEffects(form.effects, effectSchema)
+      if (effects === undefined) return null
       const modifiers: { modifier: Modifier; value: number }[] = []
       for (const entry of form.modifiers) {
         const value = parseNumber(entry.value)
@@ -566,7 +639,6 @@ export function toInput(form: CardForm): CardInput | null {
         (filled(form.peakRequirement) && peak === null) ||
         price === null ||
         !form.abilities.every((a) => filled(a.name) && filled(a.text)) ||
-        !form.effects.every(filled) ||
         (form.refinement.enabled &&
           (maxLevel === null || !filled(form.refinement.materials))) ||
         (form.enchantment.enabled && !filled(form.enchantment.text))
@@ -585,7 +657,7 @@ export function toInput(form: CardForm): CardInput | null {
         classRestriction: form.classRestriction,
         blocksShield: form.blocksShield,
         abilities: form.abilities,
-        effects: form.effects.map((text) => ({ text })),
+        effects,
         refinement:
           form.refinement.enabled && maxLevel !== null
             ? { maxLevel, materials: { text: form.refinement.materials } }
@@ -598,13 +670,14 @@ export function toInput(form: CardForm): CardInput | null {
       }
     }
     case 'item': {
+      const effects = toEffects(form.effects, effectSchema)
+      if (effects === undefined) return null
       if (
         !filled(form.slug) ||
         !filled(form.name) ||
         form.rarity === '' ||
         form.itemCategory === '' ||
-        !form.tags.every(filled) ||
-        !form.effects.every(filled)
+        !form.tags.every(filled)
       )
         return null
       return {
@@ -615,7 +688,7 @@ export function toInput(form: CardForm): CardInput | null {
         rarity: form.rarity,
         itemCategory: form.itemCategory,
         tags: form.tags,
-        effects: form.effects.map((text) => ({ text })),
+        effects,
         toolKind: filled(form.toolKind) ? form.toolKind : null,
         scavengeZoneTypes: form.scavengeZoneTypes,
         scavengeTool: filled(form.scavengeTool) ? form.scavengeTool : null,
@@ -667,6 +740,8 @@ export function toInput(form: CardForm): CardInput | null {
       }
     }
     case 'dimension': {
+      const effects = toEffects(form.effects, zoneEffectSchema)
+      if (effects === undefined) return null
       const releaseOrder = parseNumber(form.releaseOrder)
       const rewardDecks: {
         zoneType: ZoneType
@@ -682,12 +757,7 @@ export function toInput(form: CardForm): CardInput | null {
         if (deck.zoneType === '') return null
         rewardDecks.push({ zoneType: deck.zoneType, cards })
       }
-      if (
-        !filled(form.slug) ||
-        !filled(form.name) ||
-        releaseOrder === null ||
-        !form.effects.every(filled)
-      )
+      if (!filled(form.slug) || !filled(form.name) || releaseOrder === null)
         return null
       return {
         slug: form.slug,
@@ -698,7 +768,7 @@ export function toInput(form: CardForm): CardInput | null {
         arrivalZoneTitle: filled(form.arrivalZoneTitle)
           ? form.arrivalZoneTitle
           : null,
-        effects: form.effects.map((text) => ({ text })),
+        effects,
         rewardDecks,
       }
     }

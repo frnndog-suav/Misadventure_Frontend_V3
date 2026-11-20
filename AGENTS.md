@@ -57,11 +57,14 @@ O mapa é uma referência, não uma lista de leituras obrigatórias. Não copie 
 4. Se a mudança alterar comportamento, confirme os critérios Dado / Quando / Então na spec. Se a spec precisar mudar, obtenha aprovação da mudança antes de escrever testes e código.
 5. Para critérios novos ou alterados, escreva primeiro os testes com o ID do requisito e confirme a falha esperada. Implemente a menor solução completa e execute os testes afetados e as validações pertinentes.
 6. Registre a etapa de desenvolvimento no devlog. Relate arquivos alterados, verificações executadas, pendências e, quando aplicável, roteiro de testes com resultados esperados e um caso de borda.
+7. Ao final de cada implementação, inclua na resposta uma sugestão de commit em inglês, curta e em minúsculas, no formato `tipo/descrição`, sem dois-pontos. Para tarefas de feature com IDs definidos, siga o padrão do histórico, como `feat/t-55 feat-11 structured effects in cards and editor`. Use o prefixo que descreve a mudança. O autor faz o commit.
 
 ## Coordenação
 
 - O usuário faz a ponte com o backend e com outras IAs.
-- Ao alterar documentos compartilhados ou encontrar dependência do backend, consulte o protocolo em `docs/ROADMAP.md` §2. Se houver dependência, informe ao autor o que levar ao outro repositório, o que executar lá e o que trazer de volta.
+- Consulte o protocolo em `docs/ROADMAP.md` §2 e inclua na resposta final um **Aviso de backend** pronto para o autor copiar e enviar quando houver proposta ou alteração de contrato, mudança em documento compartilhado, dependência que o contrato ainda não cobre, frontend da FEAT pronto com MSW e validação real pendente, ou divergência atribuível ao backend durante a validação.
+- No aviso, identifique a FEAT e explique o motivo. Indique quais arquivos, versões e seções levar, a revisão ou os cenários a executar no backend, o retorno esperado e o que pode seguir com MSW ou fica bloqueado no frontend. Para divergências, inclua o cenário e as respostas esperada e recebida.
+- Quando faltar suporte no contrato, pause a parte que depende dele. Quando a FEAT estiver pronta com MSW, peça ao autor a URL do backend com os dados de teste necessários. Com o backend disponível, execute os cenários previstos com MSW desligado e registre os resultados. Marque a FEAT como validada somente após todos os cenários passarem.
 - No fluxo `/registrar-etapa`, horas da sessão ficam `null` quando não houver medição; o autor fecha o registro de tempo.
 
 ## Retomada e chamada de tarefas

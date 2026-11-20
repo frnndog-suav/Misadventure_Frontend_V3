@@ -74,13 +74,30 @@ describe('DimensionCard', () => {
     ).toBeVisible()
   })
 
-  it('REQ-28: mostra flavor e efeitos quando houver', () => {
+  it('REQ-53: mostra o texto e a polaridade dos efeitos', () => {
     renderWithClient(
       <DimensionCard
         card={{
           ...noDecks,
           flavorText: 'Um mundo à deriva.',
-          effects: [{ text: 'Efeito A.' }, { text: 'Efeito B.' }],
+          effects: [
+            {
+              trigger: null,
+              cost: [],
+              activation: [],
+              duration: { kind: 'immediate' },
+              text: 'Efeito A.',
+              polarity: 'positive',
+            },
+            {
+              trigger: null,
+              cost: [],
+              activation: [],
+              duration: { kind: 'immediate' },
+              text: 'Efeito B.',
+              polarity: 'negative',
+            },
+          ],
         }}
       />,
     )
@@ -89,8 +106,8 @@ describe('DimensionCard', () => {
       screen.getByRole('list', { name: 'Efeitos' }),
     ).getAllByRole('listitem')
     expect(items.map((li) => li.textContent)).toEqual([
-      'Efeito A.',
-      'Efeito B.',
+      'Positivo: Efeito A.',
+      'Negativo: Efeito B.',
     ])
   })
 
@@ -104,7 +121,19 @@ describe('DimensionCard', () => {
   it('REQ-48: "Decks de recompensas" depois dos efeitos, por tipo de zona, com "{copies}× {nome}" na ordem recebida', async () => {
     renderWithClient(
       <DimensionCard
-        card={{ ...dimension, effects: [{ text: 'Efeito A.' }] }}
+        card={{
+          ...dimension,
+          effects: [
+            {
+              trigger: null,
+              cost: [],
+              activation: [],
+              duration: { kind: 'immediate' },
+              text: 'Efeito A.',
+              polarity: 'positive',
+            },
+          ],
+        }}
       />,
     )
     const decks = screen.getByRole('list', { name: 'Decks de recompensas' })

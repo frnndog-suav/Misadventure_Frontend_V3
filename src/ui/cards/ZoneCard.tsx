@@ -1,8 +1,7 @@
 import type { ZoneCard as ZoneCardData } from '../../api/catalog'
 import { zoneActionLabels, zoneTypeLabels } from '../labels'
-import { CardFrame, LabeledList } from './parts'
+import { CardFrame, Effects, LabeledList } from './parts'
 
-const polarityLabels = { positive: 'Positivo', negative: 'Negativo' } as const
 /** Forma das setas (REQ-28); com `null`, nada aparece. */
 const arrowLayoutLabels = {
   straight: 'Setas opostas',
@@ -24,11 +23,7 @@ export function ZoneCard({ card }: { card: ZoneCardData }) {
         items={card.zoneActions}
         render={(a) => zoneActionLabels[a]}
       />
-      <LabeledList
-        label="Efeitos"
-        items={card.effects}
-        render={(e) => `${polarityLabels[e.polarity]}: ${e.text}`}
-      />
+      <Effects effects={card.effects} />
     </CardFrame>
   )
 }

@@ -23,7 +23,16 @@ const enhanced: AttributeCardData = {
   name: 'Força Bruta',
   rarity: 'rare',
   attributeKind: 'enhanced',
-  effects: [{ text: '+1 de Ataque neste combate.' }],
+  effects: [
+    {
+      trigger: null,
+      cost: [],
+      activation: [],
+      duration: { kind: 'immediate' },
+      text: '+1 de Ataque neste combate.',
+      mark: null,
+    },
+  ],
 }
 
 describe('AttributeCard', () => {

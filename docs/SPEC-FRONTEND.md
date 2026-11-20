@@ -746,7 +746,7 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 **FEAT-11 — Efeitos e status** (CONTRATO v0.52 `implementado (BE)`; README 13 e 13.6, B K2). Implementação e validação integral autorizadas pelo autor em 2026-11-19.
 
 - [ ] **T-54 — Cliente e fixtures de efeitos** (REQ-53/54/55): schemas das quatro partes, efeitos, status, efeitos ativáveis, ação e erros; fixtures estáticas compatíveis. `src/api/effects.ts` centraliza schemas; nenhuma regra de execução.
-- [ ] **T-55 — Cartas e editor de efeitos** (REQ-53/55): marcação e polaridade; campos JSON validados escolhidos pelo autor; testes unitários e e2e `lab`/`editor`.
+- [x] **T-55 — Cartas e editor de efeitos** (REQ-53/55): marcação e polaridade; campos JSON validados escolhidos pelo autor; testes unitários e e2e `lab`/`editor`.
 - [ ] **T-56 — Status e ativação na partida** (REQ-54): apresentação, pagamento por cópia e atualização autoritativa; testes unitários e e2e `party`.
 - [ ] **T-57 — Validar FEAT-11 contra o backend real**: todos os cenários do contrato com MSW desligado, incluindo telas, editor e recusas; registrar resultados e só marcar validado se todos passarem.
 

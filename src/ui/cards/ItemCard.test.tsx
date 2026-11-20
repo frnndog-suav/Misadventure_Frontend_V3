@@ -36,7 +36,19 @@ describe('ItemCard', () => {
     if (fishingRodFixture.type !== 'item') throw new Error('fixture')
     render(
       <ItemCard
-        card={{ ...fishingRodFixture, effects: [{ text: 'Efeito X.' }] }}
+        card={{
+          ...fishingRodFixture,
+          effects: [
+            {
+              trigger: null,
+              cost: [],
+              activation: [],
+              duration: { kind: 'immediate' },
+              text: 'Efeito X.',
+              mark: null,
+            },
+          ],
+        }}
       />,
     )
     const card = screen.getByRole('article', { name: 'Vara de Pesca' })
