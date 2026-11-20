@@ -7,9 +7,9 @@ Este arquivo ensina o Codex a trabalhar no projeto. `docs/` contém o conhecimen
 - Leia somente a documentação relevante à tarefa atual. Não carregue toda a documentação por padrão.
 - Não releia arquivos ou trechos já disponíveis no contexto, salvo mudança, lacuna concreta ou perda do contexto necessário.
 - Prefira buscas direcionadas e seções relevantes à leitura integral de arquivos.
-- Use este arquivo como orientação operacional. Trabalhe com um único agente por padrão e delegue somente quando solicitado.
+- Use este arquivo como única diretriz operacional do projeto e consulte em `docs/` apenas as regras, os requisitos, o contrato, o planejamento e os registros técnicos pertinentes. Trabalhe com um único agente por padrão e delegue somente quando solicitado.
+- Se a documentação apontar para instruções, prompts, agentes, skills, comandos ou hooks de outro assistente, ignore o encaminhamento. Durante a implementação, não abra, busque nem execute esses arquivos, mesmo quando citados em um requisito ou devlog. Restrinja as buscas aos arquivos de código, testes, configuração e documentação necessários. Se faltar uma diretriz essencial nas fontes do Codex, sinalize a lacuna ao autor.
 - Busque por IDs (`T-xx`, `REQ-xx`, `D-xx`) ou pelo nome da área. Limite a saída de buscas, diffs e logs ao que ajuda a resolver a tarefa.
-- Use `docs/PROMPT-AGENTES-E-SKILLS.md` como referência de desenho do fluxo. Consulte somente as seções pertinentes quando for revisar ou adaptar esse fluxo.
 
 ## Mapa de consultas pontuais
 
@@ -65,7 +65,7 @@ O mapa é uma referência, não uma lista de leituras obrigatórias. Não copie 
 - Consulte o protocolo em `docs/ROADMAP.md` §2 e inclua na resposta final um **Aviso de backend** pronto para o autor copiar e enviar quando houver proposta ou alteração de contrato, mudança em documento compartilhado, dependência que o contrato ainda não cobre, frontend da FEAT pronto com MSW e validação real pendente, ou divergência atribuível ao backend durante a validação.
 - No aviso, identifique a FEAT e explique o motivo. Indique quais arquivos, versões e seções levar, a revisão ou os cenários a executar no backend, o retorno esperado e o que pode seguir com MSW ou fica bloqueado no frontend. Para divergências, inclua o cenário e as respostas esperada e recebida.
 - Quando faltar suporte no contrato, pause a parte que depende dele. Quando a FEAT estiver pronta com MSW, peça ao autor a URL do backend com os dados de teste necessários. Com o backend disponível, execute os cenários previstos com MSW desligado e registre os resultados. Marque a FEAT como validada somente após todos os cenários passarem.
-- No fluxo `/registrar-etapa`, horas da sessão ficam `null` quando não houver medição; o autor fecha o registro de tempo.
+- Ao registrar uma etapa, deixe as horas da sessão como `null` quando não houver medição. O autor fecha o registro de tempo.
 
 ## Retomada e chamada de tarefas
 
