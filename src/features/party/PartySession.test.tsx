@@ -20,6 +20,8 @@ import {
   vi,
 } from 'vitest'
 import type { Party } from '../../api/parties'
+import { partySchema } from '../../api/parties'
+import { getJson, requestJson } from '../../api/http'
 import App from '../../App'
 import { partyEffectsReadyFixture } from '../../mocks/effectFixtures'
 import { internalErrorFixture } from '../../mocks/fixtures'
@@ -35,6 +37,7 @@ import {
 } from '../../mocks/randomEventFixtures'
 import {
   actionNoActionPointsFixture,
+  actionNotAllowedFixture,
   actionPrepareNotAllowedFixture,
   partyBladeEquippedFixture,
   partyBladeUnequippedFixture,
@@ -3042,6 +3045,189 @@ describe('REQ-52: Usar cofre', () => {
     expect(opTexts()).toEqual(['1. Guardar 1 de ouro'])
   })
 })
+describe('REQ-62: escolha de efeitos disparados', () => {
+  const choice = () =>
+    screen.findByRole('region', { name: 'Efeitos disparados' })
+  const snapshot = async (id: string) =>
+    partySchema.parse(await getJson(`/parties/${id}`))
+  const resolve = (
+    id: string,
+    choiceId: string,
+    effectId: string,
+    decision: 'pay' | 'decline',
+  ) =>
+    requestJson('POST', `/parties/${id}/actions`, {
+      type: 'resolveTriggeredEffect',
+      choiceId,
+      effectId,
+      decision,
+    })
+
+  it.each([
+    ['party-trigger-anticipation-decline', 'Recusar', 1, 0],
+    ['party-trigger-anticipation', 'Pagar', 0, 1],
+  ])('confirma ouro e vida após %s', async (id, button, gold, healed) => {
+    const before = (await snapshot(id)).members[0]!.player
+    renderParty(id)
+    const panel = await choice()
+    expect(screen.queryByRole('button', { name: 'Revelar carta' })).toBeNull()
+    fireEvent.click(within(panel).getByRole('button', { name: button }))
+    await waitFor(() => expect(panel).not.toBeInTheDocument())
+    const after = await snapshot(id)
+    expect(after.triggeredEffectChoice).toBeNull()
+    expect(after.members[0]!.player).toMatchObject({
+      gold,
+      health: before.health + healed,
+    })
+    expect(screen.getByText(new RegExp(`Ouro ${gold} `))).toBeVisible()
+  })
+
+  it('recarrega a pausa inimiga e exibe somente o novo lote em ordem', async () => {
+    const id = 'party-combat-reveal'
+    const first = renderParty(id)
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Revelar carta' }),
+    )
+    await choice()
+    const paused = (await snapshot(id)).triggeredEffectChoice
+    expect(paused).toMatchObject({
+      choiceId: 'choice-1',
+      effects: [{ effectId: 'passive-gold' }],
+    })
+    first.unmount()
+    renderParty(id)
+    const panel = await choice()
+    expect((await snapshot(id)).triggeredEffectChoice).toEqual(paused)
+    expect(
+      screen.queryByRole('list', { name: 'Transições de combate' }),
+    ).toBeNull()
+    expect(screen.queryByRole('button', { name: /Atacar/ })).toBeNull()
+    fireEvent.click(within(panel).getByRole('button', { name: 'Recusar' }))
+    const log = await screen.findByRole('list', {
+      name: 'Transições de combate',
+    })
+    expect(
+      within(log)
+        .getAllByRole('listitem')
+        .map((item) => item.textContent),
+    ).toEqual([
+      expect.stringContaining('Lobo Cinzento → Lia'),
+      expect.stringContaining('Turno de Lia'),
+    ])
+    expect(screen.getByRole('button', { name: /Atacar/ })).toBeEnabled()
+  })
+
+  it('resolve o automático primeiro e usa a próxima escolha sem opção de pagar', async () => {
+    const id = 'party-trigger-simultaneous'
+    renderParty(id)
+    const panel = await choice()
+    expect(within(panel).getByRole('button', { name: 'Pagar' })).toBeEnabled()
+    fireEvent.click(within(panel).getByRole('button', { name: 'Resolver' }))
+    expect(await screen.findByText(/ativou automatic-gold/)).toBeVisible()
+    expect(within(panel).queryByRole('button', { name: 'Pagar' })).toBeNull()
+    expect(within(panel).queryByText('Pagar 1 ouro')).toBeNull()
+    expect((await snapshot(id)).triggeredEffectChoice).toMatchObject({
+      choiceId: 'choice-2',
+      effects: [{ effectId: 'passive-gold', canPay: false }],
+    })
+    fireEvent.click(within(panel).getByRole('button', { name: 'Recusar' }))
+    await waitFor(() => expect(panel).not.toBeInTheDocument())
+    expect((await snapshot(id)).members[0]!.player.gold).toBe(0)
+  })
+
+  it.each(['Pagar', 'Recusar'])(
+    'resolve o opcional primeiro ao escolher %s',
+    async (button) => {
+      const id = 'party-trigger-simultaneous'
+      renderParty(id)
+      const panel = await choice()
+      const before = (await snapshot(id)).members[0]!.player
+      const optional = within(panel).getByRole('group', {
+        name: /Pague 1 ouro/,
+      })
+      fireEvent.click(within(optional).getByRole('button', { name: button }))
+      await waitFor(() => expect(panel).not.toBeInTheDocument())
+      const after = await snapshot(id)
+      expect(after.triggeredEffectChoice).toBeNull()
+      expect(after.members[0]!.player).toMatchObject({
+        gold: 0,
+        health: before.health + Number(button === 'Pagar'),
+      })
+      const log = screen.getByRole('list', { name: 'Transições de combate' })
+      expect(
+        within(log)
+          .getAllByRole('listitem')
+          .map((item) => item.textContent),
+      ).toEqual([
+        ...(button === 'Pagar'
+          ? [expect.stringContaining('ativou passive-gold')]
+          : []),
+        expect.stringContaining('ativou automatic-gold'),
+        expect.stringContaining('Lobo Cinzento → Lia'),
+        expect.stringContaining('Turno de Lia'),
+      ])
+    },
+  )
+
+  it('exibe a recusa de uma escolha consumida e preserva a última projeção confirmada', async () => {
+    const id = 'party-trigger-simultaneous'
+    renderParty(id)
+    const panel = await choice()
+    fireEvent.click(within(panel).getByRole('button', { name: 'Resolver' }))
+    const transition = await screen.findByText(/ativou automatic-gold/)
+    const decline = within(panel).getByRole('button', { name: 'Recusar' })
+    const request = () => resolve(id, 'choice-2', 'passive-gold', 'decline')
+    await request()
+    const consumed = await snapshot(id)
+    await expect(request()).rejects.toMatchObject({
+      code: 'ACTION_NOT_ALLOWED',
+      details: { reason: 'staleTriggeredEffectChoice' },
+    })
+    fireEvent.click(decline)
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(actionNotAllowedFixture.error.message),
+    )
+    expect(transition).toBeVisible()
+    expect(decline).toBeEnabled()
+    expect(await snapshot(id)).toEqual(consumed)
+  })
+
+  it('mantém a tela e o save após pagamento inválido e permite tentar novamente', async () => {
+    const id = 'party-trigger-invalid'
+    renderParty(id)
+    const panel = await choice()
+    const pay = within(panel).getByRole('button', { name: 'Pagar' })
+    expect(pay).toBeDisabled()
+    fireEvent.click(within(panel).getByRole('checkbox', { name: /h1/ }))
+    expect(pay).toBeEnabled()
+    const initial = await snapshot(id)
+    const details = { reason: 'paymentInvalid' }
+    await expect(
+      resolve(id, 'choice-2', 'passive-discard', 'pay'),
+    ).rejects.toMatchObject({
+      code: 'ACTION_NOT_ALLOWED',
+      details,
+    })
+    const refusal = { error: { ...actionNotAllowedFixture.error, details } }
+    server.use(
+      http.post(
+        `*/parties/${id}/actions`,
+        () => HttpResponse.json(refusal, { status: 409 }),
+        { once: true },
+      ),
+    )
+    fireEvent.click(pay)
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(refusal.error.message),
+    )
+    expect(pay).toBeEnabled()
+    expect(await snapshot(id)).toEqual(initial)
+    fireEvent.click(pay)
+    await waitFor(() => expect(panel).not.toBeInTheDocument())
+    expect((await snapshot(id)).triggeredEffectChoice).toBeNull()
+  })
+})
+
 describe('REQ-61: combate solo', () => {
   const combatLog = () =>
     screen.getByRole('list', { name: 'Transições de combate' })

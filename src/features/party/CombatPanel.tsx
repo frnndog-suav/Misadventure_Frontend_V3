@@ -25,30 +25,34 @@ function ProjectedAction({
   pending,
   name,
   onSubmit,
+  children,
 }: {
-  option: Option
+  option: Pick<Option, 'paymentCosts'> &
+    Partial<Pick<Option, 'targetIds' | 'vigorCost'>>
   label: string
   button: string
   host: PartyMember
   cards: Cards
   pending: boolean
-  name: (id: string) => string
+  name?: (id: string) => string
   onSubmit: (selection: { targetId?: string; payment?: EventPayment }) => void
+  children?: ReactNode
 }) {
   const [target, setTarget] = useState('')
   const [choices, setChoices] = useState<Map<number, Map<string, number>>>(
     () => new Map(),
   )
+  const { targetIds = [], vigorCost } = option
   const targetId =
-    option.targetIds.length === 1
-      ? option.targetIds[0]
-      : option.targetIds.find((id) => id === target)
+    targetIds.length === 1
+      ? targetIds[0]
+      : targetIds.find((id) => id === target)
   const handCards = new Set<string>()
   const equipmentSlots = new Set<
     NonNullable<EventPayment['equipmentSlots']>[number]
   >()
   const resources = new Map<string, number>()
-  let valid = !option.targetIds.length || targetId !== undefined
+  let valid = !targetIds.length || targetId !== undefined
 
   function select(index: number, id: string, quantity: number) {
     setChoices((current) =>
@@ -171,8 +175,8 @@ function ProjectedAction({
   return (
     <fieldset disabled={pending}>
       <legend>{label}</legend>
-      <p>Vigor: {option.vigorCost}</p>
-      {option.targetIds.length > 0 && (
+      {vigorCost !== undefined && <p>Vigor: {vigorCost}</p>}
+      {targetIds.length > 0 && (
         <label>
           Alvo{' '}
           <select
@@ -180,9 +184,9 @@ function ProjectedAction({
             onChange={(event) => setTarget(event.target.value)}
           >
             {!targetId && <option value="">Escolha um alvo</option>}
-            {option.targetIds.map((id) => (
+            {targetIds.map((id) => (
               <option key={id} value={id}>
-                {name(id)}
+                {name?.(id) ?? id}
               </option>
             ))}
           </select>
@@ -192,6 +196,7 @@ function ProjectedAction({
       <button type="button" disabled={!valid} onClick={submit}>
         {button}
       </button>
+      {children}
     </fieldset>
   )
 }
@@ -217,6 +222,75 @@ type Controls = {
   cards: Cards
   pending: boolean
   onAction: (action: PartyAction) => void
+}
+
+export function TriggeredEffectPanel({
+  choice,
+  host,
+  cards,
+  pending,
+  onAction,
+}: Controls & { choice: NonNullable<Party['triggeredEffectChoice']> }) {
+  const title = useId()
+  if (
+    host.id !== choice.memberId ||
+    !host.player.availableActions.includes('resolveTriggeredEffect')
+  )
+    return null
+
+  return (
+    <section aria-labelledby={title}>
+      <h2 id={title}>Efeitos disparados</h2>
+      {choice.effects.map((effect) => {
+        const { choiceId } = choice
+        const { effectId, text } = effect
+        const key = JSON.stringify([choiceId, effectId])
+        const intent = {
+          type: 'resolveTriggeredEffect',
+          choiceId,
+          effectId,
+        } as const
+        const decision = effect.mode === 'automatic' ? 'resolve' : 'decline'
+        const decide = (
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => onAction({ ...intent, decision })}
+          >
+            {decision === 'resolve' ? 'Resolver' : 'Recusar'}
+          </button>
+        )
+        if (effect.mode === 'optional' && effect.canPay) {
+          return (
+            <ProjectedAction
+              key={key}
+              option={effect}
+              label={text}
+              button="Pagar"
+              host={host}
+              cards={cards}
+              pending={pending}
+              onSubmit={({ payment }) =>
+                onAction({
+                  ...intent,
+                  decision: 'pay',
+                  ...(payment && { payment }),
+                })
+              }
+            >
+              {decide}
+            </ProjectedAction>
+          )
+        }
+        return (
+          <fieldset key={key}>
+            <legend>{text}</legend>
+            {decide}
+          </fieldset>
+        )
+      })}
+    </section>
+  )
 }
 
 export function PrepareAbilities({ host, cards, pending, onAction }: Controls) {

@@ -38,7 +38,12 @@ import { EffectsPanel, type ActivateEffect } from './EffectsPanel'
 import { nameOf } from './cardNames'
 import { RandomEventPanel } from './RandomEventPanel'
 import { RewardChoice } from './RewardChoice'
-import { CombatPanel, CombatReport, PrepareAbilities } from './CombatPanel'
+import {
+  CombatPanel,
+  CombatReport,
+  PrepareAbilities,
+  TriggeredEffectPanel,
+} from './CombatPanel'
 
 type Cards = ReadonlyMap<string, Card>
 
@@ -1164,25 +1169,31 @@ function PreparedMatch({
           error={eventError}
         />
       )}
-      {!party.combat && adjusting && host !== undefined && (
-        <AdjustDeck
-          player={host.player}
-          cards={cards}
-          onSave={onSaveBuild}
-          onCancel={() => setAdjusting(false)}
-          pending={moving}
-          error={adjustError}
-        />
-      )}
-      {!party.combat && vaulting && host !== undefined && (
-        <UseVault
-          player={host.player}
-          cards={cards}
-          onConfirm={onUseVault}
-          onCancel={() => setVaulting(false)}
-          pending={moving}
-        />
-      )}
+      {!party.combat &&
+        !party.triggeredEffectChoice &&
+        adjusting &&
+        host !== undefined && (
+          <AdjustDeck
+            player={host.player}
+            cards={cards}
+            onSave={onSaveBuild}
+            onCancel={() => setAdjusting(false)}
+            pending={moving}
+            error={adjustError}
+          />
+        )}
+      {!party.combat &&
+        !party.triggeredEffectChoice &&
+        vaulting &&
+        host !== undefined && (
+          <UseVault
+            player={host.player}
+            cards={cards}
+            onConfirm={onUseVault}
+            onCancel={() => setVaulting(false)}
+            pending={moving}
+          />
+        )}
       {!party.combat && (
         <PartyMap
           party={party}
@@ -1250,6 +1261,7 @@ export function PartySession() {
   const { mutate: startSession } = start
   const reloadChoice =
     start.data?.combat != null ||
+    start.data?.triggeredEffectChoice != null ||
     start.data?.lastCombatResult != null ||
     start.data?.randomEventEncounter != null ||
     (start.data?.pendingRewards.length ?? 0) > 0
@@ -1454,6 +1466,15 @@ export function PartySession() {
                 : (confirmed?.combatNames ?? combatNames)
             }
           />
+          {party.triggeredEffectChoice && host && (
+            <TriggeredEffectPanel
+              choice={party.triggeredEffectChoice}
+              host={host}
+              cards={cards.cards}
+              pending={action.isPending || end.isPending}
+              onAction={(intent) => action.mutate(intent)}
+            />
+          )}
           {!party.combat && host && (
             <PrepareAbilities
               host={host}

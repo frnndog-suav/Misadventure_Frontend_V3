@@ -245,7 +245,9 @@ async function partyActionScenario(
           return deny('paymentInvalid')
         }
       }
-      const response = combat.actions[effectId + ':' + decision]
+      const key = effectId + ':' + decision
+      const response =
+        combat.actions[key + ':' + choiceId] ?? combat.actions[key]
       return response
         ? HttpResponse.json(acceptCombatResponse(partyId, response))
         : deny('triggeredEffectUnavailable')

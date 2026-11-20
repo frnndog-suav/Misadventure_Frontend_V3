@@ -285,6 +285,17 @@ const automaticFirst: PartyActionResponse = {
     },
   ],
 }
+const optionalDeclinedFirst = resume(
+  { ...simultaneous, members: automaticFirst.members },
+  false,
+)
+const optionalPaidFirst = resume(simultaneous, true)
+const passiveActivated = {
+  type: 'combatEffectActivated',
+  combatId,
+  actorId: member.id,
+  effectId: optional.effectId,
+} as const
 const unavailablePayment = snapshot(
   'party-trigger-unpayable',
   combat,
@@ -699,8 +710,22 @@ const scenarios: ReadonlyMap<unknown, Scenario> = new Map<unknown, Scenario>([
       party: simultaneous,
       actions: {
         'automatic-gold:resolve': automaticFirst,
-        'passive-gold:pay': resume(simultaneous, true),
-        'passive-gold:decline': resume(automaticFirst, false),
+        'passive-gold:pay': {
+          ...optionalPaidFirst,
+          combatUpdates: [
+            passiveActivated,
+            ...automaticFirst.combatUpdates!,
+            ...optionalPaidFirst.combatUpdates!,
+          ],
+        },
+        'passive-gold:decline': {
+          ...optionalDeclinedFirst,
+          combatUpdates: [
+            ...automaticFirst.combatUpdates!,
+            ...optionalDeclinedFirst.combatUpdates!,
+          ],
+        },
+        'passive-gold:decline:choice-2': resume(automaticFirst, false),
       },
     },
   ],

@@ -114,3 +114,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 082 | T-63 | [Cliente e fixtures da FEAT-13](082-T-63-cliente-feat-13.md) | concluída |
 | 083 | T-64 | [Catálogo, editor e laboratório da FEAT-13](083-T-64-catalogo-editor-laboratorio-feat-13.md) | concluída |
 | 084 | T-65 | [Tela e ações de combate solo](084-T-65-tela-acoes-combate-solo.md) | concluída |
+| 085 | T-66 | [Escolha de efeitos disparados](085-T-66-escolha-efeitos-disparados.md) | concluída |
