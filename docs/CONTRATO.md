@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.57 · **Data:** 2026-11-20
+> **Versão do contrato:** 0.58 · **Data:** 2026-11-20
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -394,7 +394,7 @@ interface GameConfigValues {
   vaultCapacity: number // README 6.4
   vaultDeckSlots: number // README 6.4 (a build em uso ocupa um)
   vaultGoldCapacity: number // README 6.4
-  // FEAT-12 (acordado)
+  // FEAT-12 (implementado BE)
   escapeVigorPercent: number
   reserveDeck: ReserveDeckEntry[]
 }
@@ -458,7 +458,7 @@ Padrões e limites:
 | `inventoryCapacity` (FEAT-10) | 10 | 0–100 |
 | `purseCapacity` (FEAT-10) | 300 | 0–1000000 |
 | `vaultCapacity` / `vaultDeckSlots` / `vaultGoldCapacity` (FEAT-32) | 30 / 10 / 2000 | 0–1000 / 1–100 / 0–10000000 |
-| `escapeVigorPercent` (FEAT-12, acordado) | 20 | 0–100 |
+| `escapeVigorPercent` (FEAT-12) | 20 | 0–100 |
 
 A FEAT-12 acrescenta os limites de `reserveDeck` conforme o cenário de configuração na sua seção.
 
@@ -1537,7 +1537,7 @@ Regras: README 3.4 (deck de recompensas por tipo de zona; Vasculhar não usa o d
 - **Usar cofre é um lote:** um pedido com a lista de operações, aplicadas em ordem e de uma vez, por 1 ponto de ação. Se uma falha, nada muda e o erro diz qual (`operationIndex`). O frontend monta o lote na tela do cofre e envia ao confirmar.
 - **O limbo não é guardado nem exibido** (README 6.5): descartar do cofre só remove a carta.
 - **Vasculhar numa etapa só:** o jogador escolhe uma carta de `scavengeTargets` (o que a ferramenta dele coleta naquela zona, segundo a Carta de Dimensão) **sem ver o deck**. Se a carta não está mais no deck, o ponto é gasto e nada vem. O resultado vem pronto em `PlayerState.lastScavenge` (v0.45, pedido do FE).
-- **Vasculhar com o inventário cheio é recusado** (`inventoryFull`), sem gastar o ponto, até a FEAT-12 trazer a escolha de README 6.6.
+- **Vasculhar com o inventário cheio** segue a FEAT-12. Gasta 1 PA, entrega por empilhamento quando possível e abre uma escolha quando a cópia encontrada exige espaço.
 - **Mover ouro nunca perde ouro:** o que não cabe na bolsa ou no cofre é recusado.
 
 **Mudanças em outras seções:**
@@ -2170,7 +2170,7 @@ Seja `G` criado com `{ "name": "Os Teimosos", "characterName": "Lia", "playerCla
 
 Só nos e2e do backend: Pico abaixo do requisito com passivo, `removeDebuffs`/`removeBuffs`, as demais durações executadas (vencimento no `move` e na virada da rodada), `donateLife`/`reducePeak`/`payGold` com `Quantity` em fórmula e `minimumNotMet`, `random` no descarte, saves antigos e cada regra de `CONTENT_INVALID`.
 
-### FEAT-12 — Eventos aleatórios — `acordado`
+### FEAT-12 — Eventos aleatórios — `implementado (BE)`
 
 Regras de README 3.4, 6.5–6.6, 11.3, 12.2, 12.6, 13 e 14–15. Usa `POST /parties/:partyId/actions` e a resposta `200 Party`. O GET devolve o mesmo estado persistido, inclusive após recarga ou retomada da sessão.
 
@@ -2479,3 +2479,4 @@ Exemplo dos campos executáveis de `cart` no cenário da última parte:
 | 0.55 | 2026-11-20 | BE | FEAT-12 `proposto (BE)`: explicita o uso de consumível via `prepare/activate` antes da primeira parte, a seleção da mão em `handCardSelection`, o descarte aleatório de uma cópia por envio e a reversão da última parte e do RNG. Acrescenta cenários de ativação, sorteio e pagamento com IDs de cópias duplicadas. |
 | 0.56 | 2026-11-20 | BE | FEAT-12 `acordado`: frontend aceitou a v0.55 integralmente. Os cenários acordados incluem a reversão do RNG na última parte recusada e o consumo da cópia escolhida entre duplicatas. |
 | 0.57 | 2026-11-20 | BE | FEAT-12 `acordado`: limites de `escapeVigorPercent` e `reserveDeck` no laboratório e erro `LAB_CONFIG_INVALID` com caminho indexado a partir de zero para o peso inválido. |
+| 0.58 | 2026-11-20 | BE | FEAT-12 `implementado (BE)`: ações HTTP, projeção e save v8 validados pelo autor. Vasculhar com inventário cheio segue a FEAT-12. Validação integrada pendente. |
