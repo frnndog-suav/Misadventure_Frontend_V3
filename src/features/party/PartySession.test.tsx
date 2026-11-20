@@ -25,6 +25,12 @@ import { partyEffectsReadyFixture } from '../../mocks/effectFixtures'
 import { internalErrorFixture } from '../../mocks/fixtures'
 import { handlers } from '../../mocks/handlers'
 import {
+  eventMinimumNotMetFixture,
+  eventScenarios,
+  partyEncounterFixture,
+  partyPartialEventFixture,
+} from '../../mocks/randomEventFixtures'
+import {
   actionNoActionPointsFixture,
   actionPrepareNotAllowedFixture,
   partyBladeEquippedFixture,
@@ -78,6 +84,220 @@ function renderParty(id: string = partyId): void {
 
 const status = () => screen.getAllByRole('status')[0]
 const endButton = () => screen.getByRole('button', { name: 'Encerrar sessão' })
+
+it('REQ-57: inicia em antecipação e revela a carta', async () => {
+  renderParty('party-evento-aleatorio')
+  fireEvent.click(await screen.findByRole('button', { name: 'Iniciar evento' }))
+  const reveal = await screen.findByRole('button', { name: 'Revelar carta' })
+  expect(screen.queryByText('Carroça na estrada')).not.toBeInTheDocument()
+  fireEvent.click(reveal)
+  expect(await screen.findByText('Carroça na estrada')).toBeInTheDocument()
+})
+
+it('REQ-57: ao reabrir usa a escolha carregada pelo GET', async () => {
+  const { party } = eventScenarios['party-evento-revelado']!
+  const encounter = party.randomEventEncounter!
+  server.use(
+    http.get('*/parties/party-evento-revelado', () =>
+      HttpResponse.json({
+        ...party,
+        randomEventEncounter: {
+          ...encounter,
+          card: { ...encounter.card!, title: 'Carroça recuperada' },
+        },
+      }),
+    ),
+  )
+  renderParty('party-evento-revelado')
+  expect(await screen.findByText('Carroça recuperada')).toBeInTheDocument()
+  expect(
+    screen.queryByRole('button', { name: 'Revelar carta' }),
+  ).not.toBeInTheDocument()
+})
+
+it('REQ-58: envia o ID da cópia escolhida e mantém a seleção após recusa de mínimo', async () => {
+  const requests: unknown[] = []
+  server.use(
+    http.post(
+      '*/parties/party-evento-copia-recusada/actions',
+      async ({ request }) => {
+        requests.push(await request.json())
+        return HttpResponse.json(eventMinimumNotMetFixture, { status: 409 })
+      },
+    ),
+  )
+  renderParty('party-evento-copia-recusada')
+  const copy = await screen.findByRole('checkbox', { name: /h2/ })
+  fireEvent.click(copy)
+  fireEvent.click(screen.getByRole('button', { name: 'Pagar requisito' }))
+  expect(
+    await screen.findByText('Vigor — mínimo 5, atual 4'),
+  ).toBeInTheDocument()
+  expect(requests).toEqual([
+    {
+      type: 'payEventRequirement',
+      encounterId: 'e1',
+      requirementId: 'attrs',
+      payment: { handCards: ['h2'] },
+    },
+  ])
+  expect(copy).toBeChecked()
+})
+
+it('REQ-57: ativa consumível com 0 PA e oculta a ativação e a fuga após pagamento', async () => {
+  const requests: unknown[] = []
+  server.use(
+    http.post(
+      '*/parties/party-evento-consumivel/actions',
+      async ({ request }) => {
+        const body = await request.clone().json()
+        requests.push(body)
+        if (
+          body &&
+          typeof body === 'object' &&
+          'type' in body &&
+          body.type === 'payEventRequirement'
+        )
+          return HttpResponse.json(partyPartialEventFixture)
+      },
+    ),
+  )
+  renderParty('party-evento-consumivel')
+  const activate = await screen.findByRole('button', { name: /Ativar Poção/ })
+  await waitFor(() => expect(activate).toBeEnabled())
+  fireEvent.click(activate)
+  expect(await screen.findByText(/^Vida 15\//)).toBeInTheDocument()
+  expect(requests[0]).toEqual({
+    type: 'prepare',
+    operation: 'activate',
+    cardId: 'fixture.healing-potion',
+    effectIndex: 0,
+  })
+
+  fireEvent.click(screen.getByRole('checkbox', { name: /h2/ }))
+  fireEvent.click(screen.getByRole('button', { name: 'Pagar requisito' }))
+  const receipts = await screen.findByRole('list', {
+    name: 'Recibos de pagamento',
+  })
+  expect(receipts).toHaveTextContent('h2')
+  expect(
+    screen.queryByRole('button', { name: /Ativar Poção/ }),
+  ).not.toBeInTheDocument()
+  expect(
+    screen.queryByRole('button', { name: 'Fugir' }),
+  ).not.toBeInTheDocument()
+})
+
+it('REQ-58: sorteia sem payment, atualiza o saldo e guarda o recibo', async () => {
+  renderParty('party-evento-descarte-aleatorio')
+  const pay = await screen.findByRole('button', { name: 'Pagar requisito' })
+  expect(screen.queryByRole('checkbox')).not.toBeInTheDocument()
+  fireEvent.click(pay)
+  expect(await screen.findByText('Cópias restantes: 1')).toBeInTheDocument()
+  expect(
+    screen.getByRole('list', { name: 'Recibos de pagamento' }),
+  ).toHaveTextContent('h2')
+})
+
+it('REQ-58: envia todas as cópias da manipulação em uma parte', async () => {
+  const encounter = partyEncounterFixture.randomEventEncounter!
+  const party: Party = {
+    ...partyEncounterFixture,
+    randomEventEncounter: {
+      ...encounter,
+      card: {
+        ...encounter.card!,
+        requirements: [
+          {
+            id: 'move-hand',
+            kind: 'manipulateAttributeCards',
+            mode: 'handToTop',
+            count: 2,
+            minimum: null,
+            text: 'Mova duas cartas ao topo.',
+          },
+        ],
+      },
+      requirements: [
+        {
+          ...encounter.requirements[0]!,
+          requirementId: 'move-hand',
+          remaining: { copies: 2 },
+        },
+      ],
+    },
+  }
+  const requests: unknown[] = []
+  server.use(
+    http.get('*/parties/party-evento-revelado', () => HttpResponse.json(party)),
+    http.post(
+      '*/parties/party-evento-revelado/actions',
+      async ({ request }) => {
+        requests.push(await request.json())
+        return HttpResponse.json(party)
+      },
+    ),
+  )
+  renderParty('party-evento-revelado')
+  fireEvent.click(await screen.findByRole('checkbox', { name: /h1/ }))
+  const pay = screen.getByRole('button', { name: 'Pagar requisito' })
+  expect(pay).toBeDisabled()
+  fireEvent.click(screen.getByRole('checkbox', { name: /h2/ }))
+  fireEvent.click(pay)
+  await waitFor(() =>
+    expect(requests).toEqual([
+      {
+        type: 'payEventRequirement',
+        encounterId: 'e1',
+        requirementId: 'move-hand',
+        payment: { handCards: ['h1', 'h2'] },
+      },
+    ]),
+  )
+})
+
+it.each([
+  [
+    'party-evento-minimo-ok',
+    'Resolver evento',
+    null,
+    'Êxito',
+    'Reposição: 0 de 0 cartas.',
+  ],
+  [
+    'party-evento-minimo',
+    'Desistir',
+    'Confirmar desistência',
+    'Revés por desistência',
+    'Reposição: 1 de 1 cartas.',
+  ],
+  [
+    'party-evento-fuga-sem-pa',
+    'Fugir',
+    'Confirmar fuga',
+    'Revés por falha na fuga',
+    'Dívida de PA na próxima vez: 1',
+  ],
+])(
+  'REQ-58: %s apresenta o resultado confirmado pelo backend',
+  async (id, action, confirm, title, detail) => {
+    renderParty(id)
+    fireEvent.click(await screen.findByRole('button', { name: action }))
+    if (confirm) {
+      expect(
+        screen.queryByRole('region', { name: 'Resultado do último evento' }),
+      ).not.toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: confirm }))
+    }
+    const result = await screen.findByRole('region', {
+      name: 'Resultado do último evento',
+    })
+    expect(
+      within(result).getByRole('heading', { name: title }),
+    ).toBeInTheDocument()
+    expect(result).toHaveTextContent(detail)
+  },
+)
 
 it('REQ-54: preserva estado e pagamento na recusa e limpa a escolha após sucesso', async () => {
   const member = partyEffectsReadyFixture.members[0]!

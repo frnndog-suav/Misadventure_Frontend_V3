@@ -778,7 +778,7 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 
 - [x] **T-58 — Cliente e fixtures** (REQ-56 a REQ-59). Schemas, ações, erros e casos determinísticos do CONTRATO v0.57.
 - [x] **T-59 — Catálogo, editor e configuração** (REQ-56). Compatibilidade legada e executável, decks por zona e valores do laboratório.
-- [ ] **T-60 — Encontro na tela do grupo** (REQ-57 e REQ-58). Antecipação, recarga, consumível, pagamentos por cópia, recusas, desistência e fuga.
+- [x] **T-60 — Encontro na tela do grupo** (REQ-57 e REQ-58). Antecipação, recarga, consumível, pagamentos por cópia, recusas, desistência e fuga.
 - [ ] **T-61 — Recompensas e Vasculhar** (REQ-59). Escolhas pendentes, recarga, descarte e resultado de Vasculhar.
 - [ ] **T-62 — Validação integrada da FEAT-12.** Repetir os cenários do contrato contra o backend real com MSW desligado, quando disponíveis a seção implementada, a URL e os dados de teste. Cenários de relógio multiplayer seguem a integração FEAT-26.
 

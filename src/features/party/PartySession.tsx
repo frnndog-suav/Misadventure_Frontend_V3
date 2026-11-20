@@ -13,6 +13,7 @@ import { ApiError } from '../../api/http'
 import {
   ActionNotAllowedError,
   useEndSession,
+  useParty,
   usePartyAction,
   useStartSession,
   type CardCopies,
@@ -22,6 +23,10 @@ import {
   type RecoverAction,
   type VaultOperation,
 } from '../../api/parties'
+import {
+  randomEventActionTypes,
+  type RandomEventAction,
+} from '../../api/randomEvents'
 import { FullCard } from '../../ui/cards/FullCard'
 import { categoryCatalog } from '../../ui/categories'
 import { formatSavedAt } from '../../ui/formatSavedAt'
@@ -29,8 +34,23 @@ import { Term } from '../../ui/Term'
 import { PartyMap } from './PartyMap'
 import { EffectsPanel, type ActivateEffect } from './EffectsPanel'
 import { nameOf } from './cardNames'
+import { RandomEventPanel } from './RandomEventPanel'
 
 type Cards = ReadonlyMap<string, Card>
+
+function eventReceiptCardIds(
+  payments: NonNullable<Party['randomEventEncounter']>['payments'],
+): string[] {
+  return payments.flatMap(
+    ({ handCards, movedAttributeCards, equipment, resources }) =>
+      [
+        ...(handCards ?? []),
+        ...(movedAttributeCards ?? []),
+        ...(equipment ?? []),
+        ...(resources ?? []),
+      ].map(({ cardId }) => cardId),
+  )
+}
 
 /** Ids das cartas cujos nomes a partida mostra (REQ-30). */
 function cardIdsOf(party: Party): string[] {
@@ -38,6 +58,7 @@ function cardIdsOf(party: Party): string[] {
     party.dimension.dimensionCardId,
     party.dimension.startingCityZoneId,
     ...party.dimension.map.zones.map(({ zoneId }) => zoneId),
+    ...eventReceiptCardIds(party.randomEventEncounter?.payments ?? []),
     ...party.members.flatMap(({ player }) => [
       player.zoneId,
       player.respawnZoneId,
@@ -51,6 +72,12 @@ function cardIdsOf(party: Party): string[] {
       ...player.vault.slots.map(({ cardId }) => cardId),
       ...player.vault.decks.flat().map(({ cardId }) => cardId),
       ...player.scavengeTargets,
+      ...(player.lastRandomEvent === null
+        ? []
+        : [
+            player.lastRandomEvent.cardId,
+            ...eventReceiptCardIds(player.lastRandomEvent.payments),
+          ]),
       ...(player.lastScavenge === null ? [] : [player.lastScavenge.cardId]),
     ]),
   ]
@@ -58,8 +85,8 @@ function cardIdsOf(party: Party): string[] {
 
 /** "Equipar"/"Guardar" do host com `prepare` (REQ-45); `null` nos outros casos. */
 type PrepareControls = {
-  onEquip: (cardId: string) => void
-  onUnequip: (slot: EquipmentSlot, cardId: string) => void
+  onEquip?: (cardId: string) => void
+  onUnequip?: (slot: EquipmentSlot, cardId: string) => void
   onActivate: ActivateEffect
   pending: boolean
 }
@@ -136,10 +163,10 @@ function MemberState({
             <li key={slot}>
               {categoryCatalog[slot].label}:{' '}
               {cardId === null ? 'vazio' : nameOf(cards, cardId)}
-              {cardId !== null && prepare !== null && (
+              {cardId !== null && prepare?.onUnequip && (
                 <button
                   type="button"
-                  onClick={() => prepare.onUnequip(slot, cardId)}
+                  onClick={() => prepare.onUnequip?.(slot, cardId)}
                   disabled={prepare.pending}
                 >
                   Guardar {nameOf(cards, cardId)}
@@ -161,10 +188,10 @@ function MemberState({
             <li key={i}>
               {quantity}× {nameOf(cards, cardId)}
               {/* Tipo da carta do catálogo: dado de exibição, não regra (D-58). */}
-              {prepare !== null && cards.get(cardId)?.type === 'equipment' && (
+              {prepare?.onEquip && cards.get(cardId)?.type === 'equipment' && (
                 <button
                   type="button"
-                  onClick={() => prepare.onEquip(cardId)}
+                  onClick={() => prepare.onEquip?.(cardId)}
                   disabled={prepare.pending}
                 >
                   Equipar {nameOf(cards, cardId)}
@@ -1032,6 +1059,8 @@ function PreparedMatch({
   onEquip,
   onUnequip,
   onActivate,
+  onEvent,
+  eventError,
   adjustError,
   adjusting,
   setAdjusting,
@@ -1051,9 +1080,11 @@ function PreparedMatch({
     operations: VaultOperation[],
     onError: (error: Error) => void,
   ) => void
-  onEquip: PrepareControls['onEquip']
-  onUnequip: PrepareControls['onUnequip']
+  onEquip: NonNullable<PrepareControls['onEquip']>
+  onUnequip: NonNullable<PrepareControls['onUnequip']>
   onActivate: ActivateEffect
+  onEvent: (action: RandomEventAction) => void
+  eventError: Error | null
   adjustError: string
   adjusting: boolean
   setAdjusting: (open: boolean) => void
@@ -1078,6 +1109,14 @@ function PreparedMatch({
         adjusting={adjusting}
         vaulting={vaulting}
         pending={moving}
+      />
+      <RandomEventPanel
+        party={party}
+        host={host}
+        cards={cards}
+        pending={moving}
+        onAction={onEvent}
+        error={eventError}
       />
       {adjusting && host !== undefined && (
         <AdjustDeck
@@ -1119,7 +1158,14 @@ function PreparedMatch({
           cards={cards}
           prepare={
             member.isHost && member.player.availableActions.includes('prepare')
-              ? { onEquip, onUnequip, onActivate, pending: moving }
+              ? {
+                  ...(party.randomEventEncounter === null && {
+                    onEquip,
+                    onUnequip,
+                  }),
+                  onActivate,
+                  pending: moving,
+                }
               : null
           }
         />
@@ -1152,6 +1198,8 @@ export function PartySession() {
   const end = useEndSession(partyId)
   const action = usePartyAction(partyId)
   const { mutate: startSession } = start
+  const reloadEncounter = start.data?.randomEventEncounter != null
+  const restoredParty = useParty(reloadEncounter ? partyId : null)
 
   // Continuar ao abrir; repetir não muda nada (CONTRATO §3 FEAT-05, D-37).
   useEffect(() => startSession(), [startSession])
@@ -1170,7 +1218,12 @@ export function PartySession() {
   if (action.data !== undefined && action.data !== lastActionParty) {
     setLastActionParty(action.data)
   }
-  const party = action.data ?? lastActionParty ?? start.data
+  const initialParty = reloadEncounter
+    ? restoredParty.isFetchedAfterMount
+      ? restoredParty.data
+      : undefined
+    : start.data
+  const party = action.data ?? lastActionParty ?? initialParty
   const classes = useClasses()
   const cards = useCatalogCards(party === undefined ? [] : cardIdsOf(party))
   const host = party?.members.find((m) => m.isHost)
@@ -1184,6 +1237,9 @@ export function PartySession() {
   const [vaulting, setVaulting] = useState(false)
   // Erros do "Usar cofre" também ficam na seção (REQ-52).
   const vaultFailed = action.isError && action.variables.type === 'useVault'
+  const eventAction =
+    action.variables &&
+    randomEventActionTypes.some((type) => type === action.variables.type)
 
   let status = ''
   if (end.isError) status = errorText(end.error)
@@ -1229,10 +1285,14 @@ export function PartySession() {
     } else if (action.variables.type === 'recover') {
       const { health, maxHealth, vigor } = host.player
       status = `Recuperou: vida ${health}/${maxHealth}, Vigor ${vigor}.`
-    } else {
+    } else if (!eventAction) {
       status = `Você está em ${nameOf(cards.cards, host.player.zoneId)}.`
     }
   } else if (start.isError) status = errorText(start.error)
+  else if (reloadEncounter && restoredParty.isError && party === undefined)
+    status = errorText(restoredParty.error)
+  else if (reloadEncounter && party === undefined)
+    status = 'Carregando o encontro…'
   else if (!start.isSuccess) status = 'Abrindo o grupo…'
   else if (classes.isError) status = errorText(classes.error)
   else if (cards.error !== null) status = errorText(cards.error)
@@ -1240,7 +1300,10 @@ export function PartySession() {
     status = 'Carregando a partida…'
   }
 
-  const notFound = isNotFound(start.error) || isNotFound(end.error)
+  const notFound =
+    isNotFound(start.error) ||
+    isNotFound(end.error) ||
+    isNotFound(restoredParty.error)
 
   return (
     <main>
@@ -1296,6 +1359,8 @@ export function PartySession() {
             onActivate={(activation, onSuccess) =>
               action.mutate(activation, { onSuccess })
             }
+            onEvent={(event) => action.mutate(event)}
+            eventError={eventAction ? action.error : null}
             adjustError={
               adjustFailed
                 ? refusalText(
