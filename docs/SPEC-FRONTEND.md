@@ -555,7 +555,7 @@ Alinha o REQ-44.
 
 ### Eventos aleatórios (FEAT-12)
 
-Base: CONTRATO v0.56, seção FEAT-12, e README §§3.4, 6.5–6.6, 11.3 e 14–15.
+Base: CONTRATO v0.57, seção FEAT-12, e README §§3.4, 6.5–6.6, 11.3 e 14–15.
 
 ### REQ-56 — Conteúdo e configuração
 - **Dada** uma carta aleatória, **quando** aberta no catálogo ou editor, **então** a forma legada continua legível e a forma executável apresenta os textos e preserva requisitos, passos ordenados, limiar e Sem fuga. Erros `CONTENT_INVALID` aparecem junto aos campos identificados.
@@ -776,7 +776,7 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 
 ### FEAT-12 — Eventos aleatórios
 
-- [ ] **T-58 — Cliente e fixtures** (REQ-56 a REQ-59). Schemas, ações, erros e casos determinísticos do CONTRATO v0.56.
+- [x] **T-58 — Cliente e fixtures** (REQ-56 a REQ-59). Schemas, ações, erros e casos determinísticos do CONTRATO v0.57.
 - [ ] **T-59 — Catálogo, editor e configuração** (REQ-56). Compatibilidade legada e executável, decks por zona e valores do laboratório.
 - [ ] **T-60 — Encontro na tela do grupo** (REQ-57 e REQ-58). Antecipação, recarga, consumível, pagamentos por cópia, recusas, desistência e fuga.
 - [ ] **T-61 — Recompensas e Vasculhar** (REQ-59). Escolhas pendentes, recarga, descarte e resultado de Vasculhar.

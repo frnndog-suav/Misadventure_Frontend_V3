@@ -25,7 +25,9 @@ import {
   strengthBasicFixture,
   whisperingGroveFixture,
   woundedTravelerFixture,
+  testDimensionFixture,
 } from '../mocks/catalogFixtures'
+import { partyEncounterFixture } from '../mocks/randomEventFixtures'
 import { handlers } from '../mocks/handlers'
 
 const server = setupServer(...handlers)
@@ -272,4 +274,23 @@ describe('REQ-08: useCards (GET /catalog/collections/:collectionId/cards)', () =
     expect(response.status).toBe(400)
     expect(await response.json()).toEqual(catalogQueryInvalidFixture)
   })
+})
+it('REQ-56: preserves legacy text, executable rules and mixed decks by zone', () => {
+  expect(cardSchema.parse(woundedTravelerFixture)).toEqual(
+    woundedTravelerFixture,
+  )
+  const executable = partyEncounterFixture.randomEventEncounter!.card!
+  expect(cardSchema.parse(executable)).toEqual(executable)
+  const eventDecks = [
+    {
+      zoneType: 'urban',
+      cards: [
+        { cardId: howlingWolvesFixture.id, copies: 1 },
+        { cardId: executable.id, copies: 2 },
+      ],
+    },
+  ]
+  expect(
+    cardSchema.parse({ ...testDimensionFixture, eventDecks }),
+  ).toMatchObject({ eventDecks })
 })

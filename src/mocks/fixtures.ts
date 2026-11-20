@@ -100,6 +100,8 @@ export const labConfigDefaultsFixture: LabConfig = {
     vaultCapacity: { min: 0, max: 1000 },
     vaultDeckSlots: { min: 1, max: 100 },
     vaultGoldCapacity: { min: 0, max: 10000000 },
+    escapeVigorPercent: { min: 0, max: 100 },
+    reserveDeck: { minEntries: 1, minWeight: 1 },
   },
 }
 
@@ -133,6 +135,10 @@ function labConfigInvalid(
 export const labConfigInvalidFixture = labConfigInvalid([
   { field: 'actionPointsPerTurn', reason: 'outOfRange' },
   { field: 'foo', reason: 'unknownKey' },
+])
+
+export const labConfigReserveWeightFixture = labConfigInvalid([
+  { field: 'reserveDeck.0.weight', reason: 'outOfRange' },
 ])
 
 /** PATCH com { minPlayers: 5, maxPlayers: 3 }. */

@@ -1,9 +1,9 @@
 import { http, HttpResponse, type RequestHandler } from 'msw'
 import {
   eventMinimumNotMetFixture,
+  eventScenarios,
   partyAnticipationFixture,
   partyEncounterFixture,
-  partyEventMinimumFixture,
   partyEventEscapeFailedFixture,
   partyEventConsumableFixture,
   partyEventConsumableUsedFixture,
@@ -78,6 +78,7 @@ import {
 import {
   healthFixture,
   labConfigDefaultsFixture,
+  labConfigReserveWeightFixture,
   labConfigUpdatedFixture,
 } from './fixtures'
 import {
@@ -189,6 +190,34 @@ async function partyActionScenario(
 ): Promise<Response> {
   const body: unknown = await request.json().catch(() => undefined)
   const type = field(body, 'type')
+  const scenario = eventScenario(partyId)
+  if (scenario && typeof type === 'string') {
+    const qualifiers = {
+      payEventRequirement: field(body, 'requirementId'),
+      prepare: field(body, 'operation'),
+      resolveReward: field(body, 'choice'),
+    }
+    const qualifier = qualifiers[type as keyof typeof qualifiers]
+    const discard = field(body, 'discard')
+    let key = typeof qualifier === 'string' ? type + ':' + qualifier : type
+    if (
+      key === 'resolveReward:keep' &&
+      Array.isArray(discard) &&
+      discard.length === 0
+    ) {
+      key += ':empty'
+    }
+    const response = Object.hasOwn(scenario.actions, key)
+      ? scenario.actions[key]
+      : undefined
+    if (response && 'reason' in response) {
+      return HttpResponse.json(
+        { error: { ...eventMinimumNotMetFixture.error, details: response } },
+        { status: 409 },
+      )
+    }
+    if (response) return HttpResponse.json({ ...response, id: partyId })
+  }
   if (
     partyId === partyEventConsumableFixture.id &&
     type === 'prepare' &&
@@ -224,12 +253,6 @@ async function partyActionScenario(
     if (partyId === partyEventRandomDiscardPartialFixture.id) {
       return HttpResponse.json(eventMinimumNotMetFixture, { status: 409 })
     }
-  }
-  if (
-    partyId === partyEventMinimumFixture.id &&
-    type === 'payEventRequirement'
-  ) {
-    return HttpResponse.json(eventMinimumNotMetFixture, { status: 409 })
   }
   if (partyId === partyScavengeWithoutSpaceFixture.id) {
     if (type === 'scavenge')
@@ -502,20 +525,30 @@ function knownParty(
   partyId: unknown,
   ok: () => Response | Promise<Response>,
 ): Response | Promise<Response> {
-  return partyId === partyCreatedFixture.id ||
+  return eventScenario(partyId) !== undefined ||
+    partyId === partyCreatedFixture.id ||
     partyId === partyNoPointsFixture.id ||
     partyId === partyGearInSessionFixture.id ||
     partyId === partyFishingRodInSessionFixture.id ||
     partyId === partyEffectsReadyFixture.id ||
     partyId === partyRandomEventReadyFixture.id ||
-    partyId === partyPartialEventFixture.id ||
-    partyId === partyEventMinimumFixture.id ||
     partyId === partyScavengeWithoutSpaceFixture.id ||
     partyId === partyEventConsumableFixture.id ||
     partyId === partyEventRandomDiscardFixture.id ||
     partyId === partyEventRandomDiscardPartialFixture.id
     ? ok()
     : HttpResponse.json(partyNotFoundFixture, { status: 404 })
+}
+
+function eventScenario(partyId: unknown) {
+  if (typeof partyId === 'string' && Object.hasOwn(eventScenarios, partyId)) {
+    return eventScenarios[partyId]
+  }
+}
+
+function eventScenarioParty(partyId: unknown) {
+  const scenario = eventScenario(partyId)
+  if (scenario) return { ...scenario.party, id: partyId }
 }
 
 /** Lê o corpo JSON do pedido como `unknown` (inválido → `undefined`). */
@@ -830,7 +863,13 @@ const editorHandlers: RequestHandler[] = [
 export const handlers: RequestHandler[] = [
   http.get('*/health', () => HttpResponse.json(healthFixture)),
   http.get('*/lab/config', () => HttpResponse.json(labConfigDefaultsFixture)),
-  http.patch('*/lab/config', () => HttpResponse.json(labConfigUpdatedFixture)),
+  http.patch('*/lab/config', async ({ request }) => {
+    const reserve = field(await jsonBody(request), 'reserveDeck')
+    if (Array.isArray(reserve) && field(reserve[0], 'weight') === 0) {
+      return HttpResponse.json(labConfigReserveWeightFixture, { status: 400 })
+    }
+    return HttpResponse.json(labConfigUpdatedFixture)
+  }),
   http.post('*/lab/config/reset', () =>
     HttpResponse.json(labConfigDefaultsFixture),
   ),
@@ -852,38 +891,38 @@ export const handlers: RequestHandler[] = [
   http.get('*/parties/:partyId', ({ params }) =>
     knownParty(params.partyId, () =>
       HttpResponse.json(
-        [
-          partyNoPointsFixture,
-          partyGearInSessionFixture,
-          partyFishingRodInSessionFixture,
-          partyEffectsReadyFixture,
-          partyRandomEventReadyFixture,
-          partyPartialEventFixture,
-          partyEventMinimumFixture,
-          partyScavengeWithoutSpaceFixture,
-          partyEventConsumableFixture,
-          partyEventRandomDiscardFixture,
-          partyEventRandomDiscardPartialFixture,
-        ].find((party) => party.id === params.partyId) ?? partyCreatedFixture,
+        eventScenarioParty(params.partyId) ??
+          [
+            partyNoPointsFixture,
+            partyGearInSessionFixture,
+            partyFishingRodInSessionFixture,
+            partyEffectsReadyFixture,
+            partyRandomEventReadyFixture,
+            partyScavengeWithoutSpaceFixture,
+            partyEventConsumableFixture,
+            partyEventRandomDiscardFixture,
+            partyEventRandomDiscardPartialFixture,
+          ].find((party) => party.id === params.partyId) ??
+          partyCreatedFixture,
       ),
     ),
   ),
   http.post('*/parties/:partyId/session', ({ params }) =>
     knownParty(params.partyId, () =>
       HttpResponse.json(
-        [
-          partyNoPointsFixture,
-          partyGearInSessionFixture,
-          partyFishingRodInSessionFixture,
-          partyEffectsReadyFixture,
-          partyRandomEventReadyFixture,
-          partyPartialEventFixture,
-          partyEventMinimumFixture,
-          partyScavengeWithoutSpaceFixture,
-          partyEventConsumableFixture,
-          partyEventRandomDiscardFixture,
-          partyEventRandomDiscardPartialFixture,
-        ].find((party) => party.id === params.partyId) ?? partyInSessionFixture,
+        eventScenarioParty(params.partyId) ??
+          [
+            partyNoPointsFixture,
+            partyGearInSessionFixture,
+            partyFishingRodInSessionFixture,
+            partyEffectsReadyFixture,
+            partyRandomEventReadyFixture,
+            partyScavengeWithoutSpaceFixture,
+            partyEventConsumableFixture,
+            partyEventRandomDiscardFixture,
+            partyEventRandomDiscardPartialFixture,
+          ].find((party) => party.id === params.partyId) ??
+          partyInSessionFixture,
       ),
     ),
   ),

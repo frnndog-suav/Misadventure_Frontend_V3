@@ -112,6 +112,9 @@ export const labConfigSchema = z.object({
     vaultDeckSlots: limitSchema,
     vaultGoldCapacity: limitSchema,
     escapeVigorPercent: limitSchema.optional(),
+    reserveDeck: z
+      .object({ minEntries: positiveInt, minWeight: positiveInt })
+      .optional(),
   }) satisfies z.ZodType<Record<GameConfigKey, { min: number; max: number }>>,
 })
 

@@ -537,3 +537,385 @@ describe('REQ-38: usePartyAction com endTurn', () => {
     expect(noPoints.result.current.data?.turn.round).toBe(2)
   })
 })
+it('REQ-57: MSW preserves the revealed encounter on reload and blocks another start', async () => {
+  const id = 'party-evento-revelado'
+  const { result } = renderHook(() => usePartyAction(id), { wrapper })
+  await act(async () => {
+    await expect(
+      result.current.mutateAsync({ type: 'startEvent' }),
+    ).rejects.toMatchObject({
+      code: 'ACTION_NOT_ALLOWED',
+      details: { reason: 'choicePending' },
+    })
+  })
+  const response = await fetch('http://localhost:3000/parties/' + id)
+  expect(
+    partySchema.parse(await response.json()).randomEventEncounter,
+  ).toMatchObject({
+    id: 'e1',
+    phase: 'encounter',
+    decisionDeadlineAt: null,
+  })
+})
+
+it.each([
+  [
+    'party-evento-minimo-ok',
+    { type: 'resolveEvent', encounterId: 'e1' },
+    { resolution: 'success', replacement: { requested: 0, drawn: 0 } },
+  ],
+  [
+    'party-evento-fuga-ok',
+    { type: 'escapeEvent', encounterId: 'e1' },
+    { resolution: 'escaped', escape: { naturalRoll: 11, succeeded: true } },
+  ],
+  [
+    'party-evento-vigor-ok',
+    { type: 'payEventRequirement', encounterId: 'e1', requirementId: 'vigor' },
+    {
+      resolution: 'success',
+      payments: expect.arrayContaining([{ requirementId: 'vigor', vigor: 3 }]),
+    },
+  ],
+  [
+    'party-evento-descarte-ok',
+    {
+      type: 'payEventRequirement',
+      encounterId: 'e1',
+      requirementId: 'discard',
+    },
+    { resolution: 'success', replacement: { requested: 2, drawn: 2 } },
+  ],
+] satisfies [string, PartyAction, object][])(
+  'REQ-58: resolves %s',
+  async (id, action, expected) => {
+    const { result } = renderHook(() => usePartyAction(id), { wrapper })
+    await act(async () => {
+      const party = await result.current.mutateAsync(action)
+      expect(party.randomEventEncounter).toBeNull()
+      expect(party.members[0]?.player.lastRandomEvent).toMatchObject(expected)
+    })
+  },
+)
+
+it.each([
+  ['party-evento-antecipacao', { type: 'endTurn' }, 'choicePending'],
+  ['party-evento-sem-deck', { type: 'startEvent' }, 'eventDeckEmpty'],
+  [
+    'party-evento-sem-fuga',
+    { type: 'escapeEvent', encounterId: 'e1' },
+    'escapeForbidden',
+  ],
+  [
+    'party-evento-sem-vigor',
+    { type: 'escapeEvent', encounterId: 'e1' },
+    'notEnoughVigor',
+  ],
+  [
+    'party-evento-parcial',
+    { type: 'escapeEvent', encounterId: 'e1' },
+    'eventPaymentStarted',
+  ],
+  [
+    'party-evento-consumivel-apos-parte',
+    {
+      type: 'prepare',
+      operation: 'activate',
+      cardId: 'fixture.healing-potion',
+      effectIndex: 0,
+    },
+    'eventPaymentStarted',
+  ],
+  [
+    'party-evento-esquiva-baixa',
+    { type: 'resolveEvent', encounterId: 'e1' },
+    'eventMinimumNotMet',
+  ],
+  [
+    'party-evento-copia-recusada',
+    {
+      type: 'payEventRequirement',
+      encounterId: 'e1',
+      requirementId: 'attrs',
+      payment: { handCards: ['h2'] },
+    },
+    'eventMinimumNotMet',
+  ],
+] satisfies [string, PartyAction, string][])(
+  'REQ-57/58: preserves %s on refusal %j',
+  async (id, action, reason) => {
+    const url = 'http://localhost:3000/parties/' + id
+    const before = partySchema.parse(await (await fetch(url)).json())
+    const { result } = renderHook(() => usePartyAction(id), { wrapper })
+    await act(async () => {
+      await expect(result.current.mutateAsync(action)).rejects.toMatchObject({
+        code: 'ACTION_NOT_ALLOWED',
+        details: { reason },
+      })
+    })
+    expect(partySchema.parse(await (await fetch(url)).json())).toEqual(before)
+  },
+)
+
+it.each([
+  [
+    'party-vasculhar-pilha',
+    { type: 'scavenge', cardId: 'fixture.iron-ore' },
+    { lastScavenge: { found: true, delivery: 'inventory' } },
+  ],
+  [
+    'party-vasculhar-vazio',
+    { type: 'scavenge', cardId: 'fixture.iron-ore' },
+    { lastScavenge: { found: false, delivery: 'none' } },
+  ],
+  [
+    'party-evento-busca-vazia',
+    { type: 'resolveEvent', encounterId: 'e1' },
+    { lastRewardSearch: { found: false } },
+  ],
+  [
+    'party-evento-premio-fixo',
+    { type: 'resolveReward', rewardId: 'r1', choice: 'leave' },
+    { lastRewardDelivery: { disposition: 'sentToLimbo' } },
+  ],
+  [
+    'party-evento-premio-reserva',
+    { type: 'resolveReward', rewardId: 'r2', choice: 'leave' },
+    { lastRewardDelivery: { disposition: 'removed' } },
+  ],
+  [
+    'party-evento-premio-urbano',
+    { type: 'resolveReward', rewardId: 'r1', choice: 'leave' },
+    { lastRewardDelivery: { disposition: 'returnedToDeck' } },
+  ],
+] satisfies [string, PartyAction, object][])(
+  'REQ-59: returns reward disposition for %s',
+  async (id, action, expected) => {
+    const { result } = renderHook(() => usePartyAction(id), { wrapper })
+    await act(async () => {
+      const party = await result.current.mutateAsync(action)
+      expect(party.pendingRewards).toEqual([])
+      expect(party.members[0]?.player).toMatchObject(expected)
+    })
+  },
+)
+
+it('REQ-59: a full slot must be freed before presenting the reserve reward', async () => {
+  const { result } = renderHook(
+    () => usePartyAction('party-evento-premio-urbano'),
+    { wrapper },
+  )
+  await act(async () => {
+    await expect(
+      result.current.mutateAsync({
+        type: 'resolveReward',
+        rewardId: 'r1',
+        choice: 'keep',
+        discard: [],
+      }),
+    ).rejects.toMatchObject({
+      details: { reason: 'rewardDoesNotFit' },
+    })
+    const party = await result.current.mutateAsync({
+      type: 'resolveReward',
+      rewardId: 'r1',
+      choice: 'keep',
+      discard: [{ cardId: 'fixture.silver-fish', copies: 1 }],
+    })
+    expect(party.pendingRewards).toMatchObject([
+      { id: 'r2', origin: { type: 'reserveDeck' } },
+    ])
+  })
+})
+it.each([
+  [
+    'party-evento-aleatorio',
+    { type: 'startEvent' },
+    {
+      turn: { actionPoints: 0 },
+      randomEventEncounter: { phase: 'anticipation', card: null },
+    },
+  ],
+  [
+    'party-evento-antecipacao',
+    { type: 'revealEvent', encounterId: 'e1' },
+    {
+      randomEventEncounter: {
+        phase: 'encounter',
+        card: { type: 'randomEvent' },
+      },
+    },
+  ],
+  [
+    'party-evento-consumivel',
+    {
+      type: 'prepare',
+      operation: 'activate',
+      cardId: 'fixture.healing-potion',
+      effectIndex: 0,
+    },
+    {
+      turn: { actionPoints: 0 },
+      randomEventEncounter: { payments: [] },
+      members: [
+        {
+          player: {
+            health: 15,
+            inventory: [{ cardId: 'fixture.healing-potion', quantity: 1 }],
+          },
+        },
+      ],
+    },
+  ],
+  [
+    'party-evento-pagamento',
+    {
+      type: 'payEventRequirement',
+      encounterId: 'e1',
+      requirementId: 'attrs',
+      payment: { handCards: ['h1'] },
+    },
+    {
+      randomEventEncounter: {
+        payments: [
+          {
+            requirementId: 'attrs',
+            handCards: [{ copyId: 'h1', cardId: 'fixture.strength-dexterity' }],
+          },
+        ],
+      },
+    },
+  ],
+  [
+    'party-evento-atributos-pagos',
+    { type: 'payEventRequirement', encounterId: 'e1', requirementId: 'gold' },
+    {
+      members: [{ player: { gold: 10, vigor: 7, handCopies: [] } }],
+      randomEventEncounter: {
+        payments: [
+          { requirementId: 'attrs' },
+          { requirementId: 'gold', gold: 10 },
+        ],
+      },
+    },
+  ],
+  [
+    'party-evento-minimo',
+    { type: 'giveUpEvent', encounterId: 'e1' },
+    {
+      randomEventEncounter: null,
+      members: [
+        {
+          player: {
+            gold: 10,
+            lastRandomEvent: {
+              cause: 'gaveUp',
+              peakDelta: -1,
+              replacement: { requested: 1, drawn: 1 },
+            },
+          },
+        },
+      ],
+    },
+  ],
+  [
+    'party-evento-fuga-sem-pa',
+    { type: 'escapeEvent', encounterId: 'e1' },
+    {
+      turn: { actionPoints: 0 },
+      members: [
+        {
+          player: {
+            vigor: 4,
+            nextTurnActionPointDebt: 1,
+            lastRandomEvent: {
+              escape: { naturalRoll: 10, threshold: 10, succeeded: false },
+            },
+          },
+        },
+      ],
+    },
+  ],
+  [
+    'party-evento-fuga-com-pa',
+    { type: 'escapeEvent', encounterId: 'e1' },
+    {
+      turn: { actionPoints: 0 },
+      members: [
+        {
+          player: {
+            vigor: 4,
+            nextTurnActionPointDebt: 0,
+            lastRandomEvent: { escape: { actionPointsLost: 1 } },
+          },
+        },
+      ],
+    },
+  ],
+  [
+    'party-evento-divida',
+    { type: 'endTurn' },
+    {
+      turn: { round: 2, actionPoints: 2 },
+      members: [{ player: { nextTurnActionPointDebt: 0 } }],
+    },
+  ],
+  [
+    'party-evento-compra',
+    { type: 'resolveEvent', encounterId: 'e1' },
+    {
+      randomEventEncounter: { phase: 'success' },
+      pendingRewards: [
+        { id: 'r1', origin: { type: 'rewardDeck', zoneType: 'urban' } },
+      ],
+    },
+  ],
+] satisfies [string, PartyAction, object][])(
+  'REQ-57/58/59: returns the contracted snapshot for %s',
+  async (id, action, expected) => {
+    const { result } = renderHook(() => usePartyAction(id), { wrapper })
+    await act(async () => {
+      expect(await result.current.mutateAsync(action)).toMatchObject(expected)
+    })
+  },
+)
+it('REQ-58: a refused random discard leaves the accepted receipt and savedAt intact', async () => {
+  const id = 'party-evento-descarte-parcial'
+  const readSave = async () =>
+    partySchema.parse(
+      await (await fetch('http://localhost:3000/parties/' + id)).json(),
+    )
+  const before = await readSave()
+  const { result } = renderHook(() => usePartyAction(id), { wrapper })
+  await act(async () => {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      await expect(
+        result.current.mutateAsync({
+          type: 'payEventRequirement',
+          encounterId: 'e1',
+          requirementId: 'discard',
+        }),
+      ).rejects.toMatchObject({
+        details: {
+          reason: 'eventMinimumNotMet',
+          checks: [
+            {
+              requirementId: 'min-vigor',
+              stat: 'vigor',
+              minimum: 5,
+              actual: 4,
+            },
+          ],
+        },
+      })
+    }
+  })
+  const after = await readSave()
+  expect(after).toEqual(before)
+  expect(
+    after.members[0]?.player.handCopies.map(({ copyId }) => copyId),
+  ).toEqual(['h1', 'h3'])
+  expect(after.randomEventEncounter?.payments).toMatchObject([
+    { handCards: [{ copyId: 'h2' }] },
+  ])
+})

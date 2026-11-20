@@ -325,3 +325,23 @@ describe('REQ-06: useResetLabConfig (POST /lab/config/reset)', () => {
     expect((result.current.error as ApiError).code).toBe('NOT_FOUND')
   })
 })
+it('REQ-56: MSW returns the reserve limits and zero-based weight error', async () => {
+  const config = await (await fetch('http://localhost:3000/lab/config')).json()
+  expect(labConfigSchema.parse(config).limits).toMatchObject({
+    escapeVigorPercent: { min: 0, max: 100 },
+    reserveDeck: { minEntries: 1, minWeight: 1 },
+  })
+  const { result } = renderHook(() => useUpdateLabConfig(), { wrapper })
+  await act(async () => {
+    await expect(
+      result.current.mutateAsync({
+        reserveDeck: [{ type: 'gold', amount: 1, weight: 0 }],
+      }),
+    ).rejects.toMatchObject({
+      code: 'LAB_CONFIG_INVALID',
+      details: {
+        fields: [{ field: 'reserveDeck.0.weight', reason: 'outOfRange' }],
+      },
+    })
+  })
+})
