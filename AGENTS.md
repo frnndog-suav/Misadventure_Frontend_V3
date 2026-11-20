@@ -62,6 +62,7 @@ O mapa é uma referência, não uma lista de leituras obrigatórias. Não copie 
 ## Coordenação
 
 - O usuário faz a ponte com o backend e com outras IAs.
+- Somente o autor executa comandos do Docker e do Docker Compose. Somente o autor inicia, reinicia ou para o Docker, os containers e a aplicação do backend. O Codex não aciona essas operações por ferramentas, scripts ou testes. Quando precisar do ambiente, informe quais serviços são necessários e aguarde a confirmação do autor. Após a confirmação, as verificações podem consultar a API em execução.
 - Consulte o protocolo em `docs/ROADMAP.md` §2 e inclua na resposta final um **Aviso de backend** pronto para o autor copiar e enviar quando houver proposta ou alteração de contrato, mudança em documento compartilhado, dependência que o contrato ainda não cobre, frontend da FEAT pronto com MSW e validação real pendente, ou divergência atribuível ao backend durante a validação.
 - No aviso, identifique a FEAT e explique o motivo. Indique quais arquivos, versões e seções levar, a revisão ou os cenários a executar no backend, o retorno esperado e o que pode seguir com MSW ou fica bloqueado no frontend. Para divergências, inclua o cenário e as respostas esperada e recebida.
 - Quando faltar suporte no contrato, pause a parte que depende dele. Quando a FEAT estiver pronta com MSW, peça ao autor a URL do backend com os dados de teste necessários. Com o backend disponível, execute os cenários previstos com MSW desligado e registre os resultados. Marque a FEAT como validada somente após todos os cenários passarem.
