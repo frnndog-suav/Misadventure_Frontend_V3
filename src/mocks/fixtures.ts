@@ -61,6 +61,8 @@ const defaultValues: LabConfig['values'] = {
   vaultCapacity: 30,
   vaultDeckSlots: 10,
   vaultGoldCapacity: 2000,
+  escapeVigorPercent: 20,
+  reserveDeck: [{ type: 'gold', amount: 1, weight: 1 }],
 }
 
 const modifierDefaultLimit = { min: 0, max: 1000 }

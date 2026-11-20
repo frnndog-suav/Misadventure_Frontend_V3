@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.53 · **Data:** 2026-11-20
+> **Versão do contrato:** 0.56 · **Data:** 2026-11-20
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -2158,6 +2158,202 @@ Seja `G` criado com `{ "name": "Os Teimosos", "characterName": "Lia", "playerCla
 
 Só nos e2e do backend: Pico abaixo do requisito com passivo, `removeDebuffs`/`removeBuffs`, as demais durações executadas (vencimento no `move` e na virada da rodada), `donateLife`/`reducePeak`/`payGold` com `Quantity` em fórmula e `minimumNotMet`, `random` no descarte, saves antigos e cada regra de `CONTENT_INVALID`.
 
+### FEAT-12 — Eventos aleatórios — `acordado`
+
+Regras de README 3.4, 6.5–6.6, 11.3, 12.2, 12.6, 13 e 14–15. Usa `POST /parties/:partyId/actions` e a resposta `200 Party`. O GET devolve o mesmo estado persistido, inclusive após recarga ou retomada da sessão.
+
+#### Conteúdo executável
+
+```ts
+type RandomEventRequirement = { id: string; text: string } & (
+  | { kind: 'attributes'; specific: Partial<Record<Attribute, number>>; any: number }
+  | { kind: 'minimum'; stat: 'peak' | 'vigor' | Modifier; value: number }
+  | Extract<Cost, { kind: 'discardFromHand' | 'discardHandDownTo' | 'discardWholeHand'
+      | 'donateLife' | 'payGold' | 'spendVigor' | 'abandonEquipment' | 'offerResources'
+      | 'manipulateAttributeCards' }>
+)
+type RandomEventOutcomeStep =
+  | { type: 'effect'; effect: Omit<Effect, 'trigger' | 'cost'> }
+  | { type: 'drawRewards'; count: number }
+  | { type: 'searchReward'; cardId: string }
+  | { type: 'grantReward'; cardId: string; copies: number }
+
+interface RandomEventRules {
+  requirements: RandomEventRequirement[]
+  goodOutcome: { text: string; steps: RandomEventOutcomeStep[] }
+  badOutcome: { text: string; steps: RandomEventOutcomeStep[] }
+  escapeThreshold: number | null
+}
+```
+
+Na carta executável, os campos acima substituem os homônimos da `RandomEventCard`, que conserva `noEscape`. IDs de requisito são únicos por carta, na ordem declarada. Há pelo menos um requisito, quantidades de cópias e compras são inteiros positivos e um requisito de atributos exige ao menos um símbolo. `any` aceita símbolos restantes depois de alocar os específicos da mesma parte. A carta sinérgica entrega todos os símbolos ao requisito indicado, com excedente perdido. Verificações mínimas usam Pico, Vigor e modificadores efetivos calculados pelo backend. Desfechos executam os passos na ordem, uma vez, automaticamente. `steps: []` é um desfecho explícito sem efeito da carta. Para a primeira entrega, propõem-se as ativações e durações já executadas na FEAT-11, mais as durações `untilEventPhaseEnd` e `untilEventEnd`, e as fórmulas de `Quantity` com base disponível fora de combate (todas exceto `perEnemy`). Doar vida até zero segue a convenção provisória da FEAT-11 até a FEAT-14. O editor e o catálogo validam referências publicadas, quantidades e variantes executáveis com `CONTENT_INVALID`. As referências de `eventDecks`, recompensas fixas, buscas e reserva entram nas proteções de referência e uso da FEAT-31.
+
+Proposta de transição de conteúdo. O catálogo e o editor continuam a ler a forma legada `RuleText`. Cada carta legada que entrar no jogo precisa de conversão explícita revisada pelo autor, inclusive `base.abandoned-cart` e `fixture.wounded-traveler`. O texto segue disponível para exibição. Decks configurados em `DimensionCard.eventDecks` seguem o formato de `rewardDecks`, por tipo de zona, e podem referenciar cartas dos dois tipos. Nesta entrega, a projeção jogável inclui apenas eventos aleatórios com regras executáveis. Cartas de combate ficam reservadas para a FEAT-13, sem sorteio, consumo ou descarte. Uma lista explicitamente configurada com evento aleatório legado é inválida para publicação. A migração de dimensões e saves antigos usa a configuração migrada com baralho inicial semeado, sem alterar a sequência RNG das ações existentes. Sem carta elegível para comprar ou reciclar, `startEvent` fica indisponível. Ao esgotar o deck jogável, embaralha-se o descarte do mesmo tipo de zona (README 6.5).
+
+#### Estado, ações e recusas
+
+```ts
+type RandomEventAction =
+  | { type: 'startEvent' }
+  | { type: 'revealEvent'; encounterId: string }
+  | { type: 'payEventRequirement'; encounterId: string; requirementId: string; payment?: EventPayment }
+  | { type: 'resolveEvent'; encounterId: string }
+  | { type: 'giveUpEvent'; encounterId: string }
+  | { type: 'escapeEvent'; encounterId: string }
+
+interface EventPayment {
+  handCards?: string[] // IDs de cópia quando o jogador precisa escolher
+  equipmentSlots?: EquipmentSlot[]
+  resources?: { cardId: string; copies: number }[] // agregados por cardId no inventário
+}
+interface EventPaymentReceipt {
+  requirementId: string
+  gold?: number
+  health?: number
+  vigor?: number
+  handCards?: { copyId: string; cardId: string }[]
+  equipment?: { slot: EquipmentSlot; cardId: string }[]
+  resources?: { cardId: string; copies: number }[]
+  movedAttributeCards?: { copyId: string; cardId: string }[]
+}
+interface RandomEventEncounter {
+  id: string
+  memberId: string
+  zoneType: ZoneType
+  phase: EventPhase
+  card: (Omit<RandomEventCard, keyof RandomEventRules> & RandomEventRules) | null
+  payments: EventPaymentReceipt[]
+  requirements: {
+    requirementId: string
+    status: 'unpaid' | 'partial' | 'paid' | 'check'
+    remaining?: { specific: Partial<Record<Attribute, number>>; any: number } | { copies: number }
+    payable: boolean
+    handCardSelection: 'choose' | 'random' | null
+    eligibleHandCopyIds: string[]
+    eligibleEquipmentSlots: EquipmentSlot[]
+    eligibleResourceCardIds: string[]
+    amountDue: number | null
+  }[]
+  escape: { vigorCost: number; threshold: number; automatic: boolean; unavailableReason: string | null } | null
+  decisionDeadlineAt: string | null
+}
+interface RandomEventResult {
+  encounterId: string
+  cardId: string
+  resolution: 'success' | 'setback' | 'escaped'
+  cause: 'requirementsMet' | 'gaveUp' | 'escapeSucceeded' | 'escapeFailed' | 'timedOut'
+  payments: EventPaymentReceipt[]
+  peakDelta: number
+  replacement: { requested: number; drawn: number }
+  escape: {
+    vigorSpent: number; naturalRoll: number | null; total: number | null
+    threshold: number; succeeded: boolean; actionPointsLost: number; nextTurnActionPointDebtAdded: number
+  } | null
+}
+```
+
+`PartyAction` incorpora `RandomEventAction` e `ResolveRewardAction`. `Party` ganha `randomEventEncounter: RandomEventEncounter | null` e `pendingRewards: PendingReward[]`. `PlayerState` ganha `lastRandomEvent: RandomEventResult | null`, `nextTurnActionPointDebt: number` e `handCopies: { copyId: string; cardId: string }[]` na ordem de `hand`. Conserva-se `hand` e a intenção de Preparar da FEAT-11 para os consumidores atuais. Saves antigos partem de `null`, `[]` e zero para os campos de resolução e recebem IDs de cópia determinísticos na primeira leitura. O save guarda também ordem dos decks e descartes por tipo de zona, RNG, cópias já pagas, a origem das recompensas e o progresso da aplicação do desfecho. O topo do deck e a carta em antecipação ficam ocultos. `lastRandomEvent` guarda o resultado concluído mais recente do membro, inclusive após a troca de vez. Ações aceitas e transições automáticas persistem atomicamente. O backend serializa ações e transições por grupo, conferindo os IDs no estado corrente.
+
+| Estado | Ações do membro da vez |
+|---|---|
+| Sem escolha aberta | Ações atuais. `startEvent` custa 1 PA, exige carta disponível e pode ser repetido na mesma vez. |
+| `anticipation` | `revealEvent` e `prepare/activate` para efeitos válidos nesta fase. Carta `null`, requisitos vazios e fuga `null`. |
+| `encounter`, antes de pagar | `giveUpEvent`, pagamento disponível, `resolveEvent` se só há verificações, `escapeEvent` quando disponível, e `prepare/activate` para efeitos válidos. |
+| `encounter`, com pagamento | `giveUpEvent` e pagamentos pendentes disponíveis. |
+| `success` / `setback` | Aplica o desfecho automaticamente. Se houver recompensa pendente, a fase permanece visível e só `resolveReward` é aceita. |
+| Recompensa pendente de Vasculhar | Só `resolveReward`, com `randomEventEncounter: null`. |
+
+`availableActions` lista apenas os tipos válidos no estado corrente, na ordem da tabela para escolhas abertas, e é vazio para os demais membros. Fora de escolhas, `startEvent` entra imediatamente antes de `endTurn`. Em antecipação e no início do encontro, `activatableEffects` usa os mesmos IDs e intenção da FEAT-11, filtrados por fase e disponibilidade. Habilidades de combate dependem da FEAT-13. Fora desses momentos, Preparar, ações de zona e `endTurn` são bloqueados enquanto houver escolha. Cada ação de encontro e recompensa é gratuita e continua disponível com 0 PA.
+
+**Usar um consumível no encontro** é ativar seu efeito com `{ type: 'prepare', operation: 'activate', cardId, effectIndex, payment? }`, conforme a FEAT-11. Antes da primeira parte aceita, o membro da vez recebe `prepare` em `availableActions` quando há ativação elegível. A entrada correspondente em `activatableEffects` traz `source: 'inventory'`, `cardId`, `effectIndex` e `handPayment`. Quando `handPayment` é `null`, omita `payment`. A ativação aplica o efeito, consome uma cópia pelo custo `consumeSelf` e a envia ao limbo. É gratuita e seus custos ficam fora de `randomEventEncounter.payments`. Após a primeira parte aceita, `prepare` sai de `availableActions`, `activatableEffects` fica vazio e a mesma intenção recebe `409 eventPaymentStarted`, conferido antes da posse e dos custos do efeito.
+
+Erros preservam a ordem 404 grupo → 400 `ACTION_INVALID` forma → 409 sessão → 409 `ACTION_NOT_ALLOWED` regra. Motivos novos em `details.reason`: `choicePending` para ação de zona/encerrar vez com escolha aberta, `eventDeckEmpty`, `staleEncounter`, `wrongEventPhase`, `eventPaymentStarted` para fuga ou Preparar após primeira parte, `escapeForbidden` por símbolo ou Pico zero sem fuga automática, `requirementPaid`, `requirementNotPayable` para verificação ou ID desconhecido, `requirementsNotPaid` se `resolveEvent` ainda exige pagamentos, `eventMinimumNotMet`, `staleReward` e `rewardDoesNotFit`. Reutiliza `noActionPoints`, `notEnoughVigor` e `paymentInvalid`. ID obsoleto é conferido antes da fase e a fase antes das condições específicas. Todo erro deixa save, relógios, ledger e RNG intactos.
+
+Cada envio para atributo ou descarte de atributo usa exatamente uma cópia. `handCardSelection: 'choose'` pede `payment.handCards` com um único `copyId` de `eligibleHandCopyIds` nessas partes. Cartas com o mesmo `cardId` mantêm IDs distintos. `handCardSelection: 'random'` em `discardFromHand` com `random: true` devolve `eligibleHandCopyIds: []`. Nesse caso cada envio contém apenas `type`, `encounterId` e `requirementId`. Enviar `payment` é recusado com `409 paymentInvalid`. O backend sorteia uma cópia elegível da mão pelo RNG do save e registra `{ copyId, cardId }` em `payments[].handCards` quando aceita a parte. `handCardSelection: null` indica que o requisito dispensa escolha de cartas da mão. O backend aplica o saldo e as restrições cumulativas do requisito, inclusive igualdade ou distinção, a cada cópia escolhida ou sorteada. Após a primeira de duas partes aceitas, a resposta traz `status: 'partial'` e `remaining: { copies: 1 }`.
+
+As demais partes são integrais, com custos calculados pelo backend e seleção apenas quando exigida (slots, recursos ou cartas). Em manipulação que exige selecionar cartas da mão, `handCardSelection: 'choose'` orienta o envio de todos os IDs exigidos em uma única parte. Atributos entregues ou descartados vão para o descarte próprio. Manipulação usa o destino da operação e recursos ou equipamentos pagos vão ao limbo.
+
+**Última parte.** Proposta para fechar a transação de pagamento: simula a última parte, inclusive efeitos dos custos sobre Vigor e modificadores, e nesse estado verifica todos os mínimos. Se algum falhar, responde `409 eventMinimumNotMet` com `details.checks: { requirementId, stat, minimum, actual }[]` na ordem da carta, contendo as falhas. A última parte e qualquer sorteio desse envio são revertidos. As partes aceitas anteriormente ficam no ledger e a fase continua `encounter`. Pode tentar outra cópia válida ou desistir. `resolveEvent` faz a mesma checagem quando só há verificações. Um envio final aceito transita automaticamente para êxito. Desistir ou falhar na fuga aciona revés. As fontes de Pico do Apêndice A são aplicadas uma vez e `peakDelta` mostra a variação efetiva do encontro.
+
+**Fuga.** O custo padrão é `max(1, floor(peak × escapeVigorPercent / 100))` em Vigor, inclusive na falha. Propõe-se `escapeVigorPercent: 20` na configuração do laboratório. O teste é D20 semeado, com sucesso se o total exceder o limiar (10 por padrão, sujeito ao valor da carta e efeitos aplicáveis). Fuga automática tem custo 0 e rolagens `null`, respeitando Sem fuga. Êxito na fuga encerra sem desfecho da carta nem alteração de Pico. Falha aciona o revés e retira 1 PA agora ou registra 1 de dívida se já estiver em zero. Na próxima vez **do mesmo membro**, subtrai-se a dívida dos PA iniciais, com piso zero, e zera-se a dívida. O recibo conserva a rolagem e a penalidade aplicada.
+
+**Reposição e encerramento.** Após concluir os passos de êxito/revés e resolver as recompensas pendentes, compra-se do deck de atributos uma carta por cópia que saiu da mão para pagar requisitos, incluindo manipulação que tira cópias da mão. O recibo informa a quantidade pedida e a efetivamente comprada com as regras de esgotamento do deck de atributos. Custos de efeitos e cartas movidas apenas entre deck e descarte não entram. A carta do encontro vai ao descarte do seu tipo de zona. Na fuga bem-sucedida, a reposição é zero e a carta também vai ao descarte.
+
+**Prazos.** `decisionDeadlineAt` é `null` no solo; os relógios de multiplayer seguem a FEAT-26. Para essa integração, o backend pausa a vez durante a escolha, envia prazo UTC por escolha (30 s por padrão), limitado pelo teto efetivo da vez (5 min por padrão). Um pagamento intermediário aceito abre a escolha seguinte. Expiração de antecipação revela e aplica desistência, expiração de encontro aplica desistência preservando pagamentos anteriores e expiração de recompensa equivale a deixá-la. Ao atingir o teto da vez, aplica-se o padrão da escolha e das escolhas pendentes decorrentes antes de passar a vez. Os padrões usam as mesmas transições da ação manual e são aplicados uma única vez pelo backend.
+
+#### Recompensas pendentes
+
+```ts
+type RewardOrigin =
+  | { type: 'rewardDeck'; zoneType: ZoneType }
+  | { type: 'reserveDeck' }
+  | { type: 'fixed' }
+
+interface PendingReward {
+  id: string
+  memberId: string
+  cardId: string // uma cópia por entrada, em ordem de aquisição
+  origin: RewardOrigin
+  source: { type: 'randomEvent'; encounterId: string } | { type: 'scavenge' }
+  destination: 'inventory' | 'tcgFolder'
+  discardOptions: { cardId: string; maxCopies: number }[]
+  decisionDeadlineAt: string | null
+}
+type ResolveRewardAction = { type: 'resolveReward'; rewardId: string } & (
+  | { choice: 'leave' }
+  | { choice: 'keep'; discard: { cardId: string; copies: number }[] }
+)
+```
+
+O backend entrega automaticamente o que cabe e pausa a aquisição na primeira cópia sem espaço. `pendingRewards` mostra a escolha atual (ou `[]`). `discardOptions` informa as cópias elegíveis no destino; `keep` recebe o lote inteiro, valida espaço final e envia os descartes ao limbo na mesma transação que entrega a recompensa. Após cada escolha, a execução continua no próximo passo/cópia. Ouro vai direto à bolsa com excesso perdido. `leave` devolve cópia de `rewardDeck` ao fundo do deck de origem, elimina cópia de `reserveDeck` e envia cópia `fixed` ao limbo. A origem prevalece sobre a ação que gerou a recompensa.
+
+Compra do topo usa o deck do tipo de zona capturado no encontro, recorrendo à reserva global ao esgotar esse deck. Propõe-se `GameConfigValues.reserveDeck` com entradas ponderadas `{ type: 'gold', amount, weight }` ou `{ type: 'card', cardId, weight }`, pesos inteiros positivos, ao menos uma entrada, apenas ouro, consumíveis e materiais básicos. Cada compra na reserva sorteia com reposição. Busca específica remove uma cópia existente, embaralha o deck da zona e pode retornar vazia. A resposta fornece `PlayerState.lastRewardSearch: { encounterId, cardId, found } | null` para a busca mais recente e `lastRewardDelivery: { rewardId, cardId, origin, disposition } | null` para a escolha manual ou automática mais recente, com `disposition: 'kept' | 'returnedToDeck' | 'removed' | 'sentToLimbo'`.
+
+A FEAT-12 substitui a recusa provisória da FEAT-32. Vasculhar com inventário cheio gasta 1 PA e embaralha como nos demais casos aceitos. Se encontrar e a cópia couber por empilhamento, entrega imediatamente. Se encontrar e não couber, abre recompensa pendente com origem `rewardDeck` e fonte `scavenge`. `lastScavenge` passa a `{ cardId, found, delivery: 'inventory' | 'pending' | 'left' | 'none' }`, com `found` indicando presença da cópia na busca. Saves antigos convertem `true` em `inventory` e `false` em `none`. Ausência deixa `found: false`, `delivery: 'none'` e nenhuma pendência, inclusive com reserva disponível.
+
+#### Cenários de validação determinísticos
+
+Todos os pedidos são JSON para `POST /parties/p1/actions` salvo indicação. Respostas abaixo mostram os campos relevantes de `Party` e de `PlayerState` do membro `m1`. IDs, mãos, decks, configuração e rolagens são dados iniciais controlados nos testes; a API de jogo não recebe esses controles.
+
+Exemplo dos campos executáveis de `cart` no cenário da última parte:
+
+```json
+{
+  "requirements": [
+    {"id":"attrs","text":"Entregue Força e Destreza.","kind":"attributes","specific":{"strength":1,"dexterity":1},"any":0},
+    {"id":"gold","text":"Pague 10 moedas.","kind":"payGold","amount":10},
+    {"id":"vigor","text":"Gaste 3 de Vigor.","kind":"spendVigor","amount":3},
+    {"id":"min-vigor","text":"Mantenha pelo menos 5 de Vigor.","kind":"minimum","stat":"vigor","value":5}
+  ],
+  "goodOutcome":{"text":"A passagem está livre.","steps":[]},
+  "badOutcome":{"text":"Você precisa voltar.","steps":[]},
+  "escapeThreshold":null,
+  "noEscape":false
+}
+```
+
+| Dado e pedido | Resposta esperada |
+|---|---|
+| 1 PA, topo executável `cart`. `{"type":"startEvent"}` | 200, `turn.actionPoints: 0`, encontro `e1`, `phase: "anticipation"`, `card: null`, `decisionDeadlineAt: null` no solo. Novo `startEvent` ou `endTurn`: 409 `choicePending`. |
+| `{"type":"revealEvent","encounterId":"e1"}` | 200, `phase: "encounter"`, carta `cart` e requisitos calculados. GET após recarga reproduz o encontro. |
+| Ouro 20, cópia `h1` de Força+Destreza, requisito `attrs` pede ambos, `gold` pede 10, `vigor` gasta 3 e `min-vigor` exige 5, Vigor inicial 7. Envie `{"type":"payEventRequirement","encounterId":"e1","requirementId":"attrs","payment":{"handCards":["h1"]}}` e depois `{"type":"payEventRequirement","encounterId":"e1","requirementId":"gold"}`. | Dois 200, `attrs` pago com uma cópia e recibo `{"requirementId":"attrs","handCards":[{"copyId":"h1","cardId":"strength-dexterity"}]}`, ouro 10 e recibo `{"requirementId":"gold","gold":10}`. Fuga agora devolve 409 `eventPaymentStarted`. |
+| Mesmo estado, `{"type":"payEventRequirement","encounterId":"e1","requirementId":"vigor"}`. | 409 `{"error":{"code":"ACTION_NOT_ALLOWED","message":"Esta ação não é permitida agora.","details":{"reason":"eventMinimumNotMet","checks":[{"requirementId":"min-vigor","stat":"vigor","minimum":5,"actual":4}]}}}`. GET mostra Vigor 7, ouro 10, `h1` fora da mão, exatamente os dois recibos anteriores, `vigor` ainda pendente, fase `encounter` e `savedAt` igual ao anterior. |
+| Após o 409, `{"type":"giveUpEvent","encounterId":"e1"}`, com desfecho vazio e uma carta no topo de atributos. | 200, encontro `null`, ouro 10, `lastRandomEvent.resolution: "setback"`, `cause: "gaveUp"`, `peakDelta: -1`, `replacement: {"requested":1,"drawn":1}`. |
+| Variante do pagamento final com Vigor inicial 8, mesmos custos, desfecho vazio e uma carta no topo de atributos. | 200, `lastRandomEvent.resolution: "success"`, recibo `{"requirementId":"vigor","vigor":3}`, Vigor 5, `peakDelta: 1`, reposição 1 de 1 e encontro `null`. |
+| Só falta uma carta de Força, mínimo de Vigor 5 e Vigor atual 4. A mão tem `h1` e `h2` com o mesmo `cardId`. `{"type":"payEventRequirement","encounterId":"e1","requirementId":"attrs","payment":{"handCards":["h2"]}}`. | 409 `eventMinimumNotMet`, check `actual: 4`. GET mantém `h1` e `h2` na mão, sem recibo para `h2`. Desistir repõe apenas as cópias aceitas em pedidos anteriores. |
+| Com `h1` e `h2` do catálogo `fixture.strength-basic`, `attrs` pede duas Forças. Envie `{"type":"payEventRequirement","encounterId":"e1","requirementId":"attrs","payment":{"handCards":["h2"]}}`. | 200. `handCopies` contém `[{"copyId":"h1","cardId":"fixture.strength-basic"}]`, `attrs` fica `partial` com uma Força faltando e `payments` recebe `{"requirementId":"attrs","handCards":[{"copyId":"h2","cardId":"fixture.strength-basic"}]}`. |
+| Antes da primeira parte, com 0 PA, vida 10 de 20 e duas unidades de `fixture.healing-potion` no inventário. `availableActions` inclui `prepare` e `activatableEffects` inclui `{"source":"inventory","cardId":"fixture.healing-potion","effectIndex":0,"handPayment":null}`. Envie `{"type":"prepare","operation":"activate","cardId":"fixture.healing-potion","effectIndex":0}`. | 200 com vida 15, uma poção no inventário, uma no limbo, 0 PA, fase `encounter` e `payments: []`. Em seguida, pague uma parte intermediária e repita a ativação. A ação deixa de aparecer e recebe 409 `eventPaymentStarted`, com a segunda poção e a vida preservadas. |
+| Requisito `discard` com `kind: "discardFromHand"`, `random: true`, duas cartas quaisquer, sem exclusões nem restrição de igualdade. A mão tem `h1`, `h2`, `h3`. RNG controlado escolhe `h2` primeiro e `h3` em seguida. Mínimo de Vigor 5, Vigor atual 4. Envie `{"type":"payEventRequirement","encounterId":"e1","requirementId":"discard"}`. | 200. `handCopies` retém `h1` e `h3`. O requisito retorna `{"requirementId":"discard","status":"partial","remaining":{"copies":1},"payable":true,"handCardSelection":"random","eligibleHandCopyIds":[],"eligibleEquipmentSlots":[],"eligibleResourceCardIds":[],"amountDue":null}`. O recibo registra `h2` e seu `cardId`. |
+| Repita `{"type":"payEventRequirement","encounterId":"e1","requirementId":"discard"}` no mesmo estado. | 409 `{"error":{"code":"ACTION_NOT_ALLOWED","message":"Esta ação não é permitida agora.","details":{"reason":"eventMinimumNotMet","checks":[{"requirementId":"min-vigor","stat":"vigor","minimum":5,"actual":4}]}}}`. A tentativa que sorteou `h3` é revertida. GET mantém `h1` e `h3`, o recibo de `h2`, o saldo de uma cópia e o mesmo `savedAt`. O teste do save confirma RNG idêntico ao estado posterior à primeira parte. Repetir a tentativa usa o mesmo sorteio. Com Vigor 5 desde o início, o segundo envio retorna 200 com êxito, recibos de `h2` e `h3` e duas cópias pedidas na reposição. |
+| Evento só com Esquiva mínima 80, Esquiva efetiva 79. `{"type":"resolveEvent","encounterId":"e1"}`. | 409 `eventMinimumNotMet`, check `actual: 79`. Com Esquiva 80, 200 com êxito e reposição 0 de 0. |
+| Pico 10, Vigor 6, 0 PA, limiar 10, rolagem 10. `{"type":"escapeEvent","encounterId":"e1"}`. | 200 com revés e `escape: {"vigorSpent":2,"naturalRoll":10,"total":10,"threshold":10,"succeeded":false,"actionPointsLost":0,"nextTurnActionPointDebtAdded":1}`. Com 1 PA perde 1 agora e não cria dívida. Na próxima vez de `m1`, com 3 PA configurados, inicia com 2 e dívida 0. Com rolagem 11, resolução `escaped`, Vigor 4, Pico 10 e dívida 0. |
+| Carta Sem fuga e outra com custo 2, Vigor disponível 1. Mesmo pedido de fuga. | Respectivamente 409 `escapeForbidden` e 409 `notEnoughVigor`, sem rolar ou cobrar. |
+| Deck configurado tem um combate e um aleatório executável. Depois, variante com apenas combate. | No primeiro caso, revelação do aleatório; ao reciclar, só o aleatório volta. No segundo, `startEvent` ausente e envio com PA disponível recebe 409 `eventDeckEmpty`. |
+| Inventário cheio, êxito compra 2, deck urbano só tem `ore`, reserva com peso único para `potion`. | 200 em `success` com `pendingRewards[0]` `r1`, carta `ore`, origem `{"type":"rewardDeck","zoneType":"urban"}`. `{"type":"resolveReward","rewardId":"r1","choice":"keep","discard":[]}` → 409 `rewardDoesNotFit`. Com descarte de um slot inteiro → 200, `ore` no inventário, descarte no limbo. Se `ore` preencher o slot e `potion` não empilhar, surge `r2` com origem `{"type":"reserveDeck"}`. Deixar `r2` → 200, `lastRewardDelivery.disposition: "removed"`, encontro finalizado. |
+| Rodadas independentes com a mesma recompensa sem espaço, primeiro de origem urbana e depois fixa. `{"type":"resolveReward","rewardId":"r1","choice":"leave"}`. | 200 com `returnedToDeck` na primeira (cópia no fundo urbano) e `sentToLimbo` na segunda. Busca de `ore` no deck vazio → 200, `lastRewardSearch.found: false`, nenhuma compra da reserva. |
+| Inventário cheio, uma cópia de `ore` coletável no deck. `{"type":"scavenge","cardId":"ore"}`. | 200, −1 PA, `lastScavenge: {"cardId":"ore","found":true,"delivery":"pending"}`, recompensa de `rewardDeck` com fonte `scavenge`. Deixar devolve ao fundo e muda `delivery` para `left`. Com espaço em pilha, entrega direta e `delivery: "inventory"`. Com deck vazio, gasta o ponto, `found: false`, `delivery: "none"` e reserva intacta. |
+| Relógio controlado para integração FEAT-26, fase `encounter`, ouro já pago e prazo `2026-11-20T18:00:30Z`. GET após vencer o prazo. | Revés por `timedOut`; o ouro permanece pago, cartas elegíveis são repostas. Em escolha de recompensa vencida, mesmo destino de `leave`. No solo, avançar o relógio mantém a escolha aberta. |
+
 ## 4. Códigos de erro
 
 | Código | Quando acontece | FEAT |
@@ -2241,3 +2437,6 @@ Só nos e2e do backend: Pico abaixo do requisito com passivo, `removeDebuffs`/`r
 | 0.51 | 2026-11-18 | BE | FEAT-11 `acordado`: `PlayerStatus.text` e `ActivatableEffect.handPayment` aceitos sem mudanças. Os textos exatos de `handPayment.text` ficam definidos na spec do backend (o cenário só exige a instrução pt-BR). Sem mudança de formato além da v0.50. |
 | 0.52 | 2026-11-19 | BE | FEAT-11 `implementado (BE)`: efeitos e status no catálogo e no grupo, ativação em Preparar, save v7 compatível com v2 a v6 e cenários Supertest. O cenário do amuleto explicita `initialGold: 0`. |
 | 0.53 | 2026-11-20 | FE | FEAT-11 `validado`: cenários HTTP e telas do catálogo, editor e partida conferidos contra o backend real v0.52, com MSW desligado. Sem mudança de formato. |
+| 0.54 | 2026-11-20 | BE | FEAT-12 `proposto (BE)`: encontro persistido, requisitos e desfechos executáveis, pagamentos por cópia, checagem da última parte, fuga e dívida de PA, reposição, prazos, decks por tipo de zona e recompensas pendentes por origem. Substitui a recusa provisória da FEAT-32 para Vasculhar sem espaço. |
+| 0.55 | 2026-11-20 | BE | FEAT-12 `proposto (BE)`: explicita o uso de consumível via `prepare/activate` antes da primeira parte, a seleção da mão em `handCardSelection`, o descarte aleatório de uma cópia por envio e a reversão da última parte e do RNG. Acrescenta cenários de ativação, sorteio e pagamento com IDs de cópias duplicadas. |
+| 0.56 | 2026-11-20 | BE | FEAT-12 `acordado`: frontend aceitou a v0.55 integralmente. Os cenários acordados incluem a reversão do RNG na última parte recusada e o consumo da cópia escolhida entre duplicatas. |

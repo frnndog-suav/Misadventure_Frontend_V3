@@ -16,7 +16,7 @@ import { ApiError, requestJson } from './http'
 const gameConfigInt = z.number().int()
 
 /** Valores ajustáveis; cada FEAT seguinte acrescenta as suas chaves. */
-export const gameConfigValuesSchema = z.object({
+const numericGameConfigValuesSchema = z.object({
   minPlayers: gameConfigInt,
   maxPlayers: gameConfigInt,
   actionPointsPerTurn: gameConfigInt,
@@ -52,8 +52,29 @@ export const gameConfigValuesSchema = z.object({
   vaultGoldCapacity: gameConfigInt,
 })
 
+const positiveInt = gameConfigInt.min(1)
+export const gameConfigValuesSchema = numericGameConfigValuesSchema.extend({
+  escapeVigorPercent: gameConfigInt,
+  reserveDeck: z
+    .array(
+      z.discriminatedUnion('type', [
+        z.object({
+          type: z.literal('gold'),
+          amount: positiveInt,
+          weight: positiveInt,
+        }),
+        z.object({
+          type: z.literal('card'),
+          cardId: z.string(),
+          weight: positiveInt,
+        }),
+      ]),
+    )
+    .min(1),
+})
+
 export type GameConfigValues = z.infer<typeof gameConfigValuesSchema>
-export type GameConfigKey = keyof GameConfigValues
+export type GameConfigKey = keyof z.infer<typeof numericGameConfigValuesSchema>
 
 const limitSchema = z.object({ min: gameConfigInt, max: gameConfigInt })
 
@@ -90,6 +111,7 @@ export const labConfigSchema = z.object({
     vaultCapacity: limitSchema,
     vaultDeckSlots: limitSchema,
     vaultGoldCapacity: limitSchema,
+    escapeVigorPercent: limitSchema.optional(),
   }) satisfies z.ZodType<Record<GameConfigKey, { min: number; max: number }>>,
 })
 

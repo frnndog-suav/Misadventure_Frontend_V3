@@ -6,10 +6,23 @@ import {
   type UseQueryResult,
 } from '@tanstack/react-query'
 import { z } from 'zod'
-import { modifierValuesSchema, playerClassSchema } from './catalog'
+import {
+  executableRandomEventCardSchema,
+  modifierValuesSchema,
+  playerClassSchema,
+} from './catalog'
 import type { EquipmentSlot, PlayerClass } from './catalog'
 import { ApiError, requestJson } from './http'
 import { activatableEffectSchema, playerStatusSchema } from './effects'
+import {
+  encounterSchema,
+  eventMinimumCheckSchema,
+  pendingRewardSchema,
+  randomEventActionTypes,
+  randomEventPlayerFields,
+  type RandomEventAction,
+  type ResolveRewardAction,
+} from './randomEvents'
 
 /**
  * Campanha solo (CONTRATO §3 FEAT-05) e preparação da partida (FEAT-06):
@@ -66,6 +79,7 @@ export const partyActionTypeSchema = z.enum([
   'adjustDeck',
   'scavenge',
   'useVault',
+  ...randomEventActionTypes,
   'endTurn',
 ])
 export type PartyActionType = z.infer<typeof partyActionTypeSchema>
@@ -152,7 +166,14 @@ export const playerStateSchema = z.object({
   vaultDeckSlots: nonNegativeInt,
   vaultGoldCapacity: nonNegativeInt,
   scavengeTargets: z.array(z.string()),
-  lastScavenge: z.object({ cardId: z.string(), found: z.boolean() }).nullable(),
+  lastScavenge: z
+    .object({
+      cardId: z.string(),
+      found: z.boolean(),
+      delivery: z.enum(['inventory', 'pending', 'left', 'none']),
+    })
+    .nullable(),
+  ...randomEventPlayerFields,
 })
 export type PlayerState = z.infer<typeof playerStateSchema>
 
@@ -174,6 +195,10 @@ export const partySchema = z.object({
   /** Ids de membro, do 1º ao último (README 11.2). */
   turnOrder: z.array(z.string()),
   turn: partyTurnSchema,
+  randomEventEncounter: encounterSchema(
+    executableRandomEventCardSchema,
+  ).nullable(),
+  pendingRewards: z.array(pendingRewardSchema),
   createdAt: z.iso.datetime(),
   savedAt: z.iso.datetime(),
 })
@@ -334,6 +359,8 @@ export type PartyAction =
   | PrepareAction
   | UseVaultAction
   | ScavengeAction
+  | RandomEventAction
+  | ResolveRewardAction
 
 /** Movimentar (README 12.2); `zoneId` vem de `moveTargets`. */
 export interface MoveAction {
@@ -434,7 +461,20 @@ export const actionNotAllowedDetailsSchema = z.object({
     'notEnoughPeak',
     'paymentInvalid',
     'minimumNotMet',
+    'choicePending',
+    'eventDeckEmpty',
+    'staleEncounter',
+    'wrongEventPhase',
+    'eventPaymentStarted',
+    'escapeForbidden',
+    'requirementPaid',
+    'requirementNotPayable',
+    'requirementsNotPaid',
+    'eventMinimumNotMet',
+    'staleReward',
+    'rewardDoesNotFit',
   ]),
+  checks: z.array(eventMinimumCheckSchema).optional(),
   /** Carta envolvida na recusa, inclusive `paymentInvalid` (FEAT-11). */
   cardId: z.string().optional(),
   /** FEAT-32: só no `useVault`, índice da operação recusada (a partir de 0). */
@@ -449,6 +489,7 @@ export class ActionNotAllowedError extends ApiError {
   readonly reason: ActionNotAllowedDetails['reason']
   readonly cardId: string | undefined
   readonly operationIndex: number | undefined
+  readonly checks: ActionNotAllowedDetails['checks']
 
   constructor(message: string, details: ActionNotAllowedDetails) {
     super('ACTION_NOT_ALLOWED', message, details)
@@ -456,6 +497,7 @@ export class ActionNotAllowedError extends ApiError {
     this.reason = details.reason
     this.cardId = details.cardId
     this.operationIndex = details.operationIndex
+    this.checks = details.checks
   }
 }
 

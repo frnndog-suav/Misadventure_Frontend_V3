@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.73 · **Data:** 2026-11-20
+> **Versão da spec:** 0.74 · **Data:** 2026-11-20
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -553,6 +553,28 @@ Alinha o REQ-44.
 - **Dado** JSON inválido ou formato incompatível com o contrato, **então** informa "Formato de efeito inválido." e impede salvar/pré-visualizar esse conteúdo. Não valida regras entre campos: consumível sem `consumeSelf`, por exemplo, é enviado ao backend, que devolve `CONTENT_INVALID` com mensagem junto ao campo indicado, inclusive caminhos de parâmetros aninhados.
 - **Dada** a pré-visualização, **então** usa a mesma apresentação do REQ-53. Habilidades, requisitos e desfechos continuam como texto simples.
 
+### Eventos aleatórios (FEAT-12)
+
+Base: CONTRATO v0.56, seção FEAT-12, e README §§3.4, 6.5–6.6, 11.3 e 14–15.
+
+### REQ-56 — Conteúdo e configuração
+- **Dada** uma carta aleatória, **quando** aberta no catálogo ou editor, **então** a forma legada continua legível e a forma executável apresenta os textos e preserva requisitos, passos ordenados, limiar e Sem fuga. Erros `CONTENT_INVALID` aparecem junto aos campos identificados.
+- **Dada** uma Carta de Dimensão editável, **quando** configurados decks de eventos, **então** o editor preserva tipo de zona, referências e cópias; o backend valida a publicação. No laboratório, a configuração expõe `escapeVigorPercent` e as entradas ponderadas do `reserveDeck`.
+
+### REQ-57 — Início e encontro
+- **Dado** `startEvent` disponível, **quando** acionado, **então** apresenta antecipação com a carta oculta e os controles autorizados. Revelar apresenta a carta, seus requisitos e benefícios ou penalidades. Após recarregar, a tela usa a escolha devolvida pelo GET.
+- **Dada** uma ativação autorizada antes de pagar, **quando** confirmada, **então** usa `prepare/activate` da FEAT-11, inclusive com 0 PA. Após a primeira parte aceita, a tela usa as novas ações disponíveis e oculta os controles de ativação e fuga.
+
+### REQ-58 — Pagamento, desistência e fuga
+- **Dado** um requisito pagável com `handCardSelection: 'choose'`, **quando** confirmado, **então** envia os IDs das cópias elegíveis escolhidas. Atributo e descarte enviam uma cópia por parte; manipulação integral envia todas as cópias exigidas juntas. Com `'random'`, envia a ação sem `payment`; com `null`, apresenta somente as demais escolhas de pagamento aplicáveis.
+- **Dada** uma recusa `eventMinimumNotMet`, **então** mostra os mínimos que falharam e mantém o estado confirmado, os recibos anteriores e a seleção ainda válida. Para evento somente de verificações, usa `resolveEvent` quando disponível.
+- **Dado** um encontro com desistência ou fuga disponíveis, **quando** o jogador confirmar, **então** envia a ação correspondente e mostra o resultado recebido. A fuga apresenta custo, limiar e resultado do teste quando aplicável. O encerramento apresenta o desfecho, a reposição efetiva e a penalidade de PA ou dívida devolvidas pelo backend.
+
+### REQ-59 — Recompensas pendentes e Vasculhar
+- **Dada** uma recompensa pendente, **então** a tela mostra a cópia, as opções elegíveis de descarte e as ações de manter ou deixar. **Quando** um lote for recusado, **então** mostra a mensagem e preserva a escolha. **Quando** aceito, usa o próximo estado e apresenta a disposição recebida.
+- **Dado** o retorno do Vasculhar, **então** apresenta o estado `inventory`, `pending`, `left` ou `none` conforme `lastScavenge.delivery`. Uma pendência do Vasculhar usa o mesmo controle de recompensa.
+- **Dada** uma escolha com prazo retornado pelo backend, **então** a tela apresenta o prazo aplicável e usa a transição autoritativa após expirar. No solo, com prazo `null`, a escolha permanece aberta até uma ação do jogador.
+
 Formato:
 
 ### REQ-nn — <nome>
@@ -752,6 +774,16 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 
 **D-60 — FEAT-11:** os schemas verificam formato; regras cruzadas pertencem ao backend. Editor usa campos JSON por parte, opção escolhida pelo autor em 2026-11-19. Valores iniciais são apenas rascunhos editáveis. Telas afetadas (3.5): catálogo em `/lab`, editor em `/lab/editor`, partida em `/grupo/:partyId`; áreas e2e `lab`, `editor`, `party`. Sem valores novos do Apêndice A. `PlayerStatus.text` é independente do catálogo; `handPayment` é a única fonte da instrução e quantidade de pagamento. Tipos compartilhados de enumeração podem ser extraídos de `catalog.ts` para evitar ciclo entre catálogo e efeitos.
 
+### FEAT-12 — Eventos aleatórios
+
+- [ ] **T-58 — Cliente e fixtures** (REQ-56 a REQ-59). Schemas, ações, erros e casos determinísticos do CONTRATO v0.56.
+- [ ] **T-59 — Catálogo, editor e configuração** (REQ-56). Compatibilidade legada e executável, decks por zona e valores do laboratório.
+- [ ] **T-60 — Encontro na tela do grupo** (REQ-57 e REQ-58). Antecipação, recarga, consumível, pagamentos por cópia, recusas, desistência e fuga.
+- [ ] **T-61 — Recompensas e Vasculhar** (REQ-59). Escolhas pendentes, recarga, descarte e resultado de Vasculhar.
+- [ ] **T-62 — Validação integrada da FEAT-12.** Repetir os cenários do contrato contra o backend real com MSW desligado, quando disponíveis a seção implementada, a URL e os dados de teste. Cenários de relógio multiplayer seguem a integração FEAT-26.
+
+**D-61 — FEAT-12:** o frontend deriva opções e progresso dos campos autoritativos do contrato. As fixtures são estáticas por cenário. A apresentação de requisitos usa `handCardSelection`, IDs de cópia e recibos do backend. Áreas de teste `lab`, `editor` e `party`.
+
 ## 8. Histórico
 
 | Versão | Data | Mudança |
@@ -829,3 +861,4 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 | 0.71 | 2026-11-20 | T-56 concluída com MSW: status, ativação e pagamento por cópia na partida (REQ-54, D-60). |
 | 0.72 | 2026-11-20 | T-57 concluída: FEAT-11 validada por HTTP e nas telas contra o backend real, sem MSW. |
 | 0.73 | 2026-11-20 | T-54 concluída após aprovação de `typecheck` e `test:build`. |
+| 0.74 | 2026-11-20 | FEAT-12 com CONTRATO v0.56 acordado. Critérios REQ-56 a REQ-59, D-61 e tarefas T-58 a T-62 aprovados pelo autor. |

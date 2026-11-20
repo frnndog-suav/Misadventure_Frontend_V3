@@ -98,6 +98,19 @@ const member: Party['members'][number] = {
     vaultGoldCapacity: 2000,
     scavengeTargets: [],
     lastScavenge: null,
+    handCopies: [
+      strength,
+      endurance,
+      strength,
+      strength,
+      endurance,
+      endurance,
+      strength,
+    ].map((cardId, index) => ({ cardId, copyId: `h${index + 1}` })),
+    nextTurnActionPointDebt: 0,
+    lastRandomEvent: null,
+    lastRewardSearch: null,
+    lastRewardDelivery: null,
   },
 }
 
@@ -138,6 +151,8 @@ export const partyCreatedFixture: Party = {
   members: [member],
   dimension,
   turnOrder: [member.id],
+  randomEventEncounter: null,
+  pendingRewards: [],
   turn: { round: 1, memberId: member.id, actionPoints: 3 },
   createdAt: '2026-11-14T21:30:00.000Z',
   savedAt: '2026-11-14T21:30:00.000Z',
@@ -245,7 +260,7 @@ export const partyRecoveredDrawFixture = partyAfterDeckAction(
 
 /** 200 de `recover` `shuffleHand`: mão vazia, as 7 cartas de volta ao deck. */
 export const partyRecoveredShuffleHandFixture = partyAfterDeckAction(
-  { hand: [], attributeDeckCount: 60 },
+  { hand: [], handCopies: [], attributeDeckCount: 60 },
   '2026-11-14T21:42:00.000Z',
 )
 
@@ -418,7 +433,11 @@ export const partyScavengedFixture: Party = {
           { cardId: fishingRod, quantity: 1 },
           { cardId: silverFish, quantity: 1 },
         ],
-        lastScavenge: { cardId: silverFish, found: true },
+        lastScavenge: {
+          cardId: silverFish,
+          found: true,
+          delivery: 'inventory',
+        },
       },
     },
   ],

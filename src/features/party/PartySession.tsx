@@ -302,6 +302,18 @@ function reasonText(error: ActionNotAllowedError, name: string): string {
     case 'notEnoughPeak':
     case 'paymentInvalid':
     case 'minimumNotMet':
+    case 'choicePending':
+    case 'eventDeckEmpty':
+    case 'staleEncounter':
+    case 'wrongEventPhase':
+    case 'eventPaymentStarted':
+    case 'escapeForbidden':
+    case 'requirementPaid':
+    case 'requirementNotPayable':
+    case 'requirementsNotPaid':
+    case 'eventMinimumNotMet':
+    case 'staleReward':
+    case 'rewardDoesNotFit':
       return ''
     default: {
       const _exhaustive: never = error.reason
@@ -461,6 +473,18 @@ function vaultReasonText(error: ActionNotAllowedError, name: string): string {
     case 'notEnoughPeak':
     case 'paymentInvalid':
     case 'minimumNotMet':
+    case 'choicePending':
+    case 'eventDeckEmpty':
+    case 'staleEncounter':
+    case 'wrongEventPhase':
+    case 'eventPaymentStarted':
+    case 'escapeForbidden':
+    case 'requirementPaid':
+    case 'requirementNotPayable':
+    case 'requirementsNotPaid':
+    case 'eventMinimumNotMet':
+    case 'staleReward':
+    case 'rewardDoesNotFit':
       return ''
     default: {
       const _exhaustive: never = error.reason

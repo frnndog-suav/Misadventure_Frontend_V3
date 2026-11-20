@@ -32,6 +32,12 @@ import {
 } from '../mocks/partyFixtures'
 import { handlers } from '../mocks/handlers'
 import {
+  partyEventMinimumFixture,
+  partyEventRandomDiscardFixture,
+  partyRandomEventReadyFixture,
+  partyScavengeWithoutSpaceFixture,
+} from '../mocks/randomEventFixtures'
+import {
   partyPotionActivatedFixture,
   partyTonicActivatedFixture,
 } from '../mocks/effectFixtures'
@@ -42,6 +48,41 @@ import {
  */
 
 const server = setupServer(...handlers)
+
+it('REQ-57/58 preserves encounter state and the selected hand copy', () => {
+  const party = partyInSessionFixture
+  const member = party.members[0]!
+  const response = {
+    ...party,
+    randomEventEncounter: null,
+    pendingRewards: [],
+    members: [
+      {
+        ...member,
+        player: {
+          ...member.player,
+          handCopies: [{ copyId: 'h2', cardId: 'fixture.strength-basic' }],
+          nextTurnActionPointDebt: 1,
+          lastRandomEvent: null,
+          lastRewardSearch: null,
+          lastRewardDelivery: null,
+        },
+      },
+    ],
+  }
+  expect(partySchema.parse(response)).toMatchObject({
+    pendingRewards: [],
+    randomEventEncounter: null,
+    members: [
+      {
+        player: {
+          handCopies: response.members[0]!.player.handCopies,
+          nextTurnActionPointDebt: 1,
+        },
+      },
+    ],
+  })
+})
 
 beforeAll(() => {
   vi.stubEnv('VITE_API_URL', 'http://localhost:3000')
@@ -69,6 +110,108 @@ function wrapper({ children }: { children: ReactNode }) {
 
 const partyId = partyInSessionFixture.id
 const move = (zoneId: string): PartyAction => ({ type: 'move', zoneId })
+
+it('REQ-58: MSW round-trips a payment by copy ID', async () => {
+  const { result } = renderHook(
+    () => usePartyAction(partyRandomEventReadyFixture.id),
+    { wrapper },
+  )
+  act(() =>
+    result.current.mutate({
+      type: 'payEventRequirement',
+      encounterId: 'e1',
+      requirementId: 'attrs',
+      payment: { handCards: ['h2'] },
+    }),
+  )
+  await waitFor(() => expect(result.current.isSuccess).toBe(true))
+  expect(
+    result.current.data?.members[0]?.player.handCopies.map(
+      ({ copyId }) => copyId,
+    ),
+  ).toEqual(['h1'])
+  expect(
+    result.current.data?.randomEventEncounter?.payments[0]?.handCards?.[0]
+      ?.copyId,
+  ).toBe('h2')
+})
+
+it('REQ-58: last payment refusal preserves the minimum checks', async () => {
+  const { result } = renderHook(
+    () => usePartyAction(partyEventMinimumFixture.id),
+    { wrapper },
+  )
+  act(() =>
+    result.current.mutate({
+      type: 'payEventRequirement',
+      encounterId: 'e1',
+      requirementId: 'vigor',
+    }),
+  )
+  await waitFor(() => expect(result.current.isError).toBe(true))
+  expect(result.current.error).toMatchObject({
+    reason: 'eventMinimumNotMet',
+    checks: [
+      { requirementId: 'min-vigor', stat: 'vigor', minimum: 5, actual: 4 },
+    ],
+  })
+})
+
+it('REQ-59: MSW returns the pending and left dispositions for Vasculhar', async () => {
+  const { result } = renderHook(
+    () => usePartyAction(partyScavengeWithoutSpaceFixture.id),
+    { wrapper },
+  )
+  act(() =>
+    result.current.mutate({ type: 'scavenge', cardId: 'fixture.silver-fish' }),
+  )
+  await waitFor(() =>
+    expect(result.current.data?.pendingRewards[0]?.id).toBe('r1'),
+  )
+  expect(result.current.data?.turn.actionPoints).toBe(0)
+  expect(result.current.data?.members[0]?.player.lastScavenge?.delivery).toBe(
+    'pending',
+  )
+  act(() =>
+    result.current.mutate({
+      type: 'resolveReward',
+      rewardId: 'r1',
+      choice: 'leave',
+    }),
+  )
+  await waitFor(() =>
+    expect(result.current.data?.members[0]?.player.lastScavenge?.delivery).toBe(
+      'left',
+    ),
+  )
+  expect(result.current.data?.pendingRewards).toEqual([])
+  expect(
+    result.current.data?.members[0]?.player.lastRewardDelivery?.disposition,
+  ).toBe('returnedToDeck')
+})
+
+it('REQ-58: random discard accepts a part without payment and returns the drawn copy', async () => {
+  const { result } = renderHook(
+    () => usePartyAction(partyEventRandomDiscardFixture.id),
+    { wrapper },
+  )
+  act(() =>
+    result.current.mutate({
+      type: 'payEventRequirement',
+      encounterId: 'e1',
+      requirementId: 'discard',
+    }),
+  )
+  await waitFor(() => expect(result.current.isSuccess).toBe(true))
+  const encounter = result.current.data?.randomEventEncounter
+  expect(encounter?.requirements[0]).toMatchObject({
+    status: 'partial',
+    remaining: { copies: 1 },
+    handCardSelection: 'random',
+    eligibleHandCopyIds: [],
+  })
+  expect(encounter?.payments[0]?.handCards?.[0]?.copyId).toBe('h2')
+})
 
 describe('REQ-34: PlayerState.moveTargets', () => {
   it('REQ-34: as fixtures do Party trazem moveTargets válidos', () => {

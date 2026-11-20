@@ -5,6 +5,7 @@ import {
 } from '@tanstack/react-query'
 import { z } from 'zod'
 import { getJson } from './http'
+import { randomEventRulesSchema } from './randomEvents'
 
 /**
  * Catálogo (CONTRATO §3 FEAT-04): conteúdo publicado, só leitura. Os textos
@@ -143,7 +144,7 @@ export const itemCardSchema = z.object({
 })
 
 /** README 14.1 */
-export const randomEventCardSchema = z.object({
+const legacyRandomEventCardSchema = z.object({
   type: z.literal('randomEvent'),
   ...cardBase,
   title: z.string(),
@@ -153,6 +154,13 @@ export const randomEventCardSchema = z.object({
   badOutcome: ruleTextSchema,
   noEscape: z.boolean(),
 })
+
+export const executableRandomEventCardSchema =
+  legacyRandomEventCardSchema.extend(randomEventRulesSchema.shape)
+export const randomEventCardSchema = z.union([
+  executableRandomEventCardSchema,
+  legacyRandomEventCardSchema.extend({ escapeThreshold: z.never().optional() }),
+])
 
 /** README 18.1 — impresso dentro da carta de combate. */
 export const enemySchema = z.object({
@@ -204,9 +212,21 @@ export const dimensionCardSchema = z.object({
         .min(1),
     }),
   ),
+  eventDecks: z
+    .array(
+      z.object({
+        zoneType: zoneTypeSchema,
+        cards: z
+          .array(
+            z.object({ cardId: z.string(), copies: z.number().int().min(1) }),
+          )
+          .min(1),
+      }),
+    )
+    .optional(),
 })
 
-export const cardSchema = z.discriminatedUnion('type', [
+export const cardSchema = z.union([
   zoneCardSchema,
   attributeCardSchema,
   equipmentCardSchema,

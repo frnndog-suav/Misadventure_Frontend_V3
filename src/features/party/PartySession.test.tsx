@@ -2098,7 +2098,7 @@ describe('REQ-51: Vasculhar', () => {
               player: {
                 ...scavenged.player,
                 inventory: [{ cardId: 'fixture.fishing-rod', quantity: 1 }],
-                lastScavenge: { cardId: fish, found: false },
+                lastScavenge: { cardId: fish, found: false, delivery: 'none' },
               },
             },
           ],

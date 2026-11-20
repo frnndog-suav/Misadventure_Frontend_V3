@@ -442,10 +442,15 @@ describe('REQ-30: Party preparado (dimension, turnOrder, player)', () => {
       'fixture.whispering-grove',
     ])
     expect(party.turnOrder).toEqual([party.members[0].id])
-    const { hand, ...player } = party.members[0].player
+    const { hand, handCopies, ...player } = party.members[0].player
+    expect(handCopies.map(({ cardId }) => cardId)).toEqual(hand)
     expect(player).toEqual({
       statuses: [],
       activatableEffects: [],
+      nextTurnActionPointDebt: 0,
+      lastRandomEvent: null,
+      lastRewardSearch: null,
+      lastRewardDelivery: null,
       playerClasses: [{ playerClass: 'warrior', deckLockMet: true }],
       gold: 10,
       baseHealth: 20,

@@ -1,5 +1,24 @@
 import { http, HttpResponse, type RequestHandler } from 'msw'
 import {
+  eventMinimumNotMetFixture,
+  partyAnticipationFixture,
+  partyEncounterFixture,
+  partyEventMinimumFixture,
+  partyEventEscapeFailedFixture,
+  partyEventConsumableFixture,
+  partyEventConsumableUsedFixture,
+  partyEventRandomDiscardFixture,
+  partyEventRandomDiscardPartialFixture,
+  partyEventSetbackFixture,
+  partyEventSuccessFixture,
+  partyPartialEventFixture,
+  partyRandomEventReadyFixture,
+  partyScavengeLeftFixture,
+  partyScavengeKeptFixture,
+  partyScavengePendingFixture,
+  partyScavengeWithoutSpaceFixture,
+} from './randomEventFixtures'
+import {
   partyEffectsReadyFixture,
   partyPotionActivatedFixture,
   partyTonicActivatedFixture,
@@ -170,6 +189,93 @@ async function partyActionScenario(
 ): Promise<Response> {
   const body: unknown = await request.json().catch(() => undefined)
   const type = field(body, 'type')
+  if (
+    partyId === partyEventConsumableFixture.id &&
+    type === 'prepare' &&
+    field(body, 'operation') === 'activate'
+  ) {
+    return HttpResponse.json(partyEventConsumableUsedFixture)
+  }
+  if (
+    type === 'payEventRequirement' &&
+    field(body, 'requirementId') === 'discard'
+  ) {
+    if (
+      (partyId === partyEventRandomDiscardFixture.id ||
+        partyId === partyEventRandomDiscardPartialFixture.id) &&
+      field(body, 'payment') !== undefined
+    ) {
+      return HttpResponse.json(
+        {
+          error: {
+            ...eventMinimumNotMetFixture.error,
+            details: { reason: 'paymentInvalid' },
+          },
+        },
+        { status: 409 },
+      )
+    }
+    if (partyId === partyEventRandomDiscardFixture.id) {
+      return HttpResponse.json({
+        ...partyEventRandomDiscardPartialFixture,
+        id: partyId,
+      })
+    }
+    if (partyId === partyEventRandomDiscardPartialFixture.id) {
+      return HttpResponse.json(eventMinimumNotMetFixture, { status: 409 })
+    }
+  }
+  if (
+    partyId === partyEventMinimumFixture.id &&
+    type === 'payEventRequirement'
+  ) {
+    return HttpResponse.json(eventMinimumNotMetFixture, { status: 409 })
+  }
+  if (partyId === partyScavengeWithoutSpaceFixture.id) {
+    if (type === 'scavenge')
+      return HttpResponse.json(partyScavengePendingFixture)
+    if (type === 'resolveReward' && field(body, 'choice') === 'leave') {
+      return HttpResponse.json(partyScavengeLeftFixture)
+    }
+    if (type === 'resolveReward' && field(body, 'choice') === 'keep') {
+      const discard = field(body, 'discard')
+      if (Array.isArray(discard) && discard.length > 0)
+        return HttpResponse.json(partyScavengeKeptFixture)
+      return HttpResponse.json(
+        {
+          error: {
+            ...eventMinimumNotMetFixture.error,
+            details: { reason: 'rewardDoesNotFit' },
+          },
+        },
+        { status: 409 },
+      )
+    }
+  }
+  if (
+    partyId === partyRandomEventReadyFixture.id ||
+    partyId === partyPartialEventFixture.id
+  ) {
+    if (type === 'startEvent')
+      return HttpResponse.json(partyAnticipationFixture)
+    if (type === 'revealEvent') return HttpResponse.json(partyEncounterFixture)
+    if (type === 'escapeEvent')
+      return HttpResponse.json({
+        ...partyEventEscapeFailedFixture,
+        id: partyId,
+      })
+    if (type === 'payEventRequirement') {
+      const cards = field(field(body, 'payment'), 'handCards')
+      if (Array.isArray(cards) && cards.length === 1 && cards[0] === 'h2') {
+        return HttpResponse.json({ ...partyPartialEventFixture, id: partyId })
+      }
+      if (Array.isArray(cards) && cards.length === 1 && cards[0] === 'h1') {
+        return HttpResponse.json({ ...partyEventSuccessFixture, id: partyId })
+      }
+    }
+    if (type === 'giveUpEvent')
+      return HttpResponse.json({ ...partyEventSetbackFixture, id: partyId })
+  }
   if (type === 'endTurn') return HttpResponse.json(partyNextRoundFixture)
   if (
     type !== 'move' &&
@@ -400,7 +506,14 @@ function knownParty(
     partyId === partyNoPointsFixture.id ||
     partyId === partyGearInSessionFixture.id ||
     partyId === partyFishingRodInSessionFixture.id ||
-    partyId === partyEffectsReadyFixture.id
+    partyId === partyEffectsReadyFixture.id ||
+    partyId === partyRandomEventReadyFixture.id ||
+    partyId === partyPartialEventFixture.id ||
+    partyId === partyEventMinimumFixture.id ||
+    partyId === partyScavengeWithoutSpaceFixture.id ||
+    partyId === partyEventConsumableFixture.id ||
+    partyId === partyEventRandomDiscardFixture.id ||
+    partyId === partyEventRandomDiscardPartialFixture.id
     ? ok()
     : HttpResponse.json(partyNotFoundFixture, { status: 404 })
 }
@@ -744,6 +857,13 @@ export const handlers: RequestHandler[] = [
           partyGearInSessionFixture,
           partyFishingRodInSessionFixture,
           partyEffectsReadyFixture,
+          partyRandomEventReadyFixture,
+          partyPartialEventFixture,
+          partyEventMinimumFixture,
+          partyScavengeWithoutSpaceFixture,
+          partyEventConsumableFixture,
+          partyEventRandomDiscardFixture,
+          partyEventRandomDiscardPartialFixture,
         ].find((party) => party.id === params.partyId) ?? partyCreatedFixture,
       ),
     ),
@@ -756,6 +876,13 @@ export const handlers: RequestHandler[] = [
           partyGearInSessionFixture,
           partyFishingRodInSessionFixture,
           partyEffectsReadyFixture,
+          partyRandomEventReadyFixture,
+          partyPartialEventFixture,
+          partyEventMinimumFixture,
+          partyScavengeWithoutSpaceFixture,
+          partyEventConsumableFixture,
+          partyEventRandomDiscardFixture,
+          partyEventRandomDiscardPartialFixture,
         ].find((party) => party.id === params.partyId) ?? partyInSessionFixture,
       ),
     ),
