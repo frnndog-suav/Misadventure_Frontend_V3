@@ -1,7 +1,7 @@
 # 072 — T-54: cliente e fixtures de efeitos
 
 - **ID:** T-54 · **FEAT:** FEAT-11 · **Data:** 2026-11-19
-- **Status:** aguardando revisão · **Spec:** v0.70 · **Contrato:** v0.52
+- **Status:** concluída em 2026-11-20 · **Spec:** v0.70 → v0.73 · **Contrato:** v0.52
 
 ## Objetivo
 
@@ -70,3 +70,9 @@ Rastreabilidade da cobertura acrescentada:
 A T-54 permanece sem `[x]`: a aprovação da implementação não substitui os checks globais pendentes. Horas desta retomada não medidas; permanecem `null` para fechamento pelo autor.
 
 E2E: **63 testes passaram (7,1 min)** em Chromium com MSW. A primeira tentativa na porta 5173 foi interrompida após três falhas de indisponibilidade de servidor; a instância reutilizada não atendia às fixtures. A execução válida usou uma instância isolada (`$env:VITE_USE_MOCKS='true'; node node_modules/vite/bin/vite.js --port 5174 --strictPort`) e configuração temporária herdando `playwright.config.ts`, com `use.baseURL: 'http://localhost:5174'` e `webServer: undefined`. Configuração temporária removida e instância isolada encerrada ao terminar. Para repetir pelo arquivo padrão, disponibilize a porta 5173, configure `VITE_USE_MOCKS=true` e rode `node node_modules/playwright/cli.js test --reporter=line`; os 63 cenários devem passar. A suíte existente não substitui a futura cobertura das telas de efeitos T-55/T-56.
+
+## Encerramento em 2026-11-20
+
+Com as T-55 e T-56 integradas, `npm.cmd run typecheck` e `npm.cmd run test:build` passaram. O REQ-05 confirmou a ausência do laboratório no build de release. O Vite emitiu um aviso sobre o tamanho do bundle JavaScript (535,05 kB minificado).
+
+O roteiro de cliente do item 2 passou com 232 testes em 9 arquivos. Os 18 diagnósticos anteriores não se reproduziram. O encerramento atualizou a spec, o índice do devlog, esta entrada e o registro de tempo, com horas `null`.

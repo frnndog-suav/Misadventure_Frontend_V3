@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.72 · **Data:** 2026-11-20
+> **Versão da spec:** 0.73 · **Data:** 2026-11-20
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -745,7 +745,7 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 
 **FEAT-11 — Efeitos e status** (CONTRATO v0.53 `validado`; README 13 e 13.6, B K2). Implementação e validação integral autorizadas pelo autor em 2026-11-19.
 
-- [ ] **T-54 — Cliente e fixtures de efeitos** (REQ-53/54/55): schemas das quatro partes, efeitos, status, efeitos ativáveis, ação e erros; fixtures estáticas compatíveis. `src/api/effects.ts` centraliza schemas; nenhuma regra de execução.
+- [x] **T-54 — Cliente e fixtures de efeitos** (REQ-53/54/55): schemas das quatro partes, efeitos, status, efeitos ativáveis, ação e erros; fixtures estáticas compatíveis. `src/api/effects.ts` centraliza schemas; nenhuma regra de execução.
 - [x] **T-55 — Cartas e editor de efeitos** (REQ-53/55): marcação e polaridade; campos JSON validados escolhidos pelo autor; testes unitários e e2e `lab`/`editor`.
 - [x] **T-56 — Status e ativação na partida** (REQ-54): apresentação, pagamento por cópia e atualização autoritativa; testes unitários e e2e `party`.
 - [x] **T-57 — Validar FEAT-11 contra o backend real**: todos os cenários do contrato com MSW desligado, incluindo telas, editor e recusas; registrar resultados e só marcar validado se todos passarem.
@@ -828,3 +828,4 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 | 0.70 | 2026-11-19 | FEAT-11 planejada dentro do retorno autorizado: REQ-53 a REQ-55, D-60, T-54 a T-57. Editor com campos JSON por parte escolhido pelo autor; contrato v0.52 recebido sem divergências entre cópias. |
 | 0.71 | 2026-11-20 | T-56 concluída com MSW: status, ativação e pagamento por cópia na partida (REQ-54, D-60). |
 | 0.72 | 2026-11-20 | T-57 concluída: FEAT-11 validada por HTTP e nas telas contra o backend real, sem MSW. |
+| 0.73 | 2026-11-20 | T-54 concluída após aprovação de `typecheck` e `test:build`. |
