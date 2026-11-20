@@ -1,3 +1,4 @@
+import { executableCombatCardFixture } from '../mocks/combatFixtures'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
@@ -239,4 +240,19 @@ it('REQ-56: displays the printed requirements and outcomes of an executable cata
   expect(
     screen.getByRole('button', { name: 'Viajante Ferido · Evento aleatório' }),
   ).toBeVisible()
+})
+
+it('REQ-60: renders the executable combat variant returned by MSW', async () => {
+  server.use(
+    http.get(cardsUrl, () => HttpResponse.json([executableCombatCardFixture])),
+  )
+  renderCatalog()
+  fireEvent.click(
+    await screen.findByRole('button', {
+      name: 'Lobo Cinzento · Evento de combate',
+    }),
+  )
+  expect(await screen.findByText('Limiar de fuga: 0')).toBeVisible()
+  expect(screen.getAllByText('Desfecho executável sem passos')).toHaveLength(2)
+  expect(screen.getByText('Poder: 2')).toBeVisible()
 })

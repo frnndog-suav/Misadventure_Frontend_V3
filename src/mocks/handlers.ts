@@ -979,6 +979,15 @@ export const handlers: RequestHandler[] = [
   http.patch('*/lab/config', async ({ request }) => {
     const body = await jsonBody(request)
     const reserve = field(body, 'reserveDeck')
+    if (field(body, 'combatEscapeThreshold') === 0) {
+      return HttpResponse.json({
+        ...labConfigDefaultsFixture,
+        values: {
+          ...labConfigDefaultsFixture.values,
+          combatEscapeThreshold: 0,
+        },
+      })
+    }
     if (field(body, 'maxCombatCycles') === 25) {
       return HttpResponse.json({
         ...labConfigDefaultsFixture,

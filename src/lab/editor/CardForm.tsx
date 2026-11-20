@@ -68,6 +68,7 @@ import {
   sameForm,
   toInput,
   zoneActionOrder,
+  type AbilityForm,
   type AttributeForm,
   type CardForm as CardFormValues,
   type CombatEventForm,
@@ -713,7 +714,7 @@ function EquipmentFields({
         checked={values.blocksShield}
         onChange={(blocksShield) => set({ ...values, blocksShield })}
       />
-      <ListField
+      <ListField<AbilityForm>
         label="Habilidades"
         path="abilities"
         items={values.abilities}
@@ -735,6 +736,15 @@ function EquipmentFields({
               value={ability.text}
               onChange={(text) => setAbility({ ...ability, text })}
               errors={errors}
+            />
+            <TextField
+              label={`Dados executáveis da habilidade ${index + 1} (JSON)`}
+              path={`abilities.${index}.executable`}
+              value={ability.executable ?? ''}
+              onChange={(executable) => setAbility({ ...ability, executable })}
+              errors={errors}
+              multiline
+              includeChildErrors
             />
           </>
         )}
@@ -1153,7 +1163,7 @@ function EnemyFields({
         onChange={(vigor) => set({ ...enemy, vigor })}
         errors={errors}
       />
-      <ListField
+      <ListField<AbilityForm>
         label={`Habilidades${suffix}`}
         path={path('abilities')}
         items={enemy.abilities}
@@ -1176,8 +1186,26 @@ function EnemyFields({
               onChange={(text) => setAbility({ ...ability, text })}
               errors={errors}
             />
+            <TextField
+              label={`Dados executáveis da habilidade ${j + 1} do inimigo ${index + 1} (JSON)`}
+              path={`enemies.${index}.abilities.${j}.executable`}
+              value={ability.executable ?? ''}
+              onChange={(executable) => setAbility({ ...ability, executable })}
+              errors={errors}
+              multiline
+              includeChildErrors
+            />
           </>
         )}
+      />
+      <TextField
+        label={`Regras de combate do inimigo ${index + 1} (JSON)`}
+        path={path('combatRules')}
+        value={enemy.combatRules ?? ''}
+        onChange={(combatRules) => set({ ...enemy, combatRules })}
+        errors={errors}
+        multiline
+        includeChildErrors
       />
       <SelectField
         label={`Comportamento${suffix}`}
@@ -1232,6 +1260,31 @@ function CombatEventFields({
             errors={errors}
           />
         )}
+      />
+      <TextField
+        label="Limiar de fuga (vazio usa o padrão)"
+        path="escapeThreshold"
+        value={values.escapeThreshold ?? ''}
+        onChange={(escapeThreshold) => set({ ...values, escapeThreshold })}
+        errors={errors}
+      />
+      <TextField
+        label="Passos da coisa boa (JSON)"
+        path="goodOutcome.steps"
+        value={values.goodSteps ?? ''}
+        onChange={(goodSteps) => set({ ...values, goodSteps })}
+        errors={errors}
+        multiline
+        includeChildErrors
+      />
+      <TextField
+        label="Passos da coisa ruim (JSON)"
+        path="badOutcome.steps"
+        value={values.badSteps ?? ''}
+        onChange={(badSteps) => set({ ...values, badSteps })}
+        errors={errors}
+        multiline
+        includeChildErrors
       />
       <OutcomeFields values={values} set={set} errors={errors} />
     </>
@@ -1546,10 +1599,15 @@ export function CardForm({
     setFieldErrors(
       error instanceof ContentInvalidError
         ? error.fields.map(({ path, message }) => ({
-            path: path.replace(
-              /^(effects\.\d+\.(?:trigger|cost|activation|duration))\..+$/,
-              '$1',
-            ),
+            path: path
+              .replace(
+                /^(effects\.\d+\.(?:trigger|cost|activation|duration))\..+$/,
+                '$1',
+              )
+              .replace(
+                /^((?:enemies\.\d+\.)?abilities\.\d+)\.(?!(?:name|text)$).+$/,
+                '$1.executable',
+              ),
             message,
           }))
         : [],

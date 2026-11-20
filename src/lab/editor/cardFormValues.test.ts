@@ -1,7 +1,9 @@
+import { executableCombatCardFixture } from '../../mocks/combatFixtures'
 import { partyEncounterFixture } from '../../mocks/randomEventFixtures'
 import { describe, expect, it } from 'vitest'
 import {
   fixtureCardsFixture,
+  howlingWolvesFixture,
   pickaxeFixture,
   testDimensionFixture,
 } from '../../mocks/catalogFixtures'
@@ -76,4 +78,33 @@ it('REQ-56: preserves executable rules and ordered zone decks when editing', () 
   expect(
     toInput(formFromCard({ ...testDimensionFixture, eventDecks })),
   ).toMatchObject({ eventDecks })
+})
+it('REQ-60: preserves executable combat content and absent legacy fields', () => {
+  const card = {
+    ...executableCombatCardFixture,
+    enemies: executableCombatCardFixture.enemies.map((enemy) => ({
+      ...enemy,
+      combatRules: {
+        abilityUsesPerTurn: 2,
+        abilityPriority: ['selfBuff' as const, 'highestPower' as const],
+        preferredAbilityIds: ['bite'],
+      },
+    })),
+    goodOutcome: {
+      text: executableCombatCardFixture.goodOutcome.text,
+      steps: [{ type: 'drawRewards' as const, count: 2 }],
+    },
+  }
+  expect(toInput(formFromCard(card))).toMatchObject({
+    escapeThreshold: 0,
+    enemies: card.enemies,
+    goodOutcome: card.goodOutcome,
+    badOutcome: card.badOutcome,
+  })
+  expect(
+    toInput(formFromCard({ ...card, escapeThreshold: null })),
+  ).toHaveProperty('escapeThreshold', null)
+  expect(toInput(formFromCard(howlingWolvesFixture))).not.toHaveProperty(
+    'escapeThreshold',
+  )
 })

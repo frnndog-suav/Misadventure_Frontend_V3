@@ -1,7 +1,7 @@
 import type { Effect, ZoneEffect } from '../../api/effects'
 import { effectMarkLabels, effectPolarityLabels } from '../labels'
 import { useId, type ReactNode } from 'react'
-import type { Rarity, RuleText } from '../../api/catalog'
+import type { Ability, Rarity, RuleText } from '../../api/catalog'
 import { rarityLabels } from '../labels'
 import './cards.css'
 
@@ -77,21 +77,49 @@ export function Tags({ tags }: { tags: readonly string[] }) {
   )
 }
 
-export function Abilities({
-  abilities,
-}: {
-  abilities: readonly { name: string; text: string }[]
-}) {
+export function Abilities({ abilities }: { abilities: readonly Ability[] }) {
   return (
     <LabeledList
       label="Habilidades"
       items={abilities}
-      render={(a) => (
-        <>
-          <strong>{a.name}</strong> <span>{a.text}</span>
-        </>
-      )}
+      render={(ability) =>
+        'id' in ability ? (
+          <AbilityDetails ability={ability} />
+        ) : (
+          <>
+            <strong>{ability.name}</strong> <span>{ability.text}</span>
+          </>
+        )
+      }
     />
+  )
+}
+
+const abilityFormLabels = {
+  targeted: 'Direcionada',
+  projectile: 'Projétil',
+  area: 'Área',
+  continuous: 'Contínua',
+  channeled: 'Canalizada',
+  passive: 'Passiva',
+}
+
+function AbilityDetails({
+  ability,
+}: {
+  ability: Extract<Ability, { id: string }>
+}) {
+  const { name, text, ...parameters } = ability
+  return (
+    <>
+      <strong>{name}</strong> <span>{text}</span>
+      <p>{abilityFormLabels[ability.form]}</p>
+      {ability.power !== null && <p>Poder: {ability.power}</p>}
+      <details>
+        <summary>Parâmetros da habilidade</summary>
+        <pre>{JSON.stringify(parameters, null, 2)}</pre>
+      </details>
+    </>
   )
 }
 

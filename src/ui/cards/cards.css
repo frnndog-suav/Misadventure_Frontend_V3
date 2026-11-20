@@ -43,3 +43,9 @@
   color: var(--color-text-muted);
   font-style: italic;
 }
+
+.game-card pre {
+  overflow-x: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

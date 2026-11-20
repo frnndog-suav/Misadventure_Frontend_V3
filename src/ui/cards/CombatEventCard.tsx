@@ -34,6 +34,25 @@ export function CombatEventCard({ card }: { card: CombatEventCardData }) {
         badOutcome={card.badOutcome}
         noEscape={card.noEscape}
       />
+      {card.escapeThreshold != null && (
+        <p>Limiar de fuga: {card.escapeThreshold}</p>
+      )}
+      {(
+        [
+          ['Vitória', card.goodOutcome],
+          ['Derrota', card.badOutcome],
+        ] as const
+      ).map(([label, outcome]) => {
+        if (!('steps' in outcome)) return null
+        if (outcome.steps.length === 0)
+          return <p key={label}>Desfecho executável sem passos</p>
+        return (
+          <details key={label}>
+            <summary>Passos do desfecho de {label.toLowerCase()}</summary>
+            <pre>{JSON.stringify(outcome.steps, null, 2)}</pre>
+          </details>
+        )
+      })}
       {card.enemies.map((enemy, i) => (
         <EnemyBlock key={i} enemy={enemy} />
       ))}
@@ -75,6 +94,12 @@ function EnemyBlock({ enemy }: { enemy: Enemy }) {
       />
       {enemy.vigor !== null && <p>Vigor {formatNumber(enemy.vigor)}</p>}
       <Abilities abilities={enemy.abilities} />
+      {enemy.combatRules && (
+        <details>
+          <summary>Regras de combate</summary>
+          <pre>{JSON.stringify(enemy.combatRules, null, 2)}</pre>
+        </details>
+      )}
       <p>Comportamento: {behaviorLabels[enemy.behavior]}</p>
     </section>
   )

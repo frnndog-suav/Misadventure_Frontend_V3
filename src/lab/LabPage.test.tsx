@@ -568,3 +568,60 @@ it('REQ-56: saves a weighted gold and card reserve with MSW and restores default
   expect(escape).toHaveValue(20)
   expect(screen.queryByLabelText('Peso da entrada 2')).not.toBeInTheDocument()
 })
+it('REQ-60: saves zero escape threshold and restores MSW defaults', async () => {
+  renderLab()
+  await loaded()
+  const threshold = screen.getByRole('spinbutton', {
+    name: 'Limiar de fuga em combate',
+  })
+  expect(threshold).toHaveValue(10)
+  setField('Limiar de fuga em combate', '0')
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar' }))
+  await screen.findByText('Configuração salva.')
+  expect(threshold).toHaveValue(0)
+  fireEvent.click(screen.getByRole('button', { name: 'Restaurar padrões' }))
+  await screen.findByText('Padrões restaurados.')
+  expect(threshold).toHaveValue(10)
+})
+
+it('REQ-60: submits priorities in order and binds a refusal to the behavior', async () => {
+  const sent = vi.fn()
+  server.use(
+    http.patch('*/lab/config', async ({ request }) => {
+      sent(await request.json())
+      return HttpResponse.json(
+        {
+          error: {
+            code: 'LAB_CONFIG_INVALID',
+            message: 'Prioridades inválidas.',
+            details: {
+              fields: [
+                {
+                  field: 'enemyAbilityPriorities.defensive.1',
+                  reason: 'invalidBody',
+                },
+              ],
+            },
+          },
+        },
+        { status: 400 },
+      )
+    }),
+  )
+  renderLab()
+  await loaded()
+  const defense = screen.getByRole('textbox', { name: 'Defensivo' })
+  const draft = 'highestPower, highestPower, selfBuff'
+  fireEvent.change(defense, { target: { value: draft } })
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar' }))
+  await waitFor(() =>
+    expect(defense).toHaveAccessibleDescription(/Prioridades inválidas/),
+  )
+  expect(defense).toHaveValue(draft)
+  expect(sent).toHaveBeenCalledWith({
+    enemyAbilityPriorities: {
+      ...labConfigDefaultsFixture.values.enemyAbilityPriorities,
+      defensive: ['highestPower', 'highestPower', 'selfBuff'],
+    },
+  })
+})

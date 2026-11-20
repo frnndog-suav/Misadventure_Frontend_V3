@@ -6,21 +6,24 @@ import {
   useLabConfig,
   useResetLabConfig,
   useUpdateLabConfig,
-  type GameConfigKey,
   type LabConfig,
   type LabConfigInvalidDetails,
   type LabConfigPatch,
 } from '../api/labConfig'
 import { CardCategory } from '../ui/CardCategory'
 import { Term } from '../ui/Term'
-import { attributeSchema } from '../api/catalog'
+import { enemyBehaviorSchema, attributeSchema } from '../api/catalog'
+import { behaviorLabels } from '../ui/labels'
 import { testCategoryCatalog } from '../ui/test-assets/categories'
 import { CatalogSection } from './CatalogSection'
 import { GrantSection } from './GrantSection'
 import './LabPage.css'
 
 /** Rótulos dos campos (REQ-06, glossário §2.6), na ordem da tela. */
-type NumericKey = GameConfigKey | 'escapeVigorPercent'
+type NumericKey = Exclude<
+  keyof LabConfig['values'],
+  'reserveDeck' | 'enemyAbilityPriorities'
+>
 
 const fieldLabels: Record<NumericKey, string> = {
   minPlayers: 'Jogadores (mínimo)',
@@ -56,6 +59,16 @@ const fieldLabels: Record<NumericKey, string> = {
   vaultCapacity: 'Capacidade do cofre',
   vaultDeckSlots: 'Slots de decks do cofre (a build em uso ocupa um)',
   vaultGoldCapacity: 'Capacidade de ouro do cofre',
+  maxCombatCycles: 'Máximo de ciclos de combate',
+  combatEscapeThreshold: 'Limiar de fuga em combate',
+  combatEscapePeakLoss: 'Perda de Pico ao fugir do combate',
+  exhaustionPenaltyPercent: 'Penalidade de Exaustão (%)',
+  projectileAccuracyBonusPercent: 'Bônus de Precisão de projétil (%)',
+  areaDamagePercent: 'Dano em área (%)',
+  shieldProjectileDamagePercent: 'Dano de projétil contra escudo (%)',
+  channelInterruptDamagePercent: 'Dano para interromper canalização (%)',
+  elementAdvantageBonusPercent: 'Bônus de vantagem elemental (%)',
+  elementDisadvantagePenaltyPercent: 'Penalidade de desvantagem elemental (%)',
   escapeVigorPercent: 'Custo de fuga (% do Pico em Vigor)',
 }
 
@@ -233,6 +246,11 @@ function ConfigForm({ config }: { config: LabConfig }) {
   /** Só o que o jogador digitou e ainda não foi salvo. */
   const [edits, setEdits] = useState<Partial<Record<NumericKey, string>>>({})
   const [reserveEdits, setReserveEdits] = useState<ReserveDraft[] | null>(null)
+  const [priorityEdits, setPriorityEdits] = useState<
+    Partial<Record<keyof typeof behaviorLabels, string>>
+  >({})
+  const priorities = config.values.enemyAbilityPriorities
+  const priorityDefaults = config.defaults.enemyAbilityPriorities
   const [lastAction, setLastAction] = useState<'save' | 'reset' | null>(null)
 
   const shown = (key: NumericKey) => edits[key] ?? String(config.values[key])
@@ -240,7 +258,7 @@ function ConfigForm({ config }: { config: LabConfig }) {
   const patch: LabConfigPatch = {}
   let hasEmpty = false
   for (const key of fieldKeys) {
-    if (!config.limits[key]) continue
+    if (!config.limits[key] || config.values[key] === undefined) continue
     const text = shown(key)
     if (text.trim() === '') hasEmpty = true
     else if (Number(text) !== config.values[key]) patch[key] = Number(text)
@@ -259,6 +277,19 @@ function ConfigForm({ config }: { config: LabConfig }) {
     if (JSON.stringify(reserve) !== JSON.stringify(config.values.reserveDeck))
       patch.reserveDeck = reserve
   }
+  if (priorities && Object.keys(priorityEdits).length) {
+    const next = { ...priorities }
+    for (const behavior of enemyBehaviorSchema.options) {
+      const draft = priorityEdits[behavior]
+      if (draft === undefined) continue
+      next[behavior] = draft
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean) as (typeof next)[typeof behavior]
+    }
+    if (JSON.stringify(next) !== JSON.stringify(priorities))
+      patch.enemyAbilityPriorities = next
+  }
   const canSave = !hasEmpty && Object.keys(patch).length > 0
 
   const backendErrors =
@@ -276,6 +307,7 @@ function ConfigForm({ config }: { config: LabConfig }) {
   function clearEdits() {
     setEdits({})
     setReserveEdits(null)
+    setPriorityEdits({})
   }
 
   let status = ''
@@ -305,7 +337,7 @@ function ConfigForm({ config }: { config: LabConfig }) {
           const hintId = `${inputId}-hint`
           const errorId = `${inputId}-error`
           const limits = config.limits[key]
-          if (!limits) return null
+          if (!limits || config.values[key] === undefined) return null
           const { min, max } = limits
           const error = fieldErrors[key]
           return (
@@ -341,6 +373,52 @@ function ConfigForm({ config }: { config: LabConfig }) {
             errors={backendErrors}
             onChange={setReserveEdits}
           />
+        )}
+        {priorities && priorityDefaults && (
+          <fieldset>
+            <legend>Prioridades de habilidades dos inimigos</legend>
+            <p id="lab-priority-options">
+              Separe por vírgula, em ordem: selfBuff, continuous,
+              selfBuffOrContinuous, supportWoundedAlly, highestPower.
+            </p>
+            {enemyBehaviorSchema.options.map((behavior) => {
+              const id = `lab-priority-${behavior}`
+              const path = `enemyAbilityPriorities.${behavior}`
+              const invalid = backendErrors.some(
+                ({ field }) =>
+                  field === 'enemyAbilityPriorities' ||
+                  field === path ||
+                  field?.startsWith(path + '.'),
+              )
+              return (
+                <div className="lab-field" key={behavior}>
+                  <label htmlFor={id}>{behaviorLabels[behavior]}</label>
+                  <input
+                    id={id}
+                    value={
+                      priorityEdits[behavior] ?? priorities[behavior].join(', ')
+                    }
+                    onChange={(e) =>
+                      setPriorityEdits({
+                        ...priorityEdits,
+                        [behavior]: e.target.value,
+                      })
+                    }
+                    aria-invalid={invalid || undefined}
+                    aria-describedby={`lab-priority-options ${id}-hint${invalid ? ' ' + id + '-error' : ''}`}
+                  />
+                  <span id={id + '-hint'} className="lab-hint">
+                    Padrão: {priorityDefaults[behavior].join(', ')}
+                  </span>
+                  {invalid && update.error && (
+                    <span id={id + '-error'} className="lab-error">
+                      {errorText(update.error)}
+                    </span>
+                  )}
+                </div>
+              )
+            })}
+          </fieldset>
         )}
         <div className="lab-actions">
           <button type="submit" disabled={!canSave || pending}>

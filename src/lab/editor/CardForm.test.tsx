@@ -1,3 +1,4 @@
+import { executableCombatCardFixture } from '../../mocks/combatFixtures'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import {
   fireEvent,
@@ -1848,4 +1849,63 @@ it('REQ-56: links MSW publication rejection to the legacy card reference in the 
   )
   expect(reference).toHaveValue('fixture.wounded-traveler')
   expect(within(form()).getByText('Situação: Rascunho')).toBeVisible()
+})
+
+it('REQ-60: sends executable combat content and links an indexed MSW refusal', async () => {
+  const card = { ...executableCombatCardFixture, id: 'fixture.howling-wolves' }
+  const sent = vi.fn()
+  server.use(
+    http.get(cardUrl, () => HttpResponse.json({ card, status: 'published' })),
+    http.put(cardUrl, async ({ request }) => {
+      sent(await request.json())
+      return HttpResponse.json(
+        {
+          error: {
+            code: 'CONTENT_INVALID',
+            message: 'Conteúdo inválido.',
+            details: {
+              fields: [
+                {
+                  path: 'enemies.0.abilities.0.channel.chargesRequired',
+                  message: 'Número de cargas inválido.',
+                },
+              ],
+            },
+          },
+        },
+        { status: 400 },
+      )
+    }),
+  )
+  renderEditor()
+  await openCard('Lobos Uivantes · Evento de combate · Publicada')
+  const label = 'Dados executáveis da habilidade 1 do inimigo 1 (JSON)'
+  const original = JSON.parse((field(label) as HTMLTextAreaElement).value)
+  const draft = JSON.stringify({
+    ...original,
+    form: 'channeled',
+    channel: { chargesRequired: 0, releaseForm: 'targeted' },
+  })
+  type(label, draft)
+  fireEvent.click(saveButton())
+  await waitFor(() =>
+    expect(field(label)).toHaveAccessibleDescription(
+      'Número de cargas inválido.',
+    ),
+  )
+  expect(field(label)).toHaveValue(draft)
+  expect(sent).toHaveBeenCalledWith(
+    expect.objectContaining({
+      escapeThreshold: 0,
+      goodOutcome: card.goodOutcome,
+      badOutcome: card.badOutcome,
+      enemies: [
+        expect.objectContaining({
+          abilities: [
+            { ...card.enemies[0].abilities[0], ...JSON.parse(draft) },
+          ],
+        }),
+      ],
+    }),
+  )
 })

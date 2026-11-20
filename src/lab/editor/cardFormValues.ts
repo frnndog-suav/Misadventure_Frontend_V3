@@ -7,6 +7,8 @@ import {
 } from '../../api/effects'
 import {
   modifierSchema,
+  type Ability,
+  type CombatEventCard,
   type Attribute,
   type AttributeCard,
   type Card,
@@ -139,7 +141,7 @@ export interface EquipmentForm {
   peakRequirement: string
   classRestriction: PlayerClass[]
   blocksShield: boolean
-  abilities: { name: string; text: string }[]
+  abilities: AbilityForm[]
   effects: EffectForm[]
   /** Desligado = não refinável; o que foi digitado fica guardado. */
   refinement: { enabled: boolean; maxLevel: string; materials: string }
@@ -196,8 +198,44 @@ export interface EnemyForm {
   modifiers: Record<Modifier, string>
   /** Vazio = sem Vigor (`null`). */
   vigor: string
-  abilities: { name: string; text: string }[]
+  abilities: AbilityForm[]
+  combatRules?: string
   behavior: EnemyBehavior | ''
+}
+
+export interface AbilityForm {
+  name: string
+  text: string
+  executable?: string
+}
+
+function abilityFromCard({ name, text, ...fields }: Ability): AbilityForm {
+  return 'id' in fields
+    ? { name, text, executable: JSON.stringify(fields, null, 2) }
+    : { name, text }
+}
+
+const jsonObject = z.record(z.string(), z.unknown())
+const jsonList = z.array(z.unknown())
+
+function parseOptionalJson<T>(value: string | undefined, schema: z.ZodType<T>) {
+  if (!value?.trim()) return undefined
+  try {
+    const result = schema.safeParse(JSON.parse(value))
+    return result.success ? result.data : null
+  } catch {
+    return null
+  }
+}
+
+function toAbilities(forms: AbilityForm[]): Ability[] | null {
+  const abilities: Ability[] = []
+  for (const { name, text, executable } of forms) {
+    const fields = parseOptionalJson(executable, jsonObject)
+    if (!filled(name) || !filled(text) || fields === null) return null
+    abilities.push({ ...fields, name, text } as Ability)
+  }
+  return abilities
 }
 
 export interface CombatEventForm {
@@ -209,6 +247,9 @@ export interface CombatEventForm {
   goodOutcome: string
   badOutcome: string
   noEscape: boolean
+  escapeThreshold?: string
+  goodSteps?: string
+  badSteps?: string
 }
 
 export interface DimensionForm {
@@ -457,7 +498,7 @@ export function formFromCard(card: Card): CardForm {
           card.classRestriction.includes(c),
         ),
         blocksShield: card.blocksShield,
-        abilities: card.abilities.map(({ name, text }) => ({ name, text })),
+        abilities: card.abilities.map(abilityFromCard),
         effects: card.effects.map(effectToForm),
         refinement:
           card.refinement === null
@@ -532,12 +573,25 @@ export function formFromCard(card: Card): CardForm {
             modifierOrder.map((m) => [m, String(enemy.modifiers[m])]),
           ) as Record<Modifier, string>,
           vigor: numberText(enemy.vigor),
-          abilities: enemy.abilities.map(({ name, text }) => ({ name, text })),
+          abilities: enemy.abilities.map(abilityFromCard),
           behavior: enemy.behavior,
+          combatRules: JSON.stringify(enemy.combatRules, null, 2),
         })),
         goodOutcome: card.goodOutcome.text,
         badOutcome: card.badOutcome.text,
         noEscape: card.noEscape,
+        escapeThreshold:
+          card.escapeThreshold === undefined
+            ? undefined
+            : numberText(card.escapeThreshold),
+        goodSteps:
+          'steps' in card.goodOutcome
+            ? JSON.stringify(card.goodOutcome.steps, null, 2)
+            : undefined,
+        badSteps:
+          'steps' in card.badOutcome
+            ? JSON.stringify(card.badOutcome.steps, null, 2)
+            : undefined,
       }
     case 'dimension':
       return {
@@ -583,6 +637,8 @@ function chosen<T extends string>(values: readonly (T | '')[]): T[] | null {
 
 /** Um inimigo no formato do contrato, ou `null` se falta formato. */
 function toEnemy(form: EnemyForm): Enemy | null {
+  const abilities = toAbilities(form.abilities)
+  const combatRules = parseOptionalJson(form.combatRules, jsonObject)
   const count = parseNumber(form.count)
   const health = parseNumber(form.health)
   const vigor = parseNumber(form.vigor)
@@ -599,7 +655,8 @@ function toEnemy(form: EnemyForm): Enemy | null {
     form.enemyCategory === '' ||
     health === null ||
     (filled(form.vigor) && vigor === null) ||
-    !form.abilities.every((a) => filled(a.name) && filled(a.text)) ||
+    abilities === null ||
+    combatRules === null ||
     form.behavior === ''
   )
     return null
@@ -614,7 +671,8 @@ function toEnemy(form: EnemyForm): Enemy | null {
     health,
     modifiers: modifiers as Record<Modifier, number>,
     vigor,
-    abilities: form.abilities,
+    abilities,
+    ...(combatRules && { combatRules: combatRules as Enemy['combatRules'] }),
     behavior: form.behavior,
   }
 }
@@ -670,6 +728,7 @@ export function toInput(form: CardForm): CardInput | null {
       }
     }
     case 'equipment': {
+      const abilities = toAbilities(form.abilities)
       const effects = toEffects(form.effects, effectSchema)
       if (effects === undefined) return null
       const modifiers: { modifier: Modifier; value: number }[] = []
@@ -689,7 +748,7 @@ export function toInput(form: CardForm): CardInput | null {
         !form.tags.every(filled) ||
         (filled(form.peakRequirement) && peak === null) ||
         price === null ||
-        !form.abilities.every((a) => filled(a.name) && filled(a.text)) ||
+        abilities === null ||
         (form.refinement.enabled &&
           (maxLevel === null || !filled(form.refinement.materials))) ||
         (form.enchantment.enabled && !filled(form.enchantment.text))
@@ -707,7 +766,7 @@ export function toInput(form: CardForm): CardInput | null {
         peakRequirement: peak,
         classRestriction: form.classRestriction,
         blocksShield: form.blocksShield,
-        abilities: form.abilities,
+        abilities,
         effects,
         refinement:
           form.refinement.enabled && maxLevel !== null
@@ -788,6 +847,15 @@ export function toInput(form: CardForm): CardInput | null {
       }
     }
     case 'combatEvent': {
+      const goodSteps = parseOptionalJson(form.goodSteps, jsonList)
+      const badSteps = parseOptionalJson(form.badSteps, jsonList)
+      const threshold = parseNumber(form.escapeThreshold ?? '')
+      if (
+        goodSteps === null ||
+        badSteps === null ||
+        (form.escapeThreshold?.trim() && threshold === null)
+      )
+        return null
       const enemies: Enemy[] = []
       for (const enemy of form.enemies) {
         const parsed = toEnemy(enemy)
@@ -807,8 +875,17 @@ export function toInput(form: CardForm): CardInput | null {
         title: form.title,
         flavorText: filled(form.flavorText) ? form.flavorText : null,
         enemies,
-        goodOutcome: { text: form.goodOutcome },
-        badOutcome: { text: form.badOutcome },
+        goodOutcome: {
+          text: form.goodOutcome,
+          ...(goodSteps && { steps: goodSteps }),
+        } as CombatEventCard['goodOutcome'],
+        badOutcome: {
+          text: form.badOutcome,
+          ...(badSteps && { steps: badSteps }),
+        } as CombatEventCard['badOutcome'],
+        ...(form.escapeThreshold !== undefined && {
+          escapeThreshold: threshold,
+        }),
         noEscape: form.noEscape,
       }
     }
