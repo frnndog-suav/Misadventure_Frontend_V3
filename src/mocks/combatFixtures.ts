@@ -377,7 +377,280 @@ const manualPaid: PartyActionResponse = {
   ],
 }
 
+const ore = 'fixture.iron-ore'
+const weapon = 'fixture.short-sword'
+const combatAbility = {
+  equipmentSlot: 'weapon',
+  abilityId: 'strike',
+  targetIds: [enemyId],
+  vigorCost: 1,
+  paymentCosts: [{ type: 'automatic', costIndex: 0, text: 'Pague 1 Vigor' }],
+} satisfies NonNullable<Party['combat']>['abilities'][number]
+const combatEffect = {
+  effectId: 'focus',
+  origin: {
+    type: 'equipment',
+    equipmentSlot: 'weapon',
+    cardId: weapon,
+    effectIndex: 0,
+  },
+  text: 'Concentrar',
+  targetIds: [],
+  vigorCost: 0,
+  paymentCosts: [],
+} satisfies NonNullable<Party['combat']>['effects'][number]
+const soloCombat = {
+  ...resumedCombat.combat!,
+  abilities: [combatAbility],
+  effects: [combatEffect],
+}
+const soloActions = [
+  'activateCombatEffect',
+  'useAbility',
+  'escapeCombat',
+  'combatAttack',
+  'endCombatTurn',
+] as const
+const soloSnapshot: Party = {
+  ...reveal,
+  randomEventEncounter: null,
+  combat: soloCombat,
+  members: [
+    {
+      ...member,
+      player: {
+        ...resumedCombat.members[0]!.player,
+        equipment: { ...player.equipment, weapon },
+        availableActions: [...soloActions],
+      },
+    },
+  ],
+}
+const soloActive: PartyActionResponse = {
+  ...soloSnapshot,
+  combatUpdates: [
+    pausedAfterReveal.combatUpdates![0]!,
+    {
+      type: 'combatTurnStarted',
+      combatId,
+      actorId: member.id,
+      turnId: soloCombat.turn.id,
+      cycle: 1,
+    },
+  ],
+}
+function soloAfterOption(
+  type: 'useAbility' | 'activateCombatEffect',
+): PartyActionResponse {
+  const player = soloActive.members[0]!.player
+  return {
+    ...soloActive,
+    combat: {
+      ...soloCombat,
+      abilities: [],
+      effects: [],
+    },
+    members: [
+      {
+        ...member,
+        player: {
+          ...player,
+          vigor:
+            player.vigor -
+            (type === 'useAbility' ? combatAbility.vigorCost : 0),
+          availableActions: ['escapeCombat', 'combatAttack', 'endCombatTurn'],
+        },
+      },
+    ],
+    combatUpdates: [
+      type === 'useAbility'
+        ? {
+            type: 'combatAbilityUsed',
+            combatId,
+            actorId: member.id,
+            abilityId: combatAbility.abilityId,
+            equipmentSlot: 'weapon',
+          }
+        : {
+            type: 'combatEffectActivated',
+            combatId,
+            actorId: member.id,
+            effectId: combatEffect.effectId,
+          },
+    ],
+  }
+}
+
+function soloEnd(resolution: 'escaped' | 'defeat'): PartyActionResponse {
+  const escaped = resolution === 'escaped'
+  const result = {
+    ...victory,
+    resolution,
+    cause: escaped ? 'escapeSucceeded' : 'playerDown',
+    playerDown: !escaped,
+    peakDelta: escaped ? -2 : 0,
+  } satisfies NonNullable<Party['lastCombatResult']>
+  return {
+    ...soloActive,
+    combat: null,
+    lastCombatResult: result,
+    members: [
+      {
+        ...member,
+        player: {
+          ...soloActive.members[0]!.player,
+          down: !escaped,
+          health: escaped ? soloActive.members[0]!.player.health : 0,
+          vigor:
+            soloActive.members[0]!.player.vigor -
+            (escaped ? soloCombat.escape.vigorCost : 0),
+          availableActions: escaped ? ['endTurn'] : [],
+        },
+      },
+    ],
+    combatUpdates: [
+      escaped
+        ? {
+            type: 'combatEscapeAttempted',
+            combatId,
+            actorId: member.id,
+            naturalRoll: 1,
+            total: 1,
+            threshold: 0,
+            vigorSpent: soloCombat.escape.vigorCost,
+            succeeded: true,
+          }
+        : {
+            type: 'combatDamageResolved',
+            combatId,
+            actorId: enemyId,
+            targetId: member.id,
+            source: 'attack',
+            hit: true,
+            damage: soloActive.members[0]!.player.health,
+            reflectedDamage: 0,
+            targetHealth: 0,
+            actorHealth: 8,
+          },
+      { type: 'combatEnded', combatId, result },
+    ],
+  }
+}
+
+const preparePlayer: Party['members'][number]['player'] = {
+  ...player,
+  equipment: { ...player.equipment, weapon },
+  inventory: [{ cardId: ore, quantity: 2 }],
+  availableActions: ['prepare', 'endTurn'],
+  usableAbilities: [
+    {
+      equipmentSlot: 'weapon',
+      abilityId: 'focus',
+      targetIds: [],
+      vigorCost: 0,
+      paymentCosts: [
+        { type: 'automatic', costIndex: 0, text: 'Custo autom?tico' },
+        {
+          type: 'handCards',
+          costIndex: 1,
+          text: 'Descarte uma carta',
+          count: 1,
+          eligibleCopyIds: ['h1'],
+        },
+        {
+          type: 'equipmentSlots',
+          costIndex: 2,
+          text: 'Entregue o equipamento',
+          count: 1,
+          eligibleSlots: ['weapon'],
+        },
+        {
+          type: 'resources',
+          costIndex: 3,
+          text: 'Primeiro min?rio',
+          count: 1,
+          eligibleResources: [{ cardId: ore, maxCopies: 2 }],
+        },
+        {
+          type: 'resources',
+          costIndex: 4,
+          text: 'Segundo min?rio',
+          count: 1,
+          eligibleResources: [{ cardId: ore, maxCopies: 2 }],
+        },
+      ],
+    },
+  ],
+}
+const prepareParty: Party = {
+  ...snapshot('party-combat-prepare', null, []),
+  randomEventEncounter: null,
+  members: [{ ...member, player: preparePlayer }],
+}
+const prepared: PartyActionResponse = {
+  ...prepareParty,
+  members: [
+    {
+      ...member,
+      player: {
+        ...preparePlayer,
+        equipment: { ...preparePlayer.equipment, weapon: null },
+        inventory: [],
+        hand: preparePlayer.hand.slice(1),
+        handCopies: preparePlayer.handCopies.filter(
+          ({ copyId }) => copyId !== 'h1',
+        ),
+        availableActions: ['endTurn'],
+        usableAbilities: [],
+      },
+    },
+  ],
+  combatUpdates: [],
+}
+
+const soloResponses = {
+  'combatAttack:wolf-1': fatalReflection,
+  'resolveReward:combat-reward:leave': rewardLeft,
+  escapeCombat: soloEnd('escaped'),
+  endCombatTurn: soloEnd('defeat'),
+  useAbility: soloAfterOption('useAbility'),
+  activateCombatEffect: soloAfterOption('activateCombatEffect'),
+}
+
 const scenarios: ReadonlyMap<unknown, Scenario> = new Map<unknown, Scenario>([
+  [
+    'party-combat-solo',
+    {
+      party: { ...reveal, id: 'party-combat-solo' },
+      actions: { ...soloResponses, 'revealEvent:e1': soloActive },
+    },
+  ],
+  [
+    'party-combat-immediate',
+    {
+      party: { ...reveal, id: 'party-combat-immediate' },
+      actions: {
+        'revealEvent:e1': {
+          ...fatalReflection,
+          combatUpdates: [
+            ...soloActive.combatUpdates!,
+            ...fatalReflection.combatUpdates!,
+          ],
+        },
+      },
+    },
+  ],
+  [
+    'party-combat-active',
+    {
+      party: { ...soloSnapshot, id: 'party-combat-active' },
+      actions: soloResponses,
+    },
+  ],
+  [
+    prepareParty.id,
+    { party: prepareParty, actions: { 'prepare:useAbility': prepared } },
+  ],
   [
     reveal.id,
     {

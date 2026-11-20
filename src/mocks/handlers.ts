@@ -253,6 +253,66 @@ async function partyActionScenario(
     if (choice) return deny('choicePending')
     const activeCombat = combat.party.combat
     let key = type + ':' + field(body, 'encounterId')
+
+    if (type === 'prepare' && field(body, 'operation') === 'useAbility') {
+      const option = combat.party.members[0]?.player.usableAbilities?.[0]
+      if (
+        !option ||
+        field(body, 'abilityId') !== option.abilityId ||
+        field(body, 'equipmentSlot') !== option.equipmentSlot
+      )
+        return deny('combatAbilityUnavailable')
+      const payment = field(body, 'payment')
+      const expected = {
+        handCards: ['h1'],
+        equipmentSlots: ['weapon'],
+        resources: [{ cardId: 'fixture.iron-ore', copies: 2 }],
+      }
+      if (
+        field(body, 'targetId') !== undefined ||
+        Object.entries(expected).some(
+          ([key, value]) =>
+            JSON.stringify(field(payment, key)) !== JSON.stringify(value),
+        )
+      )
+        return deny('paymentInvalid')
+      key = 'prepare:useAbility'
+    }
+    if (
+      type === 'useAbility' ||
+      type === 'activateCombatEffect' ||
+      type === 'escapeCombat' ||
+      type === 'endCombatTurn'
+    ) {
+      if (!activeCombat || activeCombat.id !== field(body, 'combatId'))
+        return deny('staleCombat')
+      if (activeCombat.turn.id !== field(body, 'turnId'))
+        return deny('staleCombatTurn')
+      if (!combat.party.members[0]?.player.availableActions.includes(type))
+        return deny('wrongCombatPhase')
+      const target = field(body, 'targetId')
+      if (type === 'useAbility') {
+        const option = activeCombat.abilities.find(
+          ({ abilityId, equipmentSlot }) =>
+            abilityId === field(body, 'abilityId') &&
+            equipmentSlot === field(body, 'equipmentSlot'),
+        )
+        if (!option) return deny('combatAbilityUnavailable')
+        if (typeof target !== 'string' || !option.targetIds.includes(target))
+          return deny('combatTargetUnavailable')
+      }
+      if (type === 'activateCombatEffect') {
+        if (
+          !activeCombat.effects.some(
+            ({ effectId }) => effectId === field(body, 'effectId'),
+          )
+        )
+          return deny('wrongCombatPhase')
+        if (target !== undefined) return deny('combatTargetUnavailable')
+      }
+      if (field(body, 'payment') !== undefined) return deny('paymentInvalid')
+      key = type
+    }
     if (type === 'combatAttack') {
       const combatId = field(body, 'combatId')
       const turnId = field(body, 'turnId')

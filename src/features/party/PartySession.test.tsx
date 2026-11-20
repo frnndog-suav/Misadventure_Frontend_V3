@@ -23,6 +23,7 @@ import type { Party } from '../../api/parties'
 import App from '../../App'
 import { partyEffectsReadyFixture } from '../../mocks/effectFixtures'
 import { internalErrorFixture } from '../../mocks/fixtures'
+import { resetCombatScenarios } from '../../mocks/combatFixtures'
 import { handlers } from '../../mocks/handlers'
 import {
   eventMinimumNotMetFixture,
@@ -56,6 +57,7 @@ beforeAll(() => {
   server.listen({ onUnhandledFrame: 'error' })
 })
 afterEach(() => {
+  resetCombatScenarios()
   server.resetHandlers()
   server.events.removeAllListeners()
 })
@@ -74,8 +76,8 @@ beforeEach(() => {
 
 const partyId = partyCreatedFixture.id
 
-function renderParty(id: string = partyId): void {
-  render(
+function renderParty(id: string = partyId) {
+  return render(
     <QueryClientProvider client={queryClient}>
       <MemoryRouter initialEntries={[`/grupo/${id}`]}>
         <App />
@@ -3038,5 +3040,161 @@ describe('REQ-52: Usar cofre', () => {
       ),
     )
     expect(opTexts()).toEqual(['1. Guardar 1 de ouro'])
+  })
+})
+describe('REQ-61: combate solo', () => {
+  const combatLog = () =>
+    screen.getByRole('list', { name: 'Transições de combate' })
+  it('revela, exibe o lote em ordem, ataca e restaura a recompensa após Reflexão fatal', async () => {
+    const id = 'party-combat-solo'
+    const first = renderParty(id)
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Revelar carta' }),
+    )
+    const combat = await screen.findByRole('region', { name: 'Lobo Cinzento' })
+    expect(within(combat).getByText(/Preparar/)).toBeInTheDocument()
+    expect(endButton()).toBeDisabled()
+    const log = screen.getByRole('list', { name: 'Transições de combate' })
+    expect(
+      within(log)
+        .getAllByRole('listitem')
+        .map((item) => item.textContent),
+    ).toEqual([
+      expect.stringContaining('Combate iniciado'),
+      expect.stringContaining('Turno de'),
+    ])
+    fireEvent.click(within(combat).getByRole('button', { name: /Atacar/ }))
+    expect(await screen.findByText(/Vitória.*caído/)).toBeInTheDocument()
+    first.unmount()
+    renderParty(id)
+    expect(await screen.findByText(/Vitória.*caído/)).toBeInTheDocument()
+    expect(
+      screen.queryByRole('list', { name: 'Transições de combate' }),
+    ).not.toBeInTheDocument()
+    const reward = await screen.findByRole('region', {
+      name: 'Recompensa pendente',
+    })
+    fireEvent.click(within(reward).getByRole('button', { name: 'Deixar' }))
+    await waitFor(() => expect(reward).not.toBeInTheDocument())
+  })
+
+  it('identifica os participantes quando o combate termina na própria revelação', async () => {
+    renderParty('party-combat-immediate')
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Revelar carta' }),
+    )
+    expect(await screen.findByText(/Vitória.*caído/)).toBeInTheDocument()
+    expect(
+      within(combatLog())
+        .getAllByRole('listitem')
+        .map((item) => item.textContent),
+    ).toEqual([
+      expect.stringContaining('Combate iniciado'),
+      expect.stringContaining('Turno de Lia'),
+      expect.stringContaining('Lia → Lobo Cinzento'),
+      expect.stringContaining('Combate encerrado'),
+    ])
+  })
+
+  it('restaura um combate em andamento sem repetir o lote anterior', async () => {
+    const id = 'party-combat-active'
+    const { unmount } = renderParty(id)
+    const ability = await screen.findByRole('button', {
+      name: 'Usar habilidade',
+    })
+    fireEvent.click(ability)
+    expect(await screen.findByText(/usou strike/)).toBeInTheDocument()
+    unmount()
+    renderParty(id)
+    const combat = await screen.findByRole('region', { name: 'Lobo Cinzento' })
+    expect(
+      within(combat).getByText(/Turno de Lia.*Preparar/),
+    ).toBeInTheDocument()
+    expect(
+      within(combat).queryByRole('button', { name: 'Usar habilidade' }),
+    ).not.toBeInTheDocument()
+    expect(within(combat).getByRole('button', { name: /Atacar/ })).toBeEnabled()
+    expect(
+      screen.queryByRole('list', { name: 'Transições de combate' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('envia os custos manuais agregados de uma habilidade em Preparar com 0 PA', async () => {
+    renderParty('party-combat-prepare')
+    const ability = await screen.findByRole('group', {
+      name: /Preparar habilidade/,
+    })
+    const use = within(ability).getByRole('button', { name: 'Usar habilidade' })
+    expect(use).toBeDisabled()
+    for (const quantity of within(ability).getAllByRole('spinbutton')) {
+      fireEvent.change(quantity, { target: { value: '1' } })
+    }
+    fireEvent.click(within(ability).getByRole('checkbox', { name: /h1/ }))
+    fireEvent.click(within(ability).getByRole('checkbox', { name: /weapon/ }))
+    fireEvent.click(use)
+    expect(await screen.findByText('Habilidade usada.')).toBeInTheDocument()
+  })
+
+  it.each([
+    ['Fugir', 'Fuga'],
+    ['Encerrar turno de combate', 'Derrota'],
+  ])('mostra o desfecho ao escolher %s', async (name, result) => {
+    renderParty('party-combat-active')
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: name === 'Fugir' ? /Fugir/ : name,
+      }),
+    )
+    expect(
+      await screen.findByText(new RegExp(result + ' ·')),
+    ).toBeInTheDocument()
+  })
+
+  it.each([
+    ['Usar habilidade', /usou strike/],
+    ['Ativar efeito', /ativou focus/],
+  ])('envia os IDs projetados ao escolher %s', async (button, message) => {
+    renderParty('party-combat-active')
+    const action = await screen.findByRole('button', { name: button })
+    const combat = screen.getByRole('region', { name: 'Lobo Cinzento' })
+    expect(within(combat).getByRole('combobox', { name: 'Alvo' })).toHaveValue(
+      'wolf-1',
+    )
+    fireEvent.click(action)
+    expect(await screen.findByText(message)).toBeInTheDocument()
+    expect(
+      within(combat).queryByRole('button', { name: button }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('preserva o turno e o lote confirmado se o POST recusar a ação', async () => {
+    renderParty('party-combat-solo')
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Revelar carta' }),
+    )
+    const attack = await screen.findByRole('button', { name: /Atacar Lobo/ })
+    server.use(
+      http.post(
+        '*/parties/party-combat-solo/actions',
+        () =>
+          HttpResponse.json(
+            {
+              error: {
+                code: 'ACTION_NOT_ALLOWED',
+                message: 'Ação recusada.',
+                details: { reason: 'combatTargetUnavailable' },
+              },
+            },
+            { status: 409 },
+          ),
+        { once: true },
+      ),
+    )
+    fireEvent.click(attack)
+    await waitFor(() => expect(status()).toHaveTextContent('Ação recusada.'))
+    expect(attack).toBeEnabled()
+    expect(combatLog()).toHaveTextContent('Combate iniciado')
+    fireEvent.click(attack)
+    expect(await screen.findByText(/Vitória.*caído/)).toBeInTheDocument()
   })
 })

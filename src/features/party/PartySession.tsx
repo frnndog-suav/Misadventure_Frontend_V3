@@ -9,6 +9,7 @@ import {
   type ClassDefinition,
   type EquipmentSlot,
 } from '../../api/catalog'
+import { combatActionTypes } from '../../api/combat'
 import { ApiError } from '../../api/http'
 import {
   ActionNotAllowedError,
@@ -18,6 +19,7 @@ import {
   useStartSession,
   type CardCopies,
   type Party,
+  type PartyActionResponse,
   type PartyMember,
   type PartyStatus,
   type RecoverAction,
@@ -36,8 +38,24 @@ import { EffectsPanel, type ActivateEffect } from './EffectsPanel'
 import { nameOf } from './cardNames'
 import { RandomEventPanel } from './RandomEventPanel'
 import { RewardChoice } from './RewardChoice'
+import { CombatPanel, CombatReport, PrepareAbilities } from './CombatPanel'
 
 type Cards = ReadonlyMap<string, Card>
+
+function combatantNames(combat: Party['combat'], members: Party['members']) {
+  const names = new Map(
+    members.map(({ id, characterName }) => [id, characterName]),
+  )
+  for (const enemy of combat?.enemies ?? []) {
+    const block = combat?.card.enemies[enemy.blockIndex]
+    if (block)
+      names.set(
+        enemy.id,
+        block.count > 1 ? `${block.name} ${enemy.copyIndex + 1}` : block.name,
+      )
+  }
+  return names
+}
 
 function eventReceiptCardIds(
   payments: NonNullable<Party['randomEventEncounter']>['payments'],
@@ -1122,27 +1140,31 @@ function PreparedMatch({
     <>
       <p>Dimensão: {nameOf(cards, party.dimension.dimensionCardId)}</p>
       <p>Cidade inicial: {nameOf(cards, party.dimension.startingCityZoneId)}</p>
-      <TurnState
-        party={party}
-        cards={cards}
-        onEndTurn={onEndTurn}
-        onRecover={onRecover}
-        onAdjust={() => setAdjusting(true)}
-        onScavenge={onScavenge}
-        onVault={() => setVaulting(true)}
-        adjusting={adjusting}
-        vaulting={vaulting}
-        pending={moving}
-      />
-      <RandomEventPanel
-        party={party}
-        host={host}
-        cards={cards}
-        pending={moving}
-        onAction={onEvent}
-        error={eventError}
-      />
-      {adjusting && host !== undefined && (
+      {!party.combat && (
+        <TurnState
+          party={party}
+          cards={cards}
+          onEndTurn={onEndTurn}
+          onRecover={onRecover}
+          onAdjust={() => setAdjusting(true)}
+          onScavenge={onScavenge}
+          onVault={() => setVaulting(true)}
+          adjusting={adjusting}
+          vaulting={vaulting}
+          pending={moving}
+        />
+      )}
+      {!party.combat && (
+        <RandomEventPanel
+          party={party}
+          host={host}
+          cards={cards}
+          pending={moving}
+          onAction={onEvent}
+          error={eventError}
+        />
+      )}
+      {!party.combat && adjusting && host !== undefined && (
         <AdjustDeck
           player={host.player}
           cards={cards}
@@ -1152,7 +1174,7 @@ function PreparedMatch({
           error={adjustError}
         />
       )}
-      {vaulting && host !== undefined && (
+      {!party.combat && vaulting && host !== undefined && (
         <UseVault
           player={host.player}
           cards={cards}
@@ -1161,13 +1183,15 @@ function PreparedMatch({
           pending={moving}
         />
       )}
-      <PartyMap
-        party={party}
-        cards={cards}
-        titleOf={(cardId) => nameOf(cards, cardId)}
-        onMove={onMove}
-        moving={moving}
-      />
+      {!party.combat && (
+        <PartyMap
+          party={party}
+          cards={cards}
+          titleOf={(cardId) => nameOf(cards, cardId)}
+          onMove={onMove}
+          moving={moving}
+        />
+      )}
       <h2 id="turn-order-title">Ordem dos jogadores</h2>
       <ul aria-labelledby="turn-order-title">
         {party.turnOrder.map((id) => (
@@ -1181,7 +1205,9 @@ function PreparedMatch({
           classes={classes}
           cards={cards}
           prepare={
-            member.isHost && member.player.availableActions.includes('prepare')
+            !party.combat &&
+            member.isHost &&
+            member.player.availableActions.includes('prepare')
               ? {
                   ...(party.randomEventEncounter === null && {
                     onEquip,
@@ -1223,6 +1249,8 @@ export function PartySession() {
   const action = usePartyAction(partyId)
   const { mutate: startSession } = start
   const reloadChoice =
+    start.data?.combat != null ||
+    start.data?.lastCombatResult != null ||
     start.data?.randomEventEncounter != null ||
     (start.data?.pendingRewards.length ?? 0) > 0
   const restoredParty = useParty(start.isSuccess ? partyId : null, reloadChoice)
@@ -1240,16 +1268,21 @@ export function PartySession() {
   // O `200` da ação já traz o `Party` gravado (D-55 item 4); erro não muda a tela:
   // um novo pedido zera `action.data`, então o último `Party` devolvido fica
   // guardado (sem ele, uma recusa depois de um sucesso voltaria ao da abertura).
-  const [lastActionParty, setLastActionParty] = useState<Party>()
-  if (action.data !== undefined && action.data !== lastActionParty) {
-    setLastActionParty(action.data)
-  }
+  const [confirmed, setConfirmed] = useState<{
+    party: Party
+    response?: PartyActionResponse
+    combatNames?: ReadonlyMap<string, string>
+  }>()
   const initialParty = reloadChoice
     ? restoredParty.isFetchedAfterMount
       ? restoredParty.data
       : undefined
     : start.data
-  const party = lastActionParty ?? initialParty
+  const party = confirmed?.party ?? initialParty
+  const combatNames = combatantNames(party?.combat, party?.members ?? [])
+  if (action.data !== undefined && action.data !== confirmed?.response) {
+    setConfirmed({ party: action.data, response: action.data, combatNames })
+  }
   const classes = useClasses()
   const cards = useCatalogCards(party === undefined ? [] : cardIdsOf(party))
   const host = party?.members.find((m) => m.isHost)
@@ -1274,7 +1307,8 @@ export function PartySession() {
         setExpiredDeadline(deadlineKey)
         void refetch().then(({ data, error }) => {
           setRewardRefreshError(error)
-          if (!error && data) setLastActionParty(data)
+          if (!error && data)
+            setConfirmed((current) => ({ ...current, party: data }))
         })
       },
       Math.max(0, Date.parse(deadline) - Date.now()),
@@ -1304,14 +1338,17 @@ export function PartySession() {
     action.variables &&
     randomEventActionTypes.some((type) => type === action.variables.type)
 
+  const combatAction = combatActionTypes.some(
+    (type) => type === action.variables?.type,
+  )
+
   let status = ''
   if (end.isError) status = errorText(end.error)
   else if (action.isError && !adjustFailed && !vaultFailed) {
     if (action.variables.type === 'prepare') {
-      status =
-        action.variables.operation === 'activate'
-          ? errorText(action.error)
-          : refusalText(action.error, preparedName)
+      status = ['activate', 'useAbility'].includes(action.variables.operation)
+        ? errorText(action.error)
+        : refusalText(action.error, preparedName)
     } else if (
       action.variables.type === 'scavenge' &&
       action.error instanceof ActionNotAllowedError &&
@@ -1345,7 +1382,9 @@ export function PartySession() {
           ? `Equipou ${preparedName}.`
           : action.variables.operation === 'unequip'
             ? `Guardou ${preparedName}.`
-            : 'Efeito ativado.'
+            : action.variables.operation === 'useAbility'
+              ? 'Habilidade usada.'
+              : 'Efeito ativado.'
     } else if (action.variables.type === 'adjustDeck') {
       status = `Build salva: ${host.player.buildSize} cartas.`
     } else if (action.variables.type === 'endTurn') {
@@ -1354,7 +1393,7 @@ export function PartySession() {
     } else if (action.variables.type === 'recover') {
       const { health, maxHealth, vigor } = host.player
       status = `Recuperou: vida ${health}/${maxHealth}, Vigor ${vigor}.`
-    } else if (!eventAction) {
+    } else if (!eventAction && !combatAction) {
       status = `Você está em ${nameOf(cards.cards, host.player.zoneId)}.`
     }
   } else if (start.isError) status = errorText(start.error)
@@ -1392,10 +1431,37 @@ export function PartySession() {
           <button
             type="button"
             onClick={endSession}
-            disabled={end.isPending || action.isPending}
+            disabled={end.isPending || action.isPending || !!party.combat}
           >
             Encerrar sessão
           </button>
+          {party.combat && (
+            <CombatPanel
+              combat={party.combat}
+              host={host}
+              cards={cards.cards}
+              names={combatNames}
+              pending={action.isPending || end.isPending}
+              onAction={(intent) => action.mutate(intent)}
+            />
+          )}
+          <CombatReport
+            result={party.lastCombatResult}
+            updates={confirmed?.response?.combatUpdates}
+            names={
+              party.combat
+                ? combatNames
+                : (confirmed?.combatNames ?? combatNames)
+            }
+          />
+          {!party.combat && host && (
+            <PrepareAbilities
+              host={host}
+              cards={cards.cards}
+              pending={action.isPending || end.isPending}
+              onAction={(intent) => action.mutate(intent)}
+            />
+          )}
           <PreparedMatch
             party={party}
             classes={classes.data ?? []}

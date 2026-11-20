@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.77 · **Data:** 2026-11-20
+> **Versão da spec:** 0.78 · **Data:** 2026-11-20
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -810,7 +810,7 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 
 - [x] **T-63 — Cliente e fixtures MSW** (REQ-60 a REQ-62). Contrato de catálogo, laboratório, combate, escolhas e recusas.
 - [x] **T-64 — Catálogo, editor e laboratório** (REQ-60).
-- [ ] **T-65 — Tela, ações, pagamentos e desfechos de combate** (REQ-61).
+- [x] **T-65 — Tela, ações, pagamentos e desfechos de combate** (REQ-61).
 - [ ] **T-66 — Escolha de efeitos disparados** (REQ-62). Exercitar os quatro cenários acordados com MSW.
 - [ ] **T-67 — Validação integrada.** Repetir os cenários da FEAT-13 com MSW desligado após a entrega do backend, com URL e dados de teste.
 
@@ -895,3 +895,4 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 | 0.75 | 2026-11-20 | T-62 concluída. FEAT-12 validada contra a API real com MSW desligado. |
 | 0.76 | 2026-11-20 | Autor aprovou REQ-60 a REQ-62 e T-63 a T-67 da FEAT-13, conforme CONTRATO v0.64. T-63 concluída com cliente e fixtures MSW. |
 | 0.77 | 2026-11-20 | T-64 concluída com MSW: catálogo, editor e laboratório de combate (REQ-60). |
+| 0.78 | 2026-11-20 | T-65 concluída com MSW: tela, ações, pagamentos e desfechos de combate solo (REQ-61). |
