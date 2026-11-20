@@ -1,6 +1,6 @@
 # Misadventures — Roadmap de desenvolvimento
 
-> **Versão:** 0.54 · **Data:** 2026-11-19
+> **Versão:** 0.55 · **Data:** 2026-11-20
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend; o autor copia o arquivo inteiro quando ele muda. Base: README Parte III (III.2 e III.4). As regras estão em [`README.md`](README.md); o que trafega entre os lados, em [`CONTRATO.md`](CONTRATO.md).
 
@@ -63,7 +63,7 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | FEAT-09 | Deck de atributos: mão, Recuperar, Ajustar deck, build e trava | 4, 8.2, 12.5 | validado | validado |
 | FEAT-10 | Inventário, equipar e bolsa: inventário e empilhamento, Preparar (trocar equipamentos), modificadores com equipamentos, bolsa de ouro; doação do laboratório para montar o estado | 5, 6.1, 6.2, 9.1, 12.2 | validado | validado |
 | FEAT-32 | Cofre e Vasculhar: Usar cofre (slots, slots de decks, ouro, Descartar), limbo, deck de recompensas na Carta de Dimensão, Vasculhar | 3.4, 6.4, 6.5, 12.6 | validado | validado |
-| FEAT-11 | Efeitos e status: exibição de efeitos, buffs e debuffs; catálogo de variações de efeitos validado pelo autor (BE/design) | 13, III.3 | pronto | a fazer |
+| FEAT-11 | Efeitos e status: exibição de efeitos, buffs e debuffs; catálogo de variações de efeitos validado pelo autor (BE/design) | 13, III.3 | pronto | pronto |
 | FEAT-12 | Eventos aleatórios: fases, pagamento por partes, desistência, reposição, fuga | 14, 15 | a fazer | a fazer |
 | FEAT-13 | Combate 1 jogador × 1 ou mais inimigos: inimigos e IA deles, habilidades, elementos, cálculo de dano | 16, 17, 18, 19.1 a 19.4, 19.6 | a fazer | a fazer |
 | FEAT-14 | Nocaute, spawn, respawn e Salvar ponto de respawn (inclui o nocaute no jogo solo) | 20, 12.2 | a fazer | a fazer |
@@ -167,3 +167,4 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | 0.52 | 2026-11-18 | FEAT-32: coluna FE `pronto` (T-49 a T-53 concluídas com MSW); falta validar contra o backend real (`/retorno-backend`). |
 | 0.53 | 2026-11-18 | FEAT-32 `validado` nas duas colunas (CONTRATO v0.48): cenários com chamadas HTTP e as telas contra o backend real, com conteúdo temporário desfeito no fim. |
 | 0.54 | 2026-11-19 | FEAT-11: coluna BE `pronto` (CONTRATO v0.52, `implementado (BE)`). Falta a validação do frontend contra o backend real. |
+| 0.55 | 2026-11-20 | FEAT-11: coluna FE `pronto` com MSW. A T-56 completa a ativação e a exibição de status na partida. A T-57 valida os cenários com o backend real. |

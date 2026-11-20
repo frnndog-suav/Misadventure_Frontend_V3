@@ -27,6 +27,8 @@ import { categoryCatalog } from '../../ui/categories'
 import { formatSavedAt } from '../../ui/formatSavedAt'
 import { Term } from '../../ui/Term'
 import { PartyMap } from './PartyMap'
+import { EffectsPanel, type ActivateEffect } from './EffectsPanel'
+import { nameOf } from './cardNames'
 
 type Cards = ReadonlyMap<string, Card>
 
@@ -43,6 +45,8 @@ function cardIdsOf(party: Party): string[] {
       ...player.build.map(({ cardId }) => cardId),
       ...player.tcgFolder.map(({ cardId }) => cardId),
       ...player.inventory.map(({ cardId }) => cardId),
+      ...player.statuses.map(({ sourceCardId }) => sourceCardId),
+      ...player.activatableEffects.map(({ cardId }) => cardId),
       ...Object.values(player.equipment).filter((id) => id !== null),
       ...player.vault.slots.map(({ cardId }) => cardId),
       ...player.vault.decks.flat().map(({ cardId }) => cardId),
@@ -52,17 +56,11 @@ function cardIdsOf(party: Party): string[] {
   ]
 }
 
-/** Nome exibido de uma carta (zonas e eventos usam `title`); "…" até chegar. */
-function nameOf(cards: Cards, cardId: string): string {
-  const card = cards.get(cardId)
-  if (card === undefined) return '…'
-  return 'name' in card ? card.name : card.title
-}
-
 /** "Equipar"/"Guardar" do host com `prepare` (REQ-45); `null` nos outros casos. */
 type PrepareControls = {
   onEquip: (cardId: string) => void
   onUnequip: (slot: EquipmentSlot, cardId: string) => void
+  onActivate: ActivateEffect
   pending: boolean
 }
 
@@ -120,6 +118,12 @@ function MemberState({
           </li>
         ))}
       </ul>
+      <EffectsPanel
+        player={player}
+        cards={cards}
+        pending={prepare?.pending ?? false}
+        onActivate={prepare?.onActivate}
+      />
       <p>Zona atual: {nameOf(cards, player.zoneId)}</p>
       <p>Ponto de respawn: {nameOf(cards, player.respawnZoneId)}</p>
       <p>Deck de atributos: {player.attributeDeckCount} cartas</p>
@@ -378,6 +382,7 @@ function AdjustDeck({
                 id={fieldId}
                 type="number"
                 min={0}
+                disabled={pending}
                 value={draft[cardId] ?? ''}
                 onChange={(e) =>
                   setDraft({ ...draft, [cardId]: e.target.value })
@@ -567,7 +572,7 @@ function CardOperationForm({
     onAdd(cardId, Number(quantity))
   }
   return (
-    <fieldset>
+    <fieldset disabled={pending}>
       <legend>{legend}</legend>
       <label htmlFor={selectId}>Carta</label>
       <select
@@ -616,7 +621,7 @@ function GoldForm({
     onAdd({ operation, amount: Number(amount) })
   }
   return (
-    <fieldset>
+    <fieldset disabled={pending}>
       <legend>Ouro</legend>
       <NumberField
         label="Quantidade de ouro"
@@ -670,7 +675,7 @@ function CopiesForm({
     )
   }
   return (
-    <fieldset>
+    <fieldset disabled={pending}>
       <legend>{legend}</legend>
       {rows.map((cardId) => (
         <div key={cardId}>
@@ -1002,6 +1007,7 @@ function PreparedMatch({
   onUseVault,
   onEquip,
   onUnequip,
+  onActivate,
   adjustError,
   adjusting,
   setAdjusting,
@@ -1023,6 +1029,7 @@ function PreparedMatch({
   ) => void
   onEquip: PrepareControls['onEquip']
   onUnequip: PrepareControls['onUnequip']
+  onActivate: ActivateEffect
   adjustError: string
   adjusting: boolean
   setAdjusting: (open: boolean) => void
@@ -1088,7 +1095,7 @@ function PreparedMatch({
           cards={cards}
           prepare={
             member.isHost && member.player.availableActions.includes('prepare')
-              ? { onEquip, onUnequip, pending: moving }
+              ? { onEquip, onUnequip, onActivate, pending: moving }
               : null
           }
         />
@@ -1158,7 +1165,10 @@ export function PartySession() {
   if (end.isError) status = errorText(end.error)
   else if (action.isError && !adjustFailed && !vaultFailed) {
     if (action.variables.type === 'prepare') {
-      status = refusalText(action.error, preparedName)
+      status =
+        action.variables.operation === 'activate'
+          ? errorText(action.error)
+          : refusalText(action.error, preparedName)
     } else if (
       action.variables.type === 'scavenge' &&
       action.error instanceof ActionNotAllowedError &&
@@ -1184,7 +1194,9 @@ export function PartySession() {
       status =
         action.variables.operation === 'equip'
           ? `Equipou ${preparedName}.`
-          : `Guardou ${preparedName}.`
+          : action.variables.operation === 'unequip'
+            ? `Guardou ${preparedName}.`
+            : 'Efeito ativado.'
     } else if (action.variables.type === 'adjustDeck') {
       status = `Build salva: ${host.player.buildSize} cartas.`
     } else if (action.variables.type === 'endTurn') {
@@ -1222,7 +1234,11 @@ export function PartySession() {
           </ul>
           <p>{statusLabel[party.status]}</p>
           <p>Salvo em {formatSavedAt(party.savedAt)}</p>
-          <button type="button" onClick={endSession} disabled={end.isPending}>
+          <button
+            type="button"
+            onClick={endSession}
+            disabled={end.isPending || action.isPending}
+          >
             Encerrar sessão
           </button>
           <PreparedMatch
@@ -1253,6 +1269,9 @@ export function PartySession() {
               setPreparedCardId(cardId)
               action.mutate({ type: 'prepare', operation: 'unequip', slot })
             }}
+            onActivate={(activation, onSuccess) =>
+              action.mutate(activation, { onSuccess })
+            }
             adjustError={
               adjustFailed
                 ? refusalText(
@@ -1270,7 +1289,7 @@ export function PartySession() {
             setAdjusting={setAdjusting}
             vaulting={vaulting}
             setVaulting={setVaulting}
-            moving={action.isPending}
+            moving={action.isPending || end.isPending}
           />
         </>
       )}

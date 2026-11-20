@@ -6,6 +6,7 @@ const member = partyInSessionFixture.members[0]!
 
 export const partyEffectsReadyFixture: Party = {
   ...partyInSessionFixture,
+  id: 'party-com-efeitos',
   turn: { ...partyInSessionFixture.turn, actionPoints: 0 },
   members: [
     {

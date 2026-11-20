@@ -1,5 +1,6 @@
 import { http, HttpResponse, type RequestHandler } from 'msw'
 import {
+  partyEffectsReadyFixture,
   partyPotionActivatedFixture,
   partyTonicActivatedFixture,
 } from './effectFixtures'
@@ -398,7 +399,8 @@ function knownParty(
   return partyId === partyCreatedFixture.id ||
     partyId === partyNoPointsFixture.id ||
     partyId === partyGearInSessionFixture.id ||
-    partyId === partyFishingRodInSessionFixture.id
+    partyId === partyFishingRodInSessionFixture.id ||
+    partyId === partyEffectsReadyFixture.id
     ? ok()
     : HttpResponse.json(partyNotFoundFixture, { status: 404 })
 }
@@ -741,6 +743,7 @@ export const handlers: RequestHandler[] = [
           partyNoPointsFixture,
           partyGearInSessionFixture,
           partyFishingRodInSessionFixture,
+          partyEffectsReadyFixture,
         ].find((party) => party.id === params.partyId) ?? partyCreatedFixture,
       ),
     ),
@@ -752,6 +755,7 @@ export const handlers: RequestHandler[] = [
           partyNoPointsFixture,
           partyGearInSessionFixture,
           partyFishingRodInSessionFixture,
+          partyEffectsReadyFixture,
         ].find((party) => party.id === params.partyId) ?? partyInSessionFixture,
       ),
     ),

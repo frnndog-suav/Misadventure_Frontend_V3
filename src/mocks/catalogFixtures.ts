@@ -67,7 +67,7 @@ export const bladeOfDuskFixture: Card = {
 }
 
 /** Cópia exata do backend (coleção `fixture`, CONTRATO v0.12). */
-export const healingPotionFixture: Card = {
+export const healingPotionFixture: Extract<Card, { type: 'item' }> = {
   id: 'fixture.healing-potion',
   name: 'Poção de Cura',
   flavorText: null,

@@ -21,6 +21,7 @@ import {
 } from 'vitest'
 import type { Party } from '../../api/parties'
 import App from '../../App'
+import { partyEffectsReadyFixture } from '../../mocks/effectFixtures'
 import { internalErrorFixture } from '../../mocks/fixtures'
 import { handlers } from '../../mocks/handlers'
 import {
@@ -77,6 +78,90 @@ function renderParty(id: string = partyId): void {
 
 const status = () => screen.getAllByRole('status')[0]
 const endButton = () => screen.getByRole('button', { name: 'Encerrar sessão' })
+
+it('REQ-54: preserva estado e pagamento na recusa e limpa a escolha após sucesso', async () => {
+  const member = partyEffectsReadyFixture.members[0]!
+  const ready: Party = {
+    ...partyEffectsReadyFixture,
+    members: [
+      {
+        ...member,
+        player: {
+          ...member.player,
+          activatableEffects: [
+            {
+              ...member.player.activatableEffects[0]!,
+              handPayment: { count: 1, text: 'Escolha uma carta da mão.' },
+            },
+          ],
+        },
+      },
+    ],
+  }
+  const updated = {
+    ...ready,
+    members: [
+      {
+        ...ready.members[0]!,
+        player: { ...ready.members[0]!.player, health: 22, gold: 10 },
+      },
+    ],
+  }
+  let requests = 0
+  server.use(
+    http.post('*/parties/:partyId/session', () => HttpResponse.json(ready)),
+    http.post('*/parties/:partyId/actions', async ({ request }) => {
+      expect(await request.json()).toEqual({
+        type: 'prepare',
+        operation: 'activate',
+        cardId: 'fixture.healing-potion',
+        effectIndex: 0,
+        payment: { handCards: [member.player.hand[0]] },
+      })
+      requests += 1
+      if (requests === 1) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'ACTION_NOT_ALLOWED',
+              message: 'Pagamento recusado.',
+              details: { reason: 'paymentInvalid' },
+            },
+          },
+          { status: 409 },
+        )
+      }
+      if (requests === 2) return HttpResponse.json({})
+      return HttpResponse.json(updated)
+    }),
+  )
+  renderParty(ready.id)
+  const activate = await screen.findByRole('button', {
+    name: 'Ativar Poção de Cura — efeito 1',
+  })
+  const choice = within(
+    screen.getByRole('region', { name: 'Ativar efeitos' }),
+  ).getAllByRole('checkbox')[0]!
+  await waitFor(() => expect(choice).toHaveAccessibleName(/cópia 1/))
+  fireEvent.click(choice)
+  fireEvent.click(activate)
+  await waitFor(() => expect(status()).toHaveTextContent('Pagamento recusado.'))
+  expect(screen.getByText('Vida 17/22')).toBeInTheDocument()
+  expect(choice).toBeChecked()
+  fireEvent.click(activate)
+  await waitFor(() =>
+    expect(status()).toHaveTextContent(
+      'Servidor indisponível. Tente novamente.',
+    ),
+  )
+  expect(choice).toBeChecked()
+  fireEvent.click(activate)
+  await waitFor(() => expect(status()).toHaveTextContent('Efeito ativado.'))
+  expect(screen.getByText('Vida 22/22')).toBeInTheDocument()
+  expect(screen.getByText(/Ouro 10/)).toBeInTheDocument()
+  expect(choice).not.toBeChecked()
+  expect(activate).toBeDisabled()
+})
 
 describe('REQ-16: grupo em sessão', () => {
   it('REQ-16: ao abrir envia POST …/session e mostra "Abrindo o grupo…"', async () => {
