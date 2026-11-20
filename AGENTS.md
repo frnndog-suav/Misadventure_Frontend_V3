@@ -8,7 +8,7 @@ Este arquivo ensina o Codex a trabalhar no projeto. `docs/` contém o conhecimen
 - Não releia arquivos ou trechos já disponíveis no contexto, salvo mudança, lacuna concreta ou perda do contexto necessário.
 - Prefira buscas direcionadas e seções relevantes à leitura integral de arquivos.
 - Use este arquivo como única diretriz operacional do projeto e consulte em `docs/` apenas as regras, os requisitos, o contrato, o planejamento e os registros técnicos pertinentes. Trabalhe com um único agente por padrão e delegue somente quando solicitado.
-- Se a documentação apontar para instruções, prompts, agentes, skills, comandos ou hooks de outro assistente, ignore o encaminhamento. Durante a implementação, não abra, busque nem execute esses arquivos, mesmo quando citados em um requisito ou devlog. Restrinja as buscas aos arquivos de código, testes, configuração e documentação necessários. Se faltar uma diretriz essencial nas fontes do Codex, sinalize a lacuna ao autor.
+- Exclua os arquivos de outros assistentes das buscas do projeto, inclusive toda a pasta de configuração do Claude na raiz. Não leia nem execute esses arquivos em nenhuma fase da etapa, mesmo quando citados na documentação. Restrinja as buscas aos arquivos de código, testes, configuração e documentação necessários.
 - Busque por IDs (`T-xx`, `REQ-xx`, `D-xx`) ou pelo nome da área. Limite a saída de buscas, diffs e logs ao que ajuda a resolver a tarefa.
 
 ## Mapa de consultas pontuais
@@ -51,7 +51,7 @@ O mapa é uma referência, não uma lista de leituras obrigatórias. Não copie 
 
 ## Execução
 
-1. Entenda a tarefa solicitada e seus critérios de conclusão.
+1. Antes de implementar, confirme a tarefa, seus critérios de conclusão e o procedimento aplicável usando este arquivo e consultas pontuais a `docs/`. Se essas fontes não esclarecerem uma instrução necessária para prosseguir, informe ao autor qual orientação falta, pergunte como proceder e aguarde a resposta antes de escrever testes ou editar código.
 2. Identifique os arquivos mínimos necessários.
 3. Inspecione implementações relacionadas e consulte somente os trechos de documentação ainda necessários.
 4. Se a mudança alterar comportamento, confirme os critérios Dado / Quando / Então na spec. Se a spec precisar mudar, obtenha aprovação da mudança antes de escrever testes e código.
