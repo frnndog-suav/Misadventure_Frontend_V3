@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.62 · **Data:** 2026-11-20
+> **Versão do contrato:** 0.64 · **Data:** 2026-11-20
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -2549,6 +2549,59 @@ Ao terminar o combate, `combat` vira nulo e o resultado permanece disponível at
 
 **Recusas.** Reutiliza 400 `ACTION_INVALID` para payload malformado e 409 `ACTION_NOT_ALLOWED` para intenção incompatível com estado. Motivos novos: `combatInProgress`, `staleCombat`, `staleCombatTurn`, `wrongCombatPhase`, `combatTargetUnavailable`, `combatAbilityUnavailable`, `playerDown`. Reutiliza `choicePending`, `notEnoughVigor`, `paymentInvalid`, `escapeForbidden` e motivos de efeitos aplicáveis. Conferir sessão, combate e turno antes de janela, alvo e pagamento. Recusas preservam save, RNG e `savedAt`. O encerramento de sessão durante combate usa 409 `ACTION_NOT_ALLOWED` com `combatInProgress`.
 
+#### Escolha de efeitos disparados — `acordado`
+
+O contrato de combate solo v0.62 permanece acordado. Esta extensão cobre os efeitos do jogador em Preparar, na antecipação, no encontro aleatório antes do primeiro pagamento e em combate, inclusive durante a sequência de um inimigo.
+
+```ts
+type TriggeredEffectOrigin = CombatEffectOption['origin'] |
+  { type: 'equipmentAbility'; cardId: string; equipmentSlot: EquipmentSlot;
+    abilityId: string; effectIndex: number }
+
+type TriggeredEffectOption = {
+  effectId: string
+  origin: TriggeredEffectOrigin
+  text: string
+} & (
+  | { mode: 'automatic'; paymentCosts: [] }
+  | { mode: 'optional'; paymentCosts: CombatPaymentCost[]; canPay: boolean }
+)
+
+interface TriggeredEffectChoice {
+  choiceId: string
+  memberId: string
+  decisionDeadlineAt: string | null
+  effects: TriggeredEffectOption[]
+}
+
+interface Party {
+  // Demais campos seguem as seções anteriores.
+  triggeredEffectChoice: TriggeredEffectChoice | null
+}
+
+type ResolveTriggeredEffectAction = {
+  type: 'resolveTriggeredEffect'
+  choiceId: string
+  effectId: string
+} & (
+  | { decision: 'resolve' }
+  | { decision: 'decline' }
+  | { decision: 'pay'; payment?: EventPayment }
+)
+```
+
+- A ordem de grupos simultâneos segue README §13.5. O backend resolve dimensão, zona e evento/inimigos antes do grupo do jogador. Dentro do grupo de um jogador, efeitos automáticos e opcionais elegíveis entram juntos. A seleção determina qual resolve primeiro. Efeito automático escolhido usa `resolve` e é obrigatório. Se sobrar apenas um automático elegível, ele resolve em sequência. Um opcional sempre abre decisão, inclusive quando for o único. `canPay: false` oferece apenas recusa. Efeitos ainda pendentes têm a elegibilidade e os custos recalculados após cada resolução.
+- `Party.triggeredEffectChoice` é `null` fora dessa pausa. No solo, `decisionDeadlineAt` é `null`. Cada decisão aceita consome o `choiceId`. Se houver nova decisão, o backend emite outro ID e preserva o `effectId` das opções ainda pendentes. GET após recarga conserva a escolha corrente e os IDs. O snapshot contém a resolução confirmada até o ponto de pausa.
+- Enquanto houver escolha, `availableActions` contém apenas `resolveTriggeredEffect` para o dono, inclusive no turno inimigo, e está vazio para os demais. O POST existente aceita a ação do dono com o efeito da escolha corrente. `pay` usa as regras de lote de `EventPayment`. `resolve` e `decline` dispensam pagamento. `decline` pula o efeito. O POST retorna `200 PartyActionResponse` e inclui apenas os `combatUpdates` gerados pela decisão e pela continuação até a próxima pausa, turno jogável ou desfecho.
+- Validar grupo (404), forma (400 `ACTION_INVALID`) e sessão (409 `ACTION_NOT_ALLOWED`), nessa ordem. Incluir `payment` em `resolve` ou `decline` é erro de forma. Depois, em `resolveTriggeredEffect`, escolha ausente, vencida ou ID antigo retorna 409 `ACTION_NOT_ALLOWED` com `staleTriggeredEffectChoice`. Dono incorreto ou outra ação de jogo durante a pausa retorna `choicePending`. Efeito fora das opções ou decisão incompatível com o modo retorna `triggeredEffectUnavailable`. Lote ausente quando exigido, pagamento inexequível ou escolhas inválidas retornam `paymentInvalid`. Recusas preservam a escolha corrente, o save, `savedAt` e o RNG.
+
+| Cenário da escolha | Resultado esperado |
+| --- | --- |
+| Antecipação com uma passiva opcional que custa 1 ouro | O gatilho abre a escolha. Recusar preserva o ouro. Pagar em um save equivalente cobra 1 ouro e aplica o efeito uma vez. |
+| Turno inimigo abre escolha e o jogador recarrega | GET conserva a escolha e seus IDs. A decisão retoma do ponto de pausa e devolve as novas transições em ordem. |
+| Um automático e um opcional do mesmo jogador disparam juntos | Ambos aparecem. Selecionar o automático aplica o efeito. Selecionar o opcional permite pagar ou recusar. A ordem escolhida vale para a resolução e os custos são atualizados antes do próximo efeito. |
+| Pagamento inválido ou reenvio de escolha consumida | Retorna `paymentInvalid` ou `staleTriggeredEffectChoice`, respectivamente. Estado e RNG permanecem intactos. |
+
 #### Cenários para revisar e validar
 
 | Cenário | Resultado esperado |
@@ -2658,3 +2711,5 @@ Ao terminar o combate, `combat` vira nulo e o resultado permanece disponível at
 | 0.60 | 2026-11-20 | BE | FEAT-13 `proposto (BE)` na T-44. Catálogo, laboratório, ações, estado, desfechos e cenários determinísticos de combate solo. |
 | 0.61 | 2026-11-20 | BE | FEAT-13 permanece `proposto (BE)` após revisão do frontend. Define variantes de conteúdo, restrição de classe, opções de pagamento, elegibilidade de Preparar, lote do POST e recompensa após Reflexão fatal. |
 | 0.62 | 2026-11-20 | BE | FEAT-13 `acordado`: frontend confirmou a interface v0.61. T-44 concluída. |
+| 0.63 | 2026-11-20 | BE | Extensão da FEAT-13 `proposto (BE)`: escolha de efeitos disparados, ordem das opções simultâneas, retomada e recusas. |
+| 0.64 | 2026-11-20 | BE | Extensão da FEAT-13 `acordado`: frontend confirmou os tipos, a ordem e as recusas propostos na v0.63. |
