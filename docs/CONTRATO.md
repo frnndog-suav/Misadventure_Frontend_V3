@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.52 · **Data:** 2026-11-19
+> **Versão do contrato:** 0.53 · **Data:** 2026-11-20
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -1720,7 +1720,7 @@ Seja `G` criado com `{ "name": "Os Teimosos", "characterName": "Lia", "playerCla
 
 Só nos e2e do backend: ordem exata dos decks de recompensas (sorteio), saves antigos, `deckSlotsFull`, `vaultFull` e `vaultGoldFull` com capacidades baixas no laboratório, e a validação completa dos campos novos no editor.
 
-### FEAT-11 — Efeitos e status — `implementado (BE)`
+### FEAT-11 — Efeitos e status — `validado`
 
 Regras: README 13 (as quatro partes; tabela gatilho × custo; "Usar um recurso"; momentos de uso; o que um efeito pode citar), 13.1 a 13.4 (variações), 13.6 (buff, debuff, marcação, remover), 5.2 (consumível usado vai para o limbo), 6.5, 7.3 (teto do Vigor; requisito de Pico desliga efeitos), 7.4 (pipeline, etapas 1, 3 e 5) e 12.2 (Preparar, parte b). O catálogo de variações foi validado pelo autor (README III.3).
 
@@ -2240,3 +2240,4 @@ Só nos e2e do backend: Pico abaixo do requisito com passivo, `removeDebuffs`/`r
 | 0.50 | 2026-11-18 | FE | FEAT-11 → `proposto (FE)`, dois pedidos de mudança (princípio "o backend decide"): (1) `PlayerStatus.text`, cópia do texto do efeito na ativação (o status é uma cópia; o texto da carta pode mudar depois); (2) `activatableEffects[]` vira `ActivatableEffect` com `handPayment: { count, text } \| null`, para o frontend não interpretar `cost[]`/`HandRequirement` ao pedir a escolha de cartas da mão. Cenários e glossário §2.16 atualizados. O resto da proposta aceito sem mudanças. |
 | 0.51 | 2026-11-18 | BE | FEAT-11 `acordado`: `PlayerStatus.text` e `ActivatableEffect.handPayment` aceitos sem mudanças. Os textos exatos de `handPayment.text` ficam definidos na spec do backend (o cenário só exige a instrução pt-BR). Sem mudança de formato além da v0.50. |
 | 0.52 | 2026-11-19 | BE | FEAT-11 `implementado (BE)`: efeitos e status no catálogo e no grupo, ativação em Preparar, save v7 compatível com v2 a v6 e cenários Supertest. O cenário do amuleto explicita `initialGold: 0`. |
+| 0.53 | 2026-11-20 | FE | FEAT-11 `validado`: cenários HTTP e telas do catálogo, editor e partida conferidos contra o backend real v0.52, com MSW desligado. Sem mudança de formato. |

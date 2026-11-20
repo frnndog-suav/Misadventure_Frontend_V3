@@ -104,3 +104,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 072 | T-54 | [Cliente e fixtures de efeitos](072-T-54-cliente-efeitos.md) | aguardando revisão |
 | 073 | T-55 | [Cartas e editor de efeitos](073-T-55-cartas-e-editor-de-efeitos.md) | aguardando revisão |
 | 074 | T-56 | [Status e ativação na partida](074-T-56-status-e-ativacao.md) | aguardando revisão |
+| 075 | T-57 | [FEAT-11 validada contra o backend real](075-T-57-feat-11-validada.md) | concluída |

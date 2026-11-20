@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.71 · **Data:** 2026-11-20
+> **Versão da spec:** 0.72 · **Data:** 2026-11-20
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -743,12 +743,12 @@ A T-48 fecha o lado FE da FEAT-10 com MSW; depois, `/retorno-backend` contra o b
 
 A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o backend real, quando o BE chegar a `implementado (BE)`. Valores do Apêndice A: `vaultCapacity`, `vaultDeckSlots`, `vaultGoldCapacity` (REQ-47).
 
-**FEAT-11 — Efeitos e status** (CONTRATO v0.52 `implementado (BE)`; README 13 e 13.6, B K2). Implementação e validação integral autorizadas pelo autor em 2026-11-19.
+**FEAT-11 — Efeitos e status** (CONTRATO v0.53 `validado`; README 13 e 13.6, B K2). Implementação e validação integral autorizadas pelo autor em 2026-11-19.
 
 - [ ] **T-54 — Cliente e fixtures de efeitos** (REQ-53/54/55): schemas das quatro partes, efeitos, status, efeitos ativáveis, ação e erros; fixtures estáticas compatíveis. `src/api/effects.ts` centraliza schemas; nenhuma regra de execução.
 - [x] **T-55 — Cartas e editor de efeitos** (REQ-53/55): marcação e polaridade; campos JSON validados escolhidos pelo autor; testes unitários e e2e `lab`/`editor`.
 - [x] **T-56 — Status e ativação na partida** (REQ-54): apresentação, pagamento por cópia e atualização autoritativa; testes unitários e e2e `party`.
-- [ ] **T-57 — Validar FEAT-11 contra o backend real**: todos os cenários do contrato com MSW desligado, incluindo telas, editor e recusas; registrar resultados e só marcar validado se todos passarem.
+- [x] **T-57 — Validar FEAT-11 contra o backend real**: todos os cenários do contrato com MSW desligado, incluindo telas, editor e recusas; registrar resultados e só marcar validado se todos passarem.
 
 **D-60 — FEAT-11:** os schemas verificam formato; regras cruzadas pertencem ao backend. Editor usa campos JSON por parte, opção escolhida pelo autor em 2026-11-19. Valores iniciais são apenas rascunhos editáveis. Telas afetadas (3.5): catálogo em `/lab`, editor em `/lab/editor`, partida em `/grupo/:partyId`; áreas e2e `lab`, `editor`, `party`. Sem valores novos do Apêndice A. `PlayerStatus.text` é independente do catálogo; `handPayment` é a única fonte da instrução e quantidade de pagamento. Tipos compartilhados de enumeração podem ser extraídos de `catalog.ts` para evitar ciclo entre catálogo e efeitos.
 
@@ -827,3 +827,4 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 | 0.69 | 2026-11-18 | T-53 concluída: REQ-52 (seção "Usar cofre" com os formulários, a lista "Operações", o envio do lote e a recusa marcada por `operationIndex`); D-59 item 12. Lado FE da FEAT-32 pronto com MSW. |
 | 0.70 | 2026-11-19 | FEAT-11 planejada dentro do retorno autorizado: REQ-53 a REQ-55, D-60, T-54 a T-57. Editor com campos JSON por parte escolhido pelo autor; contrato v0.52 recebido sem divergências entre cópias. |
 | 0.71 | 2026-11-20 | T-56 concluída com MSW: status, ativação e pagamento por cópia na partida (REQ-54, D-60). |
+| 0.72 | 2026-11-20 | T-57 concluída: FEAT-11 validada por HTTP e nas telas contra o backend real, sem MSW. |
