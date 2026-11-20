@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.56 · **Data:** 2026-11-20
+> **Versão do contrato:** 0.57 · **Data:** 2026-11-20
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -394,7 +394,14 @@ interface GameConfigValues {
   vaultCapacity: number // README 6.4
   vaultDeckSlots: number // README 6.4 (a build em uso ocupa um)
   vaultGoldCapacity: number // README 6.4
+  // FEAT-12 (acordado)
+  escapeVigorPercent: number
+  reserveDeck: ReserveDeckEntry[]
 }
+
+type ReserveDeckEntry =
+  | { type: 'gold'; amount: number; weight: number }
+  | { type: 'card'; cardId: string; weight: number }
 
 type GameConfigKey = keyof GameConfigValues
 
@@ -405,7 +412,9 @@ interface LabConfig {
   /** Padrões do Apêndice A. */
   defaults: GameConfigValues
   /** Inteiros, inclusivos. */
-  limits: Record<GameConfigKey, { min: number; max: number }>
+  limits: Record<Exclude<GameConfigKey, 'reserveDeck'>, { min: number; max: number }> & {
+    reserveDeck: { minEntries: number; minWeight: number }
+  }
 }
 
 /** PATCH /lab/config — só as chaves a alterar. */
@@ -449,6 +458,9 @@ Padrões e limites:
 | `inventoryCapacity` (FEAT-10) | 10 | 0–100 |
 | `purseCapacity` (FEAT-10) | 300 | 0–1000000 |
 | `vaultCapacity` / `vaultDeckSlots` / `vaultGoldCapacity` (FEAT-32) | 30 / 10 / 2000 | 0–1000 / 1–100 / 0–10000000 |
+| `escapeVigorPercent` (FEAT-12, acordado) | 20 | 0–100 |
+
+A FEAT-12 acrescenta os limites de `reserveDeck` conforme o cenário de configuração na sua seção.
 
 #### Cenários de validação
 
@@ -2162,6 +2174,32 @@ Só nos e2e do backend: Pico abaixo do requisito com passivo, `removeDebuffs`/`r
 
 Regras de README 3.4, 6.5–6.6, 11.3, 12.2, 12.6, 13 e 14–15. Usa `POST /parties/:partyId/actions` e a resposta `200 Party`. O GET devolve o mesmo estado persistido, inclusive após recarga ou retomada da sessão.
 
+#### Configuração do laboratório
+
+`LabConfig.limits` inclui `escapeVigorPercent: { min: 0, max: 100 }` e `reserveDeck: { minEntries: 1, minWeight: 1 }`. Em `LAB_CONFIG_INVALID`, `details.fields[].field` usa pontos para separar o nome da lista, o índice a partir de zero e o campo da entrada.
+
+Exemplo de `PATCH /lab/config` com peso inválido na primeira entrada.
+
+```json
+{
+  "reserveDeck": [{ "type": "gold", "amount": 1, "weight": 0 }]
+}
+```
+
+Resposta esperada com HTTP `400`.
+
+```json
+{
+  "error": {
+    "code": "LAB_CONFIG_INVALID",
+    "message": "Configuração do laboratório inválida.",
+    "details": {
+      "fields": [{ "field": "reserveDeck.0.weight", "reason": "outOfRange" }]
+    }
+  }
+}
+```
+
 #### Conteúdo executável
 
 ```ts
@@ -2440,3 +2478,4 @@ Exemplo dos campos executáveis de `cart` no cenário da última parte:
 | 0.54 | 2026-11-20 | BE | FEAT-12 `proposto (BE)`: encontro persistido, requisitos e desfechos executáveis, pagamentos por cópia, checagem da última parte, fuga e dívida de PA, reposição, prazos, decks por tipo de zona e recompensas pendentes por origem. Substitui a recusa provisória da FEAT-32 para Vasculhar sem espaço. |
 | 0.55 | 2026-11-20 | BE | FEAT-12 `proposto (BE)`: explicita o uso de consumível via `prepare/activate` antes da primeira parte, a seleção da mão em `handCardSelection`, o descarte aleatório de uma cópia por envio e a reversão da última parte e do RNG. Acrescenta cenários de ativação, sorteio e pagamento com IDs de cópias duplicadas. |
 | 0.56 | 2026-11-20 | BE | FEAT-12 `acordado`: frontend aceitou a v0.55 integralmente. Os cenários acordados incluem a reversão do RNG na última parte recusada e o consumo da cópia escolhida entre duplicatas. |
+| 0.57 | 2026-11-20 | BE | FEAT-12 `acordado`: limites de `escapeVigorPercent` e `reserveDeck` no laboratório e erro `LAB_CONFIG_INVALID` com caminho indexado a partir de zero para o peso inválido. |
