@@ -36,21 +36,19 @@ const requirementCost = z.union(
     requirementCostKinds.has(schema.shape.kind.value),
   ),
 )
-const requirement = z
-  .object({ id: z.string(), text: z.string() })
-  .and(
-    z.union([
-      attributes.extend({ kind: z.literal('attributes') }),
-      z.object({
-        kind: z.literal('minimum'),
-        stat: minimumStat,
-        value: z.number(),
-      }),
-      requirementCost,
-    ]),
-  )
+const requirement = z.object({ id: z.string(), text: z.string() }).and(
+  z.union([
+    attributes.extend({ kind: z.literal('attributes') }),
+    z.object({
+      kind: z.literal('minimum'),
+      stat: minimumStat,
+      value: z.number(),
+    }),
+    requirementCost,
+  ]),
+)
 
-const outcome = z.object({
+export const eventOutcomeSchema = z.object({
   text: z.string(),
   steps: z.array(
     z.discriminatedUnion('type', [
@@ -67,8 +65,8 @@ const outcome = z.object({
 
 export const randomEventRulesSchema = z.object({
   requirements: z.array(requirement).min(1),
-  goodOutcome: outcome,
-  badOutcome: outcome,
+  goodOutcome: eventOutcomeSchema,
+  badOutcome: eventOutcomeSchema,
   escapeThreshold: z.number().nullable(),
 })
 
@@ -161,6 +159,7 @@ export const pendingRewardSchema = z.object({
   source: z.discriminatedUnion('type', [
     z.object({ type: z.literal('randomEvent'), encounterId: z.string() }),
     z.object({ type: z.literal('scavenge') }),
+    z.object({ type: z.literal('combatEvent'), combatId: z.string() }),
   ]),
   destination: z.enum(['inventory', 'tcgFolder']),
   discardOptions: z.array(
@@ -203,6 +202,12 @@ export const randomEventActionTypes = [
   'resolveReward',
 ] as const
 
+export interface EventPayment {
+  handCards?: string[]
+  equipmentSlots?: z.infer<typeof equipmentSlotSchema>[]
+  resources?: z.infer<typeof cardCopies>[]
+}
+
 export type RandomEventAction =
   | { type: 'startEvent' }
   | {
@@ -213,11 +218,7 @@ export type RandomEventAction =
       type: 'payEventRequirement'
       encounterId: string
       requirementId: string
-      payment?: {
-        handCards?: string[]
-        equipmentSlots?: z.infer<typeof equipmentSlotSchema>[]
-        resources?: z.infer<typeof cardCopies>[]
-      }
+      payment?: EventPayment
     }
 
 export type ResolveRewardAction = {

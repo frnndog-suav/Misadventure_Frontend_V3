@@ -6,6 +6,8 @@ import {
   type UseQueryResult,
 } from '@tanstack/react-query'
 import { z } from 'zod'
+import { enemyAbilityPrioritiesSchema } from './catalog'
+import { enemyBehaviorSchema } from './vocabulary'
 import { ApiError, requestJson } from './http'
 
 /**
@@ -54,6 +56,20 @@ const numericGameConfigValuesSchema = z.object({
 
 const positiveInt = gameConfigInt.min(1)
 export const gameConfigValuesSchema = numericGameConfigValuesSchema.extend({
+  // A configuração das versões anteriores à FEAT-13 omite os campos de combate.
+  maxCombatCycles: gameConfigInt.optional(),
+  combatEscapeThreshold: gameConfigInt.optional(),
+  combatEscapePeakLoss: gameConfigInt.optional(),
+  exhaustionPenaltyPercent: gameConfigInt.optional(),
+  projectileAccuracyBonusPercent: gameConfigInt.optional(),
+  areaDamagePercent: gameConfigInt.optional(),
+  shieldProjectileDamagePercent: gameConfigInt.optional(),
+  channelInterruptDamagePercent: gameConfigInt.optional(),
+  elementAdvantageBonusPercent: gameConfigInt.optional(),
+  elementDisadvantagePenaltyPercent: gameConfigInt.optional(),
+  enemyAbilityPriorities: z
+    .record(enemyBehaviorSchema, enemyAbilityPrioritiesSchema)
+    .optional(),
   escapeVigorPercent: gameConfigInt,
   reserveDeck: z
     .array(
@@ -111,6 +127,16 @@ export const labConfigSchema = z.object({
     vaultCapacity: limitSchema,
     vaultDeckSlots: limitSchema,
     vaultGoldCapacity: limitSchema,
+    maxCombatCycles: limitSchema.optional(),
+    combatEscapeThreshold: limitSchema.optional(),
+    combatEscapePeakLoss: limitSchema.optional(),
+    exhaustionPenaltyPercent: limitSchema.optional(),
+    projectileAccuracyBonusPercent: limitSchema.optional(),
+    areaDamagePercent: limitSchema.optional(),
+    shieldProjectileDamagePercent: limitSchema.optional(),
+    channelInterruptDamagePercent: limitSchema.optional(),
+    elementAdvantageBonusPercent: limitSchema.optional(),
+    elementDisadvantagePenaltyPercent: limitSchema.optional(),
     escapeVigorPercent: limitSchema.optional(),
     reserveDeck: z
       .object({ minEntries: positiveInt, minWeight: positiveInt })

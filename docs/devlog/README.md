@@ -111,3 +111,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 079 | T-61 | [Recompensas pendentes e Vasculhar](079-T-61-recompensas-e-vasculhar.md) | concluída |
 | 080 | T-62 | [Primeira rodada contra o backend real](080-T-62-validacao-parcial-feat-12.md) | validação parcial |
 | 081 | T-62 | [FEAT-12 validada contra o backend real](081-T-62-feat-12-validada.md) | concluída |
+| 082 | T-63 | [Cliente e fixtures da FEAT-13](082-T-63-cliente-feat-13.md) | concluída |

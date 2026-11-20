@@ -1,4 +1,4 @@
-﻿import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   equipmentSlotSchema,
@@ -347,6 +347,15 @@ function reasonText(error: ActionNotAllowedError, name: string): string {
     case 'eventMinimumNotMet':
     case 'staleReward':
     case 'rewardDoesNotFit':
+    case 'combatInProgress':
+    case 'staleCombat':
+    case 'staleCombatTurn':
+    case 'wrongCombatPhase':
+    case 'combatTargetUnavailable':
+    case 'combatAbilityUnavailable':
+    case 'playerDown':
+    case 'staleTriggeredEffectChoice':
+    case 'triggeredEffectUnavailable':
       return ''
     default: {
       const _exhaustive: never = error.reason
@@ -518,6 +527,15 @@ function vaultReasonText(error: ActionNotAllowedError, name: string): string {
     case 'eventMinimumNotMet':
     case 'staleReward':
     case 'rewardDoesNotFit':
+    case 'combatInProgress':
+    case 'staleCombat':
+    case 'staleCombatTurn':
+    case 'wrongCombatPhase':
+    case 'combatTargetUnavailable':
+    case 'combatAbilityUnavailable':
+    case 'playerDown':
+    case 'staleTriggeredEffectChoice':
+    case 'triggeredEffectUnavailable':
       return ''
     default: {
       const _exhaustive: never = error.reason

@@ -57,6 +57,36 @@ function wrapper({ children }: { children: ReactNode }) {
   )
 }
 
+it('REQ-60: GET, PATCH and reset retain combat settings projected by the API', async () => {
+  const { result } = renderHook(
+    () => ({
+      query: useLabConfig(),
+      patch: useUpdateLabConfig(),
+      reset: useResetLabConfig(),
+    }),
+    { wrapper },
+  )
+  await waitFor(() =>
+    expect(result.current.query.data?.values.maxCombatCycles).toBe(20),
+  )
+  expect(result.current.query.data?.limits.maxCombatCycles).toEqual({
+    min: 1,
+    max: 100,
+  })
+  await act(async () => {
+    const patched = await result.current.patch.mutateAsync({
+      maxCombatCycles: 25,
+    })
+    expect(patched.values.maxCombatCycles).toBe(25)
+    const reset = await result.current.reset.mutateAsync()
+    expect(reset.values.maxCombatCycles).toBe(20)
+    expect(reset.defaults.enemyAbilityPriorities?.defensive).toEqual([
+      'selfBuffOrContinuous',
+      'highestPower',
+    ])
+  })
+})
+
 describe('REQ-06: schema de LabConfig (CONTRATO §3 FEAT-03)', () => {
   it('REQ-06: aceita a fixture dos padrões', () => {
     expect(labConfigSchema.safeParse(labConfigDefaultsFixture).success).toBe(

@@ -13,7 +13,13 @@ import {
   it,
   vi,
 } from 'vitest'
-import { cardSchema, useCards, useCollections, type CardType } from './catalog'
+import {
+  cardSchema,
+  useCards,
+  useCatalogCard,
+  useCollections,
+  type CardType,
+} from './catalog'
 import { ApiError } from './http'
 import {
   catalogQueryInvalidFixture,
@@ -55,6 +61,23 @@ function wrapper({ children }: { children: ReactNode }) {
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   )
 }
+
+it('REQ-60: GET retains an executable combat card alongside legacy content', async () => {
+  const { result } = renderHook(
+    () => ({
+      legacy: useCatalogCard('fixture.howling-wolves'),
+      executable: useCatalogCard('fixture.executable-wolves'),
+    }),
+    { wrapper },
+  )
+  await waitFor(() => expect(result.current.executable.isSuccess).toBe(true))
+  expect(result.current.legacy.data).toEqual(howlingWolvesFixture)
+  expect(result.current.executable.data).toMatchObject({
+    escapeThreshold: 0,
+    goodOutcome: { steps: [] },
+    enemies: [{ abilities: [{ id: 'bite', form: 'targeted', cooldown: 1 }] }],
+  })
+})
 
 describe('REQ-08: schema de Card (CONTRATO §3 FEAT-04)', () => {
   it('REQ-08: aceita as 6 cartas da coleção fixture', () => {

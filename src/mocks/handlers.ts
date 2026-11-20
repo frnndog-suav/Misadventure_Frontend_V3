@@ -1,5 +1,10 @@
 import { http, HttpResponse, type RequestHandler } from 'msw'
 import {
+  acceptCombatResponse,
+  combatScenario,
+  executableCombatCardFixture,
+} from './combatFixtures'
+import {
   eventMinimumNotMetFixture,
   eventScenarios,
   partyAnticipationFixture,
@@ -193,6 +198,89 @@ async function partyActionScenario(
 ): Promise<Response> {
   const body: unknown = await request.json().catch(() => undefined)
   const type = field(body, 'type')
+  const combat = combatScenario(partyId)
+  if (combat) {
+    const deny = (reason: string) =>
+      HttpResponse.json(
+        {
+          error: { ...actionNotAllowedFixture.error, details: { reason } },
+        },
+        { status: 409 },
+      )
+    const malformed = () =>
+      HttpResponse.json(actionInvalidUnknownActionFixture, { status: 400 })
+    const choice = combat.party.triggeredEffectChoice
+    if (type === 'resolveTriggeredEffect') {
+      const choiceId = field(body, 'choiceId')
+      const effectId = field(body, 'effectId')
+      const decision = field(body, 'decision')
+      const payment = field(body, 'payment')
+      if (
+        typeof choiceId !== 'string' ||
+        typeof effectId !== 'string' ||
+        (decision !== 'resolve' &&
+          decision !== 'decline' &&
+          decision !== 'pay') ||
+        (decision !== 'pay' && payment !== undefined)
+      )
+        return malformed()
+      if (!choice || choice.choiceId !== choiceId)
+        return deny('staleTriggeredEffectChoice')
+      const option = choice.effects.find((entry) => entry.effectId === effectId)
+      if (
+        !option ||
+        (option.mode === 'automatic') !== (decision === 'resolve')
+      ) {
+        return deny('triggeredEffectUnavailable')
+      }
+      if (decision === 'pay') {
+        if (option.mode !== 'optional' || !option.canPay)
+          return deny('paymentInvalid')
+        const hand = field(payment, 'handCards')
+        const expected = option.paymentCosts[0]
+        if (
+          expected?.type === 'handCards' &&
+          (!Array.isArray(hand) || hand.length !== 1 || hand[0] !== 'h1')
+        ) {
+          return deny('paymentInvalid')
+        }
+      }
+      const response = combat.actions[effectId + ':' + decision]
+      return response
+        ? HttpResponse.json(acceptCombatResponse(partyId, response))
+        : deny('triggeredEffectUnavailable')
+    }
+    if (choice) return deny('choicePending')
+    const activeCombat = combat.party.combat
+    let key = type + ':' + field(body, 'encounterId')
+    if (type === 'combatAttack') {
+      const combatId = field(body, 'combatId')
+      const turnId = field(body, 'turnId')
+      const targetId = field(body, 'targetId')
+      if (
+        typeof combatId !== 'string' ||
+        typeof turnId !== 'string' ||
+        typeof targetId !== 'string'
+      )
+        return malformed()
+      if (!activeCombat || activeCombat.id !== combatId)
+        return deny('staleCombat')
+      if (activeCombat.turn.id !== turnId) return deny('staleCombatTurn')
+      if (!activeCombat.attackTargetIds.includes(targetId))
+        return deny('combatTargetUnavailable')
+      key = type + ':' + targetId
+    }
+    if (type === 'resolveReward') {
+      const rewardId = field(body, 'rewardId')
+      if (!combat.party.pendingRewards.some(({ id }) => id === rewardId))
+        return deny('staleReward')
+      key = type + ':' + rewardId + ':' + field(body, 'choice')
+    }
+    const response = combat.actions[key]
+    return response
+      ? HttpResponse.json(acceptCombatResponse(partyId, response))
+      : malformed()
+  }
   const scenario = eventScenario(partyId)
   if (scenario && typeof type === 'string') {
     const qualifiers = {
@@ -531,7 +619,10 @@ function adjustDeckScenario(build: unknown): Response {
 
 /** GET /catalog/cards/:cardId: as cartas da `fixture`; qualquer outra é 404. */
 function catalogCardScenario(cardId: string): Response {
-  const card = fixtureCardsFixture.find((entry) => entry.id === cardId)
+  const card =
+    cardId === executableCombatCardFixture.id
+      ? executableCombatCardFixture
+      : fixtureCardsFixture.find((entry) => entry.id === cardId)
   return card === undefined
     ? HttpResponse.json(catalogCardNotFoundFixture, { status: 404 })
     : HttpResponse.json(card)
@@ -542,7 +633,8 @@ function knownParty(
   partyId: unknown,
   ok: () => Response | Promise<Response>,
 ): Response | Promise<Response> {
-  return eventScenario(partyId) !== undefined ||
+  return combatScenario(partyId) !== undefined ||
+    eventScenario(partyId) !== undefined ||
     partyId === partyCreatedFixture.id ||
     partyId === partyNoPointsFixture.id ||
     partyId === partyGearInSessionFixture.id ||
@@ -887,6 +979,12 @@ export const handlers: RequestHandler[] = [
   http.patch('*/lab/config', async ({ request }) => {
     const body = await jsonBody(request)
     const reserve = field(body, 'reserveDeck')
+    if (field(body, 'maxCombatCycles') === 25) {
+      return HttpResponse.json({
+        ...labConfigDefaultsFixture,
+        values: { ...labConfigDefaultsFixture.values, maxCombatCycles: 25 },
+      })
+    }
     if (Array.isArray(reserve) && field(reserve[0], 'weight') === 0) {
       return HttpResponse.json(labConfigReserveWeightFixture, { status: 400 })
     }
@@ -920,7 +1018,8 @@ export const handlers: RequestHandler[] = [
   http.get('*/parties/:partyId', ({ params }) =>
     knownParty(params.partyId, () =>
       HttpResponse.json(
-        eventScenarioParty(params.partyId) ??
+        combatScenario(params.partyId)?.party ??
+          eventScenarioParty(params.partyId) ??
           [
             partyNoPointsFixture,
             partyGearInSessionFixture,
@@ -939,7 +1038,8 @@ export const handlers: RequestHandler[] = [
   http.post('*/parties/:partyId/session', ({ params }) =>
     knownParty(params.partyId, () =>
       HttpResponse.json(
-        eventScenarioParty(params.partyId) ??
+        combatScenario(params.partyId)?.party ??
+          eventScenarioParty(params.partyId) ??
           [
             partyNoPointsFixture,
             partyGearInSessionFixture,

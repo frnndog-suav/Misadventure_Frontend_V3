@@ -14,7 +14,12 @@ import {
   vi,
 } from 'vitest'
 import { ApiError } from './http'
-import { partySchema, playerStateSchema, usePartyAction } from './parties'
+import {
+  partySchema,
+  playerStateSchema,
+  useParty,
+  usePartyAction,
+} from './parties'
 import type { PartyAction } from './parties'
 import {
   actionInvalidUnknownActionFixture,
@@ -30,6 +35,7 @@ import {
   partyNotFoundFixture,
   partySessionNotActiveFixture,
 } from '../mocks/partyFixtures'
+import { resetCombatScenarios } from '../mocks/combatFixtures'
 import { handlers } from '../mocks/handlers'
 import {
   partyEventMinimumFixture,
@@ -88,7 +94,10 @@ beforeAll(() => {
   vi.stubEnv('VITE_API_URL', 'http://localhost:3000')
   server.listen({ onUnhandledFrame: 'error' })
 })
-afterEach(() => server.resetHandlers())
+afterEach(() => {
+  server.resetHandlers()
+  resetCombatScenarios()
+})
 afterAll(() => {
   server.close()
   vi.unstubAllEnvs()
@@ -110,6 +119,168 @@ function wrapper({ children }: { children: ReactNode }) {
 
 const partyId = partyInSessionFixture.id
 const move = (zoneId: string): PartyAction => ({ type: 'move', zoneId })
+
+function triggerDecision(
+  effectId: string,
+  decision: 'resolve' | 'decline' | 'pay',
+  choiceId = 'choice-1',
+): PartyAction {
+  return { type: 'resolveTriggeredEffect', choiceId, effectId, decision }
+}
+
+it('REQ-62: pays or declines the anticipation passive on equivalent snapshots', async () => {
+  const id = 'party-trigger-anticipation'
+  const { result } = renderHook(
+    () => ({
+      party: useParty(id),
+      action: usePartyAction(id),
+      decline: usePartyAction('party-trigger-anticipation-decline'),
+    }),
+    { wrapper },
+  )
+  await waitFor(() => expect(result.current.party.isSuccess).toBe(true))
+  const before = result.current.party.data!.members[0]!.player
+  await act(async () => {
+    const declined = await result.current.decline.mutateAsync(
+      triggerDecision('passive-gold', 'decline'),
+    )
+    const paid = await result.current.action.mutateAsync(
+      triggerDecision('passive-gold', 'pay'),
+    )
+    expect(declined.members[0]!.player).toMatchObject({
+      gold: before.gold,
+      health: before.health,
+    })
+    expect(paid.members[0]!.player).toMatchObject({
+      gold: before.gold - 1,
+      health: before.health + 1,
+    })
+    expect(paid.triggeredEffectChoice).toBeNull()
+  })
+})
+
+it('REQ-61/62: keeps the choice on GET during the enemy turn and retains the POST batch', async () => {
+  const id = 'party-combat-reveal'
+  const first = renderHook(() => usePartyAction(id), { wrapper })
+  const opened = await first.result.current.mutateAsync({
+    type: 'revealEvent',
+    encounterId: 'e1',
+  })
+  expect(opened.combatUpdates?.map(({ type }) => type)).toEqual([
+    'combatStarted',
+    'combatTurnStarted',
+  ])
+  first.unmount()
+  const reloaded = renderHook(
+    () => ({ party: useParty(id), action: usePartyAction(id) }),
+    { wrapper },
+  )
+  await waitFor(() =>
+    expect(reloaded.result.current.party.isSuccess).toBe(true),
+  )
+  const snapshot = reloaded.result.current.party.data!
+  expect(snapshot.triggeredEffectChoice).toEqual(opened.triggeredEffectChoice)
+  expect(snapshot.combat?.turn).toEqual(opened.combat?.turn)
+  expect(snapshot).not.toHaveProperty('combatUpdates')
+  await act(async () => {
+    const resumed = await reloaded.result.current.action.mutateAsync(
+      triggerDecision('passive-gold', 'decline'),
+    )
+    expect(resumed.combatUpdates?.map(({ type }) => type)).toEqual([
+      'combatDamageResolved',
+      'combatTurnStarted',
+    ])
+    expect(resumed.combat?.turn.actorId).toBe(
+      snapshot.triggeredEffectChoice?.memberId,
+    )
+    const attack = {
+      type: 'combatAttack' as const,
+      combatId: snapshot.combat!.id,
+      turnId: snapshot.combat!.turn.id,
+      targetId: 'wolf-1',
+    }
+    await expect(
+      reloaded.result.current.action.mutateAsync(attack),
+    ).rejects.toMatchObject({ reason: 'staleCombatTurn' })
+    const victory = await reloaded.result.current.action.mutateAsync({
+      ...attack,
+      turnId: resumed.combat!.turn.id,
+    })
+    expect(victory.combat).toBeNull()
+    expect(victory.combatUpdates?.map(({ type }) => type)).toEqual([
+      'combatDamageResolved',
+      'combatEnded',
+    ])
+    expect(victory.members[0]!.player).toMatchObject({
+      down: true,
+      availableActions: ['resolveReward'],
+    })
+    expect(victory.pendingRewards[0]?.source).toEqual({
+      type: 'combatEvent',
+      combatId: attack.combatId,
+    })
+    expect(
+      (await reloaded.result.current.party.refetch()).data?.pendingRewards,
+    ).toEqual(victory.pendingRewards)
+    const settled = await reloaded.result.current.action.mutateAsync({
+      type: 'resolveReward',
+      rewardId: victory.pendingRewards[0]!.id,
+      choice: 'leave',
+    })
+    expect(settled.pendingRewards).toEqual([])
+    expect(settled.members[0]!.player.availableActions).toEqual([])
+  })
+})
+
+it('REQ-62: keeps simultaneous choices ordered and preserves the remaining effect ID', async () => {
+  const id = 'party-trigger-simultaneous'
+  const { result } = renderHook(
+    () => ({ party: useParty(id), action: usePartyAction(id) }),
+    { wrapper },
+  )
+  await waitFor(() => expect(result.current.party.isSuccess).toBe(true))
+  expect(
+    result.current.party.data?.triggeredEffectChoice?.effects.map(
+      ({ effectId }) => effectId,
+    ),
+  ).toEqual(['automatic-gold', 'passive-gold'])
+  await act(async () => {
+    const next = await result.current.action.mutateAsync(
+      triggerDecision('automatic-gold', 'resolve'),
+    )
+    expect(next.triggeredEffectChoice).toMatchObject({
+      choiceId: 'choice-2',
+      effects: [{ effectId: 'passive-gold', canPay: false }],
+    })
+    await expect(
+      result.current.action.mutateAsync(
+        triggerDecision('passive-gold', 'decline'),
+      ),
+    ).rejects.toMatchObject({ reason: 'staleTriggeredEffectChoice' })
+    const resumed = await result.current.action.mutateAsync(
+      triggerDecision('passive-gold', 'decline', 'choice-2'),
+    )
+    expect(resumed.triggeredEffectChoice).toBeNull()
+  })
+})
+
+it('REQ-62: reports invalid payment and keeps the saved choice intact', async () => {
+  const id = 'party-trigger-invalid'
+  const { result } = renderHook(
+    () => ({ party: useParty(id), action: usePartyAction(id) }),
+    { wrapper },
+  )
+  await waitFor(() => expect(result.current.party.isSuccess).toBe(true))
+  const before = result.current.party.data
+  await act(async () => {
+    await expect(
+      result.current.action.mutateAsync(
+        triggerDecision('passive-discard', 'pay', 'choice-2'),
+      ),
+    ).rejects.toMatchObject({ reason: 'paymentInvalid' })
+    expect((await result.current.party.refetch()).data).toEqual(before)
+  })
+})
 
 it('REQ-58: MSW round-trips a payment by copy ID', async () => {
   const { result } = renderHook(

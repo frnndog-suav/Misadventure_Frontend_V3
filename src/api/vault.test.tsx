@@ -266,6 +266,12 @@ describe('REQ-50: PlayerState com o cofre e o Vasculhar', () => {
       'giveUpEvent',
       'escapeEvent',
       'resolveReward',
+      'activateCombatEffect',
+      'useAbility',
+      'escapeCombat',
+      'combatAttack',
+      'endCombatTurn',
+      'resolveTriggeredEffect',
       'endTurn',
     ])
   })

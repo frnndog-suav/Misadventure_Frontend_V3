@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.75 · **Data:** 2026-11-20
+> **Versão da spec:** 0.76 · **Data:** 2026-11-20
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -577,6 +577,28 @@ Base: CONTRATO v0.57, seção FEAT-12, e README §§3.4, 6.5–6.6, 11.3 e 14–
 
 Formato:
 
+### Combate solo (FEAT-13)
+
+Base: CONTRATO v0.64, seção FEAT-13, incluindo Escolha de efeitos disparados.
+
+### REQ-60 — Catálogo, editor e laboratório
+
+- **Dado** conteúdo legado ou executável, **quando** consultar ou editar uma carta, **então** o frontend mantém as variantes e campos do contrato. Conteúdo inválido recebe o erro da API no campo correspondente.
+- **Dada** a configuração de combate, **quando** consultar ou alterar valores, **então** o laboratório usa os valores, limites, padrões e erros da API.
+
+### REQ-61 — Combate solo
+
+- **Dada** a revelação de combate, **quando** receber o estado e o lote do POST, **então** a tela mostra participantes, ordem, turno, ações projetadas e transições na ordem recebida.
+- **Dada** uma ação elegível, **quando** enviá-la, **então** o cliente usa IDs, alvos e pagamento projetados. Isso inclui habilidade em Preparar com 0 PA quando elegível.
+- **Dado** um reload ou desfecho, **quando** receber o snapshot, **então** a tela preserva o estado e oferece a recompensa pendente mesmo após vitória com queda por Reflexão, conforme as opções da API.
+
+### REQ-62 — Escolha de efeitos disparados
+
+- **Dada** uma passiva opcional por 1 ouro na antecipação, **quando** recusar ou pagar em saves equivalentes, **então** a resposta preserva o ouro na recusa ou cobra 1 e aplica o efeito uma vez no pagamento.
+- **Dada** uma pausa no turno inimigo, **quando** recarregar e decidir, **então** o cliente preserva os IDs e apresenta as transições novas na ordem do POST.
+- **Dados** efeitos simultâneos, **quando** escolher o primeiro, **então** a tela envia a decisão do modo correspondente, oferece apenas recusa com `canPay: false` e usa a próxima escolha e os custos devolvidos.
+- **Dado** pagamento inválido ou escolha consumida, **quando** o POST retorna `paymentInvalid` ou `staleTriggeredEffectChoice`, **então** a tela informa a recusa e preserva o último estado confirmado.
+
 ### REQ-nn — <nome>
 - **Dado** <estado>, **quando** <ação>, **então** <resultado exato>.
 
@@ -784,6 +806,14 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 
 **D-61 — FEAT-12:** o frontend deriva opções e progresso dos campos autoritativos do contrato. As fixtures são estáticas por cenário. A apresentação de requisitos usa `handCardSelection`, IDs de cópia e recibos do backend. Áreas de teste `lab`, `editor` e `party`.
 
+### FEAT-13 — Combate solo
+
+- [x] **T-63 — Cliente e fixtures MSW** (REQ-60 a REQ-62). Contrato de catálogo, laboratório, combate, escolhas e recusas.
+- [ ] **T-64 — Catálogo, editor e laboratório** (REQ-60).
+- [ ] **T-65 — Tela, ações, pagamentos e desfechos de combate** (REQ-61).
+- [ ] **T-66 — Escolha de efeitos disparados** (REQ-62). Exercitar os quatro cenários acordados com MSW.
+- [ ] **T-67 — Validação integrada.** Repetir os cenários da FEAT-13 com MSW desligado após a entrega do backend, com URL e dados de teste.
+
 ## 8. Histórico
 
 | Versão | Data | Mudança |
@@ -863,3 +893,4 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 | 0.73 | 2026-11-20 | T-54 concluída após aprovação de `typecheck` e `test:build`. |
 | 0.74 | 2026-11-20 | FEAT-12 com CONTRATO v0.56 acordado. Critérios REQ-56 a REQ-59, D-61 e tarefas T-58 a T-62 aprovados pelo autor. |
 | 0.75 | 2026-11-20 | T-62 concluída. FEAT-12 validada contra a API real com MSW desligado. |
+| 0.76 | 2026-11-20 | Autor aprovou REQ-60 a REQ-62 e T-63 a T-67 da FEAT-13, conforme CONTRATO v0.64. T-63 concluída com cliente e fixtures MSW. |

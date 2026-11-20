@@ -11,6 +11,16 @@ import {
   modifierValuesSchema,
   playerClassSchema,
 } from './catalog'
+import {
+  combatActionTypes,
+  combatAbilityOptionSchema,
+  combatResultSchema,
+  combatStateSchema,
+  combatUpdateSchema,
+  triggeredEffectChoiceSchema,
+  type CombatAction,
+  type ResolveTriggeredEffectAction,
+} from './combat'
 import type { EquipmentSlot, PlayerClass } from './catalog'
 import { ApiError, requestJson } from './http'
 import { activatableEffectSchema, playerStatusSchema } from './effects'
@@ -20,6 +30,7 @@ import {
   pendingRewardSchema,
   randomEventActionTypes,
   randomEventPlayerFields,
+  type EventPayment,
   type RandomEventAction,
   type ResolveRewardAction,
 } from './randomEvents'
@@ -80,6 +91,7 @@ export const partyActionTypeSchema = z.enum([
   'scavenge',
   'useVault',
   ...randomEventActionTypes,
+  ...combatActionTypes,
   'endTurn',
 ])
 export type PartyActionType = z.infer<typeof partyActionTypeSchema>
@@ -147,6 +159,9 @@ export const playerStateSchema = z.object({
   moveTargets: z.array(z.string()),
   /** Ações que o jogador pode mandar agora, prontas do backend (FEAT-08, D-56). */
   availableActions: z.array(partyActionTypeSchema),
+  // Saves e respostas de versões anteriores do backend omitem os campos da FEAT-13.
+  down: z.boolean().optional(),
+  usableAbilities: z.array(combatAbilityOptionSchema).optional(),
   /** Build salva, pasta e capacidade, prontas do backend (FEAT-09, D-57). */
   build: z.array(cardCopiesSchema),
   buildSize: nonNegativeInt,
@@ -199,10 +214,19 @@ export const partySchema = z.object({
     executableRandomEventCardSchema,
   ).nullable(),
   pendingRewards: z.array(pendingRewardSchema),
+  combat: combatStateSchema.nullable().optional(),
+  lastCombatResult: combatResultSchema.nullable().optional(),
+  triggeredEffectChoice: triggeredEffectChoiceSchema.nullable().optional(),
   createdAt: z.iso.datetime(),
   savedAt: z.iso.datetime(),
 })
 export type Party = z.infer<typeof partySchema>
+
+// Apenas o POST projeta o lote transitório. Respostas anteriores à FEAT-13 o omitem.
+const partyActionResponseSchema = partySchema.extend({
+  combatUpdates: z.array(combatUpdateSchema).optional(),
+})
+export type PartyActionResponse = z.infer<typeof partyActionResponseSchema>
 
 export const partySummarySchema = z.object({
   id: z.string(),
@@ -364,6 +388,8 @@ export type PartyAction =
   | ScavengeAction
   | RandomEventAction
   | ResolveRewardAction
+  | CombatAction
+  | ResolveTriggeredEffectAction
 
 /** Movimentar (README 12.2); `zoneId` vem de `moveTargets`. */
 export interface MoveAction {
@@ -391,6 +417,13 @@ export interface AdjustDeckAction {
 /** Preparar (README 12.2, parte a): equipar uma carta ou guardar um slot. */
 export type PrepareAction =
   | { type: 'prepare'; operation: 'equip'; cardId: string }
+  | {
+      type: 'prepare'
+      operation: 'useAbility'
+      equipmentSlot: EquipmentSlot
+      abilityId: string
+      payment?: EventPayment
+    }
   | { type: 'prepare'; operation: 'unequip'; slot: EquipmentSlot }
   | {
       type: 'prepare'
@@ -476,6 +509,15 @@ export const actionNotAllowedDetailsSchema = z.object({
     'eventMinimumNotMet',
     'staleReward',
     'rewardDoesNotFit',
+    'combatInProgress',
+    'staleCombat',
+    'staleCombatTurn',
+    'wrongCombatPhase',
+    'combatTargetUnavailable',
+    'combatAbilityUnavailable',
+    'playerDown',
+    'staleTriggeredEffectChoice',
+    'triggeredEffectUnavailable',
   ]),
   checks: z.array(eventMinimumCheckSchema).optional(),
   /** Carta envolvida na recusa, inclusive `paymentInvalid` (FEAT-11). */
@@ -507,9 +549,9 @@ export class ActionNotAllowedError extends ApiError {
 async function takePartyAction(
   partyId: string,
   action: PartyAction,
-): Promise<Party> {
+): Promise<PartyActionResponse> {
   try {
-    return partySchema.parse(
+    return partyActionResponseSchema.parse(
       await requestJson('POST', `${partyPath(partyId)}/actions`, action),
     )
   } catch (error) {
@@ -530,7 +572,7 @@ async function takePartyAction(
  */
 export function usePartyAction(
   partyId: string,
-): UseMutationResult<Party, Error, PartyAction> {
+): UseMutationResult<PartyActionResponse, Error, PartyAction> {
   return useMutation({
     mutationFn: (action: PartyAction) => takePartyAction(partyId, action),
     retry: false,

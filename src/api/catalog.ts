@@ -5,7 +5,7 @@ import {
 } from '@tanstack/react-query'
 import { z } from 'zod'
 import { getJson } from './http'
-import { randomEventRulesSchema } from './randomEvents'
+import { eventOutcomeSchema, randomEventRulesSchema } from './randomEvents'
 
 /**
  * Catálogo (CONTRATO §3 FEAT-04): conteúdo publicado, só leitura. Os textos
@@ -31,13 +31,75 @@ import {
   type Modifier,
   zoneActionSchema,
 } from './vocabulary'
-import { effectSchema, zoneEffectSchema } from './effects'
+import {
+  costSchema,
+  durationSchema,
+  effectSchema,
+  zoneEffectSchema,
+} from './effects'
 
 /** Texto de regra para exibir (pt-BR). Estruturado na FEAT-11. */
 export const ruleTextSchema = z.object({ text: z.string() })
 export type RuleText = z.infer<typeof ruleTextSchema>
 
-export const abilitySchema = z.object({ name: z.string(), text: z.string() })
+const abilityFields = { name: z.string(), text: z.string() }
+const releaseFormSchema = z.enum(['targeted', 'projectile', 'area'])
+const positive = z.number().int().positive()
+const nonNegative = z.number().int().nonnegative()
+
+const executableAbilitySchema = z
+  .object({
+    ...abilityFields,
+    id: z.string().min(1),
+    form: z.enum([
+      'targeted',
+      'projectile',
+      'area',
+      'continuous',
+      'channeled',
+      'passive',
+    ]),
+    element: elementSchema.nullable(),
+    cost: z.array(costSchema),
+    power: nonNegative.nullable(),
+    effects: z.array(effectSchema),
+    cooldown: nonNegative,
+    timing: z.enum(['combat', 'outsideCombat', 'both']),
+    classRestriction: z.array(playerClassSchema),
+    usesPerTurn: positive,
+    target: z.enum(['self', 'opponent', 'ally', 'allOpponents']),
+    duration: durationSchema.nullable(),
+    channel: z
+      .object({ chargesRequired: positive, releaseForm: releaseFormSchema })
+      .nullable(),
+  })
+  .refine(
+    (ability) => (ability.form === 'channeled') === (ability.channel !== null),
+    {
+      path: ['channel'],
+    },
+  )
+
+export const abilitySchema = z.union([
+  executableAbilitySchema,
+  z.strictObject(abilityFields),
+])
+export const enemyAbilityPrioritySchema = z.enum([
+  'selfBuff',
+  'continuous',
+  'selfBuffOrContinuous',
+  'supportWoundedAlly',
+  'highestPower',
+])
+export const enemyAbilityPrioritiesSchema = z
+  .array(enemyAbilityPrioritySchema)
+  .min(1)
+  .refine((priorities) => new Set(priorities).size === priorities.length)
+
+const combatOutcomeSchema = z.union([
+  eventOutcomeSchema,
+  z.strictObject({ text: z.string() }),
+])
 export type Ability = z.infer<typeof abilitySchema>
 
 const countByCardType = z.number().int().min(0)
@@ -176,6 +238,13 @@ export const enemySchema = z.object({
   vigor: z.number().nullable(),
   abilities: z.array(abilitySchema),
   behavior: enemyBehaviorSchema,
+  combatRules: z
+    .object({
+      abilityUsesPerTurn: positive.optional(),
+      abilityPriority: enemyAbilityPrioritiesSchema.optional(),
+      preferredAbilityIds: z.array(z.string()).optional(),
+    })
+    .optional(),
 })
 export type Enemy = z.infer<typeof enemySchema>
 
@@ -186,8 +255,9 @@ export const combatEventCardSchema = z.object({
   title: z.string(),
   flavorText,
   enemies: z.array(enemySchema).min(1),
-  goodOutcome: ruleTextSchema,
-  badOutcome: ruleTextSchema,
+  goodOutcome: combatOutcomeSchema,
+  badOutcome: combatOutcomeSchema,
+  escapeThreshold: nonNegative.max(20).nullable().optional(),
   noEscape: z.boolean(),
 })
 

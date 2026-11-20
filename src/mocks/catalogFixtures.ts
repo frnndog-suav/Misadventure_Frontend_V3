@@ -1,6 +1,7 @@
 import type {
   Card,
   CardType,
+  CombatEventCard,
   CatalogQueryInvalidDetails,
   CollectionSummary,
 } from '../api/catalog'
@@ -92,7 +93,7 @@ export const healingPotionFixture: Extract<Card, { type: 'item' }> = {
 }
 
 /** Cópia exata do backend (coleção `fixture`, CONTRATO v0.12). */
-export const howlingWolvesFixture: Card = {
+export const howlingWolvesFixture: CombatEventCard = {
   id: 'fixture.howling-wolves',
   title: 'Lobos Uivantes',
   flavorText: 'Uivos ecoam entre as árvores.',

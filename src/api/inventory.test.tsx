@@ -254,6 +254,12 @@ describe('REQ-44: PlayerState com inventário, equipamentos, bolsa e modificador
       'giveUpEvent',
       'escapeEvent',
       'resolveReward',
+      'activateCombatEffect',
+      'useAbility',
+      'escapeCombat',
+      'combatAttack',
+      'endCombatTurn',
+      'resolveTriggeredEffect',
       'endTurn',
     ])
     expect(partyActionTypeSchema.safeParse('wear').success).toBe(false)
