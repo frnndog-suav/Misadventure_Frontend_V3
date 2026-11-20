@@ -1,6 +1,6 @@
 # Misadventures — Roadmap de desenvolvimento
 
-> **Versão:** 0.60 · **Data:** 2026-11-20
+> **Versão:** 0.62 · **Data:** 2026-11-20
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend; o autor copia o arquivo inteiro quando ele muda. Base: README Parte III (III.2 e III.4). As regras estão em [`README.md`](README.md); o que trafega entre os lados, em [`CONTRATO.md`](CONTRATO.md).
 
@@ -65,7 +65,7 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | FEAT-32 | Cofre e Vasculhar: Usar cofre (slots, slots de decks, ouro, Descartar), limbo, deck de recompensas na Carta de Dimensão, Vasculhar | 3.4, 6.4, 6.5, 12.6 | validado | validado |
 | FEAT-11 | Efeitos e status: exibição de efeitos, buffs e debuffs; catálogo de variações de efeitos validado pelo autor (BE/design) | 13, III.3 | validado | validado |
 | FEAT-12 | Eventos aleatórios: fases, pagamento por partes, desistência, reposição, fuga | 14, 15 | validado | validado |
-| FEAT-13 | Combate 1 jogador × 1 ou mais inimigos: inimigos e IA deles, habilidades, elementos, cálculo de dano | 16, 17, 18, 19.1 a 19.4, 19.6 | a fazer | a fazer |
+| FEAT-13 | Combate 1 jogador × 1 ou mais inimigos: inimigos e IA deles, habilidades, elementos, cálculo de dano | 16, 17, 18, 19.1 a 19.4, 19.6 | em andamento | a fazer |
 | FEAT-14 | Nocaute, spawn, respawn e Salvar ponto de respawn (inclui o nocaute no jogo solo) | 20, 12.2 | a fazer | a fazer |
 | FEAT-15 | Missões de zona, provação e mentor; especializações e multiclasse | 21, 8.3, 8.4 | a fazer | a fazer |
 | FEAT-16 | Mercado: estoque, venda, boosters, singles, serviços | 24 | a fazer | a fazer |
@@ -173,3 +173,5 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | 0.58 | 2026-11-20 | FEAT-12: aceite do frontend à v0.55 registrado no CONTRATO v0.56 (`acordado`). FE pode implementar cliente, fixtures e telas com MSW. A validação integrada depende de `implementado (BE)`, URL do backend de teste e dados dos cenários. |
 | 0.59 | 2026-11-20 | FEAT-12: BE `pronto` (CONTRATO v0.58, `implementado (BE)`). Validação do frontend contra o backend real pendente. |
 | 0.60 | 2026-11-20 | FEAT-12 validada na T-62 (CONTRATO v0.59), com MSW desligado. Prazos multiplayer seguem a FEAT-26. |
+| 0.61 | 2026-11-20 | FEAT-13 em andamento no backend. T-44 com proposta de contrato BE v0.60 em revisão. |
+| 0.62 | 2026-11-20 | FEAT-13 com CONTRATO v0.62 acordado e T-44 concluída. Próxima tarefa BE: T-45, após autorização do autor. |
