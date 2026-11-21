@@ -30,7 +30,7 @@ O devlog 058 registra a aprovação do e2e REQ-123. O teste lê a linha inteira 
 
 | Dados para a próxima rodada | Cenários pendentes do CONTRATO v0.65 |
 | --- | --- |
-| Saves legados v8 com encontro aberto, descarte e ocorrências de combate repetidas | Revelação em deck misto, incluindo a variante com pilha de compra vazia do devlog 058. |
+| Saves legados v8 com encontro aberto, descarte e ocorrências de combate repetidas | Revelação em deck misto e com pilha de compra vazia, aprovada nas duas variantes (ver abaixo). |
 | Campanhas com configuração de combate determinística | Empate e mudança de Celeridade, habilidade paga com 0 PA e recarga, habilitação de Preparar com 0 PA e bloqueio após pagamento, custos automáticos e seleção de mão, slot e recursos. |
 | Conteúdo e campanhas com casos de borda | Variantes de catálogo e restrição de classe, vitória e derrota imediatas, Área e Precisão zero com elemento e Reflexão, suporte e Canalizada, fuga falha e limite em Sem fuga, derrota com desfecho aplicado uma vez. |
 | Saves equivalentes para escolhas de efeitos | Pagar e recusar na antecipação, ordem entre automático e opcional, pagamento inválido e reenvio de escolha consumida. |
@@ -44,7 +44,7 @@ Na campanha `cf2d7906-0fb3-4879-97cb-328f75021de5`, o Chrome com MSW desligado e
 
 O autor confirmou no devlog 058 do backend que o SHA-256 da linha inteira, `state.rngState` (`[0, 90, 20971531, 12]`) e `savedAt` (`2026-11-21T17:10:01.091Z`) coincidiram antes e depois da recusa. A campanha está liberada para novas ações. A T-67 continua aberta para os demais cenários da matriz.
 
-## Saves legados v8 — confirmação parcial
+## Saves legados v8 — aprovados
 
 Chrome via Playwright, frontend em `localhost:5173`, MSW desligado e API v0.65 em `localhost:3333`. Nos dois saves, abrir e recarregar a página manteve Viajante Ferido visível na fase `encounter`, com o mesmo ID de encontro e o mesmo snapshot público completo. Desistir, iniciar evento e revelar retornaram HTTP 200 em ambas as variantes.
 
@@ -53,4 +53,8 @@ Chrome via Playwright, frontend em `localhost:5173`, MSW desligado e API v0.65 e
 | Deck misto | `f739c4d8-18e9-4090-89f1-968623044dd3` | `fixture.t67-traveler-reserve` permaneceu no topo e apareceu na fase `encounter`. |
 | Pilha de compra vazia | `6a2e39f1-940a-4631-95a2-1134be32e2a0` | `combat.card.id` retornou `fixture.howling-wolves`, com dois inimigos. A revelação é compatível com a inclusão antes da reciclagem do descarte. |
 
-A asserção automatizada da variante vazia procurou o ID em `combat.cardId` e falhou. Um GET posterior confirmou o valor no campo `combat.card.id`. A API pública não expõe a pilha, o descarte ou o RNG. Para concluir a verificação, falta conferir no PostgreSQL as duas ocorrências restantes no deck misto, uma ocorrência restante na variante vazia, a ordem do descarte e o RNG em relação ao estado inicial. Os saves ficaram nas fases indicadas na tabela. Nenhuma ação adicional foi enviada. Os outros grupos de cenários da T-67 seguem pendentes de fixtures.
+A asserção automatizada da variante vazia procurou o ID em `combat.cardId` e falhou. Um GET posterior confirmou o valor em `combat.card.id`. A variante abriu o combate na janela `prepare`, antes de qualquer ataque.
+
+O autor confirmou as duas variantes no PostgreSQL e registrou a aprovação no [devlog 058 do backend](../../../Misadventure_Backend_V3/docs/devlog/058-T-49-save-e-http-de-combate.md). No deck misto, restaram dois `fixture.howling-wolves` na pilha urbana, do topo ao fundo. Na variante com pilha vazia, restou um. Nos dois saves, o descarte urbano ficou na ordem `fixture.t67-traveler-reserve`, `fixture.wounded-traveler`, e o estado foi persistido no formato v9. O RNG ficou em `[0, 0, 0, 10]` nos dois saves, desde a preparação até a leitura final. A perda fixa de ouro, a inclusão dos lobos e a retirada da primeira carta elegível ocorreram sem sorteios nem reciclagem.
+
+O cenário v8 está fechado. A T-67 segue aberta e aguarda as fixtures dos demais cenários da matriz, começando por empate e mudança de Celeridade.
