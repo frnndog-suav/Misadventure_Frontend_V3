@@ -115,4 +115,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 083 | T-64 | [Catálogo, editor e laboratório da FEAT-13](083-T-64-catalogo-editor-laboratorio-feat-13.md) | concluída |
 | 084 | T-65 | [Tela e ações de combate solo](084-T-65-tela-acoes-combate-solo.md) | concluída |
 | 085 | T-66 | [Escolha de efeitos disparados](085-T-66-escolha-efeitos-disparados.md) | concluída |
-| 086 | T-67 | [Preparação da validação integrada da FEAT-13](086-T-67-validacao-integrada-feat-13.md) | aguardando API real e dados de teste |
+| 086 | T-67 | [Validação parcial da FEAT-13](086-T-67-validacao-integrada-feat-13.md) | validação parcial |
