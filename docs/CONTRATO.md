@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.64 · **Data:** 2026-11-20
+> **Versão do contrato:** 0.65 · **Data:** 2026-11-20
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -2392,7 +2392,7 @@ Exemplo dos campos executáveis de `cart` no cenário da última parte:
 | Inventário cheio, uma cópia de `ore` coletável no deck. `{"type":"scavenge","cardId":"ore"}`. | 200, −1 PA, `lastScavenge: {"cardId":"ore","found":true,"delivery":"pending"}`, recompensa de `rewardDeck` com fonte `scavenge`. Deixar devolve ao fundo e muda `delivery` para `left`. Com espaço em pilha, entrega direta e `delivery: "inventory"`. Com deck vazio, gasta o ponto, `found: false`, `delivery: "none"` e reserva intacta. |
 | Relógio controlado para integração FEAT-26, fase `encounter`, ouro já pago e prazo `2026-11-20T18:00:30Z`. GET após vencer o prazo. | Revés por `timedOut`; o ouro permanece pago, cartas elegíveis são repostas. Em escolha de recompensa vencida, mesmo destino de `leave`. No solo, avançar o relógio mantém a escolha aberta. |
 
-### FEAT-13 — Combate solo — `acordado`
+### FEAT-13 — Combate solo — `implementado (BE)`
 
 Base: ROADMAP v0.60, SPEC-BACKEND v0.61 (REQ-117 a REQ-123) e devlog 052. A integração começa com `startEvent` e `revealEvent` da FEAT-12. A revelação de um `combatEvent` fecha a antecipação, preenche `Party.combat` e avança eventuais turnos inimigos anteriores ao primeiro turno do jogador. Os fluxos de evento aleatório e recompensa da FEAT-12 mantêm seus formatos.
 
@@ -2549,7 +2549,7 @@ Ao terminar o combate, `combat` vira nulo e o resultado permanece disponível at
 
 **Recusas.** Reutiliza 400 `ACTION_INVALID` para payload malformado e 409 `ACTION_NOT_ALLOWED` para intenção incompatível com estado. Motivos novos: `combatInProgress`, `staleCombat`, `staleCombatTurn`, `wrongCombatPhase`, `combatTargetUnavailable`, `combatAbilityUnavailable`, `playerDown`. Reutiliza `choicePending`, `notEnoughVigor`, `paymentInvalid`, `escapeForbidden` e motivos de efeitos aplicáveis. Conferir sessão, combate e turno antes de janela, alvo e pagamento. Recusas preservam save, RNG e `savedAt`. O encerramento de sessão durante combate usa 409 `ACTION_NOT_ALLOWED` com `combatInProgress`.
 
-#### Escolha de efeitos disparados — `acordado`
+#### Escolha de efeitos disparados — `implementado (BE)`
 
 O contrato de combate solo v0.62 permanece acordado. Esta extensão cobre os efeitos do jogador em Preparar, na antecipação, no encontro aleatório antes do primeiro pagamento e em combate, inclusive durante a sequência de um inimigo.
 
@@ -2713,3 +2713,4 @@ type ResolveTriggeredEffectAction = {
 | 0.62 | 2026-11-20 | BE | FEAT-13 `acordado`: frontend confirmou a interface v0.61. T-44 concluída. |
 | 0.63 | 2026-11-20 | BE | Extensão da FEAT-13 `proposto (BE)`: escolha de efeitos disparados, ordem das opções simultâneas, retomada e recusas. |
 | 0.64 | 2026-11-20 | BE | Extensão da FEAT-13 `acordado`: frontend confirmou os tipos, a ordem e as recusas propostos na v0.63. |
+| 0.65 | 2026-11-20 | BE | FEAT-13 `implementado (BE)` com a T-49 aprovada nos unitários e e2e. Validação integrada pendente. |
