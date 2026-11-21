@@ -62,6 +62,9 @@ O mapa é uma referência, não uma lista de leituras obrigatórias. Não copie 
 
 ## Coordenação
 
+- Peça ao autor **uma única ação por vez**, sempre a de maior prioridade para avançar. Diga de forma direta o que fazer, onde fazer e qual resultado devolver, quando necessário. Repita essa mesma instrução se isso ajudar a evitar dúvidas.
+- Se houver etapas dependentes, espere a conclusão da ação atual antes de apresentar a próxima. Adie comandos, cenários manuais, sugestões de commit e prompts de retomada quando puderem ser confundidos com pedidos simultâneos. Esta regra também se aplica aos avisos copiáveis e prevalece sobre as instruções de entrega desses itens na mesma resposta. Quando o próximo passo couber ao Codex, execute-o assim que o pré-requisito estiver disponível.
+
 - O usuário faz a ponte com o backend e com outras IAs.
 - Somente o autor executa comandos do Docker e do Docker Compose. Somente o autor inicia, reinicia ou para o Docker, os containers e a aplicação do backend. O Codex não aciona essas operações por ferramentas, scripts ou testes. Quando precisar do ambiente, informe quais serviços são necessários e aguarde a confirmação do autor. Após a confirmação, as verificações podem consultar a API em execução.
 - Somente o autor executa testes do projeto backend. O Codex jamais os executa, inclusive por ferramentas, scripts ou automações. Quando precisar de um teste, avise o autor, indique o comando ou cenário e o resultado esperado, e aguarde o retorno antes de prosseguir com o trabalho que depende do teste.
