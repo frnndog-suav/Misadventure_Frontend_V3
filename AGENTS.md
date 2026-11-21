@@ -58,6 +58,7 @@ O mapa é uma referência, não uma lista de leituras obrigatórias. Não copie 
 5. Para critérios novos ou alterados, escreva primeiro os testes com o ID do requisito e confirme a falha esperada. Implemente a menor solução completa e execute os testes afetados e as validações pertinentes.
 6. Registre a etapa de desenvolvimento no devlog. Relate arquivos alterados, verificações executadas, pendências e, quando aplicável, roteiro de testes com resultados esperados e um caso de borda.
 7. Ao final de cada implementação, inclua na resposta uma sugestão de commit em inglês, curta e em minúsculas, no formato `tipo/descrição`, sem dois-pontos. Para tarefas de feature com IDs definidos, siga o padrão do histórico, como `feat/t-55 feat-11 structured effects in cards and editor`. Use o prefixo que descreve a mudança. O autor faz o commit.
+   - Imediatamente acima de cada sugestão, use em linha própria **🖥️ FRONTEND — FAÇA O COMMIT NA RAIZ DO REPOSITÓRIO FRONTEND** ou **🖥️ BACKEND — FAÇA O COMMIT NA RAIZ DO REPOSITÓRIO BACKEND**, conforme o repositório que contém as alterações. Informe o caminho absoluto da raiz quando conhecido. Se houver mudanças a commitar nos dois repositórios, dê uma sugestão separada para cada um, com seu próprio rótulo.
 
 ## Coordenação
 

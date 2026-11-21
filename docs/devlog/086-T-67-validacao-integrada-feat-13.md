@@ -77,3 +77,14 @@ Sem divergências nos dois cenários. Apenas este devlog foi alterado. A T-67 se
 Em 2026-11-21, com `VITE_USE_MOCKS=false` na configuração local, a API real em `localhost:3333` respondeu HTTP 200 a `GET /health` com `contractVersion: "0.65"`. A lista de `GET /parties` continha as campanhas das rodadas anteriores, sem as duas campanhas determinísticas desta rodada. O devlog 058 do backend também não registrava seus IDs.
 
 A execução no Chrome fica pendente até a entrega dos saves. No combate, verificar pagamento único, descarte das cartas usadas, ataque básico disponível e bloqueio durante a recarga. Fora de combate, verificar que a habilidade habilita Preparar como única operação elegível com 0 PA, que o primeiro pagamento do encontro esvazia `usableAbilities`, que a repetição recebe HTTP 409 `eventPaymentStarted` e que entrar em combate zera a recarga anterior. Nenhuma intenção desses cenários foi enviada. Ainda não há respostas das ações nem divergências a avaliar. Horas da sessão permanecem `null`.
+
+## Habilidade paga e Preparar com 0 PA — cenários solicitados aprovados
+
+Validação em 2026-11-21 no Chrome via Playwright, com Vite em `localhost:5173`, MSW desligado e API real `localhost:3333` no CONTRATO v0.65. As duas campanhas começaram com 0 PA e 10 de ouro. Horas da sessão permanecem `null`.
+
+| Campanha | Respostas e estado observado |
+| --- | --- |
+| Golpe Pago (`6ca3ea6f-682b-4d8b-8230-1ee46f71a54c`) | `useAbility` para `fixture.t67-paid-strike`, slot `weapon`, com `payment.handCards: ["hand-8"]` (Destreza), retornou HTTP 200. Ouro 10 → 8, a cópia saiu da mão e o descarte de atributos passou de 0 para 1. A API projetou `cooldownRemaining: 2` e `combat.abilities: []`. O botão de ataque básico continuou habilitado e `combatAttack` retornou HTTP 200. O GET seguinte confirmou ouro 8, 0 PA, os mesmos sete IDs na mão e uma carta no descarte. A API pública expõe a contagem do descarte. A permanência da cópia foi verificada pela contagem e pelos IDs da mão. |
+| Socorro de Campo (`538dec1d-59f2-48cc-ac13-db68cdcd6d74`) | O formulário de Preparar apareceu aberto com uma única opção, `fixture.t67-field-aid` no slot `weapon`. `prepare/useAbility` retornou HTTP 200, ouro 10 → 9, PV 10 → 11 e pagamentos do encontro vazios. A lista `usableAbilities` esvaziou e `prepare` saiu de `availableActions` já após o uso. `payEventRequirement` para `gold` retornou HTTP 200, ouro 7 e recibo `{"requirementId":"gold","gold":2}`. Vigor permaneceu em 10, com a exigência de 3 pendente. `usableAbilities` continuou vazio e `prepare` continuou ausente. O reenvio da mesma intenção pelo Chrome retornou HTTP 409, `error.code: "ACTION_NOT_ALLOWED"` e `error.details.reason: "eventPaymentStarted"`. Os GETs antes e depois do reenvio foram idênticos, inclusive o ouro 7 e `savedAt`. |
+
+A T-67 segue aberta. O reset de recarga ao entrar em combate e os demais cenários da matriz ainda precisam de validação. Apenas este devlog foi alterado.
