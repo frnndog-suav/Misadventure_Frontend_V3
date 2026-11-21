@@ -61,6 +61,46 @@ function renderLab(): void {
   )
 }
 
+it('REQ-65: exibe os ajustes de nocaute, salva, associa erros e restaura os padrões', async () => {
+  renderLab()
+  const fields = [
+    ['Vida no respawn (% da vida máxima)', 10, '1', '100'],
+    ['Perda de Pico no nocaute (%)', 10, '0', '100'],
+    ['Teto de Vigor no respawn (% do Pico)', 50, '0', '100'],
+    ['Perda de ouro da bolsa no nocaute solo (%)', 10, '0', '100'],
+    ['Rodadas de espera no nocaute solo', 1, '0', '10'],
+  ] as const
+  const inputs = []
+  for (const [name, value, min, max] of fields) {
+    const input = await screen.findByRole('spinbutton', { name })
+    expect(input).toHaveValue(value)
+    expect(input).toHaveAttribute('min', min)
+    expect(input).toHaveAttribute('max', max)
+    expect(input).toHaveAccessibleDescription(
+      expect.stringContaining(String(value)),
+    )
+    inputs.push(input)
+  }
+  const health = inputs[0]!
+  const wait = inputs[4]!
+  fireEvent.change(health, { target: { value: '0' } })
+  fireEvent.change(wait, { target: { value: '1.5' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar' }))
+  await waitFor(() => {
+    expect(health).toHaveAttribute('aria-invalid', 'true')
+    expect(wait).toHaveAccessibleDescription(
+      expect.stringContaining('Use um número inteiro.'),
+    )
+  })
+  fireEvent.change(health, { target: { value: '10' } })
+  fireEvent.change(wait, { target: { value: '0' } })
+  fireEvent.click(screen.getByRole('button', { name: 'Salvar' }))
+  expect(await screen.findByText('Configuração salva.')).toBeVisible()
+  expect(wait).toHaveValue(0)
+  fireEvent.click(screen.getByRole('button', { name: 'Restaurar padrões' }))
+  await waitFor(() => expect(wait).toHaveValue(1))
+})
+
 describe('REQ-18: link do editor', () => {
   it('REQ-18: /lab tem o link "Editor de conteúdo" para /lab/editor', () => {
     renderLab()

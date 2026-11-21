@@ -90,6 +90,7 @@ function cardIdsOf(party: Party): string[] {
     ...party.members.flatMap(({ player }) => [
       player.zoneId,
       player.respawnZoneId,
+      ...(player.lastKnockout ? [player.lastKnockout.respawnZoneId] : []),
       ...player.hand,
       ...player.build.map(({ cardId }) => cardId),
       ...player.tcgFolder.map(({ cardId }) => cardId),
@@ -126,13 +127,16 @@ function MemberState({
   classes,
   cards,
   prepare,
+  rewardPending,
 }: {
   member: PartyMember
   classes: ClassDefinition[]
   cards: Cards
   prepare: PrepareControls | null
+  rewardPending: boolean
 }) {
   const { player } = member
+  const knockout = player.lastKnockout
   const titleId = `member-${member.id}`
   const handId = `hand-${member.id}`
   const buildId = `build-${member.id}`
@@ -154,6 +158,27 @@ function MemberState({
       <p>
         Vida {player.health}/{player.maxHealth}
       </p>
+      {player.down && (
+        <p role="status">
+          {rewardPending
+            ? 'Caído · aguardando a escolha de recompensa'
+            : 'Caído'}
+        </p>
+      )}
+      {player.skipNextTurn && <p>Perde a próxima vez.</p>}
+      {knockout && (
+        <section aria-label="Último nocaute" key={knockout.id}>
+          <p role="status">
+            Retornou a {nameOf(cards, knockout.respawnZoneId)} com{' '}
+            {knockout.healthRestored} PV na rodada {knockout.roundAfterRespawn}.
+          </p>
+          <p>
+            Perdas do nocaute na rodada {knockout.roundAtKnockout}: Pico{' '}
+            {knockout.peakLost} · Vigor {knockout.vigorLost} · Ouro da bolsa{' '}
+            {knockout.purseGoldLost}.
+          </p>
+        </section>
+      )}
       <p>Vida base {player.baseHealth}</p>
       <p>Pico {player.peak}</p>
       <p>Vigor {player.vigor}</p>
@@ -1007,6 +1032,7 @@ function TurnState({
   party,
   cards,
   onEndTurn,
+  onSaveRespawnPoint,
   onRecover,
   onAdjust,
   onScavenge,
@@ -1018,6 +1044,7 @@ function TurnState({
   party: Party
   cards: Cards
   onEndTurn: () => void
+  onSaveRespawnPoint: () => void
   onRecover: (option: RecoverAction['option']) => void
   onAdjust: () => void
   onScavenge: (cardId: string) => void
@@ -1083,6 +1110,12 @@ function TurnState({
           Usar cofre
         </button>
       )}
+      {host?.id === memberId &&
+        host.player.availableActions.includes('saveRespawnPoint') && (
+          <button type="button" onClick={onSaveRespawnPoint} disabled={pending}>
+            Salvar ponto de respawn
+          </button>
+        )}
       {host?.player.availableActions.includes('endTurn') && (
         <button type="button" onClick={onEndTurn} disabled={pending}>
           Encerrar a vez
@@ -1099,6 +1132,7 @@ function PreparedMatch({
   cards,
   onMove,
   onEndTurn,
+  onSaveRespawnPoint,
   onRecover,
   onScavenge,
   onSaveBuild,
@@ -1120,6 +1154,7 @@ function PreparedMatch({
   cards: Cards
   onMove: (zoneId: string) => void
   onEndTurn: () => void
+  onSaveRespawnPoint: () => void
   onRecover: (option: RecoverAction['option']) => void
   onScavenge: (cardId: string) => void
   onSaveBuild: (build: CardCopies[]) => void
@@ -1150,6 +1185,7 @@ function PreparedMatch({
           party={party}
           cards={cards}
           onEndTurn={onEndTurn}
+          onSaveRespawnPoint={onSaveRespawnPoint}
           onRecover={onRecover}
           onAdjust={() => setAdjusting(true)}
           onScavenge={onScavenge}
@@ -1215,6 +1251,9 @@ function PreparedMatch({
           member={member}
           classes={classes}
           cards={cards}
+          rewardPending={party.pendingRewards.some(
+            ({ memberId }) => memberId === member.id,
+          )}
           prepare={
             !party.combat &&
             member.isHost &&
@@ -1405,6 +1444,8 @@ export function PartySession() {
     } else if (action.variables.type === 'recover') {
       const { health, maxHealth, vigor } = host.player
       status = `Recuperou: vida ${health}/${maxHealth}, Vigor ${vigor}.`
+    } else if (action.variables.type === 'saveRespawnPoint') {
+      status = `Ponto de respawn salvo em ${nameOf(cards.cards, host.player.respawnZoneId)}.`
     } else if (!eventAction && !combatAction) {
       status = `Você está em ${nameOf(cards.cards, host.player.zoneId)}.`
     }
@@ -1490,6 +1531,9 @@ export function PartySession() {
             cards={cards.cards}
             onMove={(zoneId) => action.mutate({ type: 'move', zoneId })}
             onEndTurn={() => action.mutate({ type: 'endTurn' })}
+            onSaveRespawnPoint={() =>
+              action.mutate({ type: 'saveRespawnPoint' })
+            }
             onRecover={(option) => action.mutate({ type: 'recover', option })}
             onScavenge={(cardId) => action.mutate({ type: 'scavenge', cardId })}
             onSaveBuild={(build) =>

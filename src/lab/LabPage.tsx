@@ -9,7 +9,6 @@ import {
   type LabConfig,
   type LabConfigInvalidDetails,
   type LabConfigPatch,
-  type KnockoutConfigKey,
 } from '../api/labConfig'
 import { CardCategory } from '../ui/CardCategory'
 import { Term } from '../ui/Term'
@@ -23,7 +22,7 @@ import './LabPage.css'
 /** Rótulos dos campos (REQ-06, glossário §2.6), na ordem da tela. */
 type NumericKey = Exclude<
   keyof LabConfig['values'],
-  'reserveDeck' | 'enemyAbilityPriorities' | KnockoutConfigKey
+  'reserveDeck' | 'enemyAbilityPriorities'
 >
 
 const fieldLabels: Record<NumericKey, string> = {
@@ -71,6 +70,11 @@ const fieldLabels: Record<NumericKey, string> = {
   elementAdvantageBonusPercent: 'Bônus de vantagem elemental (%)',
   elementDisadvantagePenaltyPercent: 'Penalidade de desvantagem elemental (%)',
   escapeVigorPercent: 'Custo de fuga (% do Pico em Vigor)',
+  knockoutHealthPercent: 'Vida no respawn (% da vida máxima)',
+  knockoutPeakLossPercent: 'Perda de Pico no nocaute (%)',
+  knockoutVigorCapPercent: 'Teto de Vigor no respawn (% do Pico)',
+  soloKnockoutGoldLossPercent: 'Perda de ouro da bolsa no nocaute solo (%)',
+  soloKnockoutWaitRounds: 'Rodadas de espera no nocaute solo',
 }
 
 const fieldKeys = Object.keys(fieldLabels) as NumericKey[]
@@ -348,6 +352,8 @@ function ConfigForm({ config }: { config: LabConfig }) {
                 id={inputId}
                 type="number"
                 value={shown(key)}
+                min={min}
+                max={max}
                 aria-invalid={error ? true : undefined}
                 aria-describedby={error ? `${hintId} ${errorId}` : hintId}
                 onChange={(e) =>

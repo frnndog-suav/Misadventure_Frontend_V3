@@ -31,6 +31,7 @@ import {
   resetCombatScenarios,
 } from '../../mocks/combatFixtures'
 import { handlers } from '../../mocks/handlers'
+import { resetKnockoutScenarios } from '../../mocks/knockoutFixtures'
 import {
   eventMinimumNotMetFixture,
   eventScenarios,
@@ -76,6 +77,7 @@ afterAll(() => {
 let queryClient: QueryClient
 
 beforeEach(() => {
+  resetKnockoutScenarios()
   queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
@@ -95,6 +97,157 @@ function renderParty(id: string = partyId) {
 
 const status = () => screen.getAllByRole('status')[0]
 const endButton = () => screen.getByRole('button', { name: 'Encerrar sessão' })
+
+it('REQ-63: salva a Urbana atual, mantém o estado em uma recusa e recupera o ponto ao reabrir', async () => {
+  const id = 'fixture.knockout-spawn'
+  const view = renderParty(id)
+  const save = () =>
+    screen.getByRole('button', { name: 'Salvar ponto de respawn' })
+  expect(
+    await screen.findByText('Cidade inicial: Porto Cinzento'),
+  ).toBeVisible()
+  expect(
+    await screen.findByText('Ponto de respawn: Porto Cinzento'),
+  ).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: /Vila do Retorno/ }))
+  fireEvent.click(
+    screen.getByRole('button', { name: 'Movimentar para Vila do Retorno' }),
+  )
+  await screen.findByText('Zona atual: Vila do Retorno')
+  fireEvent.click(save())
+  expect(
+    await screen.findByText('Ponto de respawn: Vila do Retorno'),
+  ).toBeVisible()
+  const turn = screen.getByRole('region', { name: 'A vez' })
+  expect(turn).toHaveTextContent('1 ponto de ação')
+
+  server.use(
+    http.post('*/parties/:id/actions', async ({ request }) => {
+      expect(await request.json()).toEqual({ type: 'saveRespawnPoint' })
+      return HttpResponse.json(
+        {
+          error: {
+            code: 'ACTION_NOT_ALLOWED',
+            message: 'O ponto não pôde ser salvo.',
+            details: { reason: 'noActionPoints' },
+          },
+        },
+        { status: 409 },
+      )
+    }),
+  )
+  fireEvent.click(save())
+  await screen.findByText('O ponto não pôde ser salvo.')
+  expect(turn).toHaveTextContent('1 ponto de ação')
+  server.resetHandlers()
+  fireEvent.click(save())
+  await waitFor(() => expect(turn).toHaveTextContent('0 pontos de ação'))
+  expect(
+    screen.queryByRole('button', { name: 'Salvar ponto de respawn' }),
+  ).toBeNull()
+  view.unmount()
+  queryClient.clear()
+  renderParty(id)
+  expect(
+    await screen.findByText('Ponto de respawn: Vila do Retorno'),
+  ).toBeVisible()
+})
+
+it.each([
+  ['heal', 'Desistir'],
+  ['reflection', /Atacar Lobo/],
+])(
+  'REQ-64: reabre a escolha com o membro caído e apresenta o respawn (%s)',
+  async (scenario, action) => {
+    const id = 'fixture.knockout-' + scenario
+    const view = renderParty(id)
+    fireEvent.click(await screen.findByRole('button', { name: action }))
+    if (scenario === 'heal') {
+      fireEvent.click(
+        screen.getByRole('button', { name: 'Confirmar desistência' }),
+      )
+    }
+    await screen.findByRole('region', { name: 'Recompensa pendente' })
+    expect(
+      screen.getByText('Caído · aguardando a escolha de recompensa'),
+    ).toBeVisible()
+    expect(screen.getByText(/Vida 0\//)).toBeVisible()
+    expect(screen.queryByRole('button', { name: 'Encerrar a vez' })).toBeNull()
+    fireEvent.click(endButton())
+    expect(await screen.findByText('Sessão encerrada.')).toBeVisible()
+    view.unmount()
+    queryClient.clear()
+    renderParty(id)
+    const reward = await screen.findByRole('region', {
+      name: 'Recompensa pendente',
+    })
+    fireEvent.click(within(reward).getByRole('button', { name: 'Deixar' }))
+    expect(
+      await screen.findByText(/Retornou a Vila do Retorno com 2 PV/),
+    ).toBeVisible()
+    expect(screen.getByText('Rodada 8')).toBeVisible()
+    expect(screen.getByRole('button', { name: 'Encerrar a vez' })).toBeEnabled()
+    expect(screen.queryByText(/Caído ·/)).toBeNull()
+  },
+)
+
+it('REQ-64: a doação fatal fora de combate mostra a vez jogável com a recarga e a duração projetadas', async () => {
+  renderParty('fixture.knockout-donation')
+  expect(await screen.findByText(/Duas rodadas/)).toBeVisible()
+  expect(
+    screen.queryByRole('button', { name: 'Salvar ponto de respawn' }),
+  ).toBeNull()
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Usar habilidade' }),
+  )
+  expect(await screen.findByText('Rodada 8')).toBeVisible()
+  expect(screen.queryByText(/Duas rodadas/)).toBeNull()
+  const focus = await screen.findByRole('group', {
+    name: 'Preparar habilidade · focus',
+  })
+  expect(
+    within(focus).getByRole('button', { name: 'Usar habilidade' }),
+  ).toBeEnabled()
+})
+
+it.each([
+  ['fatal-payment', 'Pagar requisito'],
+  ['defeat', 'Encerrar turno de combate'],
+  ['reflection-auto', /Atacar Lobo/],
+])(
+  'REQ-64: mostra o desfecho e mantém o resumo após recarga (%s)',
+  async (scenario, action) => {
+    const id = 'fixture.knockout-' + scenario
+    const view = renderParty(id)
+    if (scenario === 'fatal-payment') {
+      const life = (await screen.findByText(/Doe 2 PV\. ·/)).closest('li')!
+      fireEvent.click(within(life).getByRole('button', { name: action }))
+    } else {
+      fireEvent.click(await screen.findByRole('button', { name: action }))
+    }
+    const summary = await screen.findByRole('region', {
+      name: 'Último nocaute',
+    })
+    expect(summary).toHaveTextContent('Vila do Retorno')
+    expect(summary).toHaveTextContent('2 PV')
+    expect(summary).toHaveTextContent('Pico 1 · Vigor 5 · Ouro da bolsa 3')
+    expect(screen.getByText('Rodada 8')).toBeVisible()
+    expect(screen.getByText('Vida 2/21')).toBeVisible()
+    expect(screen.getByText('Vigor 4')).toBeVisible()
+    expect(screen.getByText(/Ouro no cofre 80/)).toBeVisible()
+    if (scenario === 'fatal-payment') {
+      expect(screen.getByText('Pico 8')).toBeVisible()
+      expect(screen.getByText(/Ouro 29 \(bolsa/)).toBeVisible()
+    }
+    const before = summary.textContent
+    view.unmount()
+    queryClient.clear()
+    renderParty(id)
+    expect(
+      await screen.findByRole('region', { name: 'Último nocaute' }),
+    ).toHaveTextContent(before!)
+  },
+)
 
 it('REQ-59: abre a recompensa de Vasculhar com 0 PA e mostra a devolução ao deck', async () => {
   renderParty('party-vasculhar-sem-espaco')
