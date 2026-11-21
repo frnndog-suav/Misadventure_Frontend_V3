@@ -25,7 +25,11 @@ import { getJson, requestJson } from '../../api/http'
 import App from '../../App'
 import { partyEffectsReadyFixture } from '../../mocks/effectFixtures'
 import { internalErrorFixture } from '../../mocks/fixtures'
-import { resetCombatScenarios } from '../../mocks/combatFixtures'
+import { shortSwordFixture } from '../../mocks/catalogFixtures'
+import {
+  combatScenario,
+  resetCombatScenarios,
+} from '../../mocks/combatFixtures'
 import { handlers } from '../../mocks/handlers'
 import {
   eventMinimumNotMetFixture,
@@ -3320,6 +3324,82 @@ describe('REQ-61: combate solo', () => {
     fireEvent.click(use)
     expect(await screen.findByText('Habilidade usada.')).toBeInTheDocument()
   })
+
+  it.each([1, 2])(
+    'envia habilidade de Área sem alvo individual com %i oponente(s)',
+    async (count) => {
+      const id = 'party-combat-active'
+      const { party } = combatScenario(id)!
+      const combat = party.combat!
+      const [enemy] = combat.enemies
+      const enemies =
+        count === 1
+          ? [enemy]
+          : [enemy, { ...enemy, id: 'wolf-2', copyIndex: 1 }]
+      const snapshot = {
+        ...party,
+        combat: {
+          ...combat,
+          enemies,
+          abilities: [
+            { ...combat.abilities[0], targetIds: enemies.map(({ id }) => id) },
+          ],
+        },
+      }
+      const submit = vi.fn()
+      server.use(
+        http.post(`*/parties/${id}/session`, () => HttpResponse.json(snapshot)),
+        http.get(`*/parties/${id}`, () => HttpResponse.json(snapshot)),
+        http.get('*/catalog/cards/fixture.short-sword', () =>
+          HttpResponse.json({
+            ...shortSwordFixture,
+            abilities: [
+              {
+                id: 'strike',
+                name: 'Onda de Água',
+                text: '',
+                form: 'area',
+                element: 'water',
+                cost: [],
+                power: 1,
+                effects: [],
+                cooldown: 0,
+                timing: 'combat',
+                classRestriction: [],
+                usesPerTurn: 1,
+                target: 'allOpponents',
+                duration: null,
+                channel: null,
+              },
+            ],
+          }),
+        ),
+        http.post(`*/parties/${id}/actions`, async ({ request }) => {
+          submit(await request.json())
+          return HttpResponse.json(snapshot)
+        }),
+      )
+      renderParty(id)
+      const ability = within(
+        await screen.findByRole('group', { name: 'Onda de Água' }),
+      )
+      expect(
+        ability.queryByRole('combobox', { name: 'Alvo' }),
+      ).not.toBeInTheDocument()
+      const use = ability.getByRole('button', { name: 'Usar habilidade' })
+      expect(use).toBeEnabled()
+      fireEvent.click(use)
+      await waitFor(() =>
+        expect(submit).toHaveBeenCalledExactlyOnceWith({
+          type: 'useAbility',
+          combatId: combat.id,
+          turnId: combat.turn.id,
+          abilityId: 'strike',
+          equipmentSlot: 'weapon',
+        }),
+      )
+    },
+  )
 
   it.each([
     ['Fugir', 'Fuga'],

@@ -201,20 +201,17 @@ function ProjectedAction({
   )
 }
 
-function abilityName(
+function equippedAbility(
   option: Combat['abilities'][number],
   host: PartyMember,
   cards: Cards,
 ) {
   const card = cards.get(host.player.equipment[option.equipmentSlot] ?? '')
   if (card && 'abilities' in card) {
-    return (
-      card.abilities.find(
-        (ability) => 'id' in ability && ability.id === option.abilityId,
-      )?.name ?? option.abilityId
+    return card.abilities.find(
+      (ability) => 'id' in ability && ability.id === option.abilityId,
     )
   }
-  return option.abilityId
 }
 
 type Controls = {
@@ -299,7 +296,7 @@ export function PrepareAbilities({ host, cards, pending, onAction }: Controls) {
     <ProjectedAction
       key={JSON.stringify(option)}
       option={option}
-      label={`Preparar habilidade · ${abilityName(option, host, cards)}`}
+      label={`Preparar habilidade · ${equippedAbility(option, host, cards)?.name ?? option.abilityId}`}
       button="Usar habilidade"
       host={host}
       cards={cards}
@@ -325,10 +322,12 @@ export function CombatPanel({
   pending,
   onAction,
   names,
+  catalogPending,
 }: Omit<Controls, 'host'> & {
   combat: Combat
   host?: PartyMember
   names: ReadonlyMap<string, string>
+  catalogPending: boolean
 }) {
   const title = useId()
   const name = (id: string) => names.get(id) ?? id
@@ -392,27 +391,35 @@ export function CombatPanel({
         ))}
       {host &&
         offer('useAbility') &&
-        combat.abilities.map((option) => (
-          <ProjectedAction
-            key={JSON.stringify([ids, option])}
-            option={option}
-            label={abilityName(option, host, cards)}
-            button="Usar habilidade"
-            host={host}
-            cards={cards}
-            pending={pending}
-            name={name}
-            onSubmit={(selection) =>
-              onAction({
-                type: 'useAbility',
-                ...ids,
-                abilityId: option.abilityId,
-                equipmentSlot: option.equipmentSlot,
-                ...selection,
-              })
-            }
-          />
-        ))}
+        combat.abilities.map((option) => {
+          const ability = equippedAbility(option, host, cards)
+          const cardId = host.player.equipment[option.equipmentSlot]
+          const loadingAbility =
+            catalogPending && !!cardId && !cards.has(cardId)
+          const allOpponents =
+            ability && 'target' in ability && ability.target === 'allOpponents'
+          return (
+            <ProjectedAction
+              key={JSON.stringify([ids, option])}
+              option={allOpponents ? { ...option, targetIds: [] } : option}
+              label={ability?.name ?? option.abilityId}
+              button="Usar habilidade"
+              host={host}
+              cards={cards}
+              pending={pending || loadingAbility}
+              name={name}
+              onSubmit={(selection) =>
+                onAction({
+                  type: 'useAbility',
+                  ...ids,
+                  abilityId: option.abilityId,
+                  equipmentSlot: option.equipmentSlot,
+                  ...selection,
+                })
+              }
+            />
+          )
+        })}
       {escape.unavailableReason && (
         <p>Fuga indisponível: {escape.unavailableReason}</p>
       )}

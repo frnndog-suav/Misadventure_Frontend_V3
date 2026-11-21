@@ -146,3 +146,78 @@ O autor informou os resultados da conferência no backend, sem divergências par
 | Derrota — `1527de24-10fb-4538-8b49-f5808015b665` | Uma ocorrência de `fixture.t67-defeat` no descarte urbano e saldo de 5 de ouro. |
 
 As linhas de turno obsoleto e Reflexão fatal com inventário cheio estão aprovadas. A execução dos cenários desta rodada está concluída e apenas este devlog foi alterado. Horas — null. A T-67 segue aberta para os demais cenários da matriz e a FEAT-13 permanece `implementado (BE)`.
+
+## Catálogo legado e habilidade restrita — aprovado
+
+Em 2026-11-21, Chrome via Playwright em `http://localhost:5173`, com `VITE_USE_MOCKS=false`, service workers bloqueados e API em `http://localhost:3333`. `GET /health` retornou HTTP 200 com `contractVersion: "0.65"`. Horas — null.
+
+| Cenário | Evidência |
+| --- | --- |
+| Catálogo legado — `fixture.t67-legacy-combat` | A listagem de cartas da coleção `fixture` retornou HTTP **200**. Ao abrir a carta, o Chrome exibiu o nome **Uivo** e o texto **A matilha uiva.**, presentes como `name` e `text` no JSON. Os dois desfechos apareceram como blocos legíveis: “Os lobos fogem e deixam peles para trás.” e “A matilha fere o grupo antes de recuar.” |
+| Cópia com habilidade sem `form` — slug `t67-sem-form-1795291053719` | Base `fixture.t67-catalog-combat`. A habilidade `fixture.fire`, de `fixture.fire-ambush`, foi enviada preservando o `id` e removendo apenas `form`. HTTP **400** `CONTENT_INVALID`, com `details.fields[0].path: enemies.0.abilities.0.form`. |
+| Cópia com `badOutcome.steps: null` — slug `t67-steps-nulo-1795291053719` | Mesma base, com a alteração isolada em `badOutcome.steps`. HTTP **400** `CONTENT_INVALID`, com `details.fields[0].path: badOutcome.steps` e mensagem “Campo desconhecido.” |
+
+Os dois POSTs foram enviados via `fetch` no Chrome, na página `/lab/editor`, para `/lab/content/collections/fixture/cards`. O formulário valida localmente o JSON desses campos antes de montar o pedido. Os POSTs confirmaram as rejeições da API. Sem divergência de HTTP, código ou caminho nos cenários executados.
+
+Na primeira consulta, a listagem e os 41 GETs de detalhe retornaram HTTP **200** e os três saves de limiar ainda estavam ausentes. Após a entrega dos IDs pelo autor, as três sessões foram abertas no Chrome com MSW desligado, e `GET /health` confirmou HTTP **200** e contrato v0.65.
+
+| Save | ID | Carta | HTTP | `combat.escape.threshold` |
+| --- | --- | --- | --- | --- |
+| Limiar ausente | `a53e8f3f-8766-4615-a289-ea37038ffbdb` | `fixture.t67-catalog-combat` | **200** | **13** |
+| Limiar nulo | `a85c2df2-c12a-4d73-b021-5de173459580` | `fixture.t67-catalog-combat-null` | **200** | **13** |
+| Limiar zero | `2aaa723c-4410-48ce-bb88-c9f1fee66924` | `fixture.t67-catalog-combat-zero` | **200** | **0** |
+
+Em Limiar ausente, Lia (`293d99f9-57e6-4d5e-ba17-a913f93addf4`) tinha a classe `warrior` ativa e `fixture.t67-class-weapon` no slot `weapon`. `combat.abilities` oferecia apenas Golpe Livre (`fixture.t67-open-ability`), com `canPay: true`. Golpe do Ladino (`fixture.t67-rogue-ability`) estava ausente dessa lista.
+
+O POST via `fetch` no Chrome com `type: useAbility`, `abilityId: fixture.t67-rogue-ability` e `equipmentSlot: weapon` usou o combate `1b844246-482c-4a23-b355-f32869c3d718`, o turno `1b844246-482c-4a23-b355-f32869c3d718:turn:1:0` e o alvo vivo `1b844246-482c-4a23-b355-f32869c3d718:enemy:0:0` (1 PV). A API retornou HTTP **409** `ACTION_NOT_ALLOWED`, com `error.details.reason: combatAbilityUnavailable`. O GET seguinte retornou **200** e confirmou que o turno de combate inteiro, o turno do grupo e `savedAt: 2026-11-21T19:58:47.389Z` coincidiram com os valores de antes da recusa. O turno de combate ficou em `prepare`, com um ataque restante.
+
+O botão **Atacar Lobo Cinzento** enviou `combatAttack` com os mesmos IDs. O desfecho com `goodOutcome.steps: []` retornou HTTP **200**, `combat: null`, `lastCombatResult.resolution: victory`, `lastCombatResult.cause: enemiesDefeated` e `pendingRewards: []`.
+
+Todos os resultados desta linha corresponderam ao esperado. Apenas este devlog foi alterado. Horas — null.
+
+## Revelação com desfecho imediato — vitória divergente
+
+Em 2026-11-21, no Chrome via Playwright, com `VITE_USE_MOCKS=false` e service workers bloqueados, foi usado o botão **Revelar carta** uma vez em cada campanha. Nos dois POSTs, a API retornou HTTP 200, `combat: null` e `combatStarted → combatTurnStarted → combatDamageResolved → combatEnded`. O primeiro item identificou **Lobo da Revelação** (`fixture.t67-immediate-combat`), Lia e Lobo Cinzento. Os eventos seguintes conservaram o ID do combate e referenciaram os mesmos participantes.
+
+| Campanha | Esperado | POST observado | GET após recarga |
+| --- | --- | --- | --- |
+| Vitória — `c7b58854-f54c-45ab-9aa3-e07505e79294` | `victory`, `enemiesDefeated`, Lia com 1 PV | `defeat`, `playerDown`, Lia a 0 PV no evento de dano. O lobo causou 2 de dano e recebeu 18 de dano refletido, também ficando a 0 PV. | HTTP 200, `combat: null`, mesmo `lastCombatResult`, sem a chave `combatUpdates`. Lia caída com 0 PV. |
+| Derrota — `1d52bee7-352b-4522-b875-7dc0dc4195f5` | `defeat`, `playerDown`, Lia caída com 0 PV | Conforme esperado. O lobo causou 20 de dano e ficou com 1 PV. | HTTP 200, `combat: null`, mesmo `lastCombatResult`, sem a chave `combatUpdates`. Lia caída com 0 PV. |
+
+A T-67 permanece aberta. Falta revisar a campanha de vitória no backend e repetir esse cenário com uma campanha em antecipação. Apenas este devlog foi alterado nesta rodada. Horas — null.
+
+### Revalidação da vitória — aprovada
+
+Em 2026-11-21, o backend informou que o Vigor 0 da fixture anterior aplicava a penalidade de exaustão de 10%, reduzindo a Reflexão de 20 para 18. A fixture corrigida usa Pico e Vigor 1, sem alteração na resolução do combate.
+
+No Chrome com MSW desligado, um clique em **Revelar carta** no save `49235834-c03f-4eda-8a2f-ed34dd528b9c` retornou HTTP 200, `combat: null`, `victory` e `enemiesDefeated`. Lia ficou com 1 PV e `playerDown: false`. O lote veio na ordem `combatStarted → combatTurnStarted → combatDamageResolved → combatEnded`, com a carta **Lobo da Revelação**, Lia e Lobo Cinzento, e IDs consistentes entre os eventos. O evento de dano registrou 0 de dano a Lia e 20 de dano refletido ao lobo, que ficou com 0 PV.
+
+O GET após recarga retornou HTTP 200, `combat: null`, o mesmo `lastCombatResult` e Lia com 1 PV. A chave `combatUpdates` estava ausente. A linha de revelação com vitória ou derrota imediata está aprovada. A T-67 segue aberta para os demais cenários da matriz. Apenas este devlog foi alterado. Horas — null.
+
+## Área, Precisão zero, elemento e Reflexão — Jato executado
+
+No Chrome via Playwright, com MSW desligado e API real em `http://localhost:3333`, Jato de Água foi usado uma vez contra Lobo de Fogo no save `ca987d8d-d3db-4b87-abba-919384513fd8`. O POST retornou HTTP 200 com `combatAbilityUsed` seguido de `combatDamageResolved`. O evento de dano confirmou `hit: false`, `damage: 0`, `reflectedDamage: 0`, `targetHealth: 20` e `actorHealth: 20`.
+
+A rodada parou após o Jato para o autor comparar o RNG persistido com `[0,0,0,10]`. A Onda de Água aguarda liberação. Horas — null.
+
+### Onda de Água — API conferida, RNG pendente
+
+O autor confirmou que o Jato preservou o RNG em `[0,0,0,10]` e liberou a Onda. No Chrome com MSW desligado, o GET projetou os dois lobos em `combat.abilities[].targetIds` para a Onda de Água. A tela exigiu escolher um alvo para habilitar o botão. Para executar o cenário sem alvo individual, foi enviado um único POST `useAbility` via `fetch` no Chrome, com os IDs do GET e sem `targetId`.
+
+O POST retornou HTTP 200. Após `combatAbilityUsed`, os dois eventos `combatDamageResolved` vieram nesta ordem: Lobo de Fogo com `hit: true`, `damage: 10` e `reflectedDamage: 2`; Lobo de Gelo com `hit: true`, `damage: 4` e `reflectedDamage: 3`. O GET após recarga retornou HTTP 200 e confirmou Lia com 15 PV, Fogo com 10 PV e Gelo com 16 PV.
+
+A execução parou após a recarga para a leitura final do RNG. A projeção de alvo individual para a Onda impediu a execução pelo botão. Horas — null.
+
+### Ajuste do botão de Área — pronto para revalidação
+
+O autor confirmou que o RNG persistido após a Onda permaneceu em `[0,0,0,10]`. Em `CombatPanel.tsx`, o controle usa o tipo de alvo da habilidade equipada para dispensar a seleção e omitir `targetId` em `allOpponents`. `PartySession.tsx` informa o carregamento do catálogo para aguardar a carta equipada antes de habilitar o uso.
+
+Os dois casos de regressão do REQ-61 em `PartySession.test.tsx` falharam antes do ajuste e passaram depois. A suíte da tela passou com 173 testes. ESLint, build e `git diff --check` passaram. O build emitiu aviso de tamanho do bundle.
+
+Na revalidação, abrir um save novo com a Onda disponível no Chrome com MSW desligado, clicar no botão e conferir um POST sem `targetId`, seguido de HTTP 200. A regressão cobre também o caso de um único oponente vivo. O save anterior tem `usesRemaining: 0` para a Onda. Horas — null.
+
+### Botão da Onda de Água — revalidação aprovada
+
+No save `a2d002e9-216c-4a2f-831c-a829292001a3`, o GET da API real em `http://localhost:3333` confirmou os dois lobos vivos com 20 PV cada. No Chrome via Playwright, com MSW desligado, a Onda de Água apareceu sem seletor. Um clique em **Usar habilidade** produziu um único POST `useAbility` para `fixture.t67-water-area`, sem a chave `targetId`, e recebeu HTTP 200. Os eventos vieram na ordem Fogo com 10 de dano e 2 refletidos, depois Gelo com 4 de dano e 3 refletidos.
+
+A linha de Área, Precisão zero, elemento e Reflexão está aprovada. A T-67 segue aberta para as demais linhas da matriz, começando por Suporte com aliado ferido e Canalizada após dano. Horas — null.

@@ -1453,6 +1453,7 @@ export function PartySession() {
               host={host}
               cards={cards.cards}
               names={combatNames}
+              catalogPending={cards.isPending}
               pending={action.isPending || end.isPending}
               onAction={(intent) => action.mutate(intent)}
             />
