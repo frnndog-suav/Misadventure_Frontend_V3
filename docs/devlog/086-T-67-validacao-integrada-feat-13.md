@@ -94,3 +94,55 @@ A T-67 segue aberta. O reset de recarga ao entrar em combate e os demais cenári
 Em 2026-11-21, `GET /health` confirmou o CONTRATO v0.65 na API real em `localhost:3333`. A configuração local mantém `VITE_USE_MOCKS=false`. Os GETs das 33 campanhas mostraram que Socorro de Campo é a única campanha fora de combate com equipamento de habilidade nessa rodada. Ela está no encontro Pagamento em Duas Partes, com a primeira exigência paga e 0 PA. Os dois desfechos do encontro aplicam efeitos sem iniciar combate. O preparo original no backend semeou o deck urbano apenas com esse evento. Golpe Pago já está em combate, com recarga criada dentro dele.
 
 Pendente um save determinístico com uma habilidade `both` de recarga positiva, custo pagável e um evento de combate no topo. Usar a habilidade durante a antecipação, confirmar a recarga ativa imediatamente antes de revelar, revelar na mesma vez e conferir `cooldownRemaining: 0` e a habilidade disponível no primeiro turno elegível. Se o estado prévio não estiver exposto no GET público, confirmar a recarga no estado persistido com o autor. Apenas consultas GET foram executadas nesta etapa. Nenhuma campanha foi alterada e o reset continua pendente. Horas — null.
+
+### Socorro de Campo usado antes da revelação
+
+Em 2026-11-21, no save `db73046c-05bb-4cbe-a09b-7e822e9a47c9`, Chrome via Playwright em `localhost:5173`, com MSW desligado e API real v0.65 em `localhost:3333`. Em Preparar, `prepare/useAbility` no slot `weapon` para `fixture.t67-field-aid` retornou HTTP 200. O ouro passou de 10 para 9, `usableAbilities` ficou vazio e Lia permaneceu em antecipação na rodada 1 com 0 PA. O snapshot público retornou `savedAt: 2026-11-21T19:26:57.446Z` e omite o contador de recarga fora de combate. A revelação aguarda a leitura da recarga persistida neste estado. Horas — null.
+
+### Reset ao entrar em combate — aprovado
+
+O autor confirmou recarga persistida de 3 e `uses: 1` para Socorro de Campo, em antecipação, com 9 de ouro e o mesmo `savedAt`. Um GET imediatamente antes da revelação confirmou esse `savedAt`, a antecipação e o saldo. No Chrome, com MSW desligado, Revelar carta retornou HTTP 200 e iniciou Lobos Uivantes na mesma vez, ainda na rodada 1 com 0 PA.
+
+No primeiro turno de Lia, em `prepare` (`turn:1:0`), a resposta incluiu Socorro de Campo em `combat.abilities` com `canPay: true`, e o botão Usar habilidade ficou habilitado. O GET seguinte confirmou `cooldownRemaining: 0` e `usesRemaining: 1` em `combat.abilityStates`. Lia permaneceu com 9 de ouro. Nenhum segundo uso foi enviado. Sem divergências neste cenário. A T-67 segue aberta para os demais cenários da matriz. Horas — null.
+
+## Repetição em quatro saves novos — aprovada
+
+Em 2026-11-21, Chrome via Playwright em `localhost:5173`, com `VITE_USE_MOCKS=false` e POSTs para a API real v0.65 em `localhost:3333`. Horas — null.
+
+| Cenário e save | Evidência |
+| --- | --- |
+| Empate de Celeridade (`c7a8f174-f5be-492a-afad-925a8793db84`) | Nos ciclos 1 e 2, `combat.order` e `combatTurnStarted` seguiram Lobo 1 → Lobo 2 → Lia. IDs na ordem: `736fd3ea-4ed2-4c01-a5bd-dfe228f90fda:enemy:0:0`, `736fd3ea-4ed2-4c01-a5bd-dfe228f90fda:enemy:0:1`, `a0d6e44d-885b-41d5-b162-decd510055a3`. |
+| Mudança de Celeridade (`aa0d4823-461d-4be9-a65a-a0fe06aaed5f`) | Na revelação, `combat.order` e `combatTurnStarted` foram Lobo 1 → Lobo 2 → Lia. IDs na ordem: `68902328-b5e2-4557-948f-212764ab4a51:enemy:0:0`, `68902328-b5e2-4557-948f-212764ab4a51:enemy:0:1`, `7fb47935-1af1-40bd-a3a7-022745d6765f`. Acelerar preservou a ordem no ciclo 1. Após encerrar o turno, `combat.order` passou a Lia → Lobo 1 → Lobo 2, e o primeiro `combatTurnStarted` do ciclo 2 foi de Lia. |
+| Golpe Pago com 0 PA (`7b9f5b13-913b-4ef1-b472-e358d6a04c0e`) | Um uso debitou 2 de ouro (10 → 8), retirou Destreza (`hand-8`) da mão e elevou o descarte de 0 para 1. O ataque básico retornou HTTP 200 e abriu o ciclo 2. `cooldownRemaining` foi 2 após o uso, 2 no ciclo 2, 1 no ciclo 3 e 0 no ciclo 4, quando a habilidade voltou a ser oferecida. Saldo 8 e descarte 1 foram preservados. |
+| Socorro de Campo com 0 PA (`239fd7d1-3dd7-434a-819e-010cb4bcf226`) | Única habilidade de Preparar. Seu uso baixou o saldo de 10 para 9. Pagar apenas ouro baixou para 7, gerou somente o recibo de 2 de ouro e deixou 3 de Vigor pendentes. A API projetou `usableAbilities: []` e omitiu `prepare`. Um reenvio do mesmo POST via `fetch` no Chrome retornou HTTP 409 `eventPaymentStarted`. Os GETs antes e depois foram idênticos. |
+
+Sem divergências nos quatro saves. O seletor inicial do botão de pagamento expirou antes de enviar uma ação. Um GET confirmou saldo 9 e pagamentos vazios antes da retomada pelo botão do requisito de ouro. Apenas este devlog foi alterado. A T-67 segue aberta para os demais cenários.
+
+## Turno atual, Manter, Deixar e Derrota — aprovados no frontend
+
+Em 2026-11-21, Chrome via Playwright em `http://localhost:5173`, com `VITE_USE_MOCKS=false`, service workers bloqueados e API real v0.65 em `http://localhost:3333`. As ações aceitas passaram pelos controles da sessão. Os dois reenvios de payload foram feitos via `fetch` no Chrome, uma vez cada. Horas — null.
+
+| Cenário e save | Status HTTP e estado observado |
+| --- | --- |
+| Turno atual — `3ad72beb-b030-4dc7-b210-323525a0845c` | O ataque obsoleto ao primeiro lobo no turno `turn:1:0` retornou **409** `ACTION_NOT_ALLOWED`, motivo `staleCombatTurn`. Os GETs antes e depois da recusa foram idênticos. Após recarregar, o ataque usou `combatId` `51b6eb5b-7fc1-4794-94a0-93adb5a54c2a`, turno `51b6eb5b-7fc1-4794-94a0-93adb5a54c2a:turn:2:0` e único alvo vivo `51b6eb5b-7fc1-4794-94a0-93adb5a54c2a:enemy:1:0`. Retornou **200**, `combat: null`, `resolution: victory` e `playerDown: true`. Lia ficou a 0 PV após Reflexão, com a escolha de minério aberta. |
+| Manter — `0123e4f8-3905-4747-bb5f-d25433092a33` | Ataque ao último lobo retornou **200**. Após recarregar, o GET **200** mostrou Lia a 0 PV, `down: true`, minério de ferro pendente com `source.type: combatEvent`, origem `rewardDeck` urbano e `availableActions: ['resolveReward']`. Manter retornou **200**, consumiu uma cópia de `fixture.silver-fish` e entregou uma de `fixture.iron-ore`, com `lastRewardDelivery.disposition: kept`. |
+| Deixar — `dbafa5d8-8b1f-4687-891d-3b578f6936d0` | Ataque ao último lobo retornou **200**. Após recarregar, o GET **200** mostrou Lia a 0 PV, `down: true`, minério de ferro pendente com `source.type: combatEvent`, origem `rewardDeck` urbano e `availableActions: ['resolveReward']`. Deixar retornou **200**, preservou a cópia de peixe e registrou `lastRewardDelivery.disposition: returnedToDeck`. |
+| Derrota — `1527de24-10fb-4538-8b49-f5808015b665` | Encerrar o primeiro turno retornou **200**, `combat: null`, `resolution: defeat`, Lia a 0 PV, `down: true` e ouro de 10 para 5. Os GETs **200** após recarregar, encerrar e reabrir a sessão confirmaram ouro 5. O reenvio original retornou **409** `ACTION_NOT_ALLOWED`, motivo `staleCombat`. O GET final **200** foi idêntico ao da reabertura e confirmou ouro 5. |
+
+O GET final de cada escolha de recompensa retornou **200** e confirmou Lia caída, `pendingRewards: []` e `availableActions: []`. Payload original da Derrota, reenviado após reabrir:
+
+```json
+{"type":"endCombatTurn","combatId":"b2d8041c-1869-41ad-bc1d-20f40ee1575d","turnId":"b2d8041c-1869-41ad-bc1d-20f40ee1575d:turn:1:0"}
+```
+
+### Conferência no PostgreSQL — concluída
+
+O autor informou os resultados da conferência no backend, sem divergências para o CONTRATO v0.65.
+
+| Cenário e save | Estado persistido |
+| --- | --- |
+| Manter — `0123e4f8-3905-4747-bb5f-d25433092a33` | Uma ocorrência de `fixture.howling-wolves` no descarte urbano. |
+| Deixar — `dbafa5d8-8b1f-4687-891d-3b578f6936d0` | Uma ocorrência de `fixture.howling-wolves` no descarte urbano e uma cópia de `fixture.iron-ore` devolvida ao deck urbano. |
+| Derrota — `1527de24-10fb-4538-8b49-f5808015b665` | Uma ocorrência de `fixture.t67-defeat` no descarte urbano e saldo de 5 de ouro. |
+
+As linhas de turno obsoleto e Reflexão fatal com inventário cheio estão aprovadas. A execução dos cenários desta rodada está concluída e apenas este devlog foi alterado. Horas — null. A T-67 segue aberta para os demais cenários da matriz e a FEAT-13 permanece `implementado (BE)`.
