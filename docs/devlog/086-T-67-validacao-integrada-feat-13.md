@@ -58,3 +58,16 @@ A asserção automatizada da variante vazia procurou o ID em `combat.cardId` e f
 O autor confirmou as duas variantes no PostgreSQL e registrou a aprovação no [devlog 058 do backend](../../../Misadventure_Backend_V3/docs/devlog/058-T-49-save-e-http-de-combate.md). No deck misto, restaram dois `fixture.howling-wolves` na pilha urbana, do topo ao fundo. Na variante com pilha vazia, restou um. Nos dois saves, o descarte urbano ficou na ordem `fixture.t67-traveler-reserve`, `fixture.wounded-traveler`, e o estado foi persistido no formato v9. O RNG ficou em `[0, 0, 0, 10]` nos dois saves, desde a preparação até a leitura final. A perda fixa de ouro, a inclusão dos lobos e a retirada da primeira carta elegível ocorreram sem sorteios nem reciclagem.
 
 O cenário v8 está fechado. A T-67 segue aberta e aguarda as fixtures dos demais cenários da matriz, começando por empate e mudança de Celeridade.
+
+## Empate e mudança de Celeridade — aprovados
+
+Chrome via Playwright em `localhost:5173`, com MSW desligado e respostas HTTP 200 da API real em `localhost:3333`. Em ambas as campanhas, a abertura da sessão, o início e a revelação do evento e o encerramento do turno passaram. Os dois lobos vieram com IDs distintos em `combatStarted`. A sequência de `combatTurnStarted` no ciclo 1 seguiu a ordem impressa dos lobos, antes de Lia.
+
+| Campanha | IDs dos lobos na ordem impressa | Ciclo 1 observado | Ciclo 2 observado |
+| --- | --- | --- | --- |
+| Empate (`d4f56370-404a-4411-80c0-a2c1faf30b81`) | `7d189b6e-fcfe-48c1-99bf-e67edccf6843:enemy:0:0`, `7d189b6e-fcfe-48c1-99bf-e67edccf6843:enemy:0:1` | Lobo 1 → Lobo 2 → Lia | Lobo 1 → Lobo 2 → Lia |
+| Mudança de Celeridade (`323dfc31-8eda-4faa-be87-9ce7954e193b`) | `443cf152-ce38-44b7-b106-0cabb1865979:enemy:0:0`, `443cf152-ce38-44b7-b106-0cabb1865979:enemy:0:1` | Lobo 1 → Lobo 2 → Lia | Lia abriu o ciclo. A ordem projetada continuava com Lobo 1 → Lobo 2. |
+
+Acelerar retornou HTTP 200 com `useAbility`, `equipmentSlot: "weapon"` e `abilityId: "fixture.t67-haste"`, sem `targetId`. O `combat.order` permaneceu idêntico durante o ciclo 1. O encerramento do turno retornou Lia como única transição `combatTurnStarted` do ciclo 2, com posição `turn:2:0`.
+
+Sem divergências nos dois cenários. Apenas este devlog foi alterado. A T-67 segue aberta para os demais cenários da matriz.
