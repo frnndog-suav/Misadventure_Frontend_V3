@@ -71,3 +71,9 @@ Chrome via Playwright em `localhost:5173`, com MSW desligado e respostas HTTP 20
 Acelerar retornou HTTP 200 com `useAbility`, `equipmentSlot: "weapon"` e `abilityId: "fixture.t67-haste"`, sem `targetId`. O `combat.order` permaneceu idêntico durante o ciclo 1. O encerramento do turno retornou Lia como única transição `combatTurnStarted` do ciclo 2, com posição `turn:2:0`.
 
 Sem divergências nos dois cenários. Apenas este devlog foi alterado. A T-67 segue aberta para os demais cenários da matriz.
+
+## Habilidade paga e Preparar com 0 PA — aguardando campanhas
+
+Em 2026-11-21, com `VITE_USE_MOCKS=false` na configuração local, a API real em `localhost:3333` respondeu HTTP 200 a `GET /health` com `contractVersion: "0.65"`. A lista de `GET /parties` continha as campanhas das rodadas anteriores, sem as duas campanhas determinísticas desta rodada. O devlog 058 do backend também não registrava seus IDs.
+
+A execução no Chrome fica pendente até a entrega dos saves. No combate, verificar pagamento único, descarte das cartas usadas, ataque básico disponível e bloqueio durante a recarga. Fora de combate, verificar que a habilidade habilita Preparar como única operação elegível com 0 PA, que o primeiro pagamento do encontro esvazia `usableAbilities`, que a repetição recebe HTTP 409 `eventPaymentStarted` e que entrar em combate zera a recarga anterior. Nenhuma intenção desses cenários foi enviada. Ainda não há respostas das ações nem divergências a avaliar. Horas da sessão permanecem `null`.
