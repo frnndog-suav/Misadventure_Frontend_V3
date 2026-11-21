@@ -9,6 +9,7 @@ import {
   type LabConfig,
   type LabConfigInvalidDetails,
   type LabConfigPatch,
+  type KnockoutConfigKey,
 } from '../api/labConfig'
 import { CardCategory } from '../ui/CardCategory'
 import { Term } from '../ui/Term'
@@ -22,7 +23,7 @@ import './LabPage.css'
 /** Rótulos dos campos (REQ-06, glossário §2.6), na ordem da tela. */
 type NumericKey = Exclude<
   keyof LabConfig['values'],
-  'reserveDeck' | 'enemyAbilityPriorities'
+  'reserveDeck' | 'enemyAbilityPriorities' | KnockoutConfigKey
 >
 
 const fieldLabels: Record<NumericKey, string> = {

@@ -56,6 +56,8 @@ const member: Party['members'][number] = {
     attributeDiscardPileCount: 0,
     zoneId: 'fixture.gray-harbor',
     respawnZoneId: 'fixture.gray-harbor',
+    lastKnockout: null,
+    skipNextTurn: false,
     moveTargets: ['fixture.stone-bend', 'fixture.whispering-grove'],
     // FEAT-32: a cidade inicial tem `useVault` (CONTRATO v0.46).
     availableActions: ['move', 'recover', 'adjustDeck', 'useVault', 'endTurn'],

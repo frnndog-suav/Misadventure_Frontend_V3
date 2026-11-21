@@ -90,6 +90,7 @@ export const partyActionTypeSchema = z.enum([
   'adjustDeck',
   'scavenge',
   'useVault',
+  'saveRespawnPoint',
   ...randomEventActionTypes,
   ...combatActionTypes,
   'endTurn',
@@ -138,6 +139,19 @@ export const vaultSchema = z.object({
 })
 export type Vault = z.infer<typeof vaultSchema>
 
+export const knockoutResultSchema = z.object({
+  id: z.string(),
+  combatId: z.string().nullable(),
+  respawnZoneId: z.string(),
+  healthRestored: nonNegativeInt,
+  peakLost: nonNegativeInt,
+  vigorLost: nonNegativeInt,
+  purseGoldLost: nonNegativeInt,
+  roundAtKnockout: nonNegativeInt,
+  roundAfterRespawn: nonNegativeInt,
+})
+export type KnockoutResult = z.infer<typeof knockoutResultSchema>
+
 /** Estado do jogador na partida; tudo calculado pelo backend (§1.3). */
 export const playerStateSchema = z.object({
   playerClasses: z.array(
@@ -155,6 +169,8 @@ export const playerStateSchema = z.object({
   attributeDiscardPileCount: nonNegativeInt,
   zoneId: z.string(),
   respawnZoneId: z.string(),
+  lastKnockout: knockoutResultSchema.nullable().default(null),
+  skipNextTurn: z.boolean().default(false),
   /** Destinos válidos do Movimentar, prontos do backend (FEAT-07, D-55). */
   moveTargets: z.array(z.string()),
   /** Ações que o jogador pode mandar agora, prontas do backend (FEAT-08, D-56). */
@@ -380,6 +396,7 @@ export function useStartSession(
 /** Intenção de jogo (CONTRATO §1.6); as FEATs seguintes acrescentam variantes. */
 export type PartyAction =
   | MoveAction
+  | { type: 'saveRespawnPoint' }
   | EndTurnAction
   | RecoverAction
   | AdjustDeckAction

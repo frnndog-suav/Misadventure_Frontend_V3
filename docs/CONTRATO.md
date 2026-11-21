@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.66 · **Data:** 2026-11-21
+> **Versão do contrato:** 0.69 · **Data:** 2026-11-21
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -2619,6 +2619,120 @@ type ResolveTriggeredEffectAction = {
 | Último inimigo, Reflexão fatal e inventário cheio | Vitória com `playerDown: true`. Com escolha pendente, GET em sessão ativa traz `down: true` e `availableActions: ['resolveReward']`. Manter ou deixar avança o desfecho. Após a última escolha, `availableActions: []`. Em derrota, coisa ruim executada uma única vez. |
 | Turno obsoleto após recarga | 409 `staleCombatTurn` e preservação de estado, RNG e `savedAt`. A intenção com o turno atual prossegue. |
 
+### FEAT-14 — Nocaute, spawn e respawn — `acordado`
+
+Base: README §§7.3–7.4, 12.2, 19.2, 19.5, 20 e Apêndice A, ROADMAP v0.64 e SPEC-FRONTEND v0.81 (REQ-63 a REQ-65). Esta seção define as extensões às FEATs 03, 06–08 e 11–13. A preparação da FEAT-06 coloca todos na cidade inicial com `zoneId` e `respawnZoneId` iguais. Quando a entrada em outra dimensão estiver disponível, ambos passam à cidade inicial do novo mapa.
+
+#### Salvar ponto de respawn
+
+`POST /parties/:partyId/actions` aceita `{ "type": "saveRespawnPoint" }` na união `PartyAction` e devolve `200 PartyActionResponse`. Custa 1 PA, grava a zona atual em `player.respawnZoneId` e preserva a posição. Salvar a mesma zona novamente é permitido e custa 1 PA. O GET devolve o ponto persistido. Em sessão ativa, somente o membro da vez, de pé, fora de combate e sem escolha pendente recebe a ação em `availableActions` quando está em Urbana e tem pelo menos 1 PA. A ação entra imediatamente antes de `startEvent` ou, quando este estiver ausente, imediatamente antes de `endTurn`.
+
+Ordem das recusas:
+
+1. Grupo inexistente → 404 `PARTY_NOT_FOUND`.
+2. Forma inválida → 400 `ACTION_INVALID`, seguindo §3 FEAT-07. Qualquer campo além de `type`, inclusive `zoneId`, recebe `unknownKey`.
+3. Sessão inativa → 409 `PARTY_SESSION_NOT_ACTIVE`.
+4. Combate ativo → 409 `ACTION_NOT_ALLOWED` / `combatInProgress`. Escolha de encontro ou recompensa aberta → `choicePending`. Membro da vez caído → `playerDown`. A rota usa o membro da vez e o payload dispensa ID de membro.
+5. Sem PA → 409 `ACTION_NOT_ALLOWED` / `noActionPoints`. Fora de Urbana → 409 `ACTION_NOT_ALLOWED` / `zoneActionUnavailable`.
+
+Recusas preservam estado, `savedAt` e RNG.
+
+#### Nocaute e projeção
+
+`down` indica que o jogador ainda está caído, com 0 PV. `lastCombatResult.playerDown` registra a queda naquele combate e continua verdadeiro após o respawn. `combatUpdates` mantém o formato da FEAT-13 e relata somente as transições de combate da ação. O GET devolve o snapshot persistido sem esse lote. Para comunicar o respawn após recarga, `PlayerState` ganha o seguinte resumo persistido até o próximo nocaute:
+
+```ts
+interface KnockoutResult {
+  id: string
+  combatId: string | null
+  respawnZoneId: string
+  healthRestored: number
+  peakLost: number
+  vigorLost: number
+  purseGoldLost: number
+  roundAtKnockout: number
+  roundAfterRespawn: number
+}
+
+// PlayerState
+lastKnockout: KnockoutResult | null
+skipNextTurn: boolean
+```
+
+`lastKnockout` descreve o nocaute concluído. O ID permanece estável em recarga e reabertura. As perdas registram somente a penalidade de nocaute, calculada sobre os saldos após o desfecho. `healthRestored` registra os PV no momento do respawn. A UI usa os campos atuais do jogador e de `turn` para os saldos e ações da vez.
+
+1. Ao chegar a 0 PV em qualquer fluxo executável, inclusive custo de doação de vida, conclua a ação aceita e marque a queda. Em combate solo, aplique o resultado da FEAT-13 e projete `combat: null`. Em derrota, execute a coisa ruim. Na vitória por Reflexão fatal, execute a coisa boa, inclusive quando ela dispensa escolha. Fora de combate, conclua os passos restantes do efeito ou desfecho que causou a queda, na ordem da origem.
+2. Se o desfecho parar para uma recompensa, mantenha `down: true`, a reserva da carta quando aplicável e os dados para continuar do próximo passo. Em sessão ativa, o dono recebe somente `resolveReward`, inclusive com 0 PA, após GET ou reabertura. Enquanto houver escolha, a vez permanece com o mesmo membro na mesma rodada. Ao terminar a última escolha, conclua o desfecho e faça o respawn na própria resposta. Quando o desfecho inteiro for automático, a resposta da ação fatal já traz o respawn.
+3. Ao concluir o desfecho, avalie `keepPeakOnKnockout` entre os efeitos aplicáveis ao membro antes de expirar `untilKnockout`. O primeiro protege o Pico da penalidade de nocaute. Encerre os status ativos `untilKnockout` antes de recalcular os atributos. Aplique as perdas configuradas, recalcule vida máxima e modificadores com o novo Pico, aplique o teto de Vigor e restaure a vida no ponto salvo. A projeção volta a `down: false`.
+4. Encerre a vez e descarte os PA restantes. No solo, o encerramento de uma vez na rodada R abre R+1. Passe automaticamente as rodadas de espera, inclusive os gatilhos normais de início e fim de vez e rodada para as durações, recargas e vitrines já disponíveis. Com espera padrão 1, R+1 transcorre sem ações do jogador e a resposta projeta a vez jogável em R+2 com PA renovados. Aplique a perda de ouro da bolsa uma vez durante o respawn, antes de avançar a vez.
+5. Com mais de um participante, inclusive IA, avance pela ordem normal, marque `skipNextTurn: true` ao resolver o nocaute e consuma a marca quando chegar a próxima vez do membro, passando-a automaticamente. No solo a marca é sempre falsa. Em combate de grupo, o caído permanece no combate até o fim. Uma reanimação permitida nesse combate cancela o nocaute e suas penalidades. A validação desses fluxos depende das FEATs 20 e 22.
+
+**Pagamento fatal com requisitos em aberto.** Se `payEventRequirement` for aceito, reduzir os PV a zero e deixar requisitos a pagar, grave o recibo da parte fatal e encerre a fase `encounter` por desistência automática. Use `resolution: "setback"` e `cause: "gaveUp"`, que nesta proposta também cobre a desistência forçada pelo nocaute. Aplique uma vez a perda de Pico da desistência e os passos de `badOutcome`. Os pagamentos aceitos, inclusive o fatal, ficam no resultado e mantêm seus efeitos e destinos. Ao concluir o revés, faça a reposição de atributos pagos e descarte a carta no descarte de eventos do tipo de zona de origem, conforme a FEAT-12. Depois conclua o respawn e a passagem de vez. A resposta é 200 com `randomEventEncounter: null`, `pendingRewards: []`, o recibo em `lastRandomEvent` e o jogador já recuperado no ponto salvo. Se o revés abrir recompensa pendente, o primeiro 200 mantém o encontro em `setback`, a carta reservada, o jogador caído e apenas `resolveReward` disponível. O último `resolveReward` conclui reposição, descarte, respawn e passagem de vez. Um pagamento recusado segue a reversão da FEAT-12. Se a parte fatal for a última e for aceita após as verificações, aplica-se o êxito normal antes do respawn.
+
+**Cura depois da queda na mesma resolução.** Ao confirmar a queda, mantenha `health: 0` e `down: true` até o respawn ou uma reanimação permitida em combate de grupo. Um passo posterior de cura comum naquele efeito ou desfecho resolve com zero PV restaurados para o caído. Continue executando os passos seguintes na ordem, inclusive após uma escolha. Se houver pausa para recompensa, o POST, o GET e a reabertura continuam projetando `health: 0` e `down: true`. Ao concluir o desfecho, o respawn restaura os PV calculados pela regra de nocaute e muda `down` para falso na mesma transição.
+
+Cada ação aceita persiste atomicamente o estado alcançado, inclusive o progresso do desfecho, as recompensas, o RNG e, se concluído, o respawn e a vez jogável. Saves existentes preservam `respawnZoneId`; quando ausente ou fora do mapa, use a cidade inicial da dimensão gravada. `lastKnockout` começa nulo e `skipNextTurn` começa falso. Para save da FEAT-13 com `down: true`, preserve a recompensa e o progresso já gravados. Se houver escolha, o respawn segue a última resolução. Se o desfecho já terminou, conclua e persista uma única vez a transição ao carregar o save para consulta ou reabertura, inclusive com sessão inativa no GET. A conclusão do save legado não reexecuta a coisa boa ou ruim e preserva `lastCombatResult`. A primeira gravação confirma o respawn, a rodada e o resumo juntos. Leituras e reaberturas posteriores retornam o estado gravado, com as ações filtradas pela sessão.
+
+#### Laboratório
+
+`GET /lab/config`, `PATCH /lab/config` e `POST /lab/config/reset` usam o contrato da FEAT-03. As chaves abaixo entram em `values`, `defaults` e `limits`. Os limites são inclusivos e aceitam inteiros.
+
+| Chave | Unidade | Padrão | Limites |
+|---|---|---:|---|
+| `knockoutHealthPercent` | % da vida máxima recalculada | 10 | 1–100 |
+| `knockoutPeakLossPercent` | % do Pico após o desfecho | 10 | 0–100 |
+| `knockoutVigorCapPercent` | % do novo Pico | 50 | 0–100 |
+| `soloKnockoutGoldLossPercent` | % do ouro na bolsa após o desfecho | 10 | 0–100 |
+| `soloKnockoutWaitRounds` | rodadas completas após o fim da vez atual | 1 | 0–10 |
+
+Arredonde cada percentual para baixo. A perda de Pico é zero com proteção ou percentual zero. Com percentual positivo, o mínimo da perda é 1, limitada ao Pico disponível. Vigor fica no menor valor entre o saldo após o desfecho e o teto calculado. A vida restaurada tem mínimo 1. Ouro perdido some da bolsa, com o cofre preservado pela penalidade solo. Espera zero deixa a vez jogável em R+1.
+
+Configurações antigas do laboratório e snapshots de configuração dos grupos preenchem as chaves ausentes com os padrões da tabela, conservando as chaves gravadas. Ajustes do laboratório valem para novos grupos, que usam seu snapshot da configuração. PATCH inválido mantém a configuração inteira. Exemplo para `{ "knockoutHealthPercent": 0, "soloKnockoutWaitRounds": 1.5 }`:
+
+```json
+{"error":{"code":"LAB_CONFIG_INVALID","message":"Configuração do laboratório inválida.","details":{"fields":[{"field":"knockoutHealthPercent","reason":"outOfRange"},{"field":"soloKnockoutWaitRounds","reason":"notInteger"}]}}}
+```
+
+#### Respostas de referência para a T-68
+
+Use uma fixture determinística com duas Urbanas conectadas, `fixture.gray-harbor` (cidade inicial) e `fixture.respawn-town`, e uma zona não Urbana alcançável da segunda. Os nomes e valores novos são propostos para a fixture. Os fragmentos abaixo mostram campos de respostas completas, com `M` como ID do membro. Cada cenário de queda parte da rodada 6, 2 PA, jogador fora da cidade salva, Pico 10, Vigor 9, vida base 20, bolsa 37 e cofre 80, sem outra fonte de ajuste nesses saldos. O laboratório usa os padrões.
+
+| Cenário | Resposta de referência |
+|---|---|
+| Preparação, movimento e salvar | No primeiro GET, `zoneId = respawnZoneId = "fixture.gray-harbor"` e `lastKnockout: null`. Após mover para `fixture.respawn-town`, 2 PA e respawn ainda no porto. POST `saveRespawnPoint` → 200 com `zoneId: "fixture.respawn-town"`, `respawnZoneId: "fixture.respawn-town"`, 1 PA e `combatUpdates: []`. GET repete os valores persistidos. Repetir POST na mesma Urbana → 200, 0 PA e ação ausente. |
+| Recusa | Em não Urbana com PA, 409 com o corpo abaixo. Em Urbana sem PA, mesmo corpo com `noActionPoints`. Enviar `zoneId` → 400 com `details.fields: [{ "field": "zoneId", "reason": "unknownKey" }]`. GET conserva estado e `savedAt`. |
+| Doação fatal com requisito em aberto | No encontro `e1` de uma zona não Urbana, a cópia `h1` já pagou o requisito `attrs`. Há uma cópia `h2` no topo do deck de atributos. O jogador tem 2 PV. Envie `{ "type": "payEventRequirement", "encounterId": "e1", "requirementId": "life" }` para doar 2 PV, com o requisito `gold` ainda em aberto. O revés tira 5 de ouro. POST → 200 com `randomEventEncounter: null`, `pendingRewards: []`, `combatUpdates: []` e `lastRandomEvent` com `resolution: "setback"`, `cause: "gaveUp"`, recibos de `attrs` e `life` em ordem, `peakDelta: -1` e `replacement: { "requested": 1, "drawn": 1 }`. A mão recebe `h2`, `h1` fica no descarte de atributos e a carta do encontro vai ao descarte do tipo de zona de origem. O jogador volta à segunda Urbana com PV 2/21, `down: false`, Pico 8 (9 após desistência, menos 1 de nocaute), Vigor 4, bolsa 29, cofre 80 e vez jogável na rodada 8 com 3 PA. GET preserva esses valores. |
+| Cura após 0 PV com recompensa pendente | No encontro `e2`, com 2 PV e inventário cheio, envie `{ "type": "giveUpEvent", "encounterId": "e2" }`. O revés executa, em ordem, perda de 2 PV, cura de 5 PV, oferta de uma cópia fixa de `fixture.pickaxe` e cura de 5 PV. POST → 200 com `randomEventEncounter.phase: "setback"`, escolha `reward-2` com `source: { "type": "randomEvent", "encounterId": "e2" }`, `health: 0`, `down: true`, `lastKnockout: null` no primeiro nocaute, `availableActions: ["resolveReward"]`, rodada 6 e 2 PA. GET e reabertura recuperam a mesma escolha e os mesmos PV. Envie `{ "type": "resolveReward", "rewardId": "reward-2", "choice": "leave" }`. A cópia vai ao limbo e a segunda cura também restaura zero PV. POST → 200 com encontro nulo, `pendingRewards: []`, revés em `lastRandomEvent`, respawn na segunda Urbana com PV 2/21, `down: false`, Pico 8, Vigor 4, bolsa 34, cofre 80, `lastKnockout.healthRestored: 2` e rodada 8 com 3 PA. |
+| 0 PV fora de combate | Pagar 2 PV de doação tendo exatamente 2 PV, com efeito sem mudança nos saldos usados no exemplo → 200, `combatUpdates: []`, respawn na segunda Urbana, `down: false`, PV 2/21, Pico 9, Vigor 4, bolsa 34, cofre 80 e `lastKnockout.combatId: null`. |
+| Derrota | Golpe inimigo fatal e coisa ruim que tira 5 de ouro → 200, `combat: null`, `lastCombatResult` com `resolution: "defeat"`, `cause: "playerDown"` e `playerDown: true`. Repete os valores do respawn fora de combate, exceto bolsa **29** (32 após a coisa ruim, desconto solo de 3) e `lastKnockout.combatId` igual ao ID do combate. O lote registra a sequência de combate da FEAT-13. |
+| Reflexão fatal com escolha | O último inimigo cai antes da Reflexão fatal. Com inventário cheio, a coisa boa oferece uma cópia fixa. POST → 200 com `combat: null`, `lastCombatResult` com `resolution: "victory"`, `cause: "enemiesDefeated"` e `playerDown: true`, `health: 0`, `down: true`, rodada 6, 2 PA, `availableActions: ["resolveReward"]` e a entrada `pendingRewards` abaixo. GET ativo e reabertura recuperam a escolha com o mesmo ID. O POST `{ "type": "resolveReward", "rewardId": "reward-1", "choice": "leave" }` → 200, `pendingRewards: []`, `down: false`, mesmos saldos do respawn fora de combate, `lastKnockout.combatId: "combat-1"` e vitória preservada. A cópia fixa vai ao limbo. Com espaço para entrega automática, o POST da ação fatal já traz a vitória e o respawn. |
+
+```json
+{"error":{"code":"ACTION_NOT_ALLOWED","message":"Esta ação não é permitida agora.","details":{"reason":"zoneActionUnavailable"}}}
+```
+
+```json
+{"pendingRewards":[{"id":"reward-1","memberId":"M","cardId":"fixture.pickaxe","origin":{"type":"fixed"},"source":{"type":"combatEvent","combatId":"combat-1"},"destination":"inventory","discardOptions":[{"cardId":"fixture.healing-potion","maxCopies":1}],"decisionDeadlineAt":null}]}
+```
+
+Exemplo de projeção solo após a conclusão da queda fora de combate, com travessia disponível e sem encontros disponíveis no deck urbano da fixture:
+
+```json
+{
+  "turn": {"round":8,"memberId":"M","actionPoints":3},
+  "player": {
+    "zoneId":"fixture.respawn-town","respawnZoneId":"fixture.respawn-town",
+    "down":false,"health":2,"maxHealth":21,"peak":9,"vigor":4,"gold":34,
+    "vault":{"slots":[],"decks":[],"gold":80},
+    "availableActions":["move","recover","adjustDeck","useVault","saveRespawnPoint","endTurn"],
+    "skipNextTurn":false,
+    "lastKnockout":{"id":"knockout-1","combatId":null,"respawnZoneId":"fixture.respawn-town","healthRestored":2,"peakLost":1,"vigorLost":5,"purseGoldLost":3,"roundAtKnockout":6,"roundAfterRespawn":8}
+  }
+}
+```
+
+No envelope real, `player` fica em `members[]`. Em uma variante para verificar a passagem de tempo, inclua um status com duas rodadas restantes e uma habilidade fora de combate com duas rodadas restantes de recarga, sem alterar os saldos do exemplo. Ao abrir a rodada 8, o status expirou, a recarga chegou a zero e a habilidade elegível volta a aparecer em `usableAbilities`, com `prepare` em `availableActions`. Confira a perda de 3 sobre 37 e `vault.gold: 80` no snapshot. Recarregue e reabra a sessão. O ID do nocaute, a rodada 8 e os saldos ficam iguais. Para os saves legados, reproduza também a vitória com escolha gravada e a derrota com a coisa ruim já aplicada. Confirme que o primeiro mantém a escolha e o segundo volta à vez jogável sem descontar os 5 de ouro novamente.
+
 ## 4. Códigos de erro
 
 | Código | Quando acontece | FEAT |
@@ -2715,3 +2829,6 @@ type ResolveTriggeredEffectAction = {
 | 0.64 | 2026-11-20 | BE | Extensão da FEAT-13 `acordado`: frontend confirmou os tipos, a ordem e as recusas propostos na v0.63. |
 | 0.65 | 2026-11-20 | BE | FEAT-13 `implementado (BE)` com a T-49 aprovada nos unitários e e2e. Validação integrada pendente. |
 | 0.66 | 2026-11-21 | BE | FEAT-13 `validado` após a T-67 no Chrome com MSW desligado contra a API v0.65. Sem mudança de formato. |
+| 0.67 | 2026-11-21 | BE | FEAT-14 `proposto (BE)`: salvar ponto, ordenação e retomada do nocaute, passagem de vez, ajustes do laboratório e referências para a T-68. |
+| 0.68 | 2026-11-21 | BE | FEAT-14 `proposto (BE)`: desistência automática no pagamento fatal com requisitos em aberto, cura com o jogador caído e dois cenários para revisão do REQ-64. |
+| 0.69 | 2026-11-21 | BE | FEAT-14 `acordado` após o aceite da v0.68 pelo frontend para os REQ-63 a REQ-65, incluindo doação fatal e cura após a queda. A T-68 pode começar com MSW após a sincronização. |

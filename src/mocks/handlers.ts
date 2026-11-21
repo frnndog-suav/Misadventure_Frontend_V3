@@ -1,3 +1,6 @@
+import { knockoutAction, knockoutParty } from './knockoutFixtures'
+import { knockoutConfigLimits } from '../api/labConfig'
+import type { GameConfigValues } from '../api/labConfig'
 import { http, HttpResponse, type RequestHandler } from 'msw'
 import {
   acceptCombatResponse,
@@ -36,6 +39,7 @@ import {
   collectionsFixture,
   fixtureCardsByTypeFixture,
   fixtureCardsFixture,
+  respawnTownFixture,
 } from './catalogFixtures'
 import { classesFixture } from './classFixtures'
 import type {
@@ -198,6 +202,8 @@ async function partyActionScenario(
 ): Promise<Response> {
   const body: unknown = await request.json().catch(() => undefined)
   const type = field(body, 'type')
+  const knockout = knockoutParty(partyId)
+  if (knockout) return knockoutAction(knockout, body)
   const combat = combatScenario(partyId)
   if (combat) {
     const deny = (reason: string) =>
@@ -684,7 +690,9 @@ function catalogCardScenario(cardId: string): Response {
   const card =
     cardId === executableCombatCardFixture.id
       ? executableCombatCardFixture
-      : fixtureCardsFixture.find((entry) => entry.id === cardId)
+      : cardId === respawnTownFixture.id
+        ? respawnTownFixture
+        : fixtureCardsFixture.find((entry) => entry.id === cardId)
   return card === undefined
     ? HttpResponse.json(catalogCardNotFoundFixture, { status: 404 })
     : HttpResponse.json(card)
@@ -695,7 +703,8 @@ function knownParty(
   partyId: unknown,
   ok: () => Response | Promise<Response>,
 ): Response | Promise<Response> {
-  return combatScenario(partyId) !== undefined ||
+  return knockoutParty(partyId) !== undefined ||
+    combatScenario(partyId) !== undefined ||
     eventScenario(partyId) !== undefined ||
     partyId === partyCreatedFixture.id ||
     partyId === partyNoPointsFixture.id ||
@@ -731,6 +740,49 @@ function field(body: unknown, key: string): unknown {
   return typeof body === 'object' && body !== null && key in body
     ? (body as Record<string, unknown>)[key]
     : undefined
+}
+
+let knockoutLabValues: Partial<GameConfigValues> = {}
+
+function knockoutLabConfig() {
+  return {
+    ...labConfigDefaultsFixture,
+    values: { ...labConfigDefaultsFixture.values, ...knockoutLabValues },
+  }
+}
+
+function patchKnockoutLabConfig(body: unknown) {
+  const patch: Partial<GameConfigValues> = {}
+  const fields = []
+  for (const key of Object.keys(
+    knockoutConfigLimits,
+  ) as (keyof typeof knockoutConfigLimits)[]) {
+    const value = field(body, key)
+    if (value === undefined) continue
+    const { min, max } = knockoutConfigLimits[key]
+    if (typeof value !== 'number' || !Number.isInteger(value)) {
+      fields.push({ field: key, reason: 'notInteger' })
+    } else if (value < min || value > max) {
+      fields.push({ field: key, reason: 'outOfRange' })
+    } else {
+      patch[key] = value
+    }
+  }
+  if (fields.length)
+    return HttpResponse.json(
+      {
+        error: {
+          code: 'LAB_CONFIG_INVALID',
+          message: 'Configuração do laboratório inválida.',
+          details: { fields },
+        },
+      },
+      { status: 400 },
+    )
+  if (Object.keys(patch).length) {
+    knockoutLabValues = { ...knockoutLabValues, ...patch }
+    return HttpResponse.json(knockoutLabConfig())
+  }
 }
 
 const notFound = {
@@ -1037,9 +1089,11 @@ const editorHandlers: RequestHandler[] = [
  */
 export const handlers: RequestHandler[] = [
   http.get('*/health', () => HttpResponse.json(healthFixture)),
-  http.get('*/lab/config', () => HttpResponse.json(labConfigDefaultsFixture)),
+  http.get('*/lab/config', () => HttpResponse.json(knockoutLabConfig())),
   http.patch('*/lab/config', async ({ request }) => {
     const body = await jsonBody(request)
+    const knockout = patchKnockoutLabConfig(body)
+    if (knockout) return knockout
     const reserve = field(body, 'reserveDeck')
     if (field(body, 'combatEscapeThreshold') === 0) {
       return HttpResponse.json({
@@ -1068,9 +1122,10 @@ export const handlers: RequestHandler[] = [
     }
     return HttpResponse.json(labConfigUpdatedFixture)
   }),
-  http.post('*/lab/config/reset', () =>
-    HttpResponse.json(labConfigDefaultsFixture),
-  ),
+  http.post('*/lab/config/reset', () => {
+    knockoutLabValues = {}
+    return HttpResponse.json(labConfigDefaultsFixture)
+  }),
   http.get('*/catalog/collections', () =>
     HttpResponse.json(collectionsFixture),
   ),
@@ -1089,7 +1144,8 @@ export const handlers: RequestHandler[] = [
   http.get('*/parties/:partyId', ({ params }) =>
     knownParty(params.partyId, () =>
       HttpResponse.json(
-        combatScenario(params.partyId)?.party ??
+        knockoutParty(params.partyId) ??
+          combatScenario(params.partyId)?.party ??
           eventScenarioParty(params.partyId) ??
           [
             partyNoPointsFixture,
@@ -1109,7 +1165,8 @@ export const handlers: RequestHandler[] = [
   http.post('*/parties/:partyId/session', ({ params }) =>
     knownParty(params.partyId, () =>
       HttpResponse.json(
-        combatScenario(params.partyId)?.party ??
+        knockoutParty(params.partyId, 'inSession') ??
+          combatScenario(params.partyId)?.party ??
           eventScenarioParty(params.partyId) ??
           [
             partyNoPointsFixture,
@@ -1127,7 +1184,11 @@ export const handlers: RequestHandler[] = [
     ),
   ),
   http.post('*/parties/:partyId/session/end', ({ params }) =>
-    knownParty(params.partyId, () => HttpResponse.json(partyIdleFixture)),
+    knownParty(params.partyId, () =>
+      HttpResponse.json(
+        knockoutParty(params.partyId, 'idle') ?? partyIdleFixture,
+      ),
+    ),
   ),
   http.post('*/parties/:partyId/actions', ({ params, request }) =>
     knownParty(params.partyId, () =>

@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.79 · **Data:** 2026-11-20
+> **Versão da spec:** 0.81 · **Data:** 2026-11-21
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -599,6 +599,34 @@ Base: CONTRATO v0.64, seção FEAT-13, incluindo Escolha de efeitos disparados.
 - **Dados** efeitos simultâneos, **quando** escolher o primeiro, **então** a tela envia a decisão do modo correspondente, oferece apenas recusa com `canPay: false` e usa a próxima escolha e os custos devolvidos.
 - **Dado** pagamento inválido ou escolha consumida, **quando** o POST retorna `paymentInvalid` ou `staleTriggeredEffectChoice`, **então** a tela informa a recusa e preserva o último estado confirmado.
 
+### Nocaute, spawn e respawn (FEAT-14)
+
+Base: ROADMAP v0.64, README §§20 e 12.2, Apêndice A e CONTRATO v0.66. O autor aprovou os REQ-63 a REQ-65 e a T-68 em 2026-11-21. As referências a payloads e projeções novas dependem do acordo do contrato.
+
+### REQ-63 — Spawn e ponto de respawn
+
+- **Dada** a entrada em uma dimensão, **quando** a tela receber o estado inicial, **então** apresenta a cidade inicial como zona de chegada e ponto de respawn de todos, usando os IDs projetados. Na entrada em outra dimensão, apresenta o novo ponto inicial quando esse fluxo estiver disponível.
+- **Dado** que o membro está na própria vez, em zona Urbana e com pelo menos 1 PA, **quando** a API oferecer Salvar ponto de respawn, **então** a tela oferece a ação. Ao salvar, envia a intenção sem destino e mostra o ponto atualizado para o membro e o saldo reduzido em 1 PA conforme a resposta. Após recarregar, o ponto salvo continua visível.
+- **Dada** uma zona não Urbana, falta de PA ou outra condição de indisponibilidade, **quando** a ação estiver ausente da projeção, **então** a tela a omite. Se uma intenção já enviada for recusada, mostra a mensagem da API e preserva o último estado confirmado.
+
+### REQ-64 — Nocaute e retomada da partida
+
+- **Dado** que o membro chega a 0 PV em um fluxo disponível, inclusive doação de vida, **quando** a API concluir o nocaute, **então** a tela mostra o retorno automático ao ponto salvo, a vida restaurada calculada sobre a vida máxima com o novo Pico, Pico e Vigor atualizados, as penalidades aplicáveis e o fim da vez atual. As informações e ações vêm do estado projetado pela API.
+- **Dada** vitória com queda por Reflexão e recompensas pendentes, **quando** a API projetar escolhas obrigatórias, **então** elas continuam disponíveis também após recarga ou reabertura da sessão. Ao receber o estado após a última escolha, a tela apresenta o desfecho da vitória e o respawn resolvido pelo backend. Em derrota, apresenta as penalidades do desfecho já aplicadas pela API.
+- **Dada** uma partida de um participante, **quando** o nocaute solo for resolvido, **então** a tela mostra a rodada avançada automaticamente, o ouro atualizado na bolsa e as ações da vez jogável projetada. A validação cobre o desconto arredondado para baixo, o cofre intacto e a passagem de rodada para durações e recargas disponíveis. Após recarga ou reabertura, a tela recupera o estado persistido, com as penalidades aplicadas uma só vez.
+- **Dada** uma partida com mais de um participante, inclusive com IA, **quando** esses fluxos estiverem disponíveis e a API resolver o nocaute, **então** a tela usa a ordem projetada, com perda da vez atual e da próxima e sem a penalidade extra de ouro do solo. Em combate de grupo, o membro caído permanece no combate até seu encerramento e o frontend só mostra opções de reviver quando oferecidas pelas regras aplicáveis. A validação real desses cenários depende das FEATs 20 e 22.
+
+### REQ-65 — Valores de nocaute no laboratório
+
+- **Dada** a configuração de nocaute, **quando** consultar, salvar ou restaurar os valores, **então** o laboratório exibe os campos pactuados, usa os limites e padrões retornados pela API e associa os erros de validação aos campos correspondentes. A revisão do contrato deve cobrir vida no respawn, perda de Pico, teto de Vigor, perda de ouro solo e rodadas de espera solo, conforme o Apêndice A.
+
+### Lacunas do contrato da FEAT-14
+
+- **Salvar ponto de respawn.** A ação já existe no vocabulário de zona e o estado já expõe `respawnZoneId`. Pactuar `{ type: "saveRespawnPoint" }` na rota de ações existente, posição em `availableActions`, motivos de recusa e comportamento ao salvar novamente a zona já registrada. Reutilizar o estado de spawn da FEAT-06 e definir a compatibilidade dos saves existentes.
+- **Nocaute.** Pactuar a projeção da queda, da espera por desfecho e do retorno, incluindo a semântica de `down`, o dado necessário para comunicar o resultado após GET e a relação com `lastCombatResult` e `combatUpdates`. Definir a ordem de desfecho, escolhas pendentes, penalidades, recálculo de atributos e passagem de vez, além do momento de persistência. Cobrir derrota, Reflexão com e sem recompensa pendente, doação até zero e demais fontes de 0 PV já executáveis. Confirmar `keepPeakOnKnockout` e o encerramento de status `untilKnockout` onde aplicáveis.
+- **Vez e persistência.** Pactuar o estado autoritativo da rodada e das ações no solo e a representação da perda da próxima vez para múltiplos participantes. Definir transições atômicas e retomada de saves com `down: true` da FEAT-13, inclusive com recompensa pendente, sem reaplicar o desfecho.
+- **Laboratório e dados de teste.** Pactuar chaves, unidades, limites, padrões, arredondamentos, erros de PATCH e fallback para configurações anteriores. Definir fixtures e respostas esperadas para duas Urbanas, recusa, nocaute fora de combate, derrota, vitória por Reflexão com escolha, nocaute solo e recarga.
+
 ### REQ-nn — <nome>
 - **Dado** <estado>, **quando** <ação>, **então** <resultado exato>.
 
@@ -814,6 +842,10 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 - [x] **T-66 — Escolha de efeitos disparados** (REQ-62). Exercitar os quatro cenários acordados com MSW.
 - [ ] **T-67 — Validação integrada.** Repetir os cenários da FEAT-13 com MSW desligado após a entrega do backend, com URL e dados de teste.
 
+### FEAT-14 — Nocaute, spawn e respawn
+
+- [x] **T-68 — Cliente e fixtures MSW de nocaute e respawn** (REQ-63 a REQ-65). Após aprovação da spec e acordo do contrato, escrever primeiro testes identificados pelos REQs para os novos formatos e cenários. Confirmar a falha esperada, alinhar schemas, cliente de ações, estado do grupo e configuração do laboratório e preparar fixtures para sucesso, recusas, desfecho e recarga. Concluir com os testes afetados e a checagem de tipos aprovados. As telas e a validação integrada ficam para tarefas posteriores.
+
 ## 8. Histórico
 
 | Versão | Data | Mudança |
@@ -897,3 +929,5 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 | 0.77 | 2026-11-20 | T-64 concluída com MSW: catálogo, editor e laboratório de combate (REQ-60). |
 | 0.78 | 2026-11-20 | T-65 concluída com MSW: tela, ações, pagamentos e desfechos de combate solo (REQ-61). |
 | 0.79 | 2026-11-20 | T-66 concluída com MSW nos quatro cenários de escolha de efeitos disparados (REQ-62). T-67 aguarda integração com a API real. |
+| 0.80 | 2026-11-21 | Proposta da FEAT-14 para aprovação: REQ-63 a REQ-65, T-68 e lacunas do contrato. Base: ROADMAP v0.64 e CONTRATO v0.66, que registra a validação da FEAT-13 após a T-67. |
+| 0.81 | 2026-11-21 | Autor aprovou os REQ-63 a REQ-65 e a T-68 da FEAT-14. A T-68 aguarda o acordo do contrato. |

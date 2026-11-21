@@ -54,8 +54,41 @@ const numericGameConfigValuesSchema = z.object({
   vaultGoldCapacity: gameConfigInt,
 })
 
+export const knockoutConfigDefaults = {
+  knockoutHealthPercent: 10,
+  knockoutPeakLossPercent: 10,
+  knockoutVigorCapPercent: 50,
+  soloKnockoutGoldLossPercent: 10,
+  soloKnockoutWaitRounds: 1,
+}
+
+export const knockoutConfigLimits = {
+  knockoutHealthPercent: { min: 1, max: 100 },
+  knockoutPeakLossPercent: { min: 0, max: 100 },
+  knockoutVigorCapPercent: { min: 0, max: 100 },
+  soloKnockoutGoldLossPercent: { min: 0, max: 100 },
+  soloKnockoutWaitRounds: { min: 0, max: 10 },
+}
+
+export type KnockoutConfigKey = keyof typeof knockoutConfigDefaults
+
 const positiveInt = gameConfigInt.min(1)
 export const gameConfigValuesSchema = numericGameConfigValuesSchema.extend({
+  knockoutHealthPercent: gameConfigInt.default(
+    knockoutConfigDefaults.knockoutHealthPercent,
+  ),
+  knockoutPeakLossPercent: gameConfigInt.default(
+    knockoutConfigDefaults.knockoutPeakLossPercent,
+  ),
+  knockoutVigorCapPercent: gameConfigInt.default(
+    knockoutConfigDefaults.knockoutVigorCapPercent,
+  ),
+  soloKnockoutGoldLossPercent: gameConfigInt.default(
+    knockoutConfigDefaults.soloKnockoutGoldLossPercent,
+  ),
+  soloKnockoutWaitRounds: gameConfigInt.default(
+    knockoutConfigDefaults.soloKnockoutWaitRounds,
+  ),
   // A configuração das versões anteriores à FEAT-13 omite os campos de combate.
   maxCombatCycles: gameConfigInt.optional(),
   combatEscapeThreshold: gameConfigInt.optional(),
@@ -127,6 +160,21 @@ export const labConfigSchema = z.object({
     vaultCapacity: limitSchema,
     vaultDeckSlots: limitSchema,
     vaultGoldCapacity: limitSchema,
+    knockoutHealthPercent: limitSchema.default(
+      knockoutConfigLimits.knockoutHealthPercent,
+    ),
+    knockoutPeakLossPercent: limitSchema.default(
+      knockoutConfigLimits.knockoutPeakLossPercent,
+    ),
+    knockoutVigorCapPercent: limitSchema.default(
+      knockoutConfigLimits.knockoutVigorCapPercent,
+    ),
+    soloKnockoutGoldLossPercent: limitSchema.default(
+      knockoutConfigLimits.soloKnockoutGoldLossPercent,
+    ),
+    soloKnockoutWaitRounds: limitSchema.default(
+      knockoutConfigLimits.soloKnockoutWaitRounds,
+    ),
     maxCombatCycles: limitSchema.optional(),
     combatEscapeThreshold: limitSchema.optional(),
     combatEscapePeakLoss: limitSchema.optional(),

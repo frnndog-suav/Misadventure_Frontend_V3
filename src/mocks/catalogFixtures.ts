@@ -173,6 +173,13 @@ export const grayHarborFixture: Card = {
   effects: [],
 }
 
+export const respawnTownFixture: Card = {
+  ...grayHarborFixture,
+  id: 'fixture.respawn-town',
+  title: 'Vila do Retorno',
+  connectionArrows: 2,
+}
+
 /** Cópia exata do backend (coleção `fixture`, CONTRATO v0.25). */
 export const stoneBendFixture: Card = {
   type: 'zone',

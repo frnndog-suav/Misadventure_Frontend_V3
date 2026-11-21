@@ -415,6 +415,8 @@ const soloCombat = {
   abilities: [combatAbility],
   effects: [combatEffect],
 }
+export const knockoutCombatFixture = soloCombat
+
 const soloActions = [
   'activateCombatEffect',
   'useAbility',

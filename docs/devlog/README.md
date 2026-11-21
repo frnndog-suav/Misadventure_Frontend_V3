@@ -116,3 +116,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 084 | T-65 | [Tela e ações de combate solo](084-T-65-tela-acoes-combate-solo.md) | concluída |
 | 085 | T-66 | [Escolha de efeitos disparados](085-T-66-escolha-efeitos-disparados.md) | concluída |
 | 086 | T-67 | [Validação parcial da FEAT-13](086-T-67-validacao-integrada-feat-13.md) | validação parcial |
+| 087 | T-68 | [Cliente e fixtures MSW da FEAT-14](087-T-68-cliente-feat-14.md) | concluída |

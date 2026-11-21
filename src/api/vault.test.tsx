@@ -259,6 +259,7 @@ describe('REQ-50: PlayerState com o cofre e o Vasculhar', () => {
       'adjustDeck',
       'scavenge',
       'useVault',
+      'saveRespawnPoint',
       'startEvent',
       'revealEvent',
       'payEventRequirement',

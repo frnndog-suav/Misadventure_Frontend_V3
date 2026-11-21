@@ -481,6 +481,8 @@ describe('REQ-30: Party preparado (dimension, turnOrder, player)', () => {
       attributeDiscardPileCount: 0,
       zoneId: 'fixture.gray-harbor',
       respawnZoneId: 'fixture.gray-harbor',
+      lastKnockout: null,
+      skipNextTurn: false,
       moveTargets: ['fixture.stone-bend', 'fixture.whispering-grove'],
       availableActions: [
         'move',

@@ -247,6 +247,7 @@ describe('REQ-44: PlayerState com inventário, equipamentos, bolsa e modificador
       'adjustDeck',
       'scavenge',
       'useVault',
+      'saveRespawnPoint',
       'startEvent',
       'revealEvent',
       'payEventRequirement',
