@@ -221,3 +221,67 @@ Na revalidação, abrir um save novo com a Onda disponível no Chrome com MSW de
 No save `a2d002e9-216c-4a2f-831c-a829292001a3`, o GET da API real em `http://localhost:3333` confirmou os dois lobos vivos com 20 PV cada. No Chrome via Playwright, com MSW desligado, a Onda de Água apareceu sem seletor. Um clique em **Usar habilidade** produziu um único POST `useAbility` para `fixture.t67-water-area`, sem a chave `targetId`, e recebeu HTTP 200. Os eventos vieram na ordem Fogo com 10 de dano e 2 refletidos, depois Gelo com 4 de dano e 3 refletidos.
 
 A linha de Área, Precisão zero, elemento e Reflexão está aprovada. A T-67 segue aberta para as demais linhas da matriz, começando por Suporte com aliado ferido e Canalizada após dano. Horas — null.
+
+## Suporte com aliado ferido e Canalizada após dano — aprovado
+
+Chrome via Playwright com MSW desligado, API real em `http://localhost:3333` e contrato v0.65. Nos dois saves, Chama Canalizada no Lobo da Guarda retornou HTTP 200, com uma carga adquirida e sem evento de dano. O ataque básico retornou HTTP 200 e tirou 6 PV do Guarda (20 → 14). No mesmo lote, o Curandeiro usou Cura da Matilha antes de acertar Lia com o ataque básico de 5 (20 → 15 PV). O Guarda errou em seguida, e seu evento confirmou 17 PV após a cura. A recarga retornou HTTP 200, preservou a janela Preparar do ciclo 2 e confirmou Lia com 15 PV, Guarda com 17 e Curandeiro com 20.
+
+| Limiar | Save | Cargas inicial → após Chama → após golpe → recarga |
+| --- | --- | --- |
+| 20% (4 PV) | `0f3819cf-982d-4037-a35d-f8d8e9160bb6` | 0 → 1 → 0 → 0 |
+| 25% (5 PV) | `94c3bdc7-9fcd-4791-9cd9-c1f66decc4d1` | 0 → 1 → 1 → 1 |
+
+A linha está aprovada. A próxima linha da matriz é Fuga falha e limite em Sem fuga. Apenas este devlog foi alterado nesta rodada. Horas — null.
+
+## Fuga falha e limite em Sem fuga — POSTs conferidos
+
+Chrome via Playwright, MSW desligado e API real em `http://localhost:3333`, CONTRATO v0.65. Cada botão gerou um único POST com HTTP 200.
+
+- **Fuga falha** (`ab507f71-50fd-4e1c-9ada-7d57fdd596d7`). Em Preparar, **Fugir** gerou `combatEscapeAttempted` com rolagem e total 11, limiar 20, `succeeded: false` e `vigorSpent: 2`. Vigor 10 → 8 e Pico 10. O ataque livre tirou 4 PV antes de iniciar o turno do lobo. O ataque normal tirou mais 4 PV. Lia foi de 20 → 16 → 12 PV e voltou a Preparar no ciclo 2.
+- **Limite em Sem fuga** (`2a3100ae-a32d-4e19-9fce-f4e13fbbefe0`). Em Preparar no ciclo 1 de 1, a tela exibiu `escapeForbidden`. **Encerrar turno de combate** iniciou o turno do lobo, cujo ataque errou e causou 0 de dano, seguido de `combatEnded`. O POST trouxe `combat: null`, `resolution: escaped`, `cause: cycleLimit`, `peakDelta: -2` e `pendingRewards: []`. Lia manteve 20 PV, Vigor 6 e ouro 10, com Pico 10 → 8. O lote não trouxe tentativa de fuga nem aplicação do desfecho ruim.
+
+O autor confirmou no devlog 058 do backend que o RNG permaneceu em `[0,0,0,10]` e a pilha urbana de recompensas permaneceu em `[fixture.iron-ore]`. O descarte urbano passou de vazio para `[fixture.t67-no-escape]`, com uma única cópia. O ouro permaneceu em 10, confirmando que a perda de 5 do desfecho ruim foi pulada. A linha Fuga falha e limite em Sem fuga está aprovada. Horas — null.
+
+A T-67 segue aberta para os casos restantes de escolha de efeitos disparados do REQ-62. A recarga e a retomada no turno inimigo já foram conferidas. Faltam os saves equivalentes para pagar e recusar na antecipação, escolher a ordem entre automático e opcional e conferir pagamento inválido e reenvio de escolha consumida. Apenas este devlog foi alterado nesta rodada.
+
+### Escolhas restantes do REQ-62 — aguardando saves
+
+Em 2026-11-21, a API em `http://localhost:3333` respondeu a `GET /health` com contrato v0.65 e a `GET /parties` com a lista de campanhas. A campanha de efeito disparado identificada é a já usada para a retomada no turno inimigo. A lista não identificou saves para antecipação, efeitos simultâneos e as duas recusas. Nenhuma ação de jogo foi enviada nesta checagem. Horas — null.
+
+### Antecipação aprovada e pagamento inválido aguardando leitura do PostgreSQL
+
+Chrome via Playwright em `localhost:5173`, MSW desligado e API real v0.65 em `localhost:3333`.
+
+| Cenário | Save | Resultado |
+| --- | --- | --- |
+| Pagar | `3a9834ce-2122-413f-96ed-de119653da5a` | Um clique gerou um POST `pay` com os IDs do GET. HTTP 200, ouro 10 → 9, PV 15 → 17 e escolha encerrada. O GET após recarga manteve os valores e a escolha encerrada. |
+| Recusar | `01634679-2b87-4b43-ae22-dab1f563617f` | Um clique gerou um POST `decline` com os IDs do GET. HTTP 200, ouro 10 e PV 15, com escolha encerrada. O GET após recarga confirmou o mesmo estado. |
+| Pagamento inválido | `4f9abbd3-ae82-4b8a-93cd-3f42ed2b177d` | O GET apresentou automático e opcional. Com `canPay: false`, a tela ofereceu Resolver para o automático e apenas Recusar para o opcional. Um único POST via fetch no Chrome enviou `pay` para o opcional com os IDs do GET e omitiu `payment`. HTTP 409 `ACTION_NOT_ALLOWED`, motivo `paymentInvalid`. |
+
+O save simultâneo ficou pausado após o 409 para o autor comparar RNG, `savedAt` e SHA-256 da linha completa com a leitura de referência já registrada. A resolução do automático, o recálculo do opcional e o reenvio da escolha consumida continuam pendentes. Apenas este devlog foi alterado. Horas — null.
+
+### Automático resolvido — aguardando referência para o reenvio
+
+O autor confirmou que o HTTP 409 `paymentInvalid` preservou o RNG `[0,0,0,10]`, o `savedAt` e o SHA-256 da linha inteira. No Chrome com MSW desligado, foi feito um clique em **Resolver** no save simultâneo. O monitor do Playwright falhou no evento de requisição e não capturou a contagem de POSTs nem o status da resposta. O GET confirmou ouro 10 → 12, escolha `:triggered-effect:1` → `:triggered-effect:2` e o mesmo `effectId` para o opcional de custo 11, agora com `canPay: true`. Ao reabrir no Chrome, o botão **Pagar** estava visível.
+
+O save ficou pausado com `savedAt: 2026-11-21T21:15:39.721Z`, antes do reenvio, para o autor registrar a referência persistida. Horas — null.
+
+### Reenvio de escolha consumida — HTTP 409 confirmado
+
+Após o autor confirmar a captura da referência no PostgreSQL, o GET no Chrome com MSW desligado confirmou a escolha corrente `:triggered-effect:2` e o `savedAt` de referência. No save `4f9abbd3-ae82-4b8a-93cd-3f42ed2b177d`, um único POST via fetch enviou `resolveTriggeredEffect` com `decision: resolve`, o `effectId` do automático e o `choiceId` consumido `:triggered-effect:1`, sem `payment`. A API real v0.65 retornou HTTP 409 `ACTION_NOT_ALLOWED`, mensagem “Esta ação não é permitida agora.” e motivo `staleTriggeredEffectChoice`.
+
+O save ficou pausado para o autor comparar RNG, `savedAt` e SHA-256 da linha inteira com a referência anterior ao POST. Horas — null.
+
+### Comparações no PostgreSQL — aprovadas
+
+O backend confirmou que os dois HTTP 409 (`paymentInvalid` e `staleTriggeredEffectChoice`) preservaram o RNG `[0,0,0,10]`, o `savedAt` e o SHA-256 da linha inteira em relação à referência de cada POST. Para `staleTriggeredEffectChoice`, a referência e a leitura após o reenvio coincidiram com `savedAt: 2026-11-21T21:15:39.721Z` e SHA-256 `e6ebf203368daa266110f2de687545a7a403ff49d03fd26428668d352a920ebe`. A confirmação fecha a verificação de persistência das duas recusas no REQ-62. Horas — null.
+
+### Resolução do automático com captura de rede — aprovada
+
+Em 2026-11-21, no Chrome com MSW desligado e API real v0.65 em `http://localhost:3333`, a captura de rede foi habilitada antes do clique no save `b5c999aa-fe28-4d54-b9a6-45ccfb98b6c7`. Um clique em **Resolver** gerou um único POST `resolveTriggeredEffect` com `decision: resolve` para o efeito automático. A resposta foi HTTP 200.
+
+O GET após recarga retornou HTTP 200, com ouro 10 → 12, Lia com 15 PV e `choiceId` de `:triggered-effect:1` para `:triggered-effect:2`. O opcional manteve o mesmo `effectId` e o custo de 11 de ouro. `canPay` passou de `false` para `true` e a tela exibiu **Pagar**. Apenas este devlog foi alterado nesta rodada. Horas — null.
+
+### Encerramento da T-67 e sincronização dos documentos
+
+Em 2026-11-21, o autor confirmou a conclusão da T-67. As cópias integrais de `docs/CONTRATO.md` v0.66 e `docs/ROADMAP.md` v0.64 foram trazidas do backend. Os hashes SHA-256 de cada par conferem. Ambos registram a FEAT-13 como validada e o contrato registra que o formato da API permanece o mesmo. A sincronização foi documental. Horas — null.
