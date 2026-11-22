@@ -1,6 +1,6 @@
 # Misadventures — Roadmap de desenvolvimento
 
-> **Versão:** 0.65 · **Data:** 2026-11-22
+> **Versão:** 0.66 · **Data:** 2026-11-22
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend; o autor copia o arquivo inteiro quando ele muda. Base: README Parte III (III.2 e III.4). As regras estão em [`README.md`](README.md); o que trafega entre os lados, em [`CONTRATO.md`](CONTRATO.md).
 
@@ -67,7 +67,7 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | FEAT-12 | Eventos aleatórios: fases, pagamento por partes, desistência, reposição, fuga | 14, 15 | validado | validado |
 | FEAT-13 | Combate 1 jogador × 1 ou mais inimigos: inimigos e IA deles, habilidades, elementos, cálculo de dano | 16, 17, 18, 19.1 a 19.4, 19.6 | validado | validado |
 | FEAT-14 | Nocaute, spawn, respawn e Salvar ponto de respawn (inclui o nocaute no jogo solo) | 20, 12.2 | validado | validado |
-| FEAT-15 | Missões de zona, provação e mentor; especializações e multiclasse | 21, 8.3, 8.4 | a fazer | a fazer |
+| FEAT-15 | Missões de zona, provação e mentor; especializações e multiclasse | 21, 8.3, 8.4 | pronto | em andamento |
 | FEAT-16 | Mercado: estoque, venda, boosters, singles, serviços | 24 | a fazer | a fazer |
 | FEAT-17 | Ferreiro e Oficina do Artífice | 25 | a fazer | a fazer |
 | FEAT-18 | Montarias e Estábulo | 26 | a fazer | a fazer |
@@ -178,3 +178,4 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | 0.63 | 2026-11-20 | FEAT-13 com BE pronto após a T-49 (CONTRATO v0.65). Validação integrada pendente. |
 | 0.64 | 2026-11-21 | FEAT-13 validada nos dois lados após a T-67 (CONTRATO v0.66). |
 | 0.65 | 2026-11-22 | FEAT-14 validada nos dois lados após a revalidação solo da T-54 (CONTRATO v0.74). |
+| 0.66 | 2026-11-22 | FEAT-15 solo passou com MSW no frontend (devlog 091) e tem planejamento no backend (devlog 066). A validação integrada aguarda a implementação do backend e os dados de teste. |
