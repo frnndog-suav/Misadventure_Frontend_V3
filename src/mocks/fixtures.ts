@@ -26,7 +26,12 @@ export const notFoundFixture: ErrorEnvelope = {
   error: { code: 'NOT_FOUND', message: 'Recurso não encontrado.' },
 }
 
-import { knockoutConfigDefaults, knockoutConfigLimits } from '../api/labConfig'
+import {
+  knockoutConfigDefaults,
+  knockoutConfigLimits,
+  questConfigDefaults,
+  questConfigLimits,
+} from '../api/labConfig'
 
 /** GET /lab/config sem ajuste salvo (tabela Padrão / Mínimo–máximo). */
 const defaultValues: LabConfig['values'] = {
@@ -64,6 +69,7 @@ const defaultValues: LabConfig['values'] = {
   vaultDeckSlots: 10,
   vaultGoldCapacity: 2000,
   ...knockoutConfigDefaults,
+  ...questConfigDefaults,
   maxCombatCycles: 20,
   combatEscapeThreshold: 10,
   combatEscapePeakLoss: 2,
@@ -120,6 +126,7 @@ export const labConfigDefaultsFixture: LabConfig = {
     vaultDeckSlots: { min: 1, max: 100 },
     vaultGoldCapacity: { min: 0, max: 10000000 },
     ...knockoutConfigLimits,
+    ...questConfigLimits,
     maxCombatCycles: { min: 1, max: 100 },
     combatEscapeThreshold: { min: 0, max: 20 },
     combatEscapePeakLoss: { min: 0, max: 1000 },

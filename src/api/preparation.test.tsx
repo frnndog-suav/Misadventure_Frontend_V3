@@ -184,6 +184,7 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
       item: 7,
       randomEvent: 2,
       combatEvent: 1,
+      zoneQuest: 0,
       dimension: 1,
     })
     const counts: Record<string, unknown> = {
@@ -297,7 +298,7 @@ describe('REQ-29: useClasses (GET /catalog/classes)', () => {
       'rogue',
       'warrior',
     ])
-    expect(result.current.data?.[1]).toEqual({
+    expect(result.current.data?.[1]).toMatchObject({
       playerClass: 'warrior',
       collectionId: 'fixture',
       name: 'Guerreiro',
@@ -455,6 +456,10 @@ describe('REQ-30: Party preparado (dimension, turnOrder, player)', () => {
     const { hand, handCopies, ...player } = party.members[0].player
     expect(handCopies.map(({ cardId }) => cardId)).toEqual(hand)
     expect(player).toEqual({
+      questBoard: [],
+      openQuests: [],
+      questChoices: [],
+      specializations: [],
       statuses: [],
       activatableEffects: [],
       nextTurnActionPointDebt: 0,

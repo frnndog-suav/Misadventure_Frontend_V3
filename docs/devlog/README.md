@@ -118,3 +118,5 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 086 | T-67 | [Validação parcial da FEAT-13](086-T-67-validacao-integrada-feat-13.md) | validação parcial |
 | 087 | T-68 | [Cliente e fixtures MSW da FEAT-14](087-T-68-cliente-feat-14.md) | concluída |
 | 088 | FEAT-14 | [Interface de nocaute e respawn](088-feat-14-interface-nocaute-respawn.md) | concluída com MSW |
+| 089 | FEAT-15 | [Planejamento e proposta de contrato](089-feat-15-planejamento.md) | acordo confirmado na v0.73 |
+| 090 | T-69 | [Cliente e fixtures MSW da FEAT-15](090-T-69-cliente-feat-15.md) | concluída com MSW |

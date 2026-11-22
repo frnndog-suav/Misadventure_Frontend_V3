@@ -283,6 +283,7 @@ describe('REQ-26: importar coleção', () => {
   it('REQ-33: envia o conteúdo como está, escolhe a coleção importada e mostra "Coleção importada: {cardCount} cartas e {classCount} classes."', async () => {
     let received: unknown
     let replace: string | null = 'não chamou'
+    await screen.findByRole('button', { name: /Cole\u00e7\u00e3o de Teste/ })
     let listCalls = 0
     server.use(
       http.get('*/lab/content/collections', () => {

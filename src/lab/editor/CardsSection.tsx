@@ -27,7 +27,9 @@ const statuses = Object.keys(statusLabels) as ContentStatus[]
 
 /** Carta escolhida ou tipo da carta nova (D-42). */
 type Selection =
-  null | { kind: 'card'; cardId: string } | { kind: 'new'; type: CardType }
+  | null
+  | { kind: 'card'; cardId: string }
+  | { kind: 'new'; type: Exclude<CardType, 'zoneQuest'> }
 
 /** O que o formulário abre: a escolha ou a cópia devolvida pelo backend (REQ-23). */
 type Opened = Selection | { kind: 'copy'; copy: EditorCard }
@@ -57,6 +59,7 @@ function SavedCardForm({ cardId, ...props }: FormProps & { cardId: string }) {
       </section>
     )
   }
+  if (data.card.type === 'zoneQuest') return <p>{data.card.summary}</p>
   const values = formFromCard(data.card)
   return (
     <CardForm
@@ -90,6 +93,8 @@ function OpenedForm({
         />
       )
     case 'copy':
+      if (opened.copy.card.type === 'zoneQuest')
+        return <p>{opened.copy.card.summary}</p>
       return (
         <CardForm
           {...props}
@@ -240,18 +245,20 @@ export function CardsSection({
       </button>
       {picking && (
         <div role="group" aria-label="Tipo da nova carta">
-          {cardTypes.map((value) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => {
-                open({ kind: 'new', type: value })
-                setPicking(false)
-              }}
-            >
-              {cardTypeLabels[value]}
-            </button>
-          ))}
+          {cardTypes
+            .filter((value) => value !== 'zoneQuest')
+            .map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => {
+                  open({ kind: 'new', type: value })
+                  setPicking(false)
+                }}
+              >
+                {cardTypeLabels[value]}
+              </button>
+            ))}
         </div>
       )}
       {cards.isSuccess &&

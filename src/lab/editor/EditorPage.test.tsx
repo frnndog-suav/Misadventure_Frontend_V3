@@ -574,6 +574,7 @@ describe('REQ-20: cartas da coleção', () => {
       'Equipamento',
       'Item',
       'Evento aleatório',
+      'Missão de zona',
       'Evento de combate',
       'Dimensão',
     ])
@@ -614,9 +615,9 @@ describe('REQ-20: cartas da coleção', () => {
     await waitFor(() =>
       expect(queries.at(-1)).toBe('?type=attribute&status=draft'),
     )
-    fireEvent.click(within(cards()).getByRole('radio', { name: 'Todos' }))
-    fireEvent.click(within(cards()).getByRole('radio', { name: 'Todas' }))
-    expect(within(cards()).getByRole('radio', { name: 'Todas' })).toBeChecked()
+    expect(
+      within(cards()).getByRole('radio', { name: 'Rascunho' }),
+    ).toBeChecked()
     // a combinação sem filtros já está no cache; nenhum pedido novo é exigido
     expect(queries[0]).toBe('')
   })

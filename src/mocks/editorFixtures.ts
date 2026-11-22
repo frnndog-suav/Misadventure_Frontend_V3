@@ -29,6 +29,7 @@ const zeroCardCounts = {
   item: 0,
   randomEvent: 0,
   combatEvent: 0,
+  zoneQuest: 0,
   dimension: 0,
 }
 
@@ -63,6 +64,7 @@ export const fixtureCollectionFixture: EditorCollection = {
     item: 1,
     randomEvent: 2,
     combatEvent: 1,
+    zoneQuest: 0,
     dimension: 1,
   },
   rarityCounts: { ...zeroRarityCounts, common: 4, rare: 1 },
@@ -352,7 +354,11 @@ export const mageInput: ClassInput = {
 /** 201 do cenário `POST …/bosque/classes` com `mage`. */
 export const mageDraftFixture: EditorClass = {
   status: 'draft',
-  classDefinition: { ...mageInput, collectionId: 'bosque' },
+  classDefinition: {
+    ...mageInput,
+    specializations: [],
+    collectionId: 'bosque',
+  },
 }
 
 /** As classes da `fixture`, publicadas. */

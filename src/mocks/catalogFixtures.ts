@@ -24,6 +24,7 @@ export const collectionsFixture: CollectionSummary[] = [
       item: 7,
       randomEvent: 2,
       combatEvent: 1,
+      zoneQuest: 0,
       dimension: 1,
     },
   },
@@ -153,6 +154,7 @@ export const whisperingGroveFixture: Card = {
   location: 'Terras Selvagens',
   connectionArrows: 2,
   arrowLayout: 'straight',
+  questDeck: [],
   zoneActions: ['startEvent'],
   effects: [],
   type: 'zone',
@@ -169,6 +171,7 @@ export const grayHarborFixture: Card = {
   location: 'Costa Cinzenta',
   connectionArrows: 4,
   arrowLayout: null,
+  questDeck: [],
   zoneActions: ['startEvent', 'scavenge', 'useVault', 'saveRespawnPoint'],
   effects: [],
 }
@@ -190,6 +193,7 @@ export const stoneBendFixture: Card = {
   location: 'Terras Selvagens',
   connectionArrows: 2,
   arrowLayout: 'corner',
+  questDeck: [],
   zoneActions: ['startEvent'],
   effects: [],
 }
@@ -204,6 +208,7 @@ export const oldMineFixture: Card = {
   location: 'Terras Selvagens',
   connectionArrows: 1,
   arrowLayout: null,
+  questDeck: [],
   zoneActions: ['startEvent'],
   effects: [],
 }
@@ -630,6 +635,7 @@ export const fixtureCardsByTypeFixture: Record<CardType, Card[]> = {
   ],
   randomEvent: [executableEventFixture, woundedTravelerFixture],
   combatEvent: [howlingWolvesFixture],
+  zoneQuest: [],
   dimension: [testDimensionFixture],
 }
 

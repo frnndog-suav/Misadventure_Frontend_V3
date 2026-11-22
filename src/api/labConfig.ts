@@ -70,10 +70,60 @@ export const knockoutConfigLimits = {
   soloKnockoutWaitRounds: { min: 0, max: 10 },
 }
 
+export const questConfigDefaults = {
+  questBoardSize: 3,
+  maxOpenQuests: 3,
+  trialMinPeak: 30,
+  mentorBaseGoldCost: 150,
+  trialRandomEventTarget: 3,
+  trialCombatTarget: 3,
+  mentorRandomEventTarget: 5,
+  mentorCombatTarget: 5,
+  lockSpecializationAdditional: 6,
+  lockSpecializationReinforcement: 4,
+}
+
+export const questConfigLimits = {
+  questBoardSize: { min: 1, max: 50 },
+  maxOpenQuests: { min: 1, max: 50 },
+  trialMinPeak: { min: 0, max: 1000 },
+  mentorBaseGoldCost: { min: 0, max: 1000000 },
+  trialRandomEventTarget: { min: 0, max: 1000 },
+  trialCombatTarget: { min: 0, max: 1000 },
+  mentorRandomEventTarget: { min: 0, max: 1000 },
+  mentorCombatTarget: { min: 0, max: 1000 },
+  lockSpecializationAdditional: { min: 0, max: 200 },
+  lockSpecializationReinforcement: { min: 0, max: 200 },
+}
+
 export type KnockoutConfigKey = keyof typeof knockoutConfigDefaults
 
 const positiveInt = gameConfigInt.min(1)
 export const gameConfigValuesSchema = numericGameConfigValuesSchema.extend({
+  questBoardSize: gameConfigInt.default(questConfigDefaults.questBoardSize),
+  maxOpenQuests: gameConfigInt.default(questConfigDefaults.maxOpenQuests),
+  trialMinPeak: gameConfigInt.default(questConfigDefaults.trialMinPeak),
+  mentorBaseGoldCost: gameConfigInt.default(
+    questConfigDefaults.mentorBaseGoldCost,
+  ),
+  trialRandomEventTarget: gameConfigInt.default(
+    questConfigDefaults.trialRandomEventTarget,
+  ),
+  trialCombatTarget: gameConfigInt.default(
+    questConfigDefaults.trialCombatTarget,
+  ),
+  mentorRandomEventTarget: gameConfigInt.default(
+    questConfigDefaults.mentorRandomEventTarget,
+  ),
+  mentorCombatTarget: gameConfigInt.default(
+    questConfigDefaults.mentorCombatTarget,
+  ),
+  lockSpecializationAdditional: gameConfigInt.default(
+    questConfigDefaults.lockSpecializationAdditional,
+  ),
+  lockSpecializationReinforcement: gameConfigInt.default(
+    questConfigDefaults.lockSpecializationReinforcement,
+  ),
   knockoutHealthPercent: gameConfigInt.default(
     knockoutConfigDefaults.knockoutHealthPercent,
   ),
@@ -174,6 +224,28 @@ export const labConfigSchema = z.object({
     ),
     soloKnockoutWaitRounds: limitSchema.default(
       knockoutConfigLimits.soloKnockoutWaitRounds,
+    ),
+    questBoardSize: limitSchema.default(questConfigLimits.questBoardSize),
+    maxOpenQuests: limitSchema.default(questConfigLimits.maxOpenQuests),
+    trialMinPeak: limitSchema.default(questConfigLimits.trialMinPeak),
+    mentorBaseGoldCost: limitSchema.default(
+      questConfigLimits.mentorBaseGoldCost,
+    ),
+    trialRandomEventTarget: limitSchema.default(
+      questConfigLimits.trialRandomEventTarget,
+    ),
+    trialCombatTarget: limitSchema.default(questConfigLimits.trialCombatTarget),
+    mentorRandomEventTarget: limitSchema.default(
+      questConfigLimits.mentorRandomEventTarget,
+    ),
+    mentorCombatTarget: limitSchema.default(
+      questConfigLimits.mentorCombatTarget,
+    ),
+    lockSpecializationAdditional: limitSchema.default(
+      questConfigLimits.lockSpecializationAdditional,
+    ),
+    lockSpecializationReinforcement: limitSchema.default(
+      questConfigLimits.lockSpecializationReinforcement,
     ),
     maxCombatCycles: limitSchema.optional(),
     combatEscapeThreshold: limitSchema.optional(),

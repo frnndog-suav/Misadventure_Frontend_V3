@@ -3,6 +3,7 @@ import {
   useQuery,
   type UseQueryResult,
 } from '@tanstack/react-query'
+import { questLocationSchema } from './quests'
 import { z } from 'zod'
 import { getJson } from './http'
 import { eventOutcomeSchema, randomEventRulesSchema } from './randomEvents'
@@ -114,6 +115,7 @@ export const collectionSummarySchema = z.object({
     item: countByCardType,
     randomEvent: countByCardType,
     combatEvent: countByCardType,
+    zoneQuest: countByCardType.default(0),
     dimension: countByCardType,
   }) satisfies z.ZodType<Record<CardType, number>>,
 })
@@ -145,6 +147,7 @@ export const zoneCardSchema = z.object({
   /** FEAT-06: só com 2 setas; `null` nos outros casos (o backend confere). */
   arrowLayout: z.enum(['straight', 'corner']).nullable(),
   zoneActions: z.array(zoneActionSchema),
+  questDeck: z.array(z.string()).default([]),
   effects: z.array(zoneEffectSchema),
 })
 
@@ -296,6 +299,50 @@ export const dimensionCardSchema = z.object({
     .optional(),
 })
 
+const questStageFields = { location: questLocationSchema, text: z.string() }
+const questCombatSchema = combatEventCardSchema
+  .pick({
+    enemies: true,
+    goodOutcome: true,
+    badOutcome: true,
+  })
+  .extend({
+    noEscape: z.boolean(),
+    escapeThreshold: combatEventCardSchema.shape.escapeThreshold,
+  })
+
+export const zoneQuestCardSchema = z.object({
+  type: z.literal('zoneQuest'),
+  id: z.string(),
+  collectionId: z.string(),
+  title: z.string(),
+  summary: z.string(),
+  stages: z
+    .array(
+      z.discriminatedUnion('type', [
+        z.strictObject({ ...questStageFields, type: z.literal('interaction') }),
+        z.strictObject({
+          ...questStageFields,
+          type: z.literal('objectives'),
+          randomEventSuccesses: nonNegative,
+          combatVictories: nonNegative,
+        }),
+        z.strictObject({
+          ...questStageFields,
+          type: z.literal('randomEvent'),
+          eventCardId: z.string(),
+        }),
+        z.strictObject({
+          ...questStageFields,
+          type: z.literal('combatEvent'),
+          combat: questCombatSchema,
+        }),
+      ]),
+    )
+    .min(1),
+  rewards: eventOutcomeSchema.shape.steps,
+})
+
 export const cardSchema = z.union([
   zoneCardSchema,
   attributeCardSchema,
@@ -304,6 +351,7 @@ export const cardSchema = z.union([
   randomEventCardSchema,
   combatEventCardSchema,
   dimensionCardSchema,
+  zoneQuestCardSchema,
 ])
 export type Card = z.infer<typeof cardSchema>
 export type ZoneCard = z.infer<typeof zoneCardSchema>
@@ -315,7 +363,16 @@ export type CombatEventCard = z.infer<typeof combatEventCardSchema>
 export type DimensionCard = z.infer<typeof dimensionCardSchema>
 
 /** GET /catalog/classes — README 8.6, 8.7, 4.4 (FEAT-06). */
+const specializationDefinitionSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  additionalAttributes: z.array(attributeSchema).max(2),
+  reinforcedAttributes: z.array(attributeSchema),
+  effects: z.array(effectSchema),
+})
+
 export const classDefinitionSchema = z.object({
+  specializations: z.array(specializationDefinitionSchema).default([]),
   playerClass: playerClassSchema,
   collectionId: z.string(),
   name: z.string(),

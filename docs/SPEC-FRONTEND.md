@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.81 · **Data:** 2026-11-21
+> **Versão da spec:** 0.83 · **Data:** 2026-11-22
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -630,6 +630,20 @@ Base: ROADMAP v0.64, README §§20 e 12.2, Apêndice A e CONTRATO v0.66. O autor
 ### REQ-nn — <nome>
 - **Dado** <estado>, **quando** <ação>, **então** <resultado exato>.
 
+### Missões e progressão de classes (FEAT-15)
+
+Critérios aprovados pelo autor em 2026-11-22 para o jogo solo. Base: README §§8.3, 8.4, 12.2, 21 e Apêndice A, ROADMAP v0.64 e devlog 088.
+
+| ID | Dado | Quando | Então |
+| --- | --- | --- | --- |
+| REQ-66 | Uma zona com quadro e vaga para aceitar missão | O jogador pega, continua ou finaliza uma missão de zona por 1 PA | A missão aceita sai do quadro, que recebe a próxima carta quando houver, e aparece em área própria do dono, sem ocupar slot. A etapa exibe o local por tipo ou título e só oferece ações elegíveis. A conclusão aplica as recompensas projetadas e impede repetir a missão na dimensão. |
+| REQ-67 | Zona Urbana ou Habitada, Pico mínimo (padrão 30), classe sem especialização e vaga para missão genérica | O jogador escolhe uma especialização, aceita a provação por 1 PA, cumpre os objetivos (padrão 3 êxitos em eventos e 3 vitórias de pé) e finaliza em zona elegível por 1 PA | A especialização é permanente, uma por classe, com benefícios sujeitos à trava da build. |
+| REQ-68 | Zona Urbana ou Habitada, todas as classes atuais especializadas, vaga e ouro suficiente | O jogador escolhe uma classe que ainda não possui e treina com o mentor pagando todos os PA restantes e o ouro (padrão 150, dobrando a cada nova classe). Cumpre os objetivos (padrão 5 êxitos e 5 vitórias de pé) e finaliza em zona elegível por 1 PA | A ficha mostra a nova classe e as travas, com os modificadores base da classe ativa obtida primeiro ou o padrão quando nenhuma estiver ativa. O número de classes não altera a capacidade do inventário. |
+| REQ-69 | Missões abertas, com limite padrão de três no total e uma genérica | O jogador progride, abandona, recebe uma recusa ou reabre a sessão | Só resultados posteriores à aceitação contam. Um resultado pode avançar todas as missões elegíveis. Vitória em combate de missão conclui a etapa mesmo com o dono caído. Derrota ou fuga bem-sucedida permite nova tentativa. Abandonar na própria vez fora de combate custa 0 PA, perde o progresso, libera a vaga e devolve a carta de zona ao fundo do deck ou ao quadro se houver vaga e o deck estiver vazio. O ouro do mentor não é devolvido. Recusas preservam o estado confirmado. Reabrir conserva progresso, escolhas e concessões. |
+| REQ-70 | Laboratório ou editor de conteúdo em modo dev | O autor consulta, salva ou restaura os ajustes, ou cadastra uma missão de zona | O laboratório mostra os valores, padrões, limites e erros da API. O editor permite configurar etapas e referências à coleção, com erros junto aos campos. |
+
+Missões genéricas podem ser repetidas na mesma dimensão quando os requisitos voltarem a ser atendidos. Os cenários de mudança de dimensão, ajudantes de IA e recrutamento dependem das entregas correspondentes do roadmap.
+
 ## Decisões
 
 - **D-01 — Formato de erro:** os erros do backend chegam no formato de [`CONTRATO.md`](CONTRATO.md) §1.4 (`{ "error": { "code", "message" } }`). A UI mostra `message` (pt-BR) e decide o comportamento pelo `code`. Erro esperado nunca vira exceção na UI. Códigos: os do contrato.
@@ -846,6 +860,10 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 
 - [x] **T-68 — Cliente e fixtures MSW de nocaute e respawn** (REQ-63 a REQ-65). Após aprovação da spec e acordo do contrato, escrever primeiro testes identificados pelos REQs para os novos formatos e cenários. Confirmar a falha esperada, alinhar schemas, cliente de ações, estado do grupo e configuração do laboratório e preparar fixtures para sucesso, recusas, desfecho e recarga. Concluir com os testes afetados e a checagem de tipos aprovados. As telas e a validação integrada ficam para tarefas posteriores.
 
+### FEAT-15 — Missões e progressão de classes
+
+- [x] **T-69 — Cliente e fixtures MSW de missões e progressão de classes** (REQ-66 a REQ-70). Após acordo do contrato, escrever primeiro os testes identificados pelos REQs e confirmar as falhas esperadas. Implementar schemas, cliente e fixtures para sucesso, recusa, desfecho e recarga. Rodar os testes afetados e a checagem de tipos. Interface de jogo, laboratório, editor e validação real ficam nas entregas seguintes.
+
 ## 8. Histórico
 
 | Versão | Data | Mudança |
@@ -931,3 +949,5 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 | 0.79 | 2026-11-20 | T-66 concluída com MSW nos quatro cenários de escolha de efeitos disparados (REQ-62). T-67 aguarda integração com a API real. |
 | 0.80 | 2026-11-21 | Proposta da FEAT-14 para aprovação: REQ-63 a REQ-65, T-68 e lacunas do contrato. Base: ROADMAP v0.64 e CONTRATO v0.66, que registra a validação da FEAT-13 após a T-67. |
 | 0.81 | 2026-11-21 | Autor aprovou os REQ-63 a REQ-65 e a T-68 da FEAT-14. A T-68 aguarda o acordo do contrato. |
+| 0.82 | 2026-11-22 | Autor aprovou os REQ-66 a REQ-70 e a T-69 da FEAT-15. A T-69 aguarda acordo do CONTRATO v0.70. |
+| 0.83 | 2026-11-22 | T-69 concluída com MSW conforme CONTRATO v0.73. Interfaces e validação integrada seguem em etapas posteriores. |

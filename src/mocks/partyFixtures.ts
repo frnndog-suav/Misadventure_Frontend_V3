@@ -27,6 +27,10 @@ const member: Party['members'][number] = {
   kind: 'human',
   isHost: true,
   player: {
+    questBoard: [],
+    openQuests: [],
+    questChoices: [],
+    specializations: [],
     playerClasses: [{ playerClass: 'warrior', deckLockMet: true }],
     gold: 10,
     baseHealth: 20,

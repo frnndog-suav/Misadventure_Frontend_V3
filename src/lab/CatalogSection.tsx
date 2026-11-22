@@ -25,6 +25,7 @@ function cardName(card: Card): string {
     case 'zone':
     case 'randomEvent':
     case 'combatEvent':
+    case 'zoneQuest':
       return card.title
     case 'attribute':
     case 'equipment':

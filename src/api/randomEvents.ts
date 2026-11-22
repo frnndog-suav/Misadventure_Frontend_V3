@@ -159,6 +159,11 @@ export const pendingRewardSchema = z.object({
   source: z.discriminatedUnion('type', [
     z.object({ type: z.literal('randomEvent'), encounterId: z.string() }),
     z.object({ type: z.literal('scavenge') }),
+    z.object({
+      type: z.literal('quest'),
+      questId: z.string(),
+      questCardId: z.string(),
+    }),
     z.object({ type: z.literal('combatEvent'), combatId: z.string() }),
   ]),
   destination: z.enum(['inventory', 'tcgFolder']),

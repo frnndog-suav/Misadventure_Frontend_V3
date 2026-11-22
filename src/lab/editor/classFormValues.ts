@@ -11,6 +11,7 @@ export interface ClassForm {
   name: string
   essentialAttributes: (Attribute | '')[]
   baseModifiers: Record<Modifier, string>
+  specializations?: ClassInput['specializations']
   starterDeck: { cardId: string; copies: string }[]
 }
 
@@ -35,6 +36,7 @@ export function formFromClass({ classDefinition }: EditorClass): ClassForm {
     baseModifiers: Object.fromEntries(
       modifierOrder.map((m) => [m, String(classDefinition.baseModifiers[m])]),
     ) as Record<Modifier, string>,
+    specializations: classDefinition.specializations,
     starterDeck: classDefinition.starterDeck.map(({ cardId, copies }) => ({
       cardId,
       copies: String(copies),
@@ -67,6 +69,9 @@ export function toClassInput(form: ClassForm): ClassInput | null {
     name: form.name,
     essentialAttributes,
     baseModifiers,
+    ...(form.specializations?.length
+      ? { specializations: form.specializations }
+      : {}),
     starterDeck,
   }
 }

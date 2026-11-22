@@ -21,6 +21,7 @@ export const cardTypeLabels = {
   equipment: 'Equipamento',
   item: 'Item',
   randomEvent: 'Evento aleatório',
+  zoneQuest: 'Missão de zona',
   combatEvent: 'Evento de combate',
   dimension: 'Dimensão',
 } satisfies Record<CardType, string>

@@ -1,5 +1,12 @@
+import {
+  publishQuestEditorCard,
+  questEditorCard,
+  questEditorCards,
+  saveQuestEditorCard,
+} from './questEditorFixtures'
+import { questParty, questPartyAction } from './questFixtures'
 import { knockoutAction, knockoutParty } from './knockoutFixtures'
-import { knockoutConfigLimits } from '../api/labConfig'
+import { knockoutConfigLimits, questConfigLimits } from '../api/labConfig'
 import type { GameConfigValues } from '../api/labConfig'
 import { http, HttpResponse, type RequestHandler } from 'msw'
 import {
@@ -148,7 +155,15 @@ function catalogCardsScenario(
   if (collectionId !== 'fixture') {
     return HttpResponse.json(collectionNotFoundFixture, { status: 404 })
   }
-  if (type === null) return HttpResponse.json(fixtureCardsFixture)
+  const quests = questEditorCards()
+    .filter(
+      ({ card, status }) =>
+        card.collectionId === collectionId && status === 'published',
+    )
+    .map(({ card }) => card)
+  if (type === null)
+    return HttpResponse.json([...fixtureCardsFixture, ...quests])
+  if (type === 'zoneQuest') return HttpResponse.json(quests)
   const cardType = cardTypeSchema.safeParse(type)
   if (cardType.success) {
     return HttpResponse.json(fixtureCardsByTypeFixture[cardType.data])
@@ -202,6 +217,8 @@ async function partyActionScenario(
 ): Promise<Response> {
   const body: unknown = await request.json().catch(() => undefined)
   const type = field(body, 'type')
+  const quest = questParty(partyId)
+  if (quest) return questPartyAction(quest, body)
   const knockout = knockoutParty(partyId)
   if (knockout) return knockoutAction(knockout, body)
   const combat = combatScenario(partyId)
@@ -687,6 +704,8 @@ function adjustDeckScenario(build: unknown): Response {
 
 /** GET /catalog/cards/:cardId: as cartas da `fixture`; qualquer outra é 404. */
 function catalogCardScenario(cardId: string): Response {
+  const quest = questEditorCard(cardId)
+  if (quest?.status === 'published') return HttpResponse.json(quest.card)
   const card =
     cardId === executableCombatCardFixture.id
       ? executableCombatCardFixture
@@ -703,7 +722,8 @@ function knownParty(
   partyId: unknown,
   ok: () => Response | Promise<Response>,
 ): Response | Promise<Response> {
-  return knockoutParty(partyId) !== undefined ||
+  return questParty(partyId) !== undefined ||
+    knockoutParty(partyId) !== undefined ||
     combatScenario(partyId) !== undefined ||
     eventScenario(partyId) !== undefined ||
     partyId === partyCreatedFixture.id ||
@@ -742,24 +762,29 @@ function field(body: unknown, key: string): unknown {
     : undefined
 }
 
-let knockoutLabValues: Partial<GameConfigValues> = {}
+const progressionConfigLimits = {
+  ...knockoutConfigLimits,
+  ...questConfigLimits,
+}
 
-function knockoutLabConfig() {
+let progressionLabValues: Partial<GameConfigValues> = {}
+
+function progressionLabConfig() {
   return {
     ...labConfigDefaultsFixture,
-    values: { ...labConfigDefaultsFixture.values, ...knockoutLabValues },
+    values: { ...labConfigDefaultsFixture.values, ...progressionLabValues },
   }
 }
 
-function patchKnockoutLabConfig(body: unknown) {
+function patchProgressionLabConfig(body: unknown) {
   const patch: Partial<GameConfigValues> = {}
   const fields = []
   for (const key of Object.keys(
-    knockoutConfigLimits,
-  ) as (keyof typeof knockoutConfigLimits)[]) {
+    progressionConfigLimits,
+  ) as (keyof typeof progressionConfigLimits)[]) {
     const value = field(body, key)
     if (value === undefined) continue
-    const { min, max } = knockoutConfigLimits[key]
+    const { min, max } = progressionConfigLimits[key]
     if (typeof value !== 'number' || !Number.isInteger(value)) {
       fields.push({ field: key, reason: 'notInteger' })
     } else if (value < min || value > max) {
@@ -780,8 +805,8 @@ function patchKnockoutLabConfig(body: unknown) {
       { status: 400 },
     )
   if (Object.keys(patch).length) {
-    knockoutLabValues = { ...knockoutLabValues, ...patch }
-    return HttpResponse.json(knockoutLabConfig())
+    progressionLabValues = { ...progressionLabValues, ...patch }
+    return HttpResponse.json(progressionLabConfig())
   }
 }
 
@@ -880,7 +905,25 @@ function editorCardsScenario(collectionId: string, url: URL): Response {
     return HttpResponse.json(unknownCardTypeFixture, { status: 400 })
   }
   if (collectionId === 'fixture') {
-    return HttpResponse.json(fixtureCardSummariesFixture)
+    const status = url.searchParams.get('status')
+    const quests = questEditorCards()
+      .filter(
+        (entry) =>
+          entry.card.collectionId === collectionId &&
+          (!status || entry.status === status),
+      )
+      .map(({ card, status }) => ({
+        id: card.id,
+        type: card.type,
+        name: 'title' in card ? card.title : '',
+        status,
+      }))
+    if (type === 'zoneQuest') return HttpResponse.json(quests)
+    return HttpResponse.json(
+      type
+        ? fixtureCardSummariesFixture
+        : [...fixtureCardSummariesFixture, ...quests],
+    )
   }
   if (collectionId === 'bosque') {
     return HttpResponse.json(
@@ -899,7 +942,10 @@ async function createCardScenario(
 ): Promise<Response> {
   if (!Object.hasOwn(editorCollections, collectionId))
     return notFound.collection()
-  if (field(await jsonBody(request), 'slug') === 'forca-sorte') {
+  const body = await jsonBody(request)
+  if (field(body, 'type') === 'zoneQuest')
+    return saveQuestEditorCard(collectionId, body)
+  if (field(body, 'slug') === 'forca-sorte') {
     return HttpResponse.json(forcaSorteInvalidFixture, { status: 400 })
   }
   return HttpResponse.json(forcaDraftFixture, { status: 201 })
@@ -910,6 +956,13 @@ async function saveCardScenario(
   cardId: string,
   request: Request,
 ): Promise<Response> {
+  const quest = questEditorCard(cardId)
+  if (quest)
+    return saveQuestEditorCard(
+      quest.card.collectionId,
+      await jsonBody(request),
+      cardId,
+    )
   const current = editorCards[cardId]
   if (current === undefined) return notFound.card()
   const body = await jsonBody(request)
@@ -1018,21 +1071,31 @@ const editorHandlers: RequestHandler[] = [
     ({ params, request }) =>
       createCardScenario(String(params.collectionId), request),
   ),
-  http.get('*/lab/content/cards/:cardId', ({ params }) =>
-    knownCard(params.cardId, (id) => HttpResponse.json(editorCards[id])),
-  ),
+  http.get('*/lab/content/cards/:cardId', ({ params }) => {
+    const quest = questEditorCard(String(params.cardId))
+    return quest
+      ? HttpResponse.json(quest)
+      : knownCard(params.cardId, (id) => HttpResponse.json(editorCards[id]))
+  }),
   http.put('*/lab/content/cards/:cardId', ({ params, request }) =>
     saveCardScenario(String(params.cardId), request),
   ),
-  http.post('*/lab/content/cards/:cardId/publish', ({ params }) =>
-    knownCard(params.cardId, (id) => {
-      if (id === legacyEventDeckDraftFixture.card.id) {
-        return HttpResponse.json(legacyEventDeckInvalidFixture, { status: 400 })
-      }
-      return HttpResponse.json(
-        id.startsWith('bosque.') ? forcaBrutaPublishedFixture : editorCards[id],
-      )
-    }),
+  http.post(
+    '*/lab/content/cards/:cardId/publish',
+    ({ params }) =>
+      publishQuestEditorCard(String(params.cardId)) ??
+      knownCard(params.cardId, (id) => {
+        if (id === legacyEventDeckDraftFixture.card.id) {
+          return HttpResponse.json(legacyEventDeckInvalidFixture, {
+            status: 400,
+          })
+        }
+        return HttpResponse.json(
+          id.startsWith('bosque.')
+            ? forcaBrutaPublishedFixture
+            : editorCards[id],
+        )
+      }),
   ),
   http.post('*/lab/content/cards/:cardId/duplicate', ({ params }) =>
     knownCard(params.cardId, () =>
@@ -1089,11 +1152,11 @@ const editorHandlers: RequestHandler[] = [
  */
 export const handlers: RequestHandler[] = [
   http.get('*/health', () => HttpResponse.json(healthFixture)),
-  http.get('*/lab/config', () => HttpResponse.json(knockoutLabConfig())),
+  http.get('*/lab/config', () => HttpResponse.json(progressionLabConfig())),
   http.patch('*/lab/config', async ({ request }) => {
     const body = await jsonBody(request)
-    const knockout = patchKnockoutLabConfig(body)
-    if (knockout) return knockout
+    const progression = patchProgressionLabConfig(body)
+    if (progression) return progression
     const reserve = field(body, 'reserveDeck')
     if (field(body, 'combatEscapeThreshold') === 0) {
       return HttpResponse.json({
@@ -1123,11 +1186,22 @@ export const handlers: RequestHandler[] = [
     return HttpResponse.json(labConfigUpdatedFixture)
   }),
   http.post('*/lab/config/reset', () => {
-    knockoutLabValues = {}
+    progressionLabValues = {}
     return HttpResponse.json(labConfigDefaultsFixture)
   }),
   http.get('*/catalog/collections', () =>
-    HttpResponse.json(collectionsFixture),
+    HttpResponse.json(
+      collectionsFixture.map((collection) => ({
+        ...collection,
+        cardCounts: {
+          ...collection.cardCounts,
+          zoneQuest: questEditorCards().filter(
+            ({ card, status }) =>
+              card.collectionId === collection.id && status === 'published',
+          ).length,
+        },
+      })),
+    ),
   ),
   http.get('*/catalog/collections/:collectionId/cards', ({ params, request }) =>
     catalogCardsScenario(
@@ -1144,7 +1218,8 @@ export const handlers: RequestHandler[] = [
   http.get('*/parties/:partyId', ({ params }) =>
     knownParty(params.partyId, () =>
       HttpResponse.json(
-        knockoutParty(params.partyId) ??
+        questParty(params.partyId) ??
+          knockoutParty(params.partyId) ??
           combatScenario(params.partyId)?.party ??
           eventScenarioParty(params.partyId) ??
           [
@@ -1165,7 +1240,8 @@ export const handlers: RequestHandler[] = [
   http.post('*/parties/:partyId/session', ({ params }) =>
     knownParty(params.partyId, () =>
       HttpResponse.json(
-        knockoutParty(params.partyId, 'inSession') ??
+        questParty(params.partyId, 'inSession') ??
+          knockoutParty(params.partyId, 'inSession') ??
           combatScenario(params.partyId)?.party ??
           eventScenarioParty(params.partyId) ??
           [
@@ -1186,7 +1262,9 @@ export const handlers: RequestHandler[] = [
   http.post('*/parties/:partyId/session/end', ({ params }) =>
     knownParty(params.partyId, () =>
       HttpResponse.json(
-        knockoutParty(params.partyId, 'idle') ?? partyIdleFixture,
+        questParty(params.partyId, 'idle') ??
+          knockoutParty(params.partyId, 'idle') ??
+          partyIdleFixture,
       ),
     ),
   ),

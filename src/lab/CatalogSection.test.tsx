@@ -112,6 +112,7 @@ describe('CatalogSection', () => {
       'Item (7)',
       'Evento aleatório (2)',
       'Evento de combate (1)',
+      'Missão de zona (0)',
       'Dimensão (1)',
     ])
     expect(

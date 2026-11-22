@@ -8,6 +8,7 @@ import type { ClassDefinition } from '../api/catalog'
 
 export const rogueClassFixture: ClassDefinition = {
   playerClass: 'rogue',
+  specializations: [],
   collectionId: 'fixture',
   name: 'Ladino',
   essentialAttributes: ['dexterity'],
@@ -28,6 +29,36 @@ export const rogueClassFixture: ClassDefinition = {
 
 export const warriorClassFixture: ClassDefinition = {
   playerClass: 'warrior',
+  specializations: [
+    {
+      id: 'knight',
+      name: 'Cavaleiro',
+      additionalAttributes: ['wisdom'],
+      reinforcedAttributes: ['endurance'],
+      effects: [],
+    },
+    {
+      id: 'champion',
+      name: 'Campeão',
+      additionalAttributes: [],
+      reinforcedAttributes: ['strength'],
+      effects: [],
+    },
+    {
+      id: 'guardian',
+      name: 'Guardião',
+      additionalAttributes: [],
+      reinforcedAttributes: ['endurance'],
+      effects: [],
+    },
+    {
+      id: 'vanguard',
+      name: 'Vanguarda',
+      additionalAttributes: ['dexterity'],
+      reinforcedAttributes: [],
+      effects: [],
+    },
+  ],
   collectionId: 'fixture',
   name: 'Guerreiro',
   essentialAttributes: ['strength', 'endurance'],

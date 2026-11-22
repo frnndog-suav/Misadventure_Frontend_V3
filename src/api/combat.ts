@@ -82,6 +82,7 @@ export const triggeredEffectChoiceSchema = z.object({
 
 export const combatStateSchema = z.object({
   id,
+  cardId: id.optional(),
   card: combatEventCardSchema,
   memberId: id,
   cycle: positive,

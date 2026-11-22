@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.69 · **Data:** 2026-11-21
+> **Versão do contrato:** 0.73 · **Data:** 2026-11-22
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -2733,6 +2733,147 @@ Exemplo de projeção solo após a conclusão da queda fora de combate, com trav
 
 No envelope real, `player` fica em `members[]`. Em uma variante para verificar a passagem de tempo, inclua um status com duas rodadas restantes e uma habilidade fora de combate com duas rodadas restantes de recarga, sem alterar os saldos do exemplo. Ao abrir a rodada 8, o status expirou, a recarga chegou a zero e a habilidade elegível volta a aparecer em `usableAbilities`, com `prepare` em `availableActions`. Confira a perda de 3 sobre 37 e `vault.gold: 80` no snapshot. Recarregue e reabra a sessão. O ID do nocaute, a rodada 8 e os saldos ficam iguais. Para os saves legados, reproduza também a vitória com escolha gravada e a derrota com a coisa ruim já aplicada. Confirme que o primeiro mantém a escolha e o segundo volta à vez jogável sem descontar os 5 de ouro novamente.
 
+### FEAT-15 — Missões e progressão de classes — `acordado`
+
+Base: README §§3.4, 8.2–8.4, 12.2, 21 e Apêndice A. Primeira entrega para jogo solo. As formas e os limites desta seção foram aceitos pelo frontend para os REQ-66 a REQ-70. Os exemplos mostram recortes do `Party` completo devolvido pelas rotas existentes.
+
+#### Estado e intenções
+
+```ts
+type QuestLocation =
+  | { type: 'zoneType'; zoneType: ZoneType }
+  | { type: 'zoneTitle'; title: string }
+
+type QuestOffer = { questCardId: string; title: string; summary: string }
+type QuestCounter = { current: number; target: number }
+type QuestObjectives = {
+  randomEventSuccesses: QuestCounter
+  combatVictories: QuestCounter
+}
+type OpenQuest = { questId: string; title: string } & (
+  | { type: 'zoneQuest'; questCardId: string; originZoneId: string; stage: {
+      index: number; text: string; location: QuestLocation;
+      status: 'ready' | 'inProgress' | 'completed';
+      objectives: QuestObjectives | null
+    } }
+  | { type: 'trialQuest'; classId: PlayerClass; specializationId: string; objectives: QuestObjectives }
+  | { type: 'mentorQuest'; classId: PlayerClass; objectives: QuestObjectives }
+)
+type QuestAction =
+  | { type: 'takeQuest'; questCardId: string }
+  | { type: 'continueQuest' | 'finishQuest' | 'abandonQuest'; questId: string }
+  | { type: 'takeTrialQuest'; classId: PlayerClass; specializationId: string }
+  | { type: 'trainWithMentor'; classId: PlayerClass }
+
+type QuestChoice = QuestAction & { actionPoints: number; gold: number }
+type PlayerQuestState = {
+  questBoard: QuestOffer[]
+  openQuests: OpenQuest[]
+  questChoices: QuestChoice[]
+  specializations: { classId: PlayerClass; specializationId: string; deckLockMet: boolean }[]
+}
+```
+
+`PlayerState` incorpora os quatro campos de `PlayerQuestState`. O quadro reflete a zona atual do membro, em ordem de vagas, e as missões abertas seguem a ordem de aceitação. Onde não há entradas, use listas vazias. `questChoices` traz somente intenções executáveis, com custos já calculados, inclusive 0 para ouro ou PA quando gratuito. O cliente envia apenas os campos de `QuestAction` a `POST /parties/:partyId/actions`. Os tipos correspondentes aparecem em `availableActions` quando houver pelo menos uma escolha. A ordem dos tipos segue §12.2, usando a ordem pegar, continuar, finalizar e provação para as ações agrupadas. Durante encontro, combate ou entrega pendente, as escolhas de missão ficam vazias.
+
+Pegar, continuar, finalizar e pegar provação custam 1 PA. Abandonar custa 0 PA e exige a própria vez fora de combate. Mentor consome os PA restantes, com mínimo 1, e cobra `mentorBaseGoldCost × 2 ** (n - 1)`, onde `n` é o número atual de classes. Abandono devolve a carta ao fundo do deck de origem ou preenche a vaga de origem se o deck estiver vazio. Conclusão retira a carta da partida. Reaceitação gera outro `questId` e começa do zero.
+
+O estado mantém `playerClasses` em ordem de aquisição e `deckLockMet` por classe. `specializations` segue a mesma ordem. Concessões começam com trava falsa, inclusive se a build atual já cumprir a trava. O próximo salvamento da build (Ajustar deck ou Usar cofre) checa cada trava. Os modificadores base em `modifiers` vêm da primeira classe ativa ou dos padrões do snapshot quando nenhuma está ativa. A capacidade de inventário continua vindo do snapshot. Provação e mentor são aceitos e finalizados em zona `urban` ou `inhabited`, respeitando os requisitos de §§8.3–8.4. O limite geral inclui a genérica. Apenas uma genérica pode ficar aberta.
+
+#### Progresso e entrega
+
+- Uma etapa de contadores começa em zero ao se tornar a etapa atual e só conta desfechos a partir daí. Uma etapa de interação avança na ação Continuar, ou é concluída na ação Finalizar se for a última. Em uma etapa de contadores, Continuar ou Finalizar exige metas cumpridas. Para etapa de encontro, Continuar inicia a tentativa e marca a etapa `inProgress`. Vitória ou êxito marca a etapa `completed`. Depois, Continuar avança para a próxima etapa ou Finalizar conclui a missão. Derrota, revés ou fuga devolve a etapa a `ready` para nova tentativa. Essa separação entre tentativa e entrega da missão é parte da proposta.
+- O POST que encerra o encontro aleatório com êxito ou o combate com vitória já aplica o progresso, mesmo quando abre `pendingRewards`. Para encontros aleatórios, isso é a transição para `success`, antes do recibo final. Para combate, isso é a gravação de `lastCombatResult` com `resolution: 'victory'`. Use o resultado e o estado do jogador no desfecho, antes do respawn. `resolveReward`, GET e reabertura preservam o progresso gravado. A transição persiste o resultado e seus incrementos atomicamente e conta cada desfecho uma vez.
+- O êxito aleatório e a vitória de pé contam em todas as missões abertas elegíveis desde a aceitação, até as metas de cada contador. Vitória de combate da missão com o dono caído marca a etapa `completed` e mantém os contadores de vitórias do dono. O nocaute e a entrega seguem a FEAT-14.
+- Finalizar missão de zona remove a missão e grava a conclusão no mesmo POST em que aplica ou inicia a entrega. Reutilize `pendingRewards` e `resolveReward`, com a variante de `source` `{ type: 'quest'; questId: string; questCardId: string }` para recompensa final da missão. Recompensas do encontro preservam a origem e a fonte das FEATs 12 e 13. A entrega pendente guarda o trabalho restante para a retomada.
+
+#### Conteúdo e laboratório
+
+```ts
+type ZoneQuestStage = { location: QuestLocation; text: string } & (
+  | { type: 'interaction' }
+  | { type: 'objectives'; randomEventSuccesses: number; combatVictories: number }
+  | { type: 'randomEvent'; eventCardId: string }
+  | { type: 'combatEvent'; combat: QuestCombat }
+)
+type QuestCombat = {
+  enemies: Enemy[]
+  goodOutcome: CombatOutcome
+  badOutcome: CombatOutcome
+  noEscape: boolean
+  escapeThreshold?: number | null
+}
+type ZoneQuestCard = {
+  type: 'zoneQuest'; id: string; collectionId: string; title: string; summary: string
+  stages: ZoneQuestStage[]
+  rewards: RandomEventOutcomeStep[]
+}
+type SpecializationDefinition = {
+  id: string; name: string; additionalAttributes: Attribute[];
+  reinforcedAttributes: Attribute[]; effects: Effect[]
+}
+```
+
+Adicionar `ZoneQuestCard` à união `Card` e `zoneQuest` a `CardType`, ao filtro e às contagens por tipo. A carta não tem raridade. No editor, `CardInput` segue o envelope da FEAT-31 e omite `id` e `collectionId` do payload da carta. `ZoneCard.questDeck: string[]` lista IDs em ordem inicial, sem repetições na dimensão. Ausência em conteúdo legado equivale a `[]`. O deck pertence à instância da zona. Cada carta e cada referência de etapa deve pertencer à coleção da dimensão. Títulos de destino devem identificar uma única zona no mapa da dimensão e tipos de destino devem existir nele. Uma etapa `randomEvent` referencia uma carta aleatória executável da mesma coleção. O POST de tentativa abre a antecipação da FEAT-12 com a carta reservada pela referência. `revealEvent` revela essa carta. A tentativa inteira, inclusive êxito, revés ou fuga, preserva a ordem e o conteúdo do deck e do descarte de eventos da zona. As recompensas ainda podem consumir o deck de recompensas conforme seus passos.
+
+Uma etapa `combatEvent` abre o combate diretamente com os inimigos impressos em `stage.combat.enemies`, na ordem declarada. O bloco usa a validação executável da FEAT-13, com pelo menos um inimigo e caminhos de erro como `stages.1.combat.enemies.0.count`. `eventCardId` só é aceito para `randomEvent`. O combate preserva o deck e o descarte de eventos. `combat.cardId` e `lastCombatResult.cardId` identificam a carta de missão. A atualização `combatStarted` traz seu ID e título em `cardId` e `cardTitle`. O backend grava o vínculo do encontro ou combate com a instância da missão e o índice da etapa para aplicar o desfecho correto.
+
+A recompensa final aceita passos de ganho de ouro, Pico ou cartas (fixas ou dos decks de recompensas), nas formas já definidas na FEAT-12. O texto da etapa comporta a fala de NPC.
+
+`ClassDefinition` e `ClassInput` ganham `specializations: SpecializationDefinition[]`. Catálogo legado usa lista vazia. Classe que oferece provação tem quatro opções com IDs distintos no escopo da classe e até dois atributos adicionais. A trava usa os mínimos dos essenciais da classe e soma o reforço configurado apenas aos atributos listados em `reinforcedAttributes`, um subconjunto sem repetições dos essenciais. Cada atributo adicional exige o mínimo configurado para adicionais. Clique e seleção no frontend usam as escolhas do backend. Validar estrutura e referências ao salvar e publicar conforme a FEAT-31. Referências de rascunho podem apontar para rascunhos existentes. Ao criar ou salvar um rascunho, conferir o destino contra as zonas existentes na coleção, inclusive rascunhos. Para publicar ou editar uma missão publicada, conferir as referências contra conteúdo publicado. O `validate-dimension` e a criação de grupo conferem também a coerência do conjunto de cartas publicadas usado no mapa. Exemplos de caminhos em `CONTENT_INVALID.details.fields` (com a mensagem pt-BR do editor): `stages.0.location.title`, `stages.1.eventCardId`, `questDeck.0`, `specializations.0.additionalAttributes`. Exclusão de conteúdo referenciado ou em uso segue os envelopes da FEAT-31.
+
+As chaves abaixo são inteiras. GET `/lab/config` devolve `values`, `defaults` e `limits` no formato da FEAT-03. PATCH aplica o lote inteiro ou devolve `LAB_CONFIG_INVALID`; POST `/lab/config/reset` restaura os padrões. O grupo usa o snapshot da criação; save legado preenche chaves ausentes pelos padrões e começa com missões e especializações vazias.
+
+| Chave | Padrão | Limites propostos |
+| --- | ---: | --- |
+| `questBoardSize` | 3 | 1–50 |
+| `maxOpenQuests` | 3 | 1–50 |
+| `trialMinPeak` | 30 | 0–1000 |
+| `mentorBaseGoldCost` | 150 | 0–1000000 |
+| `trialRandomEventTarget` | 3 | 0–1000 |
+| `trialCombatTarget` | 3 | 0–1000 |
+| `mentorRandomEventTarget` | 5 | 0–1000 |
+| `mentorCombatTarget` | 5 | 0–1000 |
+| `lockSpecializationAdditional` | 6 | 0–200 |
+| `lockSpecializationReinforcement` | 4 | 0–200 |
+
+#### Recusas e respostas de referência
+
+Forma inválida usa `ACTION_INVALID` com os motivos da rota de ações (`required`, `notString`, `unknownKey`, entre outros do envelope existente). Ações bem formadas recusadas usam `ACTION_NOT_ALLOWED` e `details.reason`: `questOfferUnavailable`, `questNotOpen`, `questWrongStage`, `questWrongZone`, `questObjectivesIncomplete`, `questLimitReached`, `genericQuestAlreadyOpen`, `questClassIneligible`, `questSpecializationIneligible`, `questPeakTooLow`, `notEnoughGold`, `noActionPoints`. Os bloqueios do encontro, do combate e de recompensa pendente seguem as seções existentes. Inclua em `details` o identificador pertinente da intenção (`questId`, `questCardId`, `classId`, `specializationId`) nas recusas específicas de alvo. Recusas preservam o save, os decks e o RNG.
+
+| Cenário | Requisição e recorte esperado |
+| --- | --- |
+| Quadro e aceitação | `GET /parties/P` → 200 com quadro `[A,B,C]`, cada entrada com `questCardId`, `title` e `summary`, e 3 PA. Deck de origem tem D no topo. POST ações `{"type":"takeQuest","questCardId":"B"}` → 200 com quadro `[A,D,C]`, 2 PA e `openQuests[0]` = `{"questId":"q1","type":"zoneQuest","title":"Entrega","questCardId":"B","originZoneId":"Z1","stage":{"index":0,"text":"Entregue a mensagem","location":{"type":"zoneTitle","title":"Porto"},"status":"ready","objectives":null}}`. |
+| Zona e conclusão | POST ações `{"type":"finishQuest","questId":"q1"}` em Z1 → 409 com `code: "ACTION_NOT_ALLOWED"`, `details: {"reason":"questWrongZone","questId":"q1"}`. GET mantém 2 PA e q1. No Porto com 1 PA, repetir o POST → 200, 0 PA e q1 removida. Para recompensa fixa sem espaço, `pendingRewards[0].source` = `{"type":"quest","questId":"q1","questCardId":"B"}`. Resolver com `{"type":"resolveReward","rewardId":"r1","choice":"leave"}` → 200, escolha removida e conclusão preservada. |
+| Abandono e retomada | Em qualquer zona com 0 PA, POST ações `{"type":"abandonQuest","questId":"q1"}` → 200, q1 removida e 0 PA. Em campanha com quadro de origem cheio, B retorna ao fundo e o quadro permanece `[A,D,C]`. Com vaga e deck vazio, B entra na vaga; GET após voltar à origem mostra B. Aceitá-la novamente inicia a etapa 0 com novo ID. `POST /parties/P/session` após encerrar, e `GET /parties/P`, mostram o mesmo estado persistido, inclusive a escolha pendente se houver. |
+| Provação e progresso simultâneo | A fixture define `knight` (Cavaleiro) em Guerreiro, com `additionalAttributes: ["wisdom"]` e `reinforcedAttributes: ["endurance"]`. Em Urbana com Pico 30, POST ações `{"type":"takeTrialQuest","classId":"warrior","specializationId":"knight"}` → 200, 1 PA gasto e contadores `{"randomEventSuccesses":{"current":0,"target":3},"combatVictories":{"current":0,"target":3}}`, mesmo com vitórias anteriores. Um êxito aleatório com recompensa pendente muda `randomEventSuccesses.current` para 1 na provação e na etapa de zona elegível no primeiro 200. GET e o POST do último `resolveReward` preservam 1. Finalizar cedo → 409 `questObjectivesIncomplete`; tentar outra genérica com vaga → 409 `genericQuestAlreadyOpen`; com três abertas e nenhuma genérica, tentar aceitar uma → 409 `questLimitReached`. |
+| Vitória e nova tentativa | Com q1 em etapa de combate e provação com 1 vitória, o POST da Reflexão fatal que também derrota o último inimigo → 200, `lastCombatResult.resolution: "victory"`, `lastCombatResult.playerDown: true`, q1 `stage.status: "completed"` e provação em 1. Com recompensa pendente, o mesmo POST já traz esses campos e o último `resolveReward` completa o respawn mantendo a contagem. Derrota ou fuga bem-sucedida deixa q1 em `ready`. Vitória de pé avança o contador para 2. |
+| Concessões e mentor | Finalizar a provação com ambos os contadores em 3 numa Urbana ou Habitada → 200, especialização permanente `{"classId":"warrior","specializationId":"knight","deckLockMet":false}`. Com 1 PA e as cópias disponíveis, POST `{"type":"adjustDeck","build":[{"cardId":"fixture.endurance-basic","copies":14},{"cardId":"fixture.strength-basic","copies":40},{"cardId":"fixture.wisdom-basic","copies":6}]}` → 200, 0 PA, Guerreiro e Cavaleiro com `deckLockMet: true`. Em uma vez posterior, com 2 PA e 200 de ouro e todas as classes especializadas, POST ações `{"type":"trainWithMentor","classId":"mage"}` → 200, 0 PA, 50 de ouro e missão do mentor com metas 5/5. Abandono mantém 50, e nova aceitação com PA sem ouro suficiente → 409 `notEnoughGold`. Em campanha com missão cumprida, Finalizar concede Mage inativo. Salvar build que ativa ambas as classes preserva os modificadores de Warrior; salvar outra que ativa só Mage usa os de Mage; salvar outra que desativa ambas usa os padrões. Reabrir preserva concessões, ordem e travas. |
+| Laboratório | GET laboratório inclui `values.questBoardSize: 3` e `defaults.questBoardSize: 3` na instalação limpa. PATCH `{"questBoardSize":0}` → 400 `LAB_CONFIG_INVALID` com `details.fields: [{"field":"questBoardSize","reason":"outOfRange"}]`. PATCH `{"questBoardSize":4}` → 200 com valor 4 e padrão 3. Reset → 200 com valor 3. |
+
+#### Tentativa e entrega em sequência
+
+No exemplo, q1 tem duas etapas na zona atual e é a única missão aberta. A etapa 0 referencia um evento aleatório e a etapa 1 tem combate embutido. A zona está sem ofertas e o jogador está inelegível para provação e mentor. A vez começa com 3 PA. O evento referenciado exige apenas o pagamento `gold`, que o jogador pode fazer, e oferece uma carta fixa sem espaço. Os recortes de `questChoices` incluem todas as escolhas de missão desse cenário.
+
+| Requisição ou transição | `turn.actionPoints` | Etapa de q1 | `questChoices` e desfecho |
+| --- | ---: | --- | --- |
+| GET `/parties/P` | 3 | 0, `ready` | `[{"type":"continueQuest","questId":"q1","actionPoints":1,"gold":0},{"type":"abandonQuest","questId":"q1","actionPoints":0,"gold":0}]` |
+| POST ações `{"type":"continueQuest","questId":"q1"}` | 2 | 0, `inProgress` | `[]`. Abre o encontro e1. |
+| POST ações `{"type":"revealEvent","encounterId":"e1"}`, depois `{"type":"payEventRequirement","encounterId":"e1","requirementId":"gold"}` | 2 | 0, `completed` no 200 do pagamento | `[]` enquanto `pendingRewards` contém r1. GET preserva o estado e a lista vazia. |
+| POST ações `{"type":"resolveReward","rewardId":"r1","choice":"leave"}` | 2 | 0, `completed` | `[{"type":"continueQuest","questId":"q1","actionPoints":1,"gold":0},{"type":"abandonQuest","questId":"q1","actionPoints":0,"gold":0}]`. A entrega pendente está vazia. |
+| POST ações `{"type":"continueQuest","questId":"q1"}` | 1 | 1, `ready` | `[{"type":"continueQuest","questId":"q1","actionPoints":1,"gold":0},{"type":"abandonQuest","questId":"q1","actionPoints":0,"gold":0}]`. Este POST só entrega a etapa intermediária. |
+| POST ações `{"type":"continueQuest","questId":"q1"}`, seguido de vitória de pé sem recompensa pendente | 0 | 1, `inProgress` ao iniciar e `completed` no 200 da vitória | `[]` durante o combate. Após a vitória, apenas `[{"type":"abandonQuest","questId":"q1","actionPoints":0,"gold":0}]`, pois falta PA para finalizar. |
+| POST ações `{"type":"endTurn"}` | 3 | 1, `completed` | `[{"type":"finishQuest","questId":"q1","actionPoints":1,"gold":0},{"type":"abandonQuest","questId":"q1","actionPoints":0,"gold":0}]`. |
+| POST ações `{"type":"finishQuest","questId":"q1"}` | 2 | q1 removida | `[]`. A recompensa final acrescenta 5 de ouro à bolsa com espaço. |
+
+#### Referências de conteúdo no editor
+
+- Em `fixture`, Porto é uma zona publicada com título único, `fixture.wounded-traveler` é um evento aleatório publicado e executável, e `fixture.road-ambush` é uma carta publicada de combate. POST `/lab/content/collections/fixture/cards` com `{"slug":"help-at-the-port","type":"zoneQuest","title":"Ajuda no Porto","summary":"Socorra o viajante","stages":[{"type":"randomEvent","text":"Ajude o viajante","location":{"type":"zoneTitle","title":"Porto"},"eventCardId":"fixture.wounded-traveler"}],"rewards":[]}` → 201, `status: "draft"` e `card.id: "fixture.help-at-the-port"`. POST `/lab/content/cards/fixture.help-at-the-port/publish` → 200, `status: "published"`. Associada ao quadro de Porto, a etapa revela `fixture.wounded-traveler` ao enviar `revealEvent`. Em fixture determinística com `fixture.road-ambush` no topo do deck local, o próximo Iniciar evento e Revelar após a resolução da etapa revela `fixture.road-ambush`. A verificação do save confirma que a tentativa de missão manteve deck e descarte de eventos idênticos.
+- Com o mesmo corpo e apenas `stages[0].eventCardId` trocado para `fixture.road-ambush`, PUT `/lab/content/cards/fixture.help-at-the-port` → 400 `CONTENT_INVALID` com `details.fields: [{"path":"stages.0.eventCardId","message":"A carta referenciada deve ser um evento aleatório executável da mesma coleção."}]`. A carta gravada conserva a referência anterior.
+- Com o corpo válido e apenas `stages[0].location.title` trocado para `"Porto Inexistente"`, PUT na mesma rota → 400 `CONTENT_INVALID` com `details.fields: [{"path":"stages.0.location.title","message":"Não há uma zona com esse título na coleção."}]`. Esta é a validação do campo, feita no salvamento. Em uma coleção com duas zonas publicadas de título Porto e o restante do mapa válido, POST `/lab/content/collections/fixture/validate-dimension` → 200 com `{"valid":false,"problems":["A etapa 1 da missão fixture.help-at-the-port exige um título de zona único: Porto."]}`. Essa segunda operação verifica a unicidade no conjunto publicado. POST `/parties` para a mesma dimensão inválida → 409 `DIMENSION_INVALID` com o mesmo problema.
+
+Troca de dimensão, ajudantes e recrutamento acompanham as FEATs correspondentes. O frontend aceitou na v0.71 a separação entre tentativa e entrega, o progresso no primeiro POST do desfecho e a vitória com dono caído. O frontend aceitou o combate embutido e os exemplos acrescentados na v0.72. O acordo libera a T-69 para cliente e fixtures MSW. A validação contra a API real fica para a etapa integrada.
+
 ## 4. Códigos de erro
 
 | Código | Quando acontece | FEAT |
@@ -2832,3 +2973,7 @@ No envelope real, `player` fica em `members[]`. Em uma variante para verificar a
 | 0.67 | 2026-11-21 | BE | FEAT-14 `proposto (BE)`: salvar ponto, ordenação e retomada do nocaute, passagem de vez, ajustes do laboratório e referências para a T-68. |
 | 0.68 | 2026-11-21 | BE | FEAT-14 `proposto (BE)`: desistência automática no pagamento fatal com requisitos em aberto, cura com o jogador caído e dois cenários para revisão do REQ-64. |
 | 0.69 | 2026-11-21 | BE | FEAT-14 `acordado` após o aceite da v0.68 pelo frontend para os REQ-63 a REQ-65, incluindo doação fatal e cura após a queda. A T-68 pode começar com MSW após a sincronização. |
+| 0.70 | 2026-11-22 | FE | FEAT-15 `proposto (FE)`: projeções, intenções, conteúdo, laboratório e respostas de referência para a T-69. |
+| 0.71 | 2026-11-22 | BE | FEAT-15 `proposto (BE)`: schemas de missões e classes, conteúdo e laboratório, desfechos com recompensa pendente e respostas de referência. Aguarda aceite do frontend. |
+| 0.72 | 2026-11-22 | BE | FEAT-15 `proposto (BE)` após aceite parcial: combate embutido, exemplos encadeados de tentativa e entrega, validação de referências e fixture de ativação de Cavaleiro. |
+| 0.73 | 2026-11-22 | BE | FEAT-15 `acordado` após aceite documental da v0.72 pelo frontend para os REQ-66 a REQ-70 no recorte solo. Acordo libera a T-69. |

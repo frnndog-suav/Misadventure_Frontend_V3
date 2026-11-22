@@ -114,6 +114,7 @@ export interface ZoneForm {
   connectionArrows: string
   /** `''` = "Não se aplica" (`null`, REQ-31). */
   arrowLayout: NonNullable<ZoneCard['arrowLayout']> | ''
+  questDeck?: string[]
   zoneActions: ZoneAction[]
   effects: EffectForm[]
 }
@@ -453,6 +454,8 @@ const numberText = (value: number | null): string =>
 
 /** Valores de uma carta recebida. */
 export function formFromCard(card: Card): CardForm {
+  if (card.type === 'zoneQuest')
+    throw new Error('Editor de missões indisponível.')
   switch (card.type) {
     case 'zone':
       return {
@@ -463,6 +466,7 @@ export function formFromCard(card: Card): CardForm {
         location: card.location,
         connectionArrows: String(card.connectionArrows),
         arrowLayout: card.arrowLayout ?? '',
+        questDeck: card.questDeck,
         zoneActions: zoneActionOrder.filter((a) =>
           card.zoneActions.includes(a),
         ),
@@ -700,6 +704,7 @@ export function toInput(form: CardForm): CardInput | null {
         location: form.location,
         connectionArrows: arrows,
         arrowLayout: form.arrowLayout === '' ? null : form.arrowLayout,
+        ...(form.questDeck?.length ? { questDeck: form.questDeck } : {}),
         zoneActions: form.zoneActions,
         effects,
       }

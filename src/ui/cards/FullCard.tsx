@@ -22,6 +22,8 @@ export function FullCard({ card }: { card: Card }) {
       return <RandomEventCard card={card} />
     case 'combatEvent':
       return <CombatEventCard card={card} />
+    case 'zoneQuest':
+      return <p>{card.summary}</p>
     case 'dimension':
       return <DimensionCard card={card} />
     default: {

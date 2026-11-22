@@ -405,6 +405,17 @@ function reasonText(error: ActionNotAllowedError, name: string): string {
     case 'staleTriggeredEffectChoice':
     case 'triggeredEffectUnavailable':
       return ''
+    case 'questOfferUnavailable':
+    case 'questNotOpen':
+    case 'questWrongStage':
+    case 'questWrongZone':
+    case 'questObjectivesIncomplete':
+    case 'questLimitReached':
+    case 'genericQuestAlreadyOpen':
+    case 'questClassIneligible':
+    case 'questSpecializationIneligible':
+    case 'questPeakTooLow':
+      return error.message
     default: {
       const _exhaustive: never = error.reason
       return _exhaustive
@@ -585,6 +596,17 @@ function vaultReasonText(error: ActionNotAllowedError, name: string): string {
     case 'staleTriggeredEffectChoice':
     case 'triggeredEffectUnavailable':
       return ''
+    case 'questOfferUnavailable':
+    case 'questNotOpen':
+    case 'questWrongStage':
+    case 'questWrongZone':
+    case 'questObjectivesIncomplete':
+    case 'questLimitReached':
+    case 'genericQuestAlreadyOpen':
+    case 'questClassIneligible':
+    case 'questSpecializationIneligible':
+    case 'questPeakTooLow':
+      return error.message
     default: {
       const _exhaustive: never = error.reason
       return _exhaustive

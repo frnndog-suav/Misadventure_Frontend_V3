@@ -245,8 +245,14 @@ describe('REQ-44: PlayerState com inventário, equipamentos, bolsa e modificador
       'recover',
       'prepare',
       'adjustDeck',
+      'abandonQuest',
       'scavenge',
       'useVault',
+      'takeQuest',
+      'continueQuest',
+      'finishQuest',
+      'takeTrialQuest',
+      'trainWithMentor',
       'saveRespawnPoint',
       'startEvent',
       'revealEvent',
@@ -327,6 +333,7 @@ describe('REQ-44: cartas novas da fixture', () => {
       item: 7,
       randomEvent: 2,
       combatEvent: 1,
+      zoneQuest: 0,
       dimension: 1,
     })
     expect(

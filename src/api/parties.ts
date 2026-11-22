@@ -5,6 +5,11 @@ import {
   type UseMutationResult,
   type UseQueryResult,
 } from '@tanstack/react-query'
+import {
+  playerQuestFields,
+  questActionSchema,
+  type QuestAction,
+} from './quests'
 import { z } from 'zod'
 import {
   executableRandomEventCardSchema,
@@ -88,8 +93,14 @@ export const partyActionTypeSchema = z.enum([
   'recover',
   'prepare',
   'adjustDeck',
+  'abandonQuest',
   'scavenge',
   'useVault',
+  'takeQuest',
+  'continueQuest',
+  'finishQuest',
+  'takeTrialQuest',
+  'trainWithMentor',
   'saveRespawnPoint',
   ...randomEventActionTypes,
   ...combatActionTypes,
@@ -154,6 +165,7 @@ export type KnockoutResult = z.infer<typeof knockoutResultSchema>
 
 /** Estado do jogador na partida; tudo calculado pelo backend (§1.3). */
 export const playerStateSchema = z.object({
+  ...playerQuestFields,
   playerClasses: z.array(
     z.object({ playerClass: playerClassSchema, deckLockMet: z.boolean() }),
   ),
@@ -395,6 +407,7 @@ export function useStartSession(
 
 /** Intenção de jogo (CONTRATO §1.6); as FEATs seguintes acrescentam variantes. */
 export type PartyAction =
+  | QuestAction
   | MoveAction
   | { type: 'saveRespawnPoint' }
   | EndTurnAction
@@ -535,7 +548,21 @@ export const actionNotAllowedDetailsSchema = z.object({
     'playerDown',
     'staleTriggeredEffectChoice',
     'triggeredEffectUnavailable',
+    'questOfferUnavailable',
+    'questNotOpen',
+    'questWrongStage',
+    'questWrongZone',
+    'questObjectivesIncomplete',
+    'questLimitReached',
+    'genericQuestAlreadyOpen',
+    'questClassIneligible',
+    'questSpecializationIneligible',
+    'questPeakTooLow',
   ]),
+  questId: z.string().optional(),
+  questCardId: z.string().optional(),
+  classId: playerClassSchema.optional(),
+  specializationId: z.string().optional(),
   checks: z.array(eventMinimumCheckSchema).optional(),
   /** Carta envolvida na recusa, inclusive `paymentInvalid` (FEAT-11). */
   cardId: z.string().optional(),
@@ -568,8 +595,13 @@ async function takePartyAction(
   action: PartyAction,
 ): Promise<PartyActionResponse> {
   try {
+    const quest = questActionSchema.safeParse(action)
     return partyActionResponseSchema.parse(
-      await requestJson('POST', `${partyPath(partyId)}/actions`, action),
+      await requestJson(
+        'POST',
+        `${partyPath(partyId)}/actions`,
+        quest.success ? quest.data : action,
+      ),
     )
   } catch (error) {
     if (error instanceof ApiError && error.code === 'ACTION_NOT_ALLOWED') {

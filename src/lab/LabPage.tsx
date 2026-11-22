@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { ApiError } from '../api/http'
 import {
   LabConfigInvalidError,
+  questConfigDefaults,
   useLabConfig,
   useResetLabConfig,
   useUpdateLabConfig,
@@ -22,7 +23,7 @@ import './LabPage.css'
 /** Rótulos dos campos (REQ-06, glossário §2.6), na ordem da tela. */
 type NumericKey = Exclude<
   keyof LabConfig['values'],
-  'reserveDeck' | 'enemyAbilityPriorities'
+  'reserveDeck' | 'enemyAbilityPriorities' | keyof typeof questConfigDefaults
 >
 
 const fieldLabels: Record<NumericKey, string> = {

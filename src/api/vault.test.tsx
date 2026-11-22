@@ -257,8 +257,14 @@ describe('REQ-50: PlayerState com o cofre e o Vasculhar', () => {
       'recover',
       'prepare',
       'adjustDeck',
+      'abandonQuest',
       'scavenge',
       'useVault',
+      'takeQuest',
+      'continueQuest',
+      'finishQuest',
+      'takeTrialQuest',
+      'trainWithMentor',
       'saveRespawnPoint',
       'startEvent',
       'revealEvent',
@@ -332,7 +338,11 @@ describe('REQ-51: Vasculhar', () => {
     expect(partySchema.safeParse(partyScavengedFixture).success).toBe(true)
     const player = partyScavengedFixture.members[0].player
     expect(player.inventory.at(-1)).toEqual({ cardId: S, quantity: 1 })
-    expect(player.lastScavenge).toEqual({ cardId: S, found: true, delivery: 'inventory' })
+    expect(player.lastScavenge).toEqual({
+      cardId: S,
+      found: true,
+      delivery: 'inventory',
+    })
     expect(partyScavengedFixture.turn.actionPoints).toBe(2)
   })
 

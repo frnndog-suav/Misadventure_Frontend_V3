@@ -1,3 +1,4 @@
+import { cardSchema } from '../../api/catalog'
 import { executableCombatCardFixture } from '../../mocks/combatFixtures'
 import { partyEncounterFixture } from '../../mocks/randomEventFixtures'
 import { describe, expect, it } from 'vitest'
@@ -16,7 +17,8 @@ describe('REQ-49: campos da FEAT-32 no CardInput do editor', () => {
     for (const card of fixtureCardsFixture) {
       const input = toInput(formFromCard(card))
       expect(input).not.toBeNull()
-      if (input !== null) expect(inputToCard(input, 'fixture')).toEqual(card)
+      if (input !== null)
+        expect(cardSchema.parse(inputToCard(input, 'fixture'))).toEqual(card)
     }
     expect(toInput(formFromCard(pickaxeFixture))).toMatchObject({
       toolKind: 'pickaxe',

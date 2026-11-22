@@ -11,9 +11,7 @@ import {
   cardTypeSchema,
   classDefinitionSchema,
   playerClassSchema,
-  type Card,
   type CardType,
-  type ClassDefinition,
   type PlayerClass,
   type Rarity,
 } from './catalog'
@@ -60,6 +58,7 @@ export const editorCollectionSchema = editorCollectionSummarySchema.extend({
     item: count,
     randomEvent: count,
     combatEvent: count,
+    zoneQuest: count.default(0),
     dimension: count,
   }) satisfies z.ZodType<Record<CardType, number>>,
   rarityCounts: z.object({
@@ -78,7 +77,10 @@ type DistributiveOmit<T, K extends PropertyKey> = T extends unknown
   : never
 
 /** O `Card` sem `id` e `collectionId` (o backend monta), mais o `slug`. */
-export type CardInput = DistributiveOmit<Card, 'id' | 'collectionId'> & {
+export type CardInput = DistributiveOmit<
+  z.input<typeof cardSchema>,
+  'id' | 'collectionId'
+> & {
   slug: string
 }
 
@@ -103,7 +105,10 @@ export const dimensionValidationSchema = z.object({
 export type DimensionValidation = z.infer<typeof dimensionValidationSchema>
 
 /** Classe no editor (CONTRATO §3 FEAT-06). */
-export type ClassInput = Omit<ClassDefinition, 'collectionId'>
+export type ClassInput = Omit<
+  z.input<typeof classDefinitionSchema>,
+  'collectionId'
+>
 
 export const editorClassSchema = z.object({
   status: contentStatusSchema,

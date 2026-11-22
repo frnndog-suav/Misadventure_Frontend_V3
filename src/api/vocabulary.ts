@@ -7,6 +7,7 @@ export const cardTypeSchema = z.enum([
   'item',
   'randomEvent',
   'combatEvent',
+  'zoneQuest',
   'dimension',
 ])
 export type CardType = z.infer<typeof cardTypeSchema>
