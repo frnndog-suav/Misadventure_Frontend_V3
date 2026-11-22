@@ -1,6 +1,21 @@
+import { z } from 'zod'
 import type { Attribute, Modifier, PlayerClass } from '../../api/catalog'
 import type { ClassInput, EditorClass } from '../../api/editor'
-import { filled, modifierOrder, parseNumber } from './cardFormValues'
+import { effectSchema } from '../../api/effects'
+import {
+  filled,
+  modifierOrder,
+  parseEffectPart,
+  parseNumber,
+} from './cardFormValues'
+
+export type SpecializationForm = {
+  id: string
+  name: string
+  additionalAttributes: (Attribute | '')[]
+  reinforcedAttributes: (Attribute | '')[]
+  effects: string
+}
 
 /**
  * Valores do formulário de classe (REQ-32), no formato do formulário como a
@@ -11,7 +26,7 @@ export interface ClassForm {
   name: string
   essentialAttributes: (Attribute | '')[]
   baseModifiers: Record<Modifier, string>
-  specializations?: ClassInput['specializations']
+  specializations?: SpecializationForm[]
   starterDeck: { cardId: string; copies: string }[]
 }
 
@@ -36,7 +51,12 @@ export function formFromClass({ classDefinition }: EditorClass): ClassForm {
     baseModifiers: Object.fromEntries(
       modifierOrder.map((m) => [m, String(classDefinition.baseModifiers[m])]),
     ) as Record<Modifier, string>,
-    specializations: classDefinition.specializations,
+    specializations: classDefinition.specializations.length
+      ? classDefinition.specializations.map((entry) => ({
+          ...entry,
+          effects: JSON.stringify(entry.effects, null, 2),
+        }))
+      : undefined,
     starterDeck: classDefinition.starterDeck.map(({ cardId, copies }) => ({
       cardId,
       copies: String(copies),
@@ -64,14 +84,38 @@ export function toClassInput(form: ClassForm): ClassInput | null {
     if (!filled(entry.cardId) || copies === null) return null
     starterDeck.push({ cardId: entry.cardId, copies })
   }
+  const specializations = []
+  for (const entry of form.specializations ?? []) {
+    const { id, name, additionalAttributes, reinforcedAttributes } = entry
+    const effects = z
+      .array(effectSchema)
+      .safeParse(parseEffectPart(entry.effects))
+    if (
+      !filled(id) ||
+      !filled(name) ||
+      !effects.success ||
+      additionalAttributes.some((attribute) => attribute === '') ||
+      reinforcedAttributes.some((attribute) => attribute === '')
+    )
+      return null
+    specializations.push({
+      id,
+      name,
+      additionalAttributes: additionalAttributes.filter(
+        (attribute) => attribute !== '',
+      ),
+      reinforcedAttributes: reinforcedAttributes.filter(
+        (attribute) => attribute !== '',
+      ),
+      effects: effects.data,
+    })
+  }
   return {
     playerClass: form.playerClass,
     name: form.name,
     essentialAttributes,
     baseModifiers,
-    ...(form.specializations?.length
-      ? { specializations: form.specializations }
-      : {}),
+    ...(form.specializations !== undefined ? { specializations } : {}),
     starterDeck,
   }
 }

@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.73 · **Data:** 2026-11-22
+> **Versão do contrato:** 0.74 · **Data:** 2026-11-22
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -2619,7 +2619,7 @@ type ResolveTriggeredEffectAction = {
 | Último inimigo, Reflexão fatal e inventário cheio | Vitória com `playerDown: true`. Com escolha pendente, GET em sessão ativa traz `down: true` e `availableActions: ['resolveReward']`. Manter ou deixar avança o desfecho. Após a última escolha, `availableActions: []`. Em derrota, coisa ruim executada uma única vez. |
 | Turno obsoleto após recarga | 409 `staleCombatTurn` e preservação de estado, RNG e `savedAt`. A intenção com o turno atual prossegue. |
 
-### FEAT-14 — Nocaute, spawn e respawn — `acordado`
+### FEAT-14 — Nocaute, spawn e respawn — `validado`
 
 Base: README §§7.3–7.4, 12.2, 19.2, 19.5, 20 e Apêndice A, ROADMAP v0.64 e SPEC-FRONTEND v0.81 (REQ-63 a REQ-65). Esta seção define as extensões às FEATs 03, 06–08 e 11–13. A preparação da FEAT-06 coloca todos na cidade inicial com `zoneId` e `respawnZoneId` iguais. Quando a entrada em outra dimensão estiver disponível, ambos passam à cidade inicial do novo mapa.
 
@@ -2977,3 +2977,4 @@ Troca de dimensão, ajudantes e recrutamento acompanham as FEATs correspondentes
 | 0.71 | 2026-11-22 | BE | FEAT-15 `proposto (BE)`: schemas de missões e classes, conteúdo e laboratório, desfechos com recompensa pendente e respostas de referência. Aguarda aceite do frontend. |
 | 0.72 | 2026-11-22 | BE | FEAT-15 `proposto (BE)` após aceite parcial: combate embutido, exemplos encadeados de tentativa e entrega, validação de referências e fixture de ativação de Cavaleiro. |
 | 0.73 | 2026-11-22 | BE | FEAT-15 `acordado` após aceite documental da v0.72 pelo frontend para os REQ-66 a REQ-70 no recorte solo. Acordo libera a T-69. |
+| 0.74 | 2026-11-22 | BE | FEAT-14 `validado` após a revalidação solo da T-54 em Chrome com MSW desligado (devlogs BE 064 e FE 088). |

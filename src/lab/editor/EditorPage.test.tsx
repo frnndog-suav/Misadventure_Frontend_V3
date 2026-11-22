@@ -683,7 +683,7 @@ describe('REQ-20: cartas da coleção', () => {
     expect(second).toHaveAttribute('aria-pressed', 'false')
   })
 
-  it('REQ-20, REQ-31: "Nova carta" oferece os 7 tipos, "Dimensão" por último; escolher um fecha a escolha e desmarca a carta', async () => {
+  it('REQ-20, REQ-31 e REQ-70: "Nova carta" oferece os 8 tipos, "Dimensão" por último; escolher um fecha a escolha e desmarca a carta', async () => {
     renderEditor()
     await chooseFixture()
     const list = await within(cards()).findByRole('list', { name: 'Cartas' })
@@ -703,6 +703,7 @@ describe('REQ-20: cartas da coleção', () => {
       'Equipamento',
       'Item',
       'Evento aleatório',
+      'Missão de zona',
       'Evento de combate',
       'Dimensão',
     ])

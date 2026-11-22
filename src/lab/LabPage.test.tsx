@@ -665,3 +665,9 @@ it('REQ-60: submits priorities in order and binds a refusal to the behavior', as
     },
   })
 })
+it('REQ-70 shows the quest board setting from MSW', async () => {
+  renderLab()
+  expect(
+    await screen.findByLabelText('Vagas no quadro de missões'),
+  ).toHaveValue(3)
+})

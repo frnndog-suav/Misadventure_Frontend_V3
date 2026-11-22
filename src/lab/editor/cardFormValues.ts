@@ -7,6 +7,7 @@ import {
 } from '../../api/effects'
 import {
   modifierSchema,
+  zoneQuestCardSchema,
   type Ability,
   type CombatEventCard,
   type Attribute,
@@ -300,7 +301,43 @@ function deckInput(decks: DimensionForm['rewardDecks']) {
   return result
 }
 
+export type QuestStageForm = {
+  type: 'interaction' | 'objectives' | 'randomEvent' | 'combatEvent'
+  text: string
+  locationType: 'zoneType' | 'zoneTitle'
+  zoneType: ZoneType | ''
+  title: string
+  randomEventSuccesses: string
+  combatVictories: string
+  eventCardId: string
+  combat: string
+}
+
+export function emptyQuestStage(): QuestStageForm {
+  return {
+    type: 'interaction',
+    text: '',
+    locationType: 'zoneType',
+    zoneType: '',
+    title: '',
+    randomEventSuccesses: '0',
+    combatVictories: '0',
+    eventCardId: '',
+    combat: '',
+  }
+}
+
+export type QuestForm = {
+  type: 'zoneQuest'
+  slug: string
+  title: string
+  summary: string
+  stages: QuestStageForm[]
+  rewards: string
+}
+
 export type CardForm =
+  | QuestForm
   | ZoneForm
   | AttributeForm
   | EquipmentForm
@@ -340,6 +377,15 @@ export function emptyEnemy(): EnemyForm {
 
 export function emptyForm(type: FormCardType): CardForm {
   switch (type) {
+    case 'zoneQuest':
+      return {
+        type,
+        slug: '',
+        title: '',
+        summary: '',
+        stages: [],
+        rewards: '[]',
+      }
     case 'zone':
       return {
         type,
@@ -454,9 +500,36 @@ const numberText = (value: number | null): string =>
 
 /** Valores de uma carta recebida. */
 export function formFromCard(card: Card): CardForm {
-  if (card.type === 'zoneQuest')
-    throw new Error('Editor de missões indisponível.')
   switch (card.type) {
+    case 'zoneQuest':
+      return {
+        type: card.type,
+        slug: slugOf(card),
+        title: card.title,
+        summary: card.summary,
+        stages: card.stages.map((stage) => ({
+          ...emptyQuestStage(),
+          type: stage.type,
+          text: stage.text,
+          locationType: stage.location.type,
+          ...(stage.location.type === 'zoneTitle'
+            ? { title: stage.location.title }
+            : { zoneType: stage.location.zoneType }),
+          ...(stage.type === 'objectives'
+            ? {
+                randomEventSuccesses: String(stage.randomEventSuccesses),
+                combatVictories: String(stage.combatVictories),
+              }
+            : {}),
+          ...(stage.type === 'randomEvent'
+            ? { eventCardId: stage.eventCardId }
+            : {}),
+          ...(stage.type === 'combatEvent'
+            ? { combat: JSON.stringify(stage.combat, null, 2) }
+            : {}),
+        })),
+        rewards: JSON.stringify(card.rewards, null, 2),
+      }
     case 'zone':
       return {
         type: 'zone',
@@ -466,7 +539,7 @@ export function formFromCard(card: Card): CardForm {
         location: card.location,
         connectionArrows: String(card.connectionArrows),
         arrowLayout: card.arrowLayout ?? '',
-        questDeck: card.questDeck,
+        questDeck: card.questDeck.length ? card.questDeck : undefined,
         zoneActions: zoneActionOrder.filter((a) =>
           card.zoneActions.includes(a),
         ),
@@ -684,6 +757,40 @@ function toEnemy(form: EnemyForm): Enemy | null {
 /** O corpo do envio, ou `null` se falta formato (Salvar desabilitado). */
 export function toInput(form: CardForm): CardInput | null {
   switch (form.type) {
+    case 'zoneQuest': {
+      if (!filled(form.slug) || !filled(form.title)) return null
+      const stages = form.stages.map((stage) => {
+        const location =
+          stage.locationType === 'zoneType'
+            ? { type: stage.locationType, zoneType: stage.zoneType }
+            : { type: stage.locationType, title: stage.title }
+        const base = { type: stage.type, text: stage.text, location }
+        switch (stage.type) {
+          case 'interaction':
+            return base
+          case 'objectives':
+            return {
+              ...base,
+              randomEventSuccesses: parseNumber(stage.randomEventSuccesses),
+              combatVictories: parseNumber(stage.combatVictories),
+            }
+          case 'randomEvent':
+            return { ...base, eventCardId: stage.eventCardId }
+          case 'combatEvent':
+            return { ...base, combat: parseEffectPart(stage.combat) }
+        }
+      })
+      const result = zoneQuestCardSchema
+        .omit({ id: true, collectionId: true })
+        .safeParse({
+          type: form.type,
+          title: form.title,
+          summary: form.summary,
+          stages,
+          rewards: parseEffectPart(form.rewards),
+        })
+      return result.success ? { ...result.data, slug: form.slug } : null
+    }
     case 'zone': {
       const effects = toEffects(form.effects, zoneEffectSchema)
       if (effects === undefined) return null
@@ -704,7 +811,7 @@ export function toInput(form: CardForm): CardInput | null {
         location: form.location,
         connectionArrows: arrows,
         arrowLayout: form.arrowLayout === '' ? null : form.arrowLayout,
-        ...(form.questDeck?.length ? { questDeck: form.questDeck } : {}),
+        ...(form.questDeck !== undefined ? { questDeck: form.questDeck } : {}),
         zoneActions: form.zoneActions,
         effects,
       }

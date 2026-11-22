@@ -120,3 +120,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 088 | FEAT-14 | [Interface de nocaute e respawn](088-feat-14-interface-nocaute-respawn.md) | concluída com MSW |
 | 089 | FEAT-15 | [Planejamento e proposta de contrato](089-feat-15-planejamento.md) | acordo confirmado na v0.73 |
 | 090 | T-69 | [Cliente e fixtures MSW da FEAT-15](090-T-69-cliente-feat-15.md) | concluída com MSW |
+| 091 | FEAT-15 | [Interface de missões e progressão de classes](091-feat-15-interface-missoes.md) | concluída com MSW |

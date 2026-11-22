@@ -32,6 +32,7 @@ import {
 } from '../../mocks/combatFixtures'
 import { handlers } from '../../mocks/handlers'
 import { resetKnockoutScenarios } from '../../mocks/knockoutFixtures'
+import { resetQuestScenarios } from '../../mocks/questFixtures'
 import {
   eventMinimumNotMetFixture,
   eventScenarios,
@@ -77,6 +78,7 @@ afterAll(() => {
 let queryClient: QueryClient
 
 beforeEach(() => {
+  resetQuestScenarios()
   resetKnockoutScenarios()
   queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -3616,4 +3618,74 @@ describe('REQ-61: combate solo', () => {
     fireEvent.click(attack)
     expect(await screen.findByText(/Vitória.*caído/)).toBeInTheDocument()
   })
+})
+
+it('REQ-66 accepts a zone offer and displays its destination', async () => {
+  renderParty('fixture.quest-board')
+  const board = await screen.findByRole('region', { name: 'Quadro de missões' })
+  fireEvent.click(
+    within(board).getByRole('button', { name: 'Aceitar Entrega · 1 PA' }),
+  )
+  const open = screen.getByRole('region', { name: 'Missões abertas' })
+  expect(await within(open).findByText('Destino: Porto')).toBeVisible()
+  expect(within(board).queryByText('Entrega')).not.toBeInTheDocument()
+  expect(
+    within(open).queryByRole('button', { name: /Finalizar/ }),
+  ).not.toBeInTheDocument()
+})
+
+it('REQ-67 shows the granted specialization and its inactive lock', async () => {
+  renderParty('fixture.quest-trial')
+  const finish = await screen.findByRole('button', { name: /Finalizar/ })
+  fireEvent.click(finish)
+  expect(
+    await screen.findByText(/Especialização: Cavaleiro.*trava não cumprida/),
+  ).toBeVisible()
+})
+
+it('REQ-68 and REQ-69 show mentor costs and allow abandonment at zero AP', async () => {
+  renderParty('fixture.quest-mentor')
+  const train = await screen.findByRole('button', {
+    name: /Treinar com mentor.*2 PA.*150 ouro/,
+  })
+  fireEvent.click(train)
+  const open = screen.getByRole('region', { name: 'Missões abertas' })
+  expect(await within(open).findByText('Vitórias de pé: 0/5')).toBeVisible()
+  fireEvent.click(
+    within(open).getByRole('button', { name: 'Abandonar Mentor · 0 PA' }),
+  )
+  await waitFor(() =>
+    expect(within(open).queryByText('Mentor')).not.toBeInTheDocument(),
+  )
+  expect(screen.getByText(/Ouro 50 \(bolsa/)).toBeVisible()
+})
+
+it('REQ-69 displays shared progress before reward delivery and keeps it on reload', async () => {
+  const id = 'fixture.quest-progress'
+  const view = renderParty(id)
+  fireEvent.click(
+    await screen.findByRole('button', { name: /Aceitar provação.*Cavaleiro/ }),
+  )
+  fireEvent.click(await screen.findByRole('button', { name: /Continuar/ }))
+  fireEvent.click(await screen.findByRole('button', { name: 'Revelar carta' }))
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Pagar requisito' }),
+  )
+  const reward = await screen.findByRole('region', {
+    name: 'Recompensa pendente',
+  })
+  const open = screen.getByRole('region', { name: 'Missões abertas' })
+  expect(within(open).getAllByText('Êxitos em eventos: 1/3')).toHaveLength(2)
+  expect(within(open).queryByRole('button')).not.toBeInTheDocument()
+  fireEvent.click(within(reward).getByRole('button', { name: 'Deixar' }))
+  await waitFor(() => expect(reward).not.toBeInTheDocument())
+  view.unmount()
+  queryClient.clear()
+  renderParty(id)
+  const restored = await screen.findByRole('region', {
+    name: 'Missões abertas',
+  })
+  expect(within(restored).getAllByText('Êxitos em eventos: 1/3')).toHaveLength(
+    2,
+  )
 })

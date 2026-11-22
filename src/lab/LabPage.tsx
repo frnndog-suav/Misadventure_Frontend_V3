@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom'
 import { ApiError } from '../api/http'
 import {
   LabConfigInvalidError,
-  questConfigDefaults,
   useLabConfig,
   useResetLabConfig,
   useUpdateLabConfig,
@@ -23,7 +22,7 @@ import './LabPage.css'
 /** Rótulos dos campos (REQ-06, glossário §2.6), na ordem da tela. */
 type NumericKey = Exclude<
   keyof LabConfig['values'],
-  'reserveDeck' | 'enemyAbilityPriorities' | keyof typeof questConfigDefaults
+  'reserveDeck' | 'enemyAbilityPriorities'
 >
 
 const fieldLabels: Record<NumericKey, string> = {
@@ -76,6 +75,17 @@ const fieldLabels: Record<NumericKey, string> = {
   knockoutVigorCapPercent: 'Teto de Vigor no respawn (% do Pico)',
   soloKnockoutGoldLossPercent: 'Perda de ouro da bolsa no nocaute solo (%)',
   soloKnockoutWaitRounds: 'Rodadas de espera no nocaute solo',
+  questBoardSize: 'Vagas no quadro de missões',
+  maxOpenQuests: 'Limite de missões abertas',
+  trialMinPeak: 'Pico mínimo para provação',
+  mentorBaseGoldCost: 'Custo base do mentor em ouro',
+  trialRandomEventTarget: 'Êxitos em eventos para provação',
+  trialCombatTarget: 'Vitórias de pé para provação',
+  mentorRandomEventTarget: 'Êxitos em eventos para mentor',
+  mentorCombatTarget: 'Vitórias de pé para mentor',
+  lockSpecializationAdditional: 'Trava de especialização (atributo adicional)',
+  lockSpecializationReinforcement:
+    'Trava de especialização (reforço de essencial)',
 }
 
 const fieldKeys = Object.keys(fieldLabels) as NumericKey[]

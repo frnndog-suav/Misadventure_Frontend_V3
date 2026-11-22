@@ -38,6 +38,7 @@ import { EffectsPanel, type ActivateEffect } from './EffectsPanel'
 import { nameOf } from './cardNames'
 import { RandomEventPanel } from './RandomEventPanel'
 import { RewardChoice } from './RewardChoice'
+import { QuestPanel } from './QuestPanel'
 import {
   CombatPanel,
   CombatReport,
@@ -155,6 +156,23 @@ function MemberState({
           {deckLockMet ? '(trava cumprida)' : '(trava não cumprida)'}
         </p>
       ))}
+      {player.specializations.map(
+        ({ classId, specializationId, deckLockMet }) => {
+          const definition = classes.find(
+            (entry) => entry.playerClass === classId,
+          )
+          const name = definition?.specializations.find(
+            (entry) => entry.id === specializationId,
+          )?.name
+          return (
+            <p key={classId}>
+              Especialização: {name ?? specializationId} ·{' '}
+              {definition?.name ?? classId}{' '}
+              {deckLockMet ? '(trava cumprida)' : '(trava não cumprida)'}
+            </p>
+          )
+        },
+      )}
       <p>
         Vida {player.health}/{player.maxHealth}
       </p>
@@ -1543,6 +1561,14 @@ export function PartySession() {
             <PrepareAbilities
               host={host}
               cards={cards.cards}
+              pending={action.isPending || end.isPending}
+              onAction={(intent) => action.mutate(intent)}
+            />
+          )}
+          {host && (
+            <QuestPanel
+              player={host.player}
+              classes={classes.data ?? []}
               pending={action.isPending || end.isPending}
               onAction={(intent) => action.mutate(intent)}
             />

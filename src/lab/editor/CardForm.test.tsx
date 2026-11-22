@@ -1909,3 +1909,28 @@ it('REQ-60: sends executable combat content and links an indexed MSW refusal', a
     }),
   )
 })
+
+it('REQ-70 opens a zone quest draft with editable stages', async () => {
+  renderEditor()
+  await newCard('Missão de zona')
+  type('Identificador', 'help-at-the-port-ui')
+  type('Título', 'Ajuda no Porto')
+  type('Resumo', 'Socorra o viajante')
+  const stages = screen.getByRole('group', { name: 'Etapas da missão' })
+  fireEvent.click(within(stages).getByRole('button', { name: 'Adicionar' }))
+  type('Tipo de etapa', 'randomEvent')
+  type('Texto da etapa', 'Ajude o viajante')
+  type('Identificar destino por', 'zoneTitle')
+  type('Título da zona de destino', 'Porto')
+  type('ID do evento da coleção', 'fixture.road-ambush')
+  fireEvent.click(saveButton())
+  const error = await screen.findByText(
+    /deve ser um evento aleatório executável/,
+  )
+  expect(field('ID do evento da coleção')).toHaveAccessibleDescription(
+    error.textContent,
+  )
+  type('ID do evento da coleção', 'fixture.wounded-traveler')
+  fireEvent.click(saveButton())
+  await waitFor(() => expect(formStatus()).toHaveTextContent(/salv/i))
+})

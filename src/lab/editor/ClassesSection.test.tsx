@@ -593,3 +593,13 @@ describe('REQ-32: CONTENT_REFERENCED no formulário de carta', () => {
     )
   })
 })
+
+it('REQ-70 allows editing class specializations', async () => {
+  await chooseCollection(/Coleção de Teste/)
+  fireEvent.click(
+    await within(classes()).findByRole('button', { name: 'Nova classe' }),
+  )
+  const list = screen.getByRole('group', { name: 'Especializações' })
+  fireEvent.click(within(list).getByRole('button', { name: 'Adicionar' }))
+  expect(within(list).getByLabelText('ID da especialização')).toBeVisible()
+})

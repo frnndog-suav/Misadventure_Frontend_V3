@@ -223,6 +223,80 @@ export function ClassForm({
             </>
           )}
         />
+        <ListField
+          label="Especializações"
+          path="specializations"
+          items={values.specializations ?? []}
+          onChange={(specializations) =>
+            setValues({ ...values, specializations })
+          }
+          newItem={() => ({
+            id: '',
+            name: '',
+            additionalAttributes: [],
+            reinforcedAttributes: [],
+            effects: '[]',
+          })}
+          errors={errors}
+          renderItem={(item, index, set) => {
+            const path = `specializations.${index}`
+            return (
+              <>
+                <TextField
+                  label="ID da especialização"
+                  path={`${path}.id`}
+                  value={item.id}
+                  onChange={(id) => set({ ...item, id })}
+                  errors={errors}
+                />
+                <TextField
+                  label="Nome da especialização"
+                  path={`${path}.name`}
+                  value={item.name}
+                  onChange={(name) => set({ ...item, name })}
+                  errors={errors}
+                />
+                {(
+                  [
+                    ['additionalAttributes', 'Atributos adicionais'],
+                    ['reinforcedAttributes', 'Atributos reforçados'],
+                  ] as const
+                ).map(([key, label]) => (
+                  <ListField
+                    key={key}
+                    label={label}
+                    path={`${path}.${key}`}
+                    items={item[key]}
+                    onChange={(attributes) =>
+                      set({ ...item, [key]: attributes })
+                    }
+                    newItem={(): Attribute | '' => ''}
+                    errors={errors}
+                    renderItem={(value, attributeIndex, update) => (
+                      <SelectField
+                        label={`Atributo ${attributeIndex + 1}`}
+                        path={`${path}.${key}.${attributeIndex}`}
+                        value={value}
+                        options={attributeOptions}
+                        onChange={update}
+                        errors={errors}
+                      />
+                    )}
+                  />
+                ))}
+                <TextField
+                  label="Efeitos da especialização (JSON)"
+                  path={`${path}.effects`}
+                  value={item.effects}
+                  onChange={(effects) => set({ ...item, effects })}
+                  errors={errors}
+                  multiline
+                  includeChildErrors
+                />
+              </>
+            )
+          }}
+        />
         <button type="submit" disabled={input === null || busy}>
           Salvar classe
         </button>

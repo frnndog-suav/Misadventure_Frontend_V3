@@ -79,6 +79,8 @@ import {
   type RandomEventForm,
   type ItemForm,
   type ZoneForm,
+  type QuestForm,
+  emptyQuestStage,
 } from './cardFormValues'
 
 const unavailable = 'Servidor indisponível. Tente novamente.'
@@ -344,6 +346,23 @@ function ZoneFields({
 }) {
   return (
     <>
+      <ListField
+        label="Deck de missões"
+        path="questDeck"
+        items={values.questDeck ?? []}
+        onChange={(questDeck) => set({ ...values, questDeck })}
+        newItem={() => ''}
+        errors={errors}
+        renderItem={(item, index, update) => (
+          <TextField
+            label={`ID da missão ${index + 1}`}
+            path={`questDeck.${index}`}
+            value={item}
+            onChange={update}
+            errors={errors}
+          />
+        )}
+      />
       <TextField
         label="Título"
         path="title"
@@ -1427,6 +1446,156 @@ function ZoneDeckFields({
 }
 
 /** Campos do tipo da carta (REQ-21). */
+function QuestFields({
+  values,
+  set,
+  errors,
+}: {
+  values: QuestForm
+  set: (value: QuestForm) => void
+  errors: Errors
+}) {
+  return (
+    <>
+      <TextField
+        label="Título"
+        path="title"
+        value={values.title}
+        onChange={(title) => set({ ...values, title })}
+        errors={errors}
+      />
+      <TextField
+        label="Resumo"
+        path="summary"
+        value={values.summary}
+        onChange={(summary) => set({ ...values, summary })}
+        errors={errors}
+        multiline
+      />
+      <ListField
+        label="Etapas da missão"
+        path="stages"
+        items={values.stages}
+        onChange={(stages) => set({ ...values, stages })}
+        newItem={emptyQuestStage}
+        errors={errors}
+        renderItem={(stage, index, update) => {
+          const path = `stages.${index}`
+          return (
+            <>
+              <SelectField
+                label="Tipo de etapa"
+                path={`${path}.type`}
+                value={stage.type}
+                options={[
+                  { value: 'interaction', label: 'Interação' },
+                  { value: 'objectives', label: 'Objetivos' },
+                  { value: 'randomEvent', label: 'Evento aleatório' },
+                  { value: 'combatEvent', label: 'Combate' },
+                ]}
+                onChange={(type) => {
+                  if (type) update({ ...stage, type })
+                }}
+                errors={errors}
+              />
+              <TextField
+                label="Texto da etapa"
+                path={`${path}.text`}
+                value={stage.text}
+                onChange={(text) => update({ ...stage, text })}
+                errors={errors}
+                multiline
+              />
+              <SelectField
+                label="Identificar destino por"
+                path={`${path}.location.type`}
+                value={stage.locationType}
+                options={[
+                  { value: 'zoneType', label: 'Tipo da zona' },
+                  { value: 'zoneTitle', label: 'Título da zona' },
+                ]}
+                onChange={(locationType) => {
+                  if (locationType) update({ ...stage, locationType })
+                }}
+                errors={errors}
+              />
+              {stage.locationType === 'zoneTitle' ? (
+                <TextField
+                  label="Título da zona de destino"
+                  path={`${path}.location.title`}
+                  value={stage.title}
+                  onChange={(title) => update({ ...stage, title })}
+                  errors={errors}
+                />
+              ) : (
+                <SelectField
+                  label="Tipo da zona de destino"
+                  path={`${path}.location.zoneType`}
+                  value={stage.zoneType}
+                  options={zoneTypeOptions}
+                  onChange={(zoneType) => update({ ...stage, zoneType })}
+                  errors={errors}
+                />
+              )}
+              {stage.type === 'objectives' && (
+                <>
+                  <TextField
+                    label="Êxitos em eventos"
+                    path={`${path}.randomEventSuccesses`}
+                    value={stage.randomEventSuccesses}
+                    onChange={(randomEventSuccesses) =>
+                      update({ ...stage, randomEventSuccesses })
+                    }
+                    errors={errors}
+                  />
+                  <TextField
+                    label="Vitórias de pé"
+                    path={`${path}.combatVictories`}
+                    value={stage.combatVictories}
+                    onChange={(combatVictories) =>
+                      update({ ...stage, combatVictories })
+                    }
+                    errors={errors}
+                  />
+                </>
+              )}
+              {stage.type === 'randomEvent' && (
+                <TextField
+                  label="ID do evento da coleção"
+                  path={`${path}.eventCardId`}
+                  value={stage.eventCardId}
+                  onChange={(eventCardId) => update({ ...stage, eventCardId })}
+                  errors={errors}
+                />
+              )}
+              {stage.type === 'combatEvent' && (
+                <TextField
+                  label="Combate embutido (JSON)"
+                  path={`${path}.combat`}
+                  value={stage.combat}
+                  onChange={(combat) => update({ ...stage, combat })}
+                  errors={errors}
+                  multiline
+                  includeChildErrors
+                />
+              )}
+            </>
+          )
+        }}
+      />
+      <TextField
+        label="Recompensas (JSON)"
+        path="rewards"
+        value={values.rewards}
+        onChange={(rewards) => set({ ...values, rewards })}
+        errors={errors}
+        multiline
+        includeChildErrors
+      />
+    </>
+  )
+}
+
 function TypeFields({
   values,
   set,
@@ -1439,6 +1608,8 @@ function TypeFields({
   tags: readonly string[]
 }) {
   switch (values.type) {
+    case 'zoneQuest':
+      return <QuestFields values={values} set={set} errors={errors} />
     case 'zone':
       return <ZoneFields values={values} set={set} errors={errors} />
     case 'attribute':
@@ -1557,6 +1728,7 @@ export function CardForm({
     setCardId(result.card.id)
     setStatus(result.status)
     setMessage(text)
+    onDirtyChange(false)
     onSaved(result.card.id)
   }
 
