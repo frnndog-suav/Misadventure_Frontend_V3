@@ -124,3 +124,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 092 | FEAT-15 | [Pico de conclusão de missão](092-feat-15-pico-conclusao.md) | concluída |
 | 093 | RETORNO | [FEAT-15 validada contra o backend real](093-feat-15-validacao-integrada.md) | aguardando revisão |
 | 094 | RETORNO | [FEAT-16: contrato acordado](094-RETORNO-feat-16-contrato-acordado.md) | acordado na v0.80 |
+| 095 | RETORNO | [FEAT-16: implementado no backend](095-RETORNO-feat-16-implementado-be.md) | v0.81; validação aguarda o FE |
