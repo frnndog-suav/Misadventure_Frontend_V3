@@ -81,6 +81,8 @@ export const questConfigDefaults = {
   mentorCombatTarget: 5,
   lockSpecializationAdditional: 6,
   lockSpecializationReinforcement: 4,
+  zoneQuestPeakGain: 3,
+  genericQuestPeakGain: 5,
 }
 
 export const questConfigLimits = {
@@ -94,6 +96,8 @@ export const questConfigLimits = {
   mentorCombatTarget: { min: 0, max: 1000 },
   lockSpecializationAdditional: { min: 0, max: 200 },
   lockSpecializationReinforcement: { min: 0, max: 200 },
+  zoneQuestPeakGain: { min: 0, max: 1000 },
+  genericQuestPeakGain: { min: 0, max: 1000 },
 }
 
 export type KnockoutConfigKey = keyof typeof knockoutConfigDefaults
@@ -123,6 +127,12 @@ export const gameConfigValuesSchema = numericGameConfigValuesSchema.extend({
   ),
   lockSpecializationReinforcement: gameConfigInt.default(
     questConfigDefaults.lockSpecializationReinforcement,
+  ),
+  zoneQuestPeakGain: gameConfigInt.default(
+    questConfigDefaults.zoneQuestPeakGain,
+  ),
+  genericQuestPeakGain: gameConfigInt.default(
+    questConfigDefaults.genericQuestPeakGain,
   ),
   knockoutHealthPercent: gameConfigInt.default(
     knockoutConfigDefaults.knockoutHealthPercent,
@@ -246,6 +256,10 @@ export const labConfigSchema = z.object({
     ),
     lockSpecializationReinforcement: limitSchema.default(
       questConfigLimits.lockSpecializationReinforcement,
+    ),
+    zoneQuestPeakGain: limitSchema.default(questConfigLimits.zoneQuestPeakGain),
+    genericQuestPeakGain: limitSchema.default(
+      questConfigLimits.genericQuestPeakGain,
     ),
     maxCombatCycles: limitSchema.optional(),
     combatEscapeThreshold: limitSchema.optional(),

@@ -86,6 +86,8 @@ const fieldLabels: Record<NumericKey, string> = {
   lockSpecializationAdditional: 'Trava de especialização (atributo adicional)',
   lockSpecializationReinforcement:
     'Trava de especialização (reforço de essencial)',
+  zoneQuestPeakGain: 'Pico por missão de zona',
+  genericQuestPeakGain: 'Pico por missão genérica',
 }
 
 const fieldKeys = Object.keys(fieldLabels) as NumericKey[]

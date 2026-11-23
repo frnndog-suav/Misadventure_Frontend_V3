@@ -671,3 +671,9 @@ it('REQ-70 shows the quest board setting from MSW', async () => {
     await screen.findByLabelText('Vagas no quadro de missões'),
   ).toHaveValue(3)
 })
+
+it('REQ-70 shows the two quest completion Peak settings from MSW', async () => {
+  renderLab()
+  expect(await screen.findByLabelText('Pico por missão de zona')).toHaveValue(3)
+  expect(screen.getByLabelText('Pico por missão genérica')).toHaveValue(5)
+})

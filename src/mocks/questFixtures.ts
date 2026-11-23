@@ -1,4 +1,5 @@
 ﻿import { HttpResponse } from 'msw'
+import { questConfigDefaults, type GameConfigValues } from '../api/labConfig'
 import {
   partyActionTypeSchema,
   type Party,
@@ -33,6 +34,8 @@ const objectives = (target: number, current = 0) => ({
   randomEventSuccesses: { current, target },
   combatVictories: { current, target },
 })
+const eventPeakGain = 2
+const sequenceFinalPeakSteps = [3, 4]
 const questEvent = {
   ...partyEncounterFixture.randomEventEncounter!,
   card: {
@@ -50,6 +53,15 @@ const questEvent = {
     goodOutcome: {
       text: 'O viajante agradece.',
       steps: [
+        {
+          type: 'effect' as const,
+          effect: {
+            text: 'Ganhe 2 de Pico.',
+            duration: { kind: 'immediate' },
+            activation: [{ kind: 'gainPeak', amount: eventPeakGain }],
+            mark: null,
+          },
+        },
         {
           type: 'grantReward' as const,
           cardId: 'fixture.strength-basic',
@@ -92,12 +104,18 @@ const trial: Extract<OpenQuest, { type: 'trialQuest' }> = {
 }
 
 const states = new Map<string, Party>()
+type QuestPeakConfig = Pick<
+  GameConfigValues,
+  'zoneQuestPeakGain' | 'genericQuestPeakGain'
+>
+const peakSnapshots = new Map<string, QuestPeakConfig>()
 const decks = new Map<string, string[]>()
 const originBoards = new Map<string, PlayerState['questBoard']>()
 const nextQuestIds = new Map<string, number>()
 
 export function resetQuestScenarios() {
   states.clear()
+  peakSnapshots.clear()
   decks.clear()
   originBoards.clear()
   nextQuestIds.clear()
@@ -221,8 +239,9 @@ function zoneQuest(
   }
 }
 
-export function questParty(
+export function getQuestScenario(
   id: unknown,
+  labValues: Partial<QuestPeakConfig>,
   status?: Party['status'],
 ): Party | undefined {
   if (typeof id !== 'string' || !id.startsWith(prefix)) return
@@ -242,6 +261,13 @@ export function questParty(
     return
   let party = states.get(id)
   if (!party) {
+    peakSnapshots.set(id, {
+      zoneQuestPeakGain:
+        labValues.zoneQuestPeakGain ?? questConfigDefaults.zoneQuestPeakGain,
+      genericQuestPeakGain:
+        labValues.genericQuestPeakGain ??
+        questConfigDefaults.genericQuestPeakGain,
+    })
     const openQuests: OpenQuest[] = []
     if (name === 'trial') openQuests.push(trial)
     if (name === 'mentor-ready')
@@ -439,6 +465,7 @@ export function questPartyAction(party: Party, body: unknown) {
     return save(
       {
         gold: player.gold - 5,
+        peak: player.peak + eventPeakGain,
         openQuests: increment(setStage('completed'), 'randomEventSuccesses'),
         lastRandomEvent: {
           encounterId: 'e1',
@@ -446,7 +473,7 @@ export function questPartyAction(party: Party, body: unknown) {
           resolution: 'success',
           cause: 'requirementsMet',
           payments,
-          peakDelta: 0,
+          peakDelta: eventPeakGain,
           replacement: { requested: 0, drawn: 0 },
           escape: null,
         },
@@ -769,10 +796,19 @@ export function questPartyAction(party: Party, body: unknown) {
     case 'finishQuest': {
       if (player.zoneId !== harbor) return deny('questWrongZone')
       if (!target || !complete(target)) return deny('questObjectivesIncomplete')
+      const config = peakSnapshots.get(party.id)!
+      const completed = {
+        openQuests: otherQuests,
+        peak:
+          player.peak +
+          (target.type === 'zoneQuest'
+            ? config.zoneQuestPeakGain
+            : config.genericQuestPeakGain),
+      }
       if (target.type === 'trialQuest')
         return save(
           {
-            openQuests: otherQuests,
+            ...completed,
             specializations: [
               ...player.specializations,
               {
@@ -787,7 +823,7 @@ export function questPartyAction(party: Party, body: unknown) {
       if (target.type === 'mentorQuest')
         return save(
           {
-            openQuests: otherQuests,
+            ...completed,
             playerClasses: [
               ...player.playerClasses,
               { playerClass: target.classId, deckLockMet: false },
@@ -798,9 +834,20 @@ export function questPartyAction(party: Party, body: unknown) {
       if (target.questCardId === 'sequence') {
         if (target.stage.index !== 1 || target.stage.status !== 'completed')
           return deny('questWrongStage')
-        return save({ openQuests: otherQuests, gold: player.gold + 5 }, 1)
+        const explicitPeakGain = sequenceFinalPeakSteps.reduce(
+          (total, amount) => total + amount,
+          0,
+        )
+        return save(
+          {
+            ...completed,
+            peak: player.peak + explicitPeakGain,
+            gold: player.gold + 5,
+          },
+          1,
+        )
       }
-      return save({ openQuests: otherQuests }, 1, {
+      return save(completed, 1, {
         pendingRewards: pending({
           type: 'quest',
           questId: target.questId,

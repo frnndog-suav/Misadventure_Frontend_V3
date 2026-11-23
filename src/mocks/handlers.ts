@@ -4,7 +4,7 @@ import {
   questEditorCards,
   saveQuestEditorCard,
 } from './questEditorFixtures'
-import { questParty, questPartyAction } from './questFixtures'
+import { getQuestScenario, questPartyAction } from './questFixtures'
 import { knockoutAction, knockoutParty } from './knockoutFixtures'
 import { knockoutConfigLimits, questConfigLimits } from '../api/labConfig'
 import type { GameConfigValues } from '../api/labConfig'
@@ -768,6 +768,10 @@ const progressionConfigLimits = {
 }
 
 let progressionLabValues: Partial<GameConfigValues> = {}
+
+function questParty(id: unknown, status?: 'idle' | 'inSession') {
+  return getQuestScenario(id, progressionLabValues, status)
+}
 
 function progressionLabConfig() {
   return {

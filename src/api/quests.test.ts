@@ -50,18 +50,47 @@ it('REQ-66 and REQ-69 replace an offer, preserve a refusal and reload a pending 
   })
   expect(await get('board')).toEqual(accepted)
   await act('board', { type: 'move', zoneId: 'fixture.gray-harbor' })
+  const beforeFinish = (await get('board')).members[0]!.player
   const finished = await act('board', { type: 'finishQuest', questId: 'q1' })
+  expect(finished.members[0]!.player).toMatchObject({
+    peak: beforeFinish.peak + 3,
+    vigor: beforeFinish.vigor,
+    openQuests: [],
+  })
   expect(finished.pendingRewards[0]?.source).toEqual({
     type: 'quest',
     questId: 'q1',
     questCardId: 'B',
   })
   expect(await get('board')).toEqual(finished)
+  await requestJson('POST', path('board') + '/session/end')
+  expect(
+    partySchema.parse(await requestJson('POST', path('board') + '/session')),
+  ).toEqual(finished)
+  const resolved = await act('board', {
+    type: 'resolveReward',
+    rewardId: 'r1',
+    choice: 'leave',
+  })
+  expect(resolved.members[0]!.player).toMatchObject({
+    peak: beforeFinish.peak + 3,
+    vigor: beforeFinish.vigor,
+  })
+  await act('board', { type: 'endTurn' })
+  await expect(
+    act('board', { type: 'finishQuest', questId: 'q1' }),
+  ).rejects.toMatchObject({ details: { reason: 'questNotOpen' } })
+  expect((await get('board')).members[0]!.player.peak).toBe(
+    beforeFinish.peak + 3,
+  )
 })
 
 it('REQ-67 grants an inactive specialization after the objectives', async () => {
+  const before = (await get('trial')).members[0]!.player
   const result = await act('trial', { type: 'finishQuest', questId: 'trial-1' })
   expect(result.members[0]!.player).toMatchObject({
+    peak: before.peak + 5,
+    vigor: before.vigor,
     specializations: [
       { classId: 'warrior', specializationId: 'knight', deckLockMet: false },
     ],
@@ -347,6 +376,8 @@ it('REQ-68 grants the mentor class inactive and preserves acquisition order and 
     questId: 'mentor-1',
   })
   expect(finished.members[0]!.player).toMatchObject({
+    peak: initial.members[0]!.player.peak + 5,
+    vigor: initial.members[0]!.player.vigor,
     playerClasses: [
       { playerClass: 'warrior', deckLockMet: true },
       { playerClass: 'mage', deckLockMet: false },
@@ -383,15 +414,17 @@ it('REQ-66 sends only the quest intent and preserves typed refusal details in th
 })
 
 it('REQ-66 completes both attempts separately from delivery and spends exactly one AP per quest action', async () => {
+  const before = (await get('sequence')).members[0]!.player
   const next = () => act('sequence', { type: 'continueQuest', questId: 'q1' })
   const anticipation = await next()
   expect(anticipation.turn.actionPoints).toBe(2)
   await act('sequence', { type: 'revealEvent', encounterId: 'e1' })
-  await act('sequence', {
+  const encounter = await act('sequence', {
     type: 'payEventRequirement',
     encounterId: 'e1',
     requirementId: 'gold',
   })
+  expect(encounter.members[0]!.player.peak).toBe(before.peak + 2)
   await act('sequence', {
     type: 'resolveReward',
     rewardId: 'r1',
@@ -418,4 +451,62 @@ it('REQ-66 completes both attempts separately from delivery and spends exactly o
   expect(finished.turn.actionPoints).toBe(2)
   expect(finished.members[0]!.player.openQuests).toEqual([])
   expect(finished.members[0]!.player.gold).toBe(won.members[0]!.player.gold + 5)
+  expect(finished.members[0]!.player).toMatchObject({
+    peak: before.peak + 2 + 7,
+    vigor: before.vigor,
+  })
+})
+
+it('REQ-67 and REQ-70 retain the quest Peak setting captured before a lab reset', async () => {
+  try {
+    const updated = labConfigSchema.parse(
+      await requestJson('PATCH', '/lab/config', {
+        zoneQuestPeakGain: 0,
+        genericQuestPeakGain: 9,
+      }),
+    )
+    expect(updated.values).toMatchObject({
+      zoneQuestPeakGain: 0,
+      genericQuestPeakGain: 9,
+    })
+    expect(updated.defaults).toMatchObject({
+      zoneQuestPeakGain: 3,
+      genericQuestPeakGain: 5,
+    })
+    expect(updated.limits).toMatchObject({
+      zoneQuestPeakGain: { min: 0, max: 1000 },
+      genericQuestPeakGain: { min: 0, max: 1000 },
+    })
+    await expect(
+      requestJson('PATCH', '/lab/config', {
+        zoneQuestPeakGain: 1001,
+        genericQuestPeakGain: 10,
+      }),
+    ).rejects.toMatchObject({
+      code: 'LAB_CONFIG_INVALID',
+      details: {
+        fields: [{ field: 'zoneQuestPeakGain', reason: 'outOfRange' }],
+      },
+    })
+    const before = (await get('trial')).members[0]!.player
+    const board = (await get('board')).members[0]!.player
+    const reset = labConfigSchema.parse(
+      await requestJson('POST', '/lab/config/reset'),
+    )
+    expect(reset.values).toMatchObject({
+      zoneQuestPeakGain: 3,
+      genericQuestPeakGain: 5,
+    })
+    const finished = await act('trial', {
+      type: 'finishQuest',
+      questId: 'trial-1',
+    })
+    expect(finished.members[0]!.player.peak).toBe(before.peak + 9)
+    await act('board', { type: 'takeQuest', questCardId: 'B' })
+    await act('board', { type: 'move', zoneId: 'fixture.gray-harbor' })
+    const delivered = await act('board', { type: 'finishQuest', questId: 'q1' })
+    expect(delivered.members[0]!.player.peak).toBe(board.peak)
+  } finally {
+    await requestJson('POST', '/lab/config/reset')
+  }
 })

@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.74 · **Data:** 2026-11-22
+> **Versão do contrato:** 0.76 · **Data:** 2026-11-22
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -2737,6 +2737,8 @@ No envelope real, `player` fica em `members[]`. Em uma variante para verificar a
 
 Base: README §§3.4, 8.2–8.4, 12.2, 21 e Apêndice A. Primeira entrega para jogo solo. As formas e os limites desta seção foram aceitos pelo frontend para os REQ-66 a REQ-70. Os exemplos mostram recortes do `Party` completo devolvido pelas rotas existentes.
 
+O frontend aceitou os ajustes e a regra de Pico de conclusão da v0.75.
+
 #### Estado e intenções
 
 ```ts
@@ -2820,6 +2822,8 @@ Uma etapa `combatEvent` abre o combate diretamente com os inimigos impressos em 
 
 A recompensa final aceita passos de ganho de ouro, Pico ou cartas (fixas ou dos decks de recompensas), nas formas já definidas na FEAT-12. O texto da etapa comporta a fala de NPC.
 
+Na missão de zona, os passos explícitos de Pico da recompensa final substituem o ganho padrão `zoneQuestPeakGain` do snapshot do grupo. Na ausência desses passos, aplica-se o padrão configurado. Provação e mentor usam `genericQuestPeakGain`. O Pico do encontro é uma fonte independente. O POST de `finishQuest` grava o ganho junto com a conclusão, uma única vez, inclusive quando a entrega de cartas fica pendente. O Vigor atual permanece igual. GET, reabertura e `resolveReward` preservam o ganho já gravado.
+
 `ClassDefinition` e `ClassInput` ganham `specializations: SpecializationDefinition[]`. Catálogo legado usa lista vazia. Classe que oferece provação tem quatro opções com IDs distintos no escopo da classe e até dois atributos adicionais. A trava usa os mínimos dos essenciais da classe e soma o reforço configurado apenas aos atributos listados em `reinforcedAttributes`, um subconjunto sem repetições dos essenciais. Cada atributo adicional exige o mínimo configurado para adicionais. Clique e seleção no frontend usam as escolhas do backend. Validar estrutura e referências ao salvar e publicar conforme a FEAT-31. Referências de rascunho podem apontar para rascunhos existentes. Ao criar ou salvar um rascunho, conferir o destino contra as zonas existentes na coleção, inclusive rascunhos. Para publicar ou editar uma missão publicada, conferir as referências contra conteúdo publicado. O `validate-dimension` e a criação de grupo conferem também a coerência do conjunto de cartas publicadas usado no mapa. Exemplos de caminhos em `CONTENT_INVALID.details.fields` (com a mensagem pt-BR do editor): `stages.0.location.title`, `stages.1.eventCardId`, `questDeck.0`, `specializations.0.additionalAttributes`. Exclusão de conteúdo referenciado ou em uso segue os envelopes da FEAT-31.
 
 As chaves abaixo são inteiras. GET `/lab/config` devolve `values`, `defaults` e `limits` no formato da FEAT-03. PATCH aplica o lote inteiro ou devolve `LAB_CONFIG_INVALID`; POST `/lab/config/reset` restaura os padrões. O grupo usa o snapshot da criação; save legado preenche chaves ausentes pelos padrões e começa com missões e especializações vazias.
@@ -2836,6 +2840,8 @@ As chaves abaixo são inteiras. GET `/lab/config` devolve `values`, `defaults` e
 | `mentorCombatTarget` | 5 | 0–1000 |
 | `lockSpecializationAdditional` | 6 | 0–200 |
 | `lockSpecializationReinforcement` | 4 | 0–200 |
+| `zoneQuestPeakGain` | 3 | 0–1000 |
+| `genericQuestPeakGain` | 5 | 0–1000 |
 
 #### Recusas e respostas de referência
 
@@ -2978,3 +2984,5 @@ Troca de dimensão, ajudantes e recrutamento acompanham as FEATs correspondentes
 | 0.72 | 2026-11-22 | BE | FEAT-15 `proposto (BE)` após aceite parcial: combate embutido, exemplos encadeados de tentativa e entrega, validação de referências e fixture de ativação de Cavaleiro. |
 | 0.73 | 2026-11-22 | BE | FEAT-15 `acordado` após aceite documental da v0.72 pelo frontend para os REQ-66 a REQ-70 no recorte solo. Acordo libera a T-69. |
 | 0.74 | 2026-11-22 | BE | FEAT-14 `validado` após a revalidação solo da T-54 em Chrome com MSW desligado (devlogs BE 064 e FE 088). |
+| 0.75 | 2026-11-22 | BE | FEAT-15 `proposto (BE)` para os ajustes e a aplicação do Pico de conclusão de missão. |
+| 0.76 | 2026-11-22 | BE | FEAT-15 `acordado` após o aceite documental do frontend para o Pico de conclusão da v0.75. A cobertura unitária da entrega final de zona passou na T-57. |
