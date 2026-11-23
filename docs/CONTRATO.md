@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.76 · **Data:** 2026-11-22
+> **Versão do contrato:** 0.78 · **Data:** 2026-11-23
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -2733,7 +2733,7 @@ Exemplo de projeção solo após a conclusão da queda fora de combate, com trav
 
 No envelope real, `player` fica em `members[]`. Em uma variante para verificar a passagem de tempo, inclua um status com duas rodadas restantes e uma habilidade fora de combate com duas rodadas restantes de recarga, sem alterar os saldos do exemplo. Ao abrir a rodada 8, o status expirou, a recarga chegou a zero e a habilidade elegível volta a aparecer em `usableAbilities`, com `prepare` em `availableActions`. Confira a perda de 3 sobre 37 e `vault.gold: 80` no snapshot. Recarregue e reabra a sessão. O ID do nocaute, a rodada 8 e os saldos ficam iguais. Para os saves legados, reproduza também a vitória com escolha gravada e a derrota com a coisa ruim já aplicada. Confirme que o primeiro mantém a escolha e o segundo volta à vez jogável sem descontar os 5 de ouro novamente.
 
-### FEAT-15 — Missões e progressão de classes — `acordado`
+### FEAT-15 — Missões e progressão de classes — `validado`
 
 Base: README §§3.4, 8.2–8.4, 12.2, 21 e Apêndice A. Primeira entrega para jogo solo. As formas e os limites desta seção foram aceitos pelo frontend para os REQ-66 a REQ-70. Os exemplos mostram recortes do `Party` completo devolvido pelas rotas existentes.
 
@@ -2986,3 +2986,5 @@ Troca de dimensão, ajudantes e recrutamento acompanham as FEATs correspondentes
 | 0.74 | 2026-11-22 | BE | FEAT-14 `validado` após a revalidação solo da T-54 em Chrome com MSW desligado (devlogs BE 064 e FE 088). |
 | 0.75 | 2026-11-22 | BE | FEAT-15 `proposto (BE)` para os ajustes e a aplicação do Pico de conclusão de missão. |
 | 0.76 | 2026-11-22 | BE | FEAT-15 `acordado` após o aceite documental do frontend para o Pico de conclusão da v0.75. A cobertura unitária da entrega final de zona passou na T-57. |
+| 0.77 | 2026-11-23 | BE | FEAT-15 `implementado (BE)` (SPEC-BACKEND T-55 a T-60). Cenários cobertos pelo e2e `take-party-action/index.quests.controller.e2e-spec.ts` e conferidos contra o backend real em campanhas determinísticas (devlog 072). Sem mudança de formato. Dados de teste: no catálogo temporário da T-60, "Porto" é `Porto Cinzento` (`fixture.gray-harbor`), `fixture.howling-wolves` faz o papel de `fixture.road-ambush`, e o Cavaleiro e o Mago existem só nesse catálogo. O `/health` volta a anunciar a versão atual. |
+| 0.78 | 2026-11-23 | FE | FEAT-15 `validado` (solo): as 13 campanhas da T-60 e os cenários de laboratório e editor passaram com chamadas HTTP contra o backend real (`http://localhost:3333`, health 0.77), e as telas de missões, ficha, laboratório e editor passaram no Chrome com o MSW desligado (devlog FE 093). Sem mudança de formato. A derrota foi conferida no save `derrota` já usado pelo backend, porque o save intacto terminou em vitória. |
