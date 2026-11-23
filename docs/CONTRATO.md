@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.78 · **Data:** 2026-11-23
+> **Versão do contrato:** 0.80 · **Data:** 2026-11-23
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -293,6 +293,20 @@ Base dos nomes no código dos dois lados e dos termos com destaque e tooltip (RE
 | Escolha de cartas da mão pedida | `handPayment` (`count`, `text`) | pronta do backend (v0.50) |
 | Quantidade variável (13.2) | `Quantity` (`base`, `multiplier`, `minimum`) | "mín. N" = `minimum` |
 | Fase do evento aleatório | `EventPhase` (`anticipation`, `encounter`, `success`, `setback`) | executada na FEAT-12 |
+
+### 2.17 Mercado (README 6.4, 24) — FEAT-16
+
+| Termo | Identificador | Observação |
+|---|---|---|
+| Mercado da zona (estoque + singles) | `market` (`stock`, `singles`) | na carta de zona; `PlayerState.market` é a projeção com preços |
+| Ir ao Mercado | `visitMarket` (`operations`) | lote, como `useVault` |
+| Fator do mercado | `factorPercent` | pontos percentuais |
+| Vitrine de singles / slot | `showcase` / `slotIndex` | |
+| Ajuste de preço da carta | `priceMultiplier` | |
+| Preço base de estoque / lote | `stockPrice` / `stockQuantity` | |
+| Coleção do booster | `boosterCollectionId` | |
+| Abrir booster | `openBooster` | no Preparar e no Usar cofre |
+| Expansão (serviço do mercado) | `expansions` / `MarketExpansion` (`vaultSlots`, `deckSlots`, `tcgFolder`, `purse`, `vaultGold`) | |
 
 ## 3. Features
 
@@ -2880,6 +2894,299 @@ No exemplo, q1 tem duas etapas na zona atual e é a única missão aberta. A eta
 
 Troca de dimensão, ajudantes e recrutamento acompanham as FEATs correspondentes. O frontend aceitou na v0.71 a separação entre tentativa e entrega, o progresso no primeiro POST do desfecho e a vitória com dono caído. O frontend aceitou o combate embutido e os exemplos acrescentados na v0.72. O acordo libera a T-69 para cliente e fixtures MSW. A validação contra a API real fica para a etapa integrada.
 
+### FEAT-16 — Mercado — `acordado`
+
+Regras: README 3.4 (a carta de zona lista o estoque e diz se há singles), 5.1–5.3, 6.3–6.6, 12.2 (Ir ao Mercado: 1 PA, repetível; Preparar e Usar cofre abrem booster), 24.1–24.5, 27, 28.1 e Apêndice A (linhas "Mercado" e "Guardar"); Apêndice B K5, K6, M4, O2, S3, C20, C25, F1, F2, F25. Base no backend: SPEC-BACKEND REQ-136 a REQ-144, D-114 a D-122.
+
+**Fora desta FEAT:** Estábulo e espaço da montaria (FEAT-18); valorização por refino e encantamento e marcas de reparo na venda (FEAT-17); coleções estendidas e reprint (FEAT-19: até lá, só a coleção da dimensão é vigente); efeitos de desconto, de mais ouro na venda e `marketShowcaseModifier` (continua publicável e inerte, como os efeitos não executados da FEAT-13).
+
+**Decisões que o frontend precisa saber:**
+- **Ir ao Mercado é um lote**, como o Usar cofre (FEAT-32): um pedido com a lista de operações, aplicadas em ordem, por 1 PA. Se uma falha, nada muda (PA, ouro, cartas, vitrine e RNG) e o erro diz qual (`operationIndex`). A ação pode ser repetida na mesma vez.
+- **Os preços vêm prontos** em `PlayerState.market` (estoque, boosters, vitrine, serviços e o valor de venda de cada carta vendável). O frontend não calcula preço, fator, escassez nem capacidade. Dentro de um lote, a vitrine pode mudar (compra de single repõe o slot): o resultado confirmado vem em `lastMarketVisit`.
+- **Resultado pronto:** `lastMarketVisit` (o que cada operação comprou, vendeu ou pagou e o ouro perdido acima da bolsa) e `lastBoosterOpening` (as cartas que saíram do booster e para onde foram), no padrão do `lastScavenge`.
+- **Capacidades efetivas:** `purseCapacity`, `vaultCapacity`, `vaultDeckSlots`, `vaultGoldCapacity` e `tcgFolderCapacity` passam a ser as do jogador (snapshot + expansões compradas). `inventoryCapacity` não muda.
+- **A vitrine é do mercado, não do jogador:** quem chega depois vê o que sobrou. O sorteio é feito na criação do grupo e no fim de cada rodada (decaimento), pelo RNG do grupo, e é definitivo (README 28.1).
+
+**Mudanças em outras seções:**
+- **FEAT-03 (`validado`):** `GameConfigValues` ganha as 37 chaves abaixo; `LabConfigInvalidDetails.reason` ganha `sumMismatch`; `minAboveMax` vale também para o par do fator do mercado.
+- **FEAT-04 (`validado`):** `AttributeCard` e `ItemCard` ganham `priceMultiplier`; `ItemCard` ganha `stockPrice`, `stockQuantity` e `boosterCollectionId`; `ZoneCard` ganha `market`. A `fixture` muda (abaixo).
+- **FEAT-06 a FEAT-15 (`validado`):** `PlayerState` ganha `expansions`, `market`, `lastMarketVisit` e `lastBoosterOpening`; as capacidades viram efetivas; `PartyAction` ganha `VisitMarketAction`; `PrepareAction` e `VaultOperation` ganham `openBooster`; `availableActions` ganha `visitMarket` (ordem nova) e `prepare` entra também com booster no inventário; motivos novos em `ActionInvalidDetails` e `ActionNotAllowedDetails`. Saves de antes desta versão continuam: sem mercados sorteados (a zona com mercado mostra estoque e boosters, com fator 100 e sem vitrine), expansões em 0, `lastMarketVisit` e `lastBoosterOpening` `null`. **Cenários antigos mudam:** Porto Cinzento ganha `visitMarket`, então o `availableActions` esperado na cidade, com `actionPoints ≥ 1` e fora de escolha, ganha `visitMarket` depois das ações de missão de §21 (`takeQuest`…`takeTrialQuest`) e antes de `trainWithMentor`.
+- **FEAT-12 (`validado`):** `PendingReward.source` ganha `{ type: 'booster'; boosterCardId: string }`; a origem dessas cópias é `{ type: 'fixed' }` (deixar → limbo).
+- **FEAT-31 (`validado`):** o editor valida os campos novos (`CONTENT_INVALID`, `path` no campo); carta citada em `market.stock` de uma zona → `CONTENT_REFERENCED` ao excluir ou renomear; cartas no pool e nas vitrines de um save estão **em uso** (`CONTENT_IN_USE`).
+
+#### Endpoints
+
+| Método | Rota | Corpo | Sucesso | Erros |
+|---|---|---|---|---|
+| POST | `/parties/:partyId/actions` (FEAT-07) | `VisitMarketAction`, `PrepareAction` (`openBooster`), `UseVaultAction` (`openBooster`) | `200` `Party` | os da FEAT-07 |
+
+Ordem das conferências do `visitMarket`: 404 → pedido malformado (400) → sem sessão (409 `PARTY_SESSION_NOT_ACTIVE`) → escolha aberta (`choicePending`, FEAT-12) → `noActionPoints` → `zoneActionUnavailable` → regra da **primeira operação** que falha, simulando em ordem. Em cada operação:
+- `buyStock`: `notInMarketStock` → `notEnoughGold` → `inventoryFull`.
+- `buyBooster`: `notMarketBooster` → `notEnoughGold` → `inventoryFull`.
+- `buySingle`: `singlesUnavailable` → `showcaseSlotNotFound` → `showcaseSlotEmpty` → `notEnoughGold` → `inventoryFull` / `tcgFolderFull`.
+- `sell`: `notInInventory` / `notInTcgFolder` → `notLotMultiple`.
+- `buyExpansion`: `notEnoughGold`.
+
+`openBooster` no `prepare` (gratuito, fora de encontro, combate e escolha pendente): `notInInventory` → `notBooster` → `tcgFolderFull` (menos de 8 vagas na pasta) → `boosterEmpty`. No `useVault`: `notInVault` → `notBooster` → `vaultFull` (menos de 8 slots livres) → `boosterEmpty`.
+
+#### Tipos
+
+```ts
+interface GameConfigValues {
+  // … chaves das FEATs 03 a 15 …
+  // FEAT-16 (todas inteiras; ver tabela)
+  singlesShowcaseSlots: number
+  singlesDecayMax: number
+  singlesPoolSize: number
+  marketFactorMinPercent: number
+  marketFactorMaxPercent: number
+  singlesStockCommon: number; singlesStockUncommon: number; singlesStockRare: number
+  singlesStockEpic: number; singlesStockLegendary: number
+  singlesPriceCommon: number; singlesPriceUncommon: number; singlesPriceRare: number
+  singlesPriceEpic: number; singlesPriceLegendary: number
+  scarcityStepPercent: number
+  treasureValueCommon: number; treasureValueUncommon: number; treasureValueRare: number
+  treasureValueEpic: number; treasureValueLegendary: number
+  boosterPrice: number
+  boosterCardCount: number
+  boosterSalePrice: number
+  boosterChanceCommon: number; boosterChanceUncommon: number; boosterChanceRare: number
+  boosterChanceEpic: number; boosterChanceLegendary: number // milésimos; soma = 1000
+  vaultExpansionSlots: number; vaultExpansionBasePrice: number
+  deckSlotExpansionSlots: number; deckSlotExpansionBasePrice: number
+  tcgFolderExpansionSlots: number; tcgFolderExpansionBasePrice: number
+  purseExpansionPricePercent: number
+  vaultGoldExpansionPricePercent: number
+}
+
+interface LabConfigInvalidDetails {
+  fields: {
+    field: string | null
+    reason: 'invalidBody' | 'unknownKey' | 'notInteger' | 'outOfRange' | 'minAboveMax'
+      | 'sumMismatch' // FEAT-16: as 5 chances do booster não somam 1000; lista as 5 chaves
+  }[]
+}
+
+interface AttributeCard {
+  // … campos das FEATs 04 e 11 …
+  /** FEAT-16. ×0,8 a ×1,5, até 2 casas decimais (README 24.4). Legado: 1. */
+  priceMultiplier: number
+}
+
+interface ItemCard {
+  // … campos das FEATs 04, 11 e 32 …
+  /** FEAT-16. Como em EquipmentCard. Legado: 1. */
+  priceMultiplier: number
+  /** FEAT-16. Preço base de estoque (README 24.1), inteiro ≥ 1. Só em `consumable`, `material` e `tool`; `null` = não é carta de estoque. */
+  stockPrice: number | null
+  /** FEAT-16. Cópias entregues por compra no estoque e lote mínimo de venda (munição: 10). Inteiro ≥ 1; > 1 só com `stockPrice`. Legado: 1. */
+  stockQuantity: number
+  /** FEAT-16. Só em `itemCategory: "booster"` (obrigatório ali): a coleção de onde saem as cartas. Senão `null`. */
+  boosterCollectionId: string | null
+}
+
+interface ZoneCard {
+  // … campos das FEATs 04, 06 e 15 …
+  /**
+   * FEAT-16 (README 3.4, B O2). Presente se e só se `zoneActions` tem `visitMarket`; senão `null`.
+   * `stock`: itens com `stockPrice`, de qualquer coleção, sem repetição, na ordem de exibição (pode ser vazio).
+   * `singles`: se o mercado tem vitrine de singles.
+   */
+  market: { stock: string[]; singles: boolean } | null
+}
+
+type MarketExpansion = 'vaultSlots' | 'deckSlots' | 'tcgFolder' | 'purse' | 'vaultGold'
+
+interface PlayerState {
+  // … campos das FEATs 06 a 15 …
+  /** FEAT-16. Expansões compradas (README 6.4, 24.5). Começa tudo 0. */
+  expansions: Record<MarketExpansion, number>
+  /** FEAT-16. Agora efetivos: snapshot + expansões. */
+  purseCapacity: number      // purse × 2^expansions.purse
+  vaultCapacity: number      // + vaultExpansionSlots × expansions.vaultSlots
+  vaultDeckSlots: number     // + deckSlotExpansionSlots × expansions.deckSlots
+  vaultGoldCapacity: number  // × 2^expansions.vaultGold
+  tcgFolderCapacity: number  // + tcgFolderExpansionSlots × expansions.tcgFolder
+  /** FEAT-16. Só para o membro da vez numa zona com `market`; senão `null`. */
+  market: MarketView | null
+  /** FEAT-16. Resultado do `visitMarket` aceito mais recente deste jogador; `null` na criação. Cada `visitMarket` aceito o substitui. */
+  lastMarketVisit: MarketVisitResult | null
+  /** FEAT-16. Resultado do `openBooster` aceito mais recente deste jogador; `null` na criação. */
+  lastBoosterOpening: BoosterOpeningResult | null
+  /**
+   * Ordem sem mudança, com `visitMarket` depois das ações de missão de §21 e antes de `trainWithMentor`.
+   * `visitMarket`: membro da vez, zona atual com `visitMarket`, `actionPoints ≥ 1`, fora de encontro, combate e escolha pendente.
+   * `prepare` entra também quando há um booster no `inventory`.
+   */
+  availableActions: PartyActionType[]
+}
+
+interface MarketView {
+  zoneId: string
+  /** Fator do mercado em pontos percentuais (80 a 120 no padrão). Só informativo: os preços já o incluem. */
+  factorPercent: number
+  /** Na ordem de `market.stock`. `price` por compra; cada compra entrega `copiesPerPurchase` cópias. */
+  stock: { cardId: string; price: number; copiesPerPurchase: number }[]
+  /** Itens `booster` publicados cuja `boosterCollectionId` é a coleção vigente, em ordem de `cardId`. */
+  boosters: { cardId: string; price: number }[]
+  /** `null` = mercado sem singles. Senão `singlesShowcaseSlots` entradas, em ordem de `slotIndex`; `offer: null` = slot vazio. */
+  showcase: { slotIndex: number; offer: { cardId: string; price: number; destination: 'inventory' | 'tcgFolder' } | null }[] | null
+  /** Sempre as 5, nesta ordem: vaultSlots, deckSlots, tcgFolder, purse, vaultGold. `capacity` = capacidade depois da compra. */
+  services: { expansion: MarketExpansion; price: number; capacity: number }[]
+  /**
+   * O que o jogador pode vender agora: inventário (na ordem dos slots, agregado por `cardId`) e depois a pasta de TCG.
+   * `owned` = unidades naquele lugar; `lotSize` = `stockQuantity` da carta de estoque, senão 1; `price` = ouro por lote.
+   */
+  sellOffers: { source: 'inventory' | 'tcgFolder'; cardId: string; owned: number; lotSize: number; price: number }[]
+}
+
+interface MarketVisitResult {
+  zoneId: string
+  /** Uma entrada por operação, na ordem do lote. `gold` < 0 = pago; > 0 = recebido (antes do limite da bolsa). */
+  results: MarketOperationResult[]
+  /** Ouro de vendas que passou de `purseCapacity` e foi perdido (README 5.3). */
+  goldLost: number
+}
+
+type MarketOperationResult =
+  | { operation: 'buyStock'; cardId: string; quantity: number; copiesReceived: number; gold: number }
+  | { operation: 'buyBooster'; cardId: string; quantity: number; gold: number }
+  | { operation: 'buySingle'; slotIndex: number; cardId: string; destination: 'inventory' | 'tcgFolder'; gold: number }
+  | { operation: 'sell'; source: 'inventory' | 'tcgFolder'; cardId: string; quantity: number; gold: number }
+  | { operation: 'buyExpansion'; expansion: MarketExpansion; capacity: number; gold: number }
+
+interface BoosterOpeningResult {
+  boosterCardId: string
+  via: 'prepare' | 'useVault'
+  /** As cartas na ordem do sorteio (a última é o slot garantido). `pending` = foi para a entrega pendente (FEAT-12). */
+  cards: { cardId: string; destination: 'tcgFolder' | 'inventory' | 'vault' | 'pending' }[]
+}
+
+type PartyAction = /* … das FEATs 07 a 15 … */ | VisitMarketAction
+
+/** Ir ao Mercado (README 12.2, 24). 1 PA; só numa zona com `visitMarket`; repetível. Operações aplicadas em ordem. */
+interface VisitMarketAction {
+  type: 'visitMarket'
+  operations: MarketOperation[] // 1 a 50
+}
+
+type MarketOperation =
+  /** `quantity` compras de um item de `market.stock` → inventário (cada compra entrega `stockQuantity` cópias). */
+  | { operation: 'buyStock'; cardId: string; quantity: number }
+  /** `quantity` boosters de `market.boosters` → inventário. */
+  | { operation: 'buyBooster'; cardId: string; quantity: number }
+  /** A carta do slot: atributo → pasta de TCG; equipamento/item → inventário. O slot é reposto na hora. */
+  | { operation: 'buySingle'; slotIndex: number }
+  /** Vende `quantity` unidades (múltiplo de `lotSize`). Do inventário: os slots de 1 cópia primeiro, como no `store` do cofre. */
+  | { operation: 'sell'; source: 'inventory' | 'tcgFolder'; cardId: string; quantity: number }
+  /** Expansão permanente (README 6.4, 24.5). */
+  | { operation: 'buyExpansion'; expansion: MarketExpansion }
+// `quantity`: inteiro ≥ 1. `slotIndex`: inteiro ≥ 0.
+
+type PrepareAction = /* … equip, unequip, activate … */
+  /** FEAT-16. Gratuita. Abre 1 booster do inventário: atributos → pasta; recursos → inventário (o que não couber abre a entrega pendente). Embalagem → limbo. */
+  | { type: 'prepare'; operation: 'openBooster'; cardId: string }
+
+type VaultOperation = /* … da FEAT-32 … */
+  /** FEAT-16. Abre 1 booster de `vault.slots`; as cartas vão para `vault.slots`. Embalagem → limbo. */
+  | { operation: 'openBooster'; cardId: string }
+
+interface PendingReward {
+  // … campos da FEAT-12; origem das cópias do booster: { type: 'fixed' } …
+  source: /* … variantes das FEATs 12 e 15 … */ | { type: 'booster'; boosterCardId: string }
+}
+
+interface ActionInvalidDetails {
+  fields: {
+    field: string | null // ex.: "operations.0.slotIndex", "operations.1.source"
+    reason: /* … motivos das FEATs 07 a 32 (inclui unknownOption, invalidLength, notNonNegativeInteger) … */
+  }[]
+}
+// `source` fora de inventory|tcgFolder e `expansion` fora das 5 → `unknownOption`; `operation` desconhecida → `unknownOperation`.
+
+interface ActionNotAllowedDetails {
+  reason: /* … motivos existentes … */
+    | 'notInMarketStock'      // FEAT-16: buyStock de carta fora do estoque deste mercado
+    | 'notMarketBooster'      // FEAT-16: buyBooster de carta fora de `market.boosters`
+    | 'singlesUnavailable'    // FEAT-16: buySingle num mercado sem singles
+    | 'showcaseSlotNotFound'  // FEAT-16: slotIndex ≥ número de slots
+    | 'showcaseSlotEmpty'     // FEAT-16: slot sem carta
+    | 'notLotMultiple'        // FEAT-16: venda fora de múltiplo do lote
+    | 'notBooster'            // FEAT-16: openBooster de carta que não é booster
+    | 'boosterEmpty'          // FEAT-16: a coleção do booster não tem nenhuma carta elegível publicada
+  // reusados: notEnoughGold, inventoryFull, tcgFolderFull, notInInventory, notInTcgFolder, notInVault, vaultFull, choicePending
+  cardId?: string
+  operationIndex?: number // visitMarket e useVault
+}
+```
+
+**Preços** (SPEC D-119: conta com inteiros e arredonda só no fim). Compra para cima; venda para baixo com mínimo 1 por unidade ou lote.
+- Estoque: ⌈`stockPrice` × fator⌉ por compra.
+- Booster: `boosterPrice`, sem fator.
+- Single: ⌈preço base da raridade × `priceMultiplier` × fator × (1 + `scarcityStepPercent` × cópias já saídas da carta)⌉.
+- Venda de carta de estoque: ⌊50% × `stockPrice`⌋ por lote de `stockQuantity`; tesouro: `treasureValue…` da raridade; booster: `boosterSalePrice`; demais: ⌊50% × preço base da raridade × `priceMultiplier`⌋. Sem fator nem escassez (README 24.2).
+- Serviços: `vaultSlots`, `deckSlots`, `tcgFolder` custam base × 2^(compras feitas); `purse` custa ⌈capacidade atual × `purseExpansionPricePercent` ÷ 100⌉; `vaultGold`, ⌈capacidade atual × `vaultGoldExpansionPricePercent` ÷ 100⌉.
+
+**Laboratório:** chaves inteiras, nos formatos de `values`, `defaults` e `limits` da FEAT-03. PATCH aplica o lote inteiro ou devolve `LAB_CONFIG_INVALID`. Snapshots de grupos existentes ganham os padrões nas chaves ausentes.
+
+| Chave | Padrão | Limites |
+|---|---:|---|
+| `singlesShowcaseSlots` | 4 | 1–20 |
+| `singlesDecayMax` (D20 ≤ valor tira a carta) | 3 | 0–20 |
+| `singlesPoolSize` | 20 | 1–1000 |
+| `marketFactorMinPercent` / `marketFactorMaxPercent` | 80 / 120 | 1–1000 cada (`min ≤ max`, senão `minAboveMax` nas duas) |
+| `singlesStockCommon` … `Legendary` | 6 / 4 / 2 / 1 / 1 | 1–100 cada |
+| `singlesPriceCommon` … `Legendary` | 5 / 15 / 45 / 130 / 370 | 1–1000000 cada |
+| `scarcityStepPercent` | 10 | 0–1000 |
+| `treasureValueCommon` … `Legendary` | 10 / 25 / 60 / 150 / 400 | 1–1000000 cada |
+| `boosterPrice` / `boosterSalePrice` | 30 / 15 | 0–1000000 / 1–1000000 |
+| `boosterCardCount` | 8 | 1–50 |
+| `boosterChanceCommon` … `Legendary` (milésimos) | 600 / 250 / 110 / 35 / 5 | 0–1000 cada; soma 1000 (senão `sumMismatch` nas cinco) |
+| `vaultExpansionSlots` / `vaultExpansionBasePrice` | 5 / 50 | 1–1000 / 0–1000000 |
+| `deckSlotExpansionSlots` / `deckSlotExpansionBasePrice` | 1 / 100 | 1–100 / 0–1000000 |
+| `tcgFolderExpansionSlots` / `tcgFolderExpansionBasePrice` | 10 / 60 | 1–1000 / 0–1000000 |
+| `purseExpansionPricePercent` / `vaultGoldExpansionPricePercent` | 50 / 25 | 0–1000 cada |
+
+O "8" do `openBooster` (vagas exigidas) é `boosterCardCount`.
+
+**`CONTENT_INVALID` dos campos novos** (editor, import e boot; `fields[].message` em pt-BR pronto do backend). Textos usados nos cenários:
+- `priceMultiplier`: "O ajuste de preço deve estar entre 0,8 e 1,5, com até 2 casas decimais."
+- `stockPrice`: "Só consumíveis, materiais e ferramentas têm preço de estoque."
+- `stockQuantity`: "Lote maior que 1 exige preço de estoque."
+- `boosterCollectionId`: "Booster precisa de uma coleção existente." / "Só boosters indicam coleção."
+- `market`: "Zona com Ir ao Mercado precisa do mercado, e só ela."
+- `market.stock.i`: "O item do estoque precisa ter preço de estoque." / "Item repetido no estoque." / "Carta inexistente."
+
+Mensagem de `CONTENT_REFERENCED` para estoque: "Esta carta está no estoque do mercado de uma zona.".
+
+#### Cenários de validação
+
+Contra a `fixture` com as mudanças desta FEAT:
+- `fixture.gray-harbor` ganha `visitMarket` (`zoneActions = ["startEvent", "scavenge", "useVault", "visitMarket", "saveRespawnPoint"]`) e `market = { "stock": ["fixture.healing-potion", "fixture.arrows", "fixture.fishing-rod"], "singles": true }`. As outras zonas: `market: null`.
+- `fixture.healing-potion` ganha `stockPrice: 6`; `fixture.fishing-rod`, `stockPrice: 20`; `fixture.short-sword` passa a `priceMultiplier: 1.2`.
+- Cartas novas (item): `fixture.arrows` (Flechas, `consumable`, `common`, `stockPrice: 3`, `stockQuantity: 10`) e `fixture.booster` (Booster de Teste, `booster`, `common`, `boosterCollectionId: "fixture"`). As demais cartas ganham os campos novos nos valores legados.
+- `cardCounts.item` da `fixture` sobe 2.
+
+Seja `G` criado com `{ "name": "Os Teimosos", "characterName": "Lia", "playerClass": "warrior" }` com o laboratório em `{ "initialGold": 0, "marketFactorMinPercent": 115, "marketFactorMaxPercent": 115 }` (fator fixo), posto em sessão; `M` o membro e `/grants` a doação (FEAT-10). `A` = `fixture.arrows`, `P` = `fixture.healing-potion`, `F` = `fixture.fishing-rod`, `BO` = `fixture.booster`, `C` = `fixture.lucky-coin` (tesouro Incomum), `W` = `fixture.short-sword`, `STR` = `fixture.strength-basic`.
+
+| Cenário | Requisição e recorte esperado |
+|---|---|
+| Estado inicial | `POST /parties` → `player.expansions` com as 5 em 0, `lastMarketVisit: null`, `lastBoosterOpening: null`, `availableActions` com `visitMarket` entre `useVault` e `saveRespawnPoint`. `market.factorPercent: 115`; `market.stock = [{ "cardId": P, "price": 7, "copiesPerPurchase": 1 }, { "cardId": A, "price": 4, "copiesPerPurchase": 10 }, { "cardId": F, "price": 23, "copiesPerPurchase": 1 }]`; `market.boosters = [{ "cardId": BO, "price": 30 }]`; `market.showcase` com 4 slots; `market.services = [{ "expansion": "vaultSlots", "price": 50, "capacity": 35 }, { "expansion": "deckSlots", "price": 100, "capacity": 11 }, { "expansion": "tcgFolder", "price": 60, "capacity": 40 }, { "expansion": "purse", "price": 150, "capacity": 600 }, { "expansion": "vaultGold", "price": 500, "capacity": 4000 }]`; `market.sellOffers: []`. |
+| Estoque e lote | Com `gold: 100` (doação), `{ "type": "visitMarket", "operations": [{ "operation": "buyStock", "cardId": A, "quantity": 2 }] }` → 200, `gold: 92`, `inventory` com `{ "cardId": A, "quantity": 20 }`, `actionPoints: 2`, `lastMarketVisit.results = [{ "operation": "buyStock", "cardId": A, "quantity": 2, "copiesReceived": 20, "gold": -8 }]`, `sellOffers` com `{ "source": "inventory", "cardId": A, "owned": 20, "lotSize": 10, "price": 1 }`. Vender 15 de `A` → 409 `{ "reason": "notLotMultiple", "cardId": A, "operationIndex": 0 }`; vender 10 → 200, `gold: 93`. |
+| Venda | Com `C`, `W` e 2 `STR` na pasta (doações): `sellOffers` traz `C` a 25, `W` a 3 e `{ "source": "tcgFolder", "cardId": STR, "owned": 2, "lotSize": 1, "price": 2 }`. Lote `[{sell C 1}, {sell W 1}, {sell tcgFolder STR 2}]` → 200 com `+25`, `+3` e `+4`, as cartas fora do inventário e da pasta. |
+| Ouro perdido | Com `gold: 290` e `C` no inventário, vender `C` → 200, `gold: 300`, `lastMarketVisit.goldLost: 15`. |
+| Lote recusado | Com `gold: 35`, `[{ "operation": "buyBooster", "cardId": BO, "quantity": 1 }, { "operation": "buyStock", "cardId": P, "quantity": 1 }]` → 409 `{ "reason": "notEnoughGold", "cardId": P, "operationIndex": 1 }`; GET mostra `gold: 35`, sem `BO` e os mesmos PA. `buyStock` de `fixture.pickaxe` → 409 `notInMarketStock`. |
+| Single | Para o slot `i` com carta, `buySingle` com `slotIndex: i` e ouro bastante → 200, `gold` menos `showcase[i].offer.price`, a carta na pasta (atributo) ou no inventário (demais), `lastMarketVisit.results[0].cardId` = a carta comprada e o slot reposto (ou `offer: null`). Valor de referência: `W` (Comum, ×1,2) num mercado de fator 90 custa 6 sem saídas e 7 com 2 saídas. `slotIndex: 4` → 409 `showcaseSlotNotFound`; slot vazio → 409 `showcaseSlotEmpty`. |
+| Expansões | Com `gold: 300`, `[{ "operation": "buyExpansion", "expansion": "vaultGold" }]` → 409 `notEnoughGold` (500 > 300). `[{ "operation": "buyExpansion", "expansion": "purse" }]` → 200, `gold: 150`, `purseCapacity: 600`, `expansions.purse: 1`, serviço `purse` a 300 com `capacity: 1200`. Com `gold: 110`, `[{buyExpansion vaultSlots}, {buyExpansion vaultSlots}]` → 409 `{ "reason": "notEnoughGold", "operationIndex": 1 }` (50 + 100 > 110). Reabrir a sessão preserva as expansões. |
+| Abrir booster | Com `BO` no inventário, `prepare` em `availableActions` e `{ "type": "prepare", "operation": "openBooster", "cardId": BO }` → 200, `BO` fora do inventário, `lastBoosterOpening.via: "prepare"` com 8 cartas da `fixture` e os destinos `tcgFolder`/`inventory`, os PA sem mudança. Com 23 cartas na pasta (capacidade 30) → 409 `tcgFolderFull`. `openBooster` de `P` → 409 `notBooster`. |
+| Booster no cofre | `{ "type": "useVault", "operations": [{ "operation": "store", "cardId": BO, "quantity": 1 }, { "operation": "openBooster", "cardId": BO }] }` → 200, as 8 cartas em `vault.slots`, `lastBoosterOpening.via: "useVault"`. Com 23 slots ocupados no cofre → 409 `{ "reason": "vaultFull", "operationIndex": 1 }`. |
+| Formato | `operations: []` → 400 `fields = [{ "field": "operations", "reason": "invalidLength" }]`; `[{ "operation": "buySingle", "slotIndex": -1 }]` → `[{ "field": "operations.0.slotIndex", "reason": "notNonNegativeInteger" }]`; `[{ "operation": "sell", "source": "vault", "cardId": P, "quantity": 1 }]` → `[{ "field": "operations.0.source", "reason": "unknownOption" }]`; `[{ "operation": "haggle" }]` → `[{ "field": "operations.0.operation", "reason": "unknownOperation" }]`. |
+| Fora do mercado | Depois de `move` para fora de Porto Cinzento: `market: null`, sem `visitMarket` em `availableActions`, `visitMarket` → 409 `zoneActionUnavailable`. Com 0 PA no Porto: `market` presente, sem `visitMarket`, e o POST → 409 `noActionPoints`. |
+| Laboratório | GET inclui `values.boosterPrice: 30`, `defaults.singlesPoolSize: 20`. PATCH `{ "boosterChanceCommon": 700 }` → 400 com `fields` = as 5 chaves de chance com `sumMismatch`. PATCH `{ "marketFactorMinPercent": 130 }` → 400 com `minAboveMax` em `marketFactorMinPercent` e `marketFactorMaxPercent`. |
+| Editor | PUT `fixture.pickaxe` com `stockPrice: 20` e `itemCategory: "relic"` → 400 `CONTENT_INVALID` com `{ "path": "stockPrice", "message": "Só consumíveis, materiais e ferramentas têm preço de estoque." }`. PUT `fixture.gray-harbor` com `market: null` → `{ "path": "market", "message": "Zona com Ir ao Mercado precisa do mercado, e só ela." }`. `DELETE /lab/content/cards/fixture.arrows` sem nenhum grupo → 409 `CONTENT_REFERENCED`. |
+
+Só nos e2e do backend: sorteio exato do fator, do pool, da distribuição e da vitrine (`fixedRng`); decaimento no fim da rodada e na rodada do nocaute solo; saída do pool e novo pool; refazer a raridade sem elegíveis e `boosterEmpty`; entrega pendente com fonte `booster`; saves v2 a v8. Para a validação integrada (T-66), o backend entrega campanhas preparadas com a vitrine, os IDs e os resultados esperados.
+
 ## 4. Códigos de erro
 
 | Código | Quando acontece | FEAT |
@@ -2988,3 +3295,5 @@ Troca de dimensão, ajudantes e recrutamento acompanham as FEATs correspondentes
 | 0.76 | 2026-11-22 | BE | FEAT-15 `acordado` após o aceite documental do frontend para o Pico de conclusão da v0.75. A cobertura unitária da entrega final de zona passou na T-57. |
 | 0.77 | 2026-11-23 | BE | FEAT-15 `implementado (BE)` (SPEC-BACKEND T-55 a T-60). Cenários cobertos pelo e2e `take-party-action/index.quests.controller.e2e-spec.ts` e conferidos contra o backend real em campanhas determinísticas (devlog 072). Sem mudança de formato. Dados de teste: no catálogo temporário da T-60, "Porto" é `Porto Cinzento` (`fixture.gray-harbor`), `fixture.howling-wolves` faz o papel de `fixture.road-ambush`, e o Cavaleiro e o Mago existem só nesse catálogo. O `/health` volta a anunciar a versão atual. |
 | 0.78 | 2026-11-23 | FE | FEAT-15 `validado` (solo): as 13 campanhas da T-60 e os cenários de laboratório e editor passaram com chamadas HTTP contra o backend real (`http://localhost:3333`, health 0.77), e as telas de missões, ficha, laboratório e editor passaram no Chrome com o MSW desligado (devlog FE 093). Sem mudança de formato. A derrota foi conferida no save `derrota` já usado pelo backend, porque o save intacto terminou em vitória. |
+| 0.79 | 2026-11-23 | BE | FEAT-16 proposta (`proposto (BE)`): `VisitMarketAction` (lote de 1 a 50 `MarketOperation`: `buyStock`, `buyBooster`, `buySingle`, `sell`, `buyExpansion`); `openBooster` em `PrepareAction` e `VaultOperation`; `PlayerState.market` (`MarketView`), `expansions`, `lastMarketVisit`, `lastBoosterOpening` e capacidades efetivas; `visitMarket` em `availableActions`; fonte `booster` em `PendingReward`; `priceMultiplier` em atributo e item, `stockPrice`, `stockQuantity`, `boosterCollectionId` e `ZoneCard.market` (altera FEAT-04/31); 37 chaves no laboratório e motivo `sumMismatch` (altera FEAT-03); 8 motivos novos em `ActionNotAllowedDetails`; `fixture` com mercado no Porto Cinzento, `fixture.arrows` e `fixture.booster`; glossário §2.17. Sem rota nem código de erro novos. |
+| 0.80 | 2026-11-23 | FE | FEAT-16 `acordado` sem mudanças: preços, capacidades, ofertas de venda, destino de cada single e resultados chegam prontos; o frontend só exibe, monta o lote e envia. Decisão do FE para o lote: cada slot da vitrine entra no máximo uma vez por lote; o preço exibido antes de confirmar é o da projeção, e o cobrado vem de `lastMarketVisit` (a escassez pode subir o preço de outra cópia da mesma carta dentro do lote). O FE alinha schemas, fixtures do MSW (inclusive `visitMarket` no `availableActions` da cidade), laboratório e editor nas tarefas da FEAT-16. |

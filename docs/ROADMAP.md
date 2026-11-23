@@ -1,6 +1,6 @@
 # Misadventures — Roadmap de desenvolvimento
 
-> **Versão:** 0.68 · **Data:** 2026-11-23
+> **Versão:** 0.70 · **Data:** 2026-11-23
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend; o autor copia o arquivo inteiro quando ele muda. Base: README Parte III (III.2 e III.4). As regras estão em [`README.md`](README.md); o que trafega entre os lados, em [`CONTRATO.md`](CONTRATO.md).
 
@@ -181,3 +181,5 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | 0.66 | 2026-11-22 | FEAT-15 solo passou com MSW no frontend (devlog 091) e tem planejamento no backend (devlog 066). A validação integrada aguarda a implementação do backend e os dados de teste. |
 | 0.67 | 2026-11-23 | FEAT-15 pronta no backend (CONTRATO v0.77, T-60, devlog 072). Validação integrada solo com MSW desligado em andamento. |
 | 0.68 | 2026-11-23 | FEAT-15 `validado` nos dois lados (CONTRATO v0.78): 13 campanhas da T-60, laboratório e editor contra o backend real, com MSW desligado (devlog FE 093). |
+| 0.69 | 2026-11-23 | FEAT-16: planejada no BE (SPEC-BACKEND v0.73, T-61 a T-66); contrato proposto pelo BE (CONTRATO v0.79); BE `aguardando outro lado`. |
+| 0.70 | 2026-11-23 | FEAT-16: contrato `acordado` pelo FE (CONTRATO v0.80); FE `a fazer` (falta planejar REQs e tarefas na spec); BE sai de `aguardando outro lado` para `a fazer`. |
