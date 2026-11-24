@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.85 · **Data:** 2026-11-24
+> **Versão do contrato:** 0.86 · **Data:** 2026-11-24
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -3189,7 +3189,7 @@ Seja `G` criado com `{ "name": "Os Teimosos", "characterName": "Lia", "playerCla
 
 Só nos e2e do backend: sorteio exato do fator, do pool, da distribuição e da vitrine (`fixedRng`); decaimento no fim da rodada e na rodada do nocaute solo; saída do pool e novo pool; refazer a raridade sem elegíveis e `boosterEmpty`; entrega pendente com fonte `booster`; saves v2 a v8. Para a validação integrada (T-66), o backend entrega campanhas preparadas com a vitrine, os IDs e os resultados esperados.
 
-### FEAT-17 — Ferreiro e Oficina do Artífice — `acordado`
+### FEAT-17 — Ferreiro e Oficina do Artífice — `implementado (BE)`
 
 Regras: README 3.4 (a carta de zona lista os encantamentos do ferreiro), 5.1 (quebra e marca de reparo), 5.2 (Documentos), 8.2 (trava de classe), 8.8 (Ferreiro Arcano), 12.2 (Ir ao Ferreiro: todos os PA restantes; Oficina do Artífice: 1 PA), 16.1 (bônus de elemento), 24.2 (valorização na venda), 25 e Apêndice A (linhas "Artífice", "Ferreiro" e "Mercado"); Apêndice B 17, C4, C21, E26. Base no backend: SPEC-BACKEND REQ-145 a REQ-154, D-129 a D-134.
 
@@ -3611,3 +3611,4 @@ Só nos e2e do backend: rolagens exatas com `fixedRng` (limiares padrão, +2 do 
 | 0.83 | 2026-11-24 | BE | FEAT-17 `proposto (BE)` (SPEC-BACKEND v0.81, REQ-145 a REQ-154): estado por cópia de equipamento, `visitBlacksmith` e `artificerWorkshop` em lote validado antes de rolar, projeção `blacksmith`, `lastBlacksmithVisit`, 19 chaves do laboratório, materiais/encantamentos/receita/ferreiro estruturados no conteúdo, venda valorizada. Muda FEAT-03, 04, 06–16, 31 e 32 (detalhes na seção). |
 | 0.84 | 2026-11-24 | FE | FEAT-17 → `proposto (FE)`, pedidos de mudança (princípio "o backend decide"): (1) `ServiceView.equipment[].refine` vira `refineSteps` (cada nível seguinte até o máximo ou o teto da Oficina, com materiais, ouro, limiar, bônus e quebra), para o jogador montar vários refinos num lote só sem o frontend calcular custo nem limiar; (2) `enchantOptions[].requiresRefinement`, com os encantamentos que só cabem depois de refinar; (3) `eventActionBlock`, que não existe no contrato, sai da ordem das conferências em favor de `choicePending`/`combatInProgress`; (4) tipo de `MarketView.sellOffers` escrito, com `inventorySlotIndex?` e `equipmentState?` em equipamento; (5) a confirmar: equipamento criado por `craft` não é alvo de outra operação do mesmo lote. Cenários "Estado inicial", "Lote com falha e quebra" (ordem dos resultados alinhada ao lote enviado) e "Venda valorizada" atualizados. O resto aceito sem mudanças. |
 | 0.85 | 2026-11-24 | BE | FEAT-17 `acordado`: os cinco pedidos da v0.84 aceitos sem mudança (`refineSteps`, `requiresRefinement`, `choicePending`/`combatInProgress` no lugar de `eventActionBlock`, tipo de `sellOffers`, `craft` sem alvo no mesmo lote, agora confirmado). Devolvidas ao glossário §2.7 as duas linhas da v0.83 (estado do equipamento; receita, lista do ferreiro e encantamento extra), que a cópia do FE não trazia. |
+| 0.86 | 2026-11-24 | BE | FEAT-17 `implementado (BE)` (SPEC-BACKEND T-67 a T-73; e2e do ferreiro, da Oficina, do mercado e do laboratório passando). Sem mudança de forma. Campanhas da validação integrada pelo preparador `test/prepare-feat-17.cjs` (devlog 089). |
