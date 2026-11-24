@@ -1,6 +1,6 @@
 # Misadventures — Roadmap de desenvolvimento
 
-> **Versão:** 0.80 · **Data:** 2026-11-24
+> **Versão:** 0.82 · **Data:** 2026-11-24
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend; o autor copia o arquivo inteiro quando ele muda. Base: README Parte III (III.2 e III.4). As regras estão em [`README.md`](README.md); o que trafega entre os lados, em [`CONTRATO.md`](CONTRATO.md).
 
@@ -70,7 +70,7 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | FEAT-15 | Missões de zona, provação e mentor; especializações e multiclasse | 21, 8.3, 8.4 | validado | validado |
 | FEAT-16 | Mercado: estoque, venda, boosters, singles, serviços | 24 | validado | validado |
 | FEAT-17 | Ferreiro e Oficina do Artífice | 25 | validado | validado |
-| FEAT-18 | Montarias e Estábulo | 26 | a fazer | a fazer |
+| FEAT-18 | Montarias e Estábulo | 26 | aguardando outro lado | aguardando outro lado |
 | FEAT-19 | Conclusão da dimensão, chefe final, passagem para a próxima, save congelado | 3.2, 28.1 | a fazer | a fazer |
 
 ### Momento 2 — Ajudantes de IA
@@ -193,3 +193,5 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | 0.78 | 2026-11-24 | FEAT-17: FE `aguardando outro lado` (T-75 a T-78 prontas com MSW); falta o BE e a validação contra o backend real (T-79). |
 | 0.79 | 2026-11-24 | FEAT-17: BE `pronto` (`implementado (BE)` no CONTRATO v0.86, T-67 a T-73); falta a validação integrada do FE (T-79). |
 | 0.80 | 2026-11-24 | FEAT-17 `validado` nos dois lados (T-79, CONTRATO v0.87). |
+| 0.81 | 2026-11-24 | FEAT-18: planejada no BE (SPEC-BACKEND v0.92, T-74 a T-80; README Apêndice B.20, U1 e U2); contrato proposto pelo BE (CONTRATO v0.88); BE `aguardando outro lado`. |
+| 0.82 | 2026-11-24 | FEAT-18: FE pede mudanças na seção (CONTRATO v0.89, `proposto (FE)`: montaria como origem de efeitos e habilidades, destinos da montaria, espaço no descarte da recompensa); FE e BE `aguardando outro lado`. |
