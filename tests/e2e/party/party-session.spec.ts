@@ -577,3 +577,82 @@ test.describe('REQ-79: estado do equipamento e venda por cópia (MSW)', () => {
     )
   })
 })
+
+test.describe('REQ-80, REQ-81: Ir ao Ferreiro e Oficina (MSW)', () => {
+  test('REQ-80/REQ-81: monta o lote no ferreiro, confirma e mostra o resultado com falha e quebra', async ({
+    page,
+  }) => {
+    await page.goto('/grupo/party-ferreiro')
+    await page
+      .getByRole('region', { name: 'A vez' })
+      .getByRole('button', { name: 'Ir ao Ferreiro' })
+      .click()
+    const smithy = page.getByRole('region', { name: 'Ferreiro' })
+    await expect(smithy).toContainText(
+      'Gasta todos os pontos de ação restantes (3).',
+    )
+    await smithy.getByRole('button', { name: 'Refinar Espada Curta' }).click()
+    await smithy.getByRole('button', { name: 'Refinar Espada Curta' }).click()
+    await smithy
+      .getByRole('button', { name: 'Encantar Espada Curta com Fio de Brasa' })
+      .click()
+    await expect(
+      smithy.getByRole('list', { name: 'Operações' }).getByRole('listitem'),
+    ).toContainText([
+      '1. Refinar Espada Curta para +1',
+      '2. Refinar Espada Curta para +2',
+      '3. Encantar Espada Curta com Fio de Brasa',
+    ])
+    await expect(smithy).toContainText('Total previsto: 80 de ouro')
+    await smithy
+      .getByRole('button', { name: 'Confirmar (todos os pontos de ação)' })
+      .click()
+    await expect(smithy).toHaveCount(0)
+    await expect(page.getByRole('status').first()).toContainText(
+      'Ferreiro: 3 operações, 3 pontos de ação gastos.',
+    )
+    await expect(
+      page.getByRole('list', { name: 'Resultado do ferreiro' }),
+    ).toContainText(
+      'Falhou ao refinar Espada Curta para +4: 40 de ouro perdidos, D20 14 contra 21. Espada Curta quebrou.',
+    )
+  })
+
+  test('REQ-81: recusa com operationIndex marca a operação na seção', async ({
+    page,
+  }) => {
+    await page.goto('/grupo/party-ferreiro')
+    await page
+      .getByRole('region', { name: 'A vez' })
+      .getByRole('button', { name: 'Ir ao Ferreiro' })
+      .click()
+    const smithy = page.getByRole('region', { name: 'Ferreiro' })
+    await smithy.getByRole('button', { name: 'Refinar Espada Curta' }).click()
+    await smithy
+      .getByRole('button', { name: 'Confirmar (todos os pontos de ação)' })
+      .click()
+    await expect(smithy.getByText('Recusada')).toBeVisible()
+    await expect(smithy).toContainText(
+      'Esta ação não é permitida agora. Espada Curta está quebrado: conserte antes.',
+    )
+  })
+
+  test('REQ-80: com Artífice ativo, a Oficina gasta 1 ponto de ação', async ({
+    page,
+  }) => {
+    await page.goto('/grupo/party-artifice')
+    await page
+      .getByRole('region', { name: 'A vez' })
+      .getByRole('button', { name: 'Oficina do Artífice' })
+      .click()
+    const workshop = page.getByRole('region', { name: 'Oficina do Artífice' })
+    await expect(workshop).toContainText('Gasta 1 ponto de ação.')
+    await workshop.getByRole('button', { name: 'Refinar Espada Curta' }).click()
+    await workshop
+      .getByRole('button', { name: 'Confirmar (1 ponto de ação)' })
+      .click()
+    await expect(page.getByRole('status').first()).toContainText(
+      'Oficina do Artífice: 1 operação, 1 ponto de ação gasto.',
+    )
+  })
+})

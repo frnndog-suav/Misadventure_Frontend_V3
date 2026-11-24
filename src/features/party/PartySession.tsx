@@ -11,6 +11,7 @@ import {
 } from '../../api/catalog'
 import { combatActionTypes } from '../../api/combat'
 import type { MarketOperation } from '../../api/market'
+import type { BlacksmithOperation } from '../../api/blacksmith'
 import { ApiError } from '../../api/http'
 import {
   ActionNotAllowedError,
@@ -43,6 +44,11 @@ import { RewardChoice } from './RewardChoice'
 import { QuestPanel } from './QuestPanel'
 import { BoosterResult } from './BoosterResult'
 import { MarketPanel, MarketResult } from './MarketPanel'
+import {
+  BlacksmithPanel,
+  BlacksmithResult,
+  type BlacksmithSource,
+} from './BlacksmithPanel'
 import { byCardId, invalidQuantity, isIntFrom } from './fieldRules'
 import { NumberField } from './fields'
 import {
@@ -110,6 +116,31 @@ function marketCardIds(player: PartyMember['player']): string[] {
   ]
 }
 
+/** Cartas que a seção e o resultado mostram (REQ-80, REQ-81). */
+function blacksmithCardIds(player: PartyMember['player']): string[] {
+  const { blacksmith: view, lastBlacksmithVisit: visit } = player
+  const services = view === null ? [] : [view.blacksmith, view.workshop]
+  return [
+    ...services.flatMap((service) =>
+      (service?.equipment ?? []).flatMap((entry) => [
+        entry.cardId,
+        ...entry.refineSteps.flatMap((s) => s.materials.map((m) => m.cardId)),
+      ]),
+    ),
+    ...(view?.enchantments ?? []).flatMap((e) =>
+      e.enchantment.materials.map((m) => m.cardId),
+    ),
+    ...(view?.recipes ?? []).flatMap((r) => [
+      r.cardId,
+      r.equipmentId,
+      ...r.materials.map((m) => m.cardId),
+    ]),
+    ...(visit?.results ?? []).flatMap((r) =>
+      r.operation === 'craft' ? [r.recipeCardId, r.equipmentId] : [r.cardId],
+    ),
+  ]
+}
+
 /** Ids das cartas cujos nomes a partida mostra (REQ-30). */
 function cardIdsOf(party: Party): string[] {
   return [
@@ -144,6 +175,7 @@ function cardIdsOf(party: Party): string[] {
           ]),
       ...(player.lastScavenge === null ? [] : [player.lastScavenge.cardId]),
       ...marketCardIds(player),
+      ...blacksmithCardIds(player),
     ]),
   ]
 }
@@ -492,7 +524,7 @@ function reasonText(error: ActionNotAllowedError, name: string): string {
     case 'showcaseSlotNotFound':
     case 'showcaseSlotEmpty':
     case 'notLotMultiple':
-    case 'artificerInactive': // FEAT-17: textos do ferreiro na T-78 (REQ-81)
+    case 'artificerInactive': // FEAT-17: textos do ferreiro em blacksmithReasonText (REQ-81)
     case 'equipmentNotFound':
     case 'notBroken':
     case 'equipmentBroken':
@@ -709,7 +741,7 @@ function vaultReasonText(error: ActionNotAllowedError, name: string): string {
     case 'showcaseSlotNotFound':
     case 'showcaseSlotEmpty':
     case 'notLotMultiple':
-    case 'artificerInactive': // FEAT-17: textos do ferreiro na T-78 (REQ-81)
+    case 'artificerInactive': // FEAT-17: textos do ferreiro em blacksmithReasonText (REQ-81)
     case 'equipmentNotFound':
     case 'notBroken':
     case 'equipmentBroken':
@@ -774,6 +806,77 @@ function marketFailureText(
     error.cardId ??
     (refused !== undefined && 'cardId' in refused ? refused.cardId : '')
   const reason = marketReasonText(error, nameOf(cards, cardId))
+  return reason === '' ? error.message : `${error.message} ${reason}`
+}
+
+/**
+ * Texto de cada motivo de recusa do Ir ao Ferreiro e da Oficina (REQ-81);
+ * `notEnoughGold` e `notInInventory` seguem o REQ-52; outro motivo → ''.
+ */
+function blacksmithReasonText(
+  error: ActionNotAllowedError,
+  name: string,
+): string {
+  switch (error.reason) {
+    case 'equipmentNotFound':
+      return 'Esse equipamento não está mais lá.'
+    case 'notBroken':
+      return `${name} não está quebrado.`
+    case 'equipmentBroken':
+      return `${name} está quebrado: conserte antes.`
+    case 'notRefinable':
+      return `${name} não pode ser refinado.`
+    case 'refinementMaterialsMissing':
+      return `${name} não tem materiais de refino definidos.`
+    case 'refineLevelMax':
+      return `${name} já está no refino máximo.`
+    case 'refineLevelTooHigh':
+      return 'A Oficina não refina acima desse nível.'
+    case 'enchantNotAvailable':
+      return 'A Oficina não encanta.'
+    case 'enchantmentNotOffered':
+      return 'Este ferreiro não oferece esse encantamento.'
+    case 'notEnchantable':
+      return `${name} não pode ser encantado.`
+    case 'enchantSlotUnavailable':
+      return `${name} não tem slot para esse encantamento.`
+    case 'replaceIndexRequired':
+      return 'Escolha o encantamento a substituir.'
+    case 'replaceIndexInvalid':
+      return 'O encantamento a substituir não existe.'
+    case 'recipeMissing':
+      return `${name} não é uma receita.`
+    case 'materialsMissing':
+      return 'Faltam materiais.'
+    case 'inventoryFull':
+      return 'Não há espaço no inventário.'
+    case 'notEnoughGold':
+    case 'notInInventory':
+      return vaultReasonText(error, name)
+    default:
+      return ''
+  }
+}
+
+/** Recusa sem `operationIndex` do ferreiro: vai para a área de status (REQ-81). */
+function isBlacksmithStatusRefusal(error: Error): boolean {
+  return (
+    error instanceof ActionNotAllowedError && error.operationIndex === undefined
+  )
+}
+
+/** Recusa ou erro do último "Confirmar" do ferreiro, na seção (REQ-81). */
+function blacksmithFailureText(
+  error: Error,
+  refusedCardId: string,
+  cards: Cards,
+): string {
+  if (isBlacksmithStatusRefusal(error)) return ''
+  if (!(error instanceof ActionNotAllowedError)) return errorText(error)
+  const reason = blacksmithReasonText(
+    error,
+    nameOf(cards, error.cardId ?? refusedCardId),
+  )
   return reason === '' ? error.message : `${error.message} ${reason}`
 }
 
@@ -1231,9 +1334,11 @@ function TurnState({
   onScavenge,
   onVault,
   onMarket,
+  onBlacksmith,
   adjusting,
   vaulting,
   marketing,
+  smithing,
   pending,
 }: {
   party: Party
@@ -1245,9 +1350,11 @@ function TurnState({
   onScavenge: (cardId: string) => void
   onVault: () => void
   onMarket: () => void
+  onBlacksmith: (source: BlacksmithSource) => void
   adjusting: boolean
   vaulting: boolean
   marketing: boolean
+  smithing: BlacksmithSource | null
   pending: boolean
 }) {
   const { round, memberId, actionPoints } = party.turn
@@ -1307,6 +1414,27 @@ function TurnState({
           Usar cofre
         </button>
       )}
+      {/* REQ-80: logo antes de "Ir ao Mercado", na ordem de availableActions. */}
+      {host?.player.availableActions.flatMap((type) =>
+        type === 'visitBlacksmith' || type === 'artificerWorkshop'
+          ? [
+              <button
+                key={type}
+                type="button"
+                onClick={() =>
+                  onBlacksmith(
+                    type === 'visitBlacksmith' ? 'blacksmith' : 'workshop',
+                  )
+                }
+                disabled={pending || smithing !== null}
+              >
+                {type === 'visitBlacksmith'
+                  ? 'Ir ao Ferreiro'
+                  : 'Oficina do Artífice'}
+              </button>,
+            ]
+          : [],
+      )}
       {host?.player.availableActions.includes('visitMarket') && (
         <button
           type="button"
@@ -1344,6 +1472,7 @@ function PreparedMatch({
   onSaveBuild,
   onUseVault,
   onVisitMarket,
+  onBlacksmith,
   onEquip,
   onUnequip,
   onOpenBooster,
@@ -1357,6 +1486,8 @@ function PreparedMatch({
   setVaulting,
   marketing,
   setMarketing,
+  smithing,
+  setSmithing,
   moving,
 }: {
   party: Party
@@ -1376,6 +1507,11 @@ function PreparedMatch({
     operations: MarketOperation[],
     onError: (error: Error) => void,
   ) => void
+  onBlacksmith: (
+    source: BlacksmithSource,
+    operations: BlacksmithOperation[],
+    onError: (error: Error) => void,
+  ) => void
   onEquip: NonNullable<PrepareControls['onEquip']>
   onUnequip: NonNullable<PrepareControls['onUnequip']>
   onOpenBooster: NonNullable<PrepareControls['onOpenBooster']>
@@ -1389,6 +1525,8 @@ function PreparedMatch({
   setVaulting: (open: boolean) => void
   marketing: boolean
   setMarketing: (open: boolean) => void
+  smithing: BlacksmithSource | null
+  setSmithing: (source: BlacksmithSource | null) => void
   moving: boolean
 }) {
   const names = new Map(party.members.map((m) => [m.id, m.characterName]))
@@ -1408,9 +1546,11 @@ function PreparedMatch({
           onScavenge={onScavenge}
           onVault={() => setVaulting(true)}
           onMarket={() => setMarketing(true)}
+          onBlacksmith={setSmithing}
           adjusting={adjusting}
           vaulting={vaulting}
           marketing={marketing}
+          smithing={smithing}
           pending={moving}
         />
       )}
@@ -1461,6 +1601,26 @@ function PreparedMatch({
             pending={moving}
             failureText={(error, refused) =>
               marketFailureText(error, refused, cards)
+            }
+          />
+        )}
+      {!party.combat &&
+        !party.triggeredEffectChoice &&
+        smithing !== null &&
+        host !== undefined && (
+          <BlacksmithPanel
+            key={smithing}
+            source={smithing}
+            player={host.player}
+            actionPoints={party.turn.actionPoints}
+            cards={cards}
+            onConfirm={(operations, onError) =>
+              onBlacksmith(smithing, operations, onError)
+            }
+            onCancel={() => setSmithing(null)}
+            pending={moving}
+            failureText={(error, refusedCardId) =>
+              blacksmithFailureText(error, refusedCardId, cards)
             }
           />
         )}
@@ -1623,6 +1783,13 @@ export function PartySession() {
   const [marketing, setMarketing] = useState(false)
   // Erros do Ir ao Mercado também ficam na seção (REQ-74).
   const marketFailed = action.isError && action.variables.type === 'visitMarket'
+  const [smithing, setSmithing] = useState<BlacksmithSource | null>(null)
+  const smithAction =
+    action.variables?.type === 'visitBlacksmith' ||
+    action.variables?.type === 'artificerWorkshop'
+  // Erros do ferreiro ficam na seção, menos a recusa sem `operationIndex` (REQ-81).
+  const smithFailed =
+    action.isError && smithAction && !isBlacksmithStatusRefusal(action.error)
   const eventAction =
     action.variables &&
     randomEventActionTypes.some((type) => type === action.variables.type)
@@ -1633,7 +1800,13 @@ export function PartySession() {
 
   let status = ''
   if (end.isError) status = errorText(end.error)
-  else if (action.isError && !adjustFailed && !vaultFailed && !marketFailed) {
+  else if (
+    action.isError &&
+    !adjustFailed &&
+    !vaultFailed &&
+    !marketFailed &&
+    !smithFailed
+  ) {
     if (action.variables.type === 'prepare') {
       status = ['activate', 'useAbility'].includes(action.variables.operation)
         ? errorText(action.error)
@@ -1651,7 +1824,22 @@ export function PartySession() {
       status = `${action.error.message} Não há espaço no inventário.`
     } else status = errorText(action.error)
   } else if (action.isSuccess && party !== undefined && host !== undefined) {
-    if (action.variables.type === 'visitMarket') {
+    if (
+      action.variables.type === 'visitBlacksmith' ||
+      action.variables.type === 'artificerWorkshop'
+    ) {
+      const n = action.variables.operations.length
+      const label =
+        action.variables.type === 'visitBlacksmith'
+          ? 'Ferreiro'
+          : 'Oficina do Artífice'
+      const spent = host.player.lastBlacksmithVisit?.actionPointsSpent
+      status = `${label}: ${n} ${n === 1 ? 'operação' : 'operações'}${
+        spent === undefined
+          ? ''
+          : `, ${spent} ${spent === 1 ? 'ponto de ação gasto' : 'pontos de ação gastos'}`
+      }.`
+    } else if (action.variables.type === 'visitMarket') {
       const n = action.variables.operations.length
       status = `Mercado: ${n} ${n === 1 ? 'operação feita' : 'operações feitas'}.`
     } else if (action.variables.type === 'useVault') {
@@ -1809,6 +1997,18 @@ export function PartySession() {
                 { onSuccess: () => setMarketing(false), onError },
               )
             }
+            onBlacksmith={(source, operations, onError) =>
+              action.mutate(
+                {
+                  type:
+                    source === 'blacksmith'
+                      ? 'visitBlacksmith'
+                      : 'artificerWorkshop',
+                  operations,
+                },
+                { onSuccess: () => setSmithing(null), onError },
+              )
+            }
             onEquip={(cardId) => {
               setPreparedCardId(cardId)
               action.mutate({ type: 'prepare', operation: 'equip', cardId })
@@ -1849,6 +2049,8 @@ export function PartySession() {
             setVaulting={setVaulting}
             marketing={marketing}
             setMarketing={setMarketing}
+            smithing={smithing}
+            setSmithing={setSmithing}
             moving={action.isPending || end.isPending}
           />
           {delivery && (
@@ -1906,6 +2108,16 @@ export function PartySession() {
         host?.player.lastMarketVisit != null && (
           <MarketResult
             visit={host.player.lastMarketVisit}
+            cards={cards.cards}
+          />
+        )}
+      {action.isSuccess &&
+        (action.variables.type === 'visitBlacksmith' ||
+          action.variables.type === 'artificerWorkshop') &&
+        host?.player.lastBlacksmithVisit != null && (
+          <BlacksmithResult
+            visit={host.player.lastBlacksmithVisit}
+            view={host.player.blacksmith}
             cards={cards.cards}
           />
         )}
