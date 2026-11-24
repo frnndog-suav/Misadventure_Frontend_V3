@@ -132,3 +132,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 099 | T-72 | [Ir ao Mercado na tela do grupo](099-T-72-ir-ao-mercado-tela-do-grupo.md) | aguardando revisão |
 | 100 | T-73 | [Abrir booster no Preparar e no cofre](100-T-73-abrir-booster.md) | aguardando revisão |
 | 101 | T-74 | [Validação integrada da FEAT-16](101-T-74-validacao-integrada-feat-16.md) | concluída |
+| 102 | FEAT-16 | [Fechamento da FEAT-16](102-feat-16-fechamento.md) | concluída |

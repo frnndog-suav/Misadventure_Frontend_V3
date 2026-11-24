@@ -186,4 +186,4 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | 0.71 | 2026-11-23 | FEAT-16: BE `pronto` (`implementado (BE)` no CONTRATO v0.81, T-61 a T-66); falta a validação integrada do FE. |
 | 0.72 | 2026-11-23 | Correção da linha da FEAT-16 na tabela do momento 1: a v0.71 trazia as colunas trocadas (FE `pronto`, BE `a fazer`). O certo é FE `a fazer` (REQs e tarefas ainda não planejados) e BE `pronto`. |
 | 0.73 | 2026-11-24 | FEAT-16: FE `aguardando outro lado` (T-70 a T-73 prontas com MSW); falta a validação contra o backend real (T-74). |
-| 0.74 | 2026-11-24 | FEAT-16: `validado` nas duas colunas (CONTRATO v0.82, T-74). |
+| 0.74 | 2026-11-24 | FEAT-16 `validado` nas duas colunas (CONTRATO v0.82): T-74 com as 11 campanhas da T-66 contra o backend real, MSW desligado. |
