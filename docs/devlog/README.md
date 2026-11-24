@@ -130,3 +130,5 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 097 | FEAT-16 | [T-70: cliente e fixtures MSW do Mercado](097-T-70-cliente-feat-16.md) | concluída |
 | 098 | T-71 | [Laboratório, catálogo e editor do Mercado](098-T-71-laboratorio-catalogo-editor-feat-16.md) | concluída |
 | 099 | T-72 | [Ir ao Mercado na tela do grupo](099-T-72-ir-ao-mercado-tela-do-grupo.md) | aguardando revisão |
+| 100 | T-73 | [Abrir booster no Preparar e no cofre](100-T-73-abrir-booster.md) | aguardando revisão |
+| 101 | T-74 | [Validação integrada da FEAT-16](101-T-74-validacao-integrada-feat-16.md) | concluída |

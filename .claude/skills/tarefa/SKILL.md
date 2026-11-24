@@ -87,6 +87,6 @@ Não crie painéis de desenvolvimento fora do laboratório. A tarefa é verifica
    - resultado dos checks;
    - **Aviso de backend**, se houver;
    - mensagem de commit sugerida (`tipo/descrição curta em minúsculas`).
-6. Pergunte se pode seguir para a próxima (diga qual). **Não comece.** Recomende ao autor rodar **`/clear`** antes da próxima: tudo o que ela precisa já está na spec, no contrato, no devlog e na memória. (O agente não consegue rodar `/clear`.)
+6. **Um pedido só, nunca dois.** Se houve Aviso de backend, o único pedido é levá-lo ao backend: não pergunte pela próxima tarefa (ela volta depois do `/retorno-backend`). Sem aviso, pergunte se pode seguir para a próxima (diga qual). **Não comece.** Recomende ao autor rodar **`/clear`** antes da próxima: tudo o que ela precisa já está na spec, no contrato, no devlog e na memória. (O agente não consegue rodar `/clear`.)
 
 A suíte automatizada não precisa de aprovação. Só peça quando for realmente necessário (ex.: um critério que admite duas leituras e o teste fixa uma).

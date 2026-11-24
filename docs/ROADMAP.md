@@ -1,6 +1,6 @@
 # Misadventures — Roadmap de desenvolvimento
 
-> **Versão:** 0.73 · **Data:** 2026-11-24
+> **Versão:** 0.74 · **Data:** 2026-11-24
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend; o autor copia o arquivo inteiro quando ele muda. Base: README Parte III (III.2 e III.4). As regras estão em [`README.md`](README.md); o que trafega entre os lados, em [`CONTRATO.md`](CONTRATO.md).
 
@@ -68,7 +68,7 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | FEAT-13 | Combate 1 jogador × 1 ou mais inimigos: inimigos e IA deles, habilidades, elementos, cálculo de dano | 16, 17, 18, 19.1 a 19.4, 19.6 | validado | validado |
 | FEAT-14 | Nocaute, spawn, respawn e Salvar ponto de respawn (inclui o nocaute no jogo solo) | 20, 12.2 | validado | validado |
 | FEAT-15 | Missões de zona, provação e mentor; especializações e multiclasse | 21, 8.3, 8.4 | validado | validado |
-| FEAT-16 | Mercado: estoque, venda, boosters, singles, serviços | 24 | aguardando outro lado | pronto |
+| FEAT-16 | Mercado: estoque, venda, boosters, singles, serviços | 24 | validado | validado |
 | FEAT-17 | Ferreiro e Oficina do Artífice | 25 | a fazer | a fazer |
 | FEAT-18 | Montarias e Estábulo | 26 | a fazer | a fazer |
 | FEAT-19 | Conclusão da dimensão, chefe final, passagem para a próxima, save congelado | 3.2, 28.1 | a fazer | a fazer |
@@ -186,3 +186,4 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | 0.71 | 2026-11-23 | FEAT-16: BE `pronto` (`implementado (BE)` no CONTRATO v0.81, T-61 a T-66); falta a validação integrada do FE. |
 | 0.72 | 2026-11-23 | Correção da linha da FEAT-16 na tabela do momento 1: a v0.71 trazia as colunas trocadas (FE `pronto`, BE `a fazer`). O certo é FE `a fazer` (REQs e tarefas ainda não planejados) e BE `pronto`. |
 | 0.73 | 2026-11-24 | FEAT-16: FE `aguardando outro lado` (T-70 a T-73 prontas com MSW); falta a validação contra o backend real (T-74). |
+| 0.74 | 2026-11-24 | FEAT-16: `validado` nas duas colunas (CONTRATO v0.82, T-74). |

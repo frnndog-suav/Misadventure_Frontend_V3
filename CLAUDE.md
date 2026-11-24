@@ -53,6 +53,8 @@ Traga de volta: <o que colar aqui depois, ex.: a resposta do backend ou "backend
 Enquanto isso, aqui: <o que segue com MSW / o que fica bloqueado>
 ```
 
+**Um pedido por vez.** Quando houver Aviso de backend, ele é o único pedido da resposta: não peça também para seguir com outra tarefa. A sequência é: aviso → autor leva ao backend → `/retorno-backend` → próxima tarefa.
+
 Mostre o aviso quando:
 
 1. o contrato for criado ou alterado (`/contrato`);

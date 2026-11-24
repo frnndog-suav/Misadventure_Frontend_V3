@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.88 · **Data:** 2026-11-23
+> **Versão da spec:** 0.90 · **Data:** 2026-11-24
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -924,7 +924,7 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 - [x] **T-71 — Laboratório, catálogo e editor** (REQ-71, REQ-72). E2E nas áreas `lab` e `editor`.
 - [x] **T-72 — Ir ao Mercado na tela do grupo** (REQ-73, REQ-74, REQ-76). E2E na área `party`.
 - [x] **T-73 — Abrir booster** (REQ-75). Preparar, Usar cofre e origem da entrega pendente; e2e na área `party`.
-- [ ] **T-74 — Validação integrada da FEAT-16.** Repetir os cenários do contrato contra o backend real com MSW desligado, com as campanhas preparadas pelo backend (CONTRATO v0.81).
+- [x] **T-74 — Validação integrada da FEAT-16.** Repetir os cenários do contrato contra o backend real com MSW desligado, com as campanhas preparadas pelo backend (CONTRATO v0.81).
 
 ## 8. Histórico
 
@@ -1019,3 +1019,4 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 | 0.87 | 2026-11-23 | T-71 concluída: laboratório, catálogo e editor com os campos do mercado (D-62 item 9). |
 | 0.88 | 2026-11-24 | T-72 concluída: Ir ao Mercado na tela do grupo (REQ-73, REQ-74) e linha de expansões (REQ-76), com MSW (D-62 item 10). Abrir booster e validação integrada seguem nas T-73 e T-74. |
 | 0.89 | 2026-11-24 | T-73 concluída: Abrir booster no Preparar e no Usar cofre, lista "Cartas do booster" e origem da entrega pendente (REQ-75, D-62 item 11), com MSW. Falta a T-74 (validação integrada). |
+| 0.90 | 2026-11-24 | T-74 concluída: FEAT-16 validada contra o backend real (CONTRATO v0.82). |
