@@ -181,7 +181,7 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
       zone: 4,
       attribute: 3,
       equipment: 7,
-      item: 7,
+      item: 9,
       randomEvent: 2,
       combatEvent: 1,
       zoneQuest: 0,
@@ -199,7 +199,7 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
     ).toBe(false)
   })
 
-  it('REQ-28: o handler padrão da coleção fixture lista as 25 cartas na ordem de id', async () => {
+  it('REQ-28: o handler padrão da coleção fixture lista as 27 cartas na ordem de id', async () => {
     const response = await fetch(
       'http://localhost:3000/catalog/collections/fixture/cards',
     )
@@ -208,7 +208,9 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
     )
     expect(ids).toEqual([
       'fixture.arcane-wand',
+      'fixture.arrows',
       'fixture.blade-of-dusk',
+      'fixture.booster',
       'fixture.dexterity-basic',
       'fixture.endurance-basic',
       'fixture.event-cart-test',
@@ -233,7 +235,7 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
       'fixture.whispering-grove',
       'fixture.wounded-traveler',
     ])
-    expect(fixtureCardsFixture).toHaveLength(25)
+    expect(fixtureCardsFixture).toHaveLength(27)
   })
 })
 
@@ -466,6 +468,20 @@ describe('REQ-30: Party preparado (dimension, turnOrder, player)', () => {
       lastRandomEvent: null,
       lastRewardSearch: null,
       lastRewardDelivery: null,
+      // FEAT-16 (CONTRATO v0.81, cenário "Estado inicial")
+      expansions: {
+        vaultSlots: 0,
+        deckSlots: 0,
+        tcgFolder: 0,
+        purse: 0,
+        vaultGold: 0,
+      },
+      market: expect.objectContaining({
+        zoneId: 'fixture.gray-harbor',
+        factorPercent: 115,
+      }),
+      lastMarketVisit: null,
+      lastBoosterOpening: null,
       playerClasses: [{ playerClass: 'warrior', deckLockMet: true }],
       gold: 10,
       baseHealth: 20,
@@ -494,6 +510,7 @@ describe('REQ-30: Party preparado (dimension, turnOrder, player)', () => {
         'recover',
         'adjustDeck',
         'useVault',
+        'visitMarket',
         'endTurn',
       ],
       // FEAT-09 (CONTRATO v0.37, cenário de criação)

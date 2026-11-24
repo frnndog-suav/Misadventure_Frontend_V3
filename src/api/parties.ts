@@ -11,6 +11,7 @@ import {
   type QuestAction,
 } from './quests'
 import { z } from 'zod'
+import { playerMarketFields, type VisitMarketAction } from './market'
 import {
   executableRandomEventCardSchema,
   modifierValuesSchema,
@@ -100,6 +101,7 @@ export const partyActionTypeSchema = z.enum([
   'continueQuest',
   'finishQuest',
   'takeTrialQuest',
+  'visitMarket',
   'trainWithMentor',
   'saveRespawnPoint',
   ...randomEventActionTypes,
@@ -217,6 +219,8 @@ export const playerStateSchema = z.object({
     })
     .nullable(),
   ...randomEventPlayerFields,
+  /** Mercado, expansões e resultados, prontos do backend (FEAT-16, D-62). */
+  ...playerMarketFields,
 })
 export type PlayerState = z.infer<typeof playerStateSchema>
 
@@ -416,6 +420,7 @@ export type PartyAction =
   | PrepareAction
   | UseVaultAction
   | ScavengeAction
+  | VisitMarketAction
   | RandomEventAction
   | ResolveRewardAction
   | CombatAction
@@ -462,6 +467,8 @@ export type PrepareAction =
       effectIndex: number
       payment?: { handCards: string[] }
     }
+  /** FEAT-16: abre 1 booster do inventário (README 24.3). */
+  | { type: 'prepare'; operation: 'openBooster'; cardId: string }
 
 /** Usar cofre (README 6.4, 12.2): lote aplicado em ordem pelo backend (D-59). */
 export interface UseVaultAction {
@@ -480,6 +487,8 @@ export type VaultOperation =
   | { operation: 'unpackDeck'; deckIndex: number }
   | { operation: 'swapBuild'; deckIndex: number }
   | { operation: 'editBuild'; build: CardCopies[] }
+  /** FEAT-16: abre 1 booster de `vault.slots`. */
+  | { operation: 'openBooster'; cardId: string }
 
 /** Vasculhar (README 12.6); `cardId` vem de `scavengeTargets`. */
 export interface ScavengeAction {
@@ -558,6 +567,15 @@ export const actionNotAllowedDetailsSchema = z.object({
     'questClassIneligible',
     'questSpecializationIneligible',
     'questPeakTooLow',
+    // FEAT-16
+    'notInMarketStock',
+    'notMarketBooster',
+    'singlesUnavailable',
+    'showcaseSlotNotFound',
+    'showcaseSlotEmpty',
+    'notLotMultiple',
+    'notBooster',
+    'boosterEmpty',
   ]),
   questId: z.string().optional(),
   questCardId: z.string().optional(),
@@ -566,7 +584,7 @@ export const actionNotAllowedDetailsSchema = z.object({
   checks: z.array(eventMinimumCheckSchema).optional(),
   /** Carta envolvida na recusa, inclusive `paymentInvalid` (FEAT-11). */
   cardId: z.string().optional(),
-  /** FEAT-32: só no `useVault`, índice da operação recusada (a partir de 0). */
+  /** FEAT-32 e FEAT-16: no `useVault` e no `visitMarket`, índice da operação recusada (a partir de 0). */
   operationIndex: nonNegativeInt.optional(),
 })
 export type ActionNotAllowedDetails = z.infer<

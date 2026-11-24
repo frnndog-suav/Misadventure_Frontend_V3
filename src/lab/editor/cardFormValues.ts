@@ -118,6 +118,8 @@ export interface ZoneForm {
   questDeck?: string[]
   zoneActions: ZoneAction[]
   effects: EffectForm[]
+  /** FEAT-16: transportado sem controle até a T-71 (salvar não apaga). */
+  market?: ZoneCard['market']
 }
 
 export interface AttributeForm {
@@ -129,6 +131,8 @@ export interface AttributeForm {
   attributeKind: AttributeKind | ''
   attributes: (Attribute | '')[]
   effects: EffectForm[]
+  /** FEAT-16: transportado sem controle até a T-71 (salvar não apaga). */
+  priceMultiplier?: number
 }
 
 export interface EquipmentForm {
@@ -168,6 +172,13 @@ export interface ItemForm {
   scavengeZoneTypes: ZoneType[]
   /** FEAT-32: vazio = `null`. */
   scavengeTool: string
+  /** FEAT-16: transportados sem controle até a T-71 (salvar não apaga). */
+  market?: {
+    priceMultiplier: number
+    stockPrice: number | null
+    stockQuantity: number
+    boosterCollectionId: string | null
+  }
 }
 
 export interface RandomEventForm {
@@ -544,6 +555,7 @@ export function formFromCard(card: Card): CardForm {
           card.zoneActions.includes(a),
         ),
         effects: card.effects.map(effectToForm),
+        market: card.market,
       }
     case 'attribute':
       return {
@@ -555,6 +567,7 @@ export function formFromCard(card: Card): CardForm {
         attributeKind: card.attributeKind,
         attributes: [...card.attributes],
         effects: card.effects.map(effectToForm),
+        priceMultiplier: card.priceMultiplier,
       }
     case 'equipment':
       return {
@@ -605,6 +618,12 @@ export function formFromCard(card: Card): CardForm {
         toolKind: card.toolKind ?? '',
         scavengeZoneTypes: [...card.scavengeZoneTypes],
         scavengeTool: card.scavengeTool ?? '',
+        market: {
+          priceMultiplier: card.priceMultiplier,
+          stockPrice: card.stockPrice,
+          stockQuantity: card.stockQuantity,
+          boosterCollectionId: card.boosterCollectionId,
+        },
       }
     case 'randomEvent':
       return {
@@ -814,6 +833,7 @@ export function toInput(form: CardForm): CardInput | null {
         ...(form.questDeck !== undefined ? { questDeck: form.questDeck } : {}),
         zoneActions: form.zoneActions,
         effects,
+        ...(form.market !== undefined ? { market: form.market } : {}),
       }
     }
     case 'attribute': {
@@ -837,6 +857,9 @@ export function toInput(form: CardForm): CardInput | null {
         attributeKind: form.attributeKind,
         attributes,
         effects,
+        ...(form.priceMultiplier !== undefined
+          ? { priceMultiplier: form.priceMultiplier }
+          : {}),
       }
     }
     case 'equipment': {
@@ -914,6 +937,7 @@ export function toInput(form: CardForm): CardInput | null {
         toolKind: filled(form.toolKind) ? form.toolKind : null,
         scavengeZoneTypes: form.scavengeZoneTypes,
         scavengeTool: filled(form.scavengeTool) ? form.scavengeTool : null,
+        ...form.market,
       }
     }
     case 'randomEvent': {

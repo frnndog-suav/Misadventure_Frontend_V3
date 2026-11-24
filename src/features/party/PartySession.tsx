@@ -433,6 +433,14 @@ function reasonText(error: ActionNotAllowedError, name: string): string {
     case 'questClassIneligible':
     case 'questSpecializationIneligible':
     case 'questPeakTooLow':
+    case 'notInMarketStock': // FEAT-16: textos nas T-72 e T-73
+    case 'notMarketBooster':
+    case 'singlesUnavailable':
+    case 'showcaseSlotNotFound':
+    case 'showcaseSlotEmpty':
+    case 'notLotMultiple':
+    case 'notBooster':
+    case 'boosterEmpty':
       return error.message
     default: {
       const _exhaustive: never = error.reason
@@ -624,6 +632,14 @@ function vaultReasonText(error: ActionNotAllowedError, name: string): string {
     case 'questClassIneligible':
     case 'questSpecializationIneligible':
     case 'questPeakTooLow':
+    case 'notInMarketStock': // FEAT-16: textos nas T-72 e T-73
+    case 'notMarketBooster':
+    case 'singlesUnavailable':
+    case 'showcaseSlotNotFound':
+    case 'showcaseSlotEmpty':
+    case 'notLotMultiple':
+    case 'notBooster':
+    case 'boosterEmpty':
       return error.message
     default: {
       const _exhaustive: never = error.reason
@@ -666,6 +682,8 @@ function describeOperation(op: VaultOperation, cards: Cards): string {
       return `Usar deck ${op.deckIndex + 1} como build`
     case 'editBuild':
       return `Editar a build (${total(op.build)} cartas)`
+    case 'openBooster':
+      return `Abrir ${nameOf(cards, op.cardId)}`
     default: {
       const _exhaustive: never = op
       return _exhaustive

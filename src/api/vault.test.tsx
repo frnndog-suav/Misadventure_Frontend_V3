@@ -135,17 +135,19 @@ describe('REQ-47: GameConfigValues com as chaves da FEAT-32', () => {
 })
 
 describe('REQ-48: ferramentas e decks de recompensas nas cartas', () => {
-  it('REQ-48: a fixture tem 25 cartas (item 7) em ordem de id e todas validam', () => {
+  it('REQ-48: a fixture tem 27 cartas (item 9) em ordem de id e todas validam', () => {
     expect(
       collectionSummarySchema.parse(collectionsFixture[0]).cardCounts.item,
-    ).toBe(7)
-    expect(fixtureCardsFixture).toHaveLength(25)
+    ).toBe(9)
+    expect(fixtureCardsFixture).toHaveLength(27)
     const ids = fixtureCardsFixture.map((card) => card.id)
     expect(ids).toEqual([...ids].sort())
     for (const card of fixtureCardsFixture) {
       expect(cardSchema.safeParse(card).success).toBe(true)
     }
     expect(fixtureCardsByTypeFixture.item.map((card) => card.id)).toEqual([
+      'fixture.arrows',
+      'fixture.booster',
       F,
       P,
       I,
@@ -192,7 +194,13 @@ describe('REQ-48: ferramentas e decks de recompensas nas cartas', () => {
       ],
     })
     expect(grayHarborFixture).toMatchObject({
-      zoneActions: ['startEvent', 'scavenge', 'useVault', 'saveRespawnPoint'],
+      zoneActions: [
+        'startEvent',
+        'scavenge',
+        'useVault',
+        'visitMarket',
+        'saveRespawnPoint',
+      ],
     })
   })
 
@@ -231,6 +239,7 @@ describe('REQ-50: PlayerState com o cofre e o Vasculhar', () => {
       'recover',
       'adjustDeck',
       'useVault',
+      'visitMarket',
       'endTurn',
     ])
   })
@@ -247,6 +256,7 @@ describe('REQ-50: PlayerState com o cofre e o Vasculhar', () => {
       'prepare',
       'adjustDeck',
       'useVault',
+      'visitMarket',
       'endTurn',
     ])
   })
@@ -264,6 +274,7 @@ describe('REQ-50: PlayerState com o cofre e o Vasculhar', () => {
       'continueQuest',
       'finishQuest',
       'takeTrialQuest',
+      'visitMarket',
       'trainWithMentor',
       'saveRespawnPoint',
       'startEvent',
@@ -326,6 +337,7 @@ describe('REQ-50: PlayerState com o cofre e o Vasculhar', () => {
       'adjustDeck',
       'scavenge',
       'useVault',
+      'visitMarket',
       'endTurn',
     ])
   })

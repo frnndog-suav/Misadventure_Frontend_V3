@@ -10,6 +10,17 @@ import { knockoutConfigLimits, questConfigLimits } from '../api/labConfig'
 import type { GameConfigValues } from '../api/labConfig'
 import { http, HttpResponse, type RequestHandler } from 'msw'
 import {
+  marketInvalidFixture,
+  marketRefusalFixture,
+  partyBoosterOpenedFixture,
+  partyMarketArrowsFixture,
+  partyMarketGoldLostFixture,
+  partyMarketPurseFixture,
+  partyMarketSaleFixture,
+  partyVaultBoosterOpenedFixture,
+  partyWithBoosterFixture,
+} from './marketFixtures'
+import {
   acceptCombatResponse,
   combatScenario,
   executableCombatCardFixture,
@@ -97,6 +108,8 @@ import {
   healthFixture,
   labConfigDefaultsFixture,
   labConfigEventSettingsFixture,
+  labConfigMarketFactorFixture,
+  labConfigSumMismatchFixture,
   labConfigReserveWeightFixture,
   labConfigUpdatedFixture,
 } from './fixtures'
@@ -496,7 +509,8 @@ async function partyActionScenario(
     type !== 'adjustDeck' &&
     type !== 'prepare' &&
     type !== 'scavenge' &&
-    type !== 'useVault'
+    type !== 'useVault' &&
+    type !== 'visitMarket'
   ) {
     return HttpResponse.json(actionInvalidUnknownActionFixture, { status: 400 })
   }
@@ -506,13 +520,17 @@ async function partyActionScenario(
   }
   const operations = field(body, 'operations')
   if (
-    type === 'useVault' &&
+    (type === 'useVault' || type === 'visitMarket') &&
     Array.isArray(operations) &&
     operations.length === 0
   ) {
     return HttpResponse.json(actionInvalidOperationsLengthFixture, {
       status: 400,
     })
+  }
+  if (type === 'visitMarket') {
+    const malformed = marketFormatScenario(operations)
+    if (malformed) return malformed
   }
   if (type === 'prepare') return prepareScenario(body)
   if (partyId === partyNoPointsFixture.id) {
@@ -526,6 +544,7 @@ async function partyActionScenario(
       : HttpResponse.json(actionNotScavengeableFixture, { status: 409 })
   }
   if (type === 'useVault') return vaultBatchScenario(operations)
+  if (type === 'visitMarket') return marketScenario(operations)
   switch (field(body, 'zoneId')) {
     case 'fixture.stone-bend':
       return HttpResponse.json(partyMovedToStoneBendFixture)
@@ -553,6 +572,21 @@ function prepareScenario(body: unknown): Response {
   ) =>
     HttpResponse.json(actionPrepareNotAllowedFixture(reason), { status: 409 })
   switch (field(body, 'operation')) {
+    case 'openBooster':
+      switch (field(body, 'cardId')) {
+        case 'fixture.booster':
+          return HttpResponse.json(partyBoosterOpenedFixture)
+        case 'fixture.healing-potion':
+          return HttpResponse.json(
+            marketRefusalFixture({
+              reason: 'notBooster',
+              cardId: 'fixture.healing-potion',
+            }),
+            { status: 409 },
+          )
+        default:
+          return refuse('notInInventory')
+      }
     case 'activate':
       switch (field(body, 'cardId')) {
         case 'fixture.healing-potion':
@@ -603,6 +637,11 @@ function prepareScenario(body: unknown): Response {
  * qualquer outro → o `Party` do lote de exemplo. Sem simular o lote.
  */
 function vaultBatchScenario(operations: unknown): Response {
+  if (
+    Array.isArray(operations) &&
+    operations.some((item) => field(item, 'operation') === 'openBooster')
+  )
+    return HttpResponse.json(partyVaultBoosterOpenedFixture)
   const takesFive =
     Array.isArray(operations) &&
     operations.some(
@@ -612,6 +651,100 @@ function vaultBatchScenario(operations: unknown): Response {
   return takesFive
     ? HttpResponse.json(actionNotInVaultFixture, { status: 409 })
     : HttpResponse.json(partyVaultUsedFixture)
+}
+
+/**
+ * `visitMarket`, formato (cenário "Formato" do CONTRATO §3 FEAT-16): a
+ * primeira operação fora do formato responde o `400` do cenário.
+ */
+function marketFormatScenario(operations: unknown): Response | undefined {
+  if (!Array.isArray(operations)) return undefined
+  const known = ['buyStock', 'buyBooster', 'buySingle', 'sell', 'buyExpansion']
+  for (const [index, item] of operations.entries()) {
+    const invalid = (key: string, reason: string) =>
+      HttpResponse.json(
+        marketInvalidFixture(`operations.${index}.${key}`, reason),
+        { status: 400 },
+      )
+    const operation = field(item, 'operation')
+    if (!known.includes(String(operation)))
+      return invalid('operation', 'unknownOperation')
+    const slotIndex = field(item, 'slotIndex')
+    if (
+      operation === 'buySingle' &&
+      (typeof slotIndex !== 'number' ||
+        !Number.isInteger(slotIndex) ||
+        slotIndex < 0)
+    )
+      return invalid('slotIndex', 'notNonNegativeInteger')
+    const source = field(item, 'source')
+    if (
+      operation === 'sell' &&
+      source !== 'inventory' &&
+      source !== 'tcgFolder'
+    )
+      return invalid('source', 'unknownOption')
+  }
+  return undefined
+}
+
+/**
+ * `visitMarket`: tabela dos cenários do CONTRATO §3 FEAT-16 pela primeira
+ * operação que casa (D-62 item 5). Sem estado nem simulação do lote: preço,
+ * ouro e espaço não são conferidos aqui; qualquer outro lote devolve o
+ * `Party` do cenário "Estoque e lote".
+ */
+function marketScenario(operations: unknown): Response {
+  const list: unknown[] = Array.isArray(operations) ? operations : []
+  const refuse = (reason: string, operationIndex: number, cardId?: string) =>
+    HttpResponse.json(
+      marketRefusalFixture({
+        reason,
+        ...(cardId !== undefined && { cardId }),
+        operationIndex,
+      }),
+      { status: 409 },
+    )
+  if (list.filter((item) => field(item, 'operation') === 'sell').length > 1)
+    return HttpResponse.json(partyMarketSaleFixture)
+  if (
+    list.length > 1 &&
+    list.every((item) => field(item, 'expansion') === 'vaultSlots')
+  )
+    return refuse('notEnoughGold', 1)
+  for (const [index, item] of list.entries()) {
+    const operation = field(item, 'operation')
+    const cardId = field(item, 'cardId')
+    const slotIndex = field(item, 'slotIndex')
+    if (operation === 'buyStock' && cardId === 'fixture.pickaxe')
+      return refuse('notInMarketStock', index, cardId)
+    if (
+      operation === 'buyStock' &&
+      cardId === 'fixture.healing-potion' &&
+      index > 0 &&
+      field(list[0], 'operation') === 'buyBooster'
+    )
+      return refuse('notEnoughGold', index, cardId)
+    if (operation === 'buySingle' && slotIndex === 4)
+      return refuse('showcaseSlotNotFound', index)
+    if (operation === 'buySingle' && slotIndex === 3)
+      return refuse('showcaseSlotEmpty', index)
+    if (
+      operation === 'sell' &&
+      cardId === 'fixture.arrows' &&
+      field(item, 'quantity') === 15
+    )
+      return refuse('notLotMultiple', index, cardId)
+    if (operation === 'sell' && cardId === 'fixture.lucky-coin')
+      return HttpResponse.json(partyMarketGoldLostFixture)
+    if (operation === 'buyExpansion') {
+      const expansion = field(item, 'expansion')
+      if (expansion === 'purse')
+        return HttpResponse.json(partyMarketPurseFixture)
+      if (expansion === 'vaultGold') return refuse('notEnoughGold', index)
+    }
+  }
+  return HttpResponse.json(partyMarketArrowsFixture)
 }
 
 /**
@@ -729,6 +862,7 @@ function knownParty(
     partyId === partyCreatedFixture.id ||
     partyId === partyNoPointsFixture.id ||
     partyId === partyGearInSessionFixture.id ||
+    partyId === partyWithBoosterFixture.id ||
     partyId === partyFishingRodInSessionFixture.id ||
     partyId === partyEffectsReadyFixture.id ||
     partyId === partyRandomEventReadyFixture.id ||
@@ -1159,6 +1293,11 @@ export const handlers: RequestHandler[] = [
   http.get('*/lab/config', () => HttpResponse.json(progressionLabConfig())),
   http.patch('*/lab/config', async ({ request }) => {
     const body = await jsonBody(request)
+    // FEAT-16: os dois cenários do contrato, por tabela (sem conferir regra).
+    if (field(body, 'boosterChanceCommon') === 700)
+      return HttpResponse.json(labConfigSumMismatchFixture, { status: 400 })
+    if (field(body, 'marketFactorMinPercent') === 130)
+      return HttpResponse.json(labConfigMarketFactorFixture, { status: 400 })
     const progression = patchProgressionLabConfig(body)
     if (progression) return progression
     const reserve = field(body, 'reserveDeck')
@@ -1229,6 +1368,7 @@ export const handlers: RequestHandler[] = [
           [
             partyNoPointsFixture,
             partyGearInSessionFixture,
+            partyWithBoosterFixture,
             partyFishingRodInSessionFixture,
             partyEffectsReadyFixture,
             partyRandomEventReadyFixture,
@@ -1251,6 +1391,7 @@ export const handlers: RequestHandler[] = [
           [
             partyNoPointsFixture,
             partyGearInSessionFixture,
+            partyWithBoosterFixture,
             partyFishingRodInSessionFixture,
             partyEffectsReadyFixture,
             partyRandomEventReadyFixture,

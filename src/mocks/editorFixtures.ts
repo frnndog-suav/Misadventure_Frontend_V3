@@ -172,6 +172,7 @@ export const cardNotFoundFixture: ErrorEnvelope = {
 
 function forca(slug: string, name: string): Card {
   return {
+    priceMultiplier: 1,
     type: 'attribute',
     id: `bosque.${slug}`,
     collectionId: 'bosque',

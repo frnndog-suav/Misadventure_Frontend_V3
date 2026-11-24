@@ -29,6 +29,8 @@ export const notFoundFixture: ErrorEnvelope = {
 import {
   knockoutConfigDefaults,
   knockoutConfigLimits,
+  marketConfigDefaults,
+  marketConfigLimits,
   questConfigDefaults,
   questConfigLimits,
 } from '../api/labConfig'
@@ -70,6 +72,7 @@ const defaultValues: LabConfig['values'] = {
   vaultGoldCapacity: 2000,
   ...knockoutConfigDefaults,
   ...questConfigDefaults,
+  ...marketConfigDefaults,
   maxCombatCycles: 20,
   combatEscapeThreshold: 10,
   combatEscapePeakLoss: 2,
@@ -127,6 +130,7 @@ export const labConfigDefaultsFixture: LabConfig = {
     vaultGoldCapacity: { min: 0, max: 10000000 },
     ...knockoutConfigLimits,
     ...questConfigLimits,
+    ...marketConfigLimits,
     maxCombatCycles: { min: 1, max: 100 },
     combatEscapeThreshold: { min: 0, max: 20 },
     combatEscapePeakLoss: { min: 0, max: 1000 },
@@ -194,6 +198,23 @@ export const labConfigEventSettingsFixture: LabConfig = {
 export const labConfigMinAboveMaxFixture = labConfigInvalid([
   { field: 'minPlayers', reason: 'minAboveMax' },
   { field: 'maxPlayers', reason: 'minAboveMax' },
+])
+
+/** PATCH com { boosterChanceCommon: 700 } (FEAT-16): a soma passa de 1000. */
+export const labConfigSumMismatchFixture = labConfigInvalid(
+  [
+    'boosterChanceCommon',
+    'boosterChanceUncommon',
+    'boosterChanceRare',
+    'boosterChanceEpic',
+    'boosterChanceLegendary',
+  ].map((field) => ({ field, reason: 'sumMismatch' as const })),
+)
+
+/** PATCH com { marketFactorMinPercent: 130 } (FEAT-16). */
+export const labConfigMarketFactorFixture = labConfigInvalid([
+  { field: 'marketFactorMinPercent', reason: 'minAboveMax' },
+  { field: 'marketFactorMaxPercent', reason: 'minAboveMax' },
 ])
 
 /** PATCH com { initialGold: 2.5 }. */

@@ -13,12 +13,12 @@ Este arquivo ensina o Codex a trabalhar no projeto. `docs/` contém o conhecimen
 
 ## Mapa de consultas pontuais
 
-| Fonte | Quando consultar |
-| --- | --- |
-| `docs/SPEC-FRONTEND.md` | REQ, decisão e tarefa envolvidos no comportamento solicitado. |
-| `docs/README.md` | Seções das regras afetadas; Apêndice B ao investigar decisões fechadas. |
-| `docs/CONTRATO.md` | Seção e situação do contrato usado na comunicação com o backend. |
-| `docs/ROADMAP.md` | Planejamento da feature ou protocolo da ponte entre repositórios (§2). |
+| Fonte                                     | Quando consultar                                                         |
+| ----------------------------------------- | ------------------------------------------------------------------------ |
+| `docs/SPEC-FRONTEND.md`                   | REQ, decisão e tarefa envolvidos no comportamento solicitado.            |
+| `docs/README.md`                          | Seções das regras afetadas; Apêndice B ao investigar decisões fechadas.  |
+| `docs/CONTRATO.md`                        | Seção e situação do contrato usado na comunicação com o backend.         |
+| `docs/ROADMAP.md`                         | Planejamento da feature ou protocolo da ponte entre repositórios (§2).   |
 | `docs/devlog/README.md` e entrada da área | Histórico e ponto de retomada antes de alterar funcionalidade ou visual. |
 
 O mapa é uma referência, não uma lista de leituras obrigatórias. Não copie regras, contratos, requisitos ou registros de `docs/` para cá.

@@ -25,6 +25,8 @@ import { knockoutCombatFixture } from './combatFixtures'
 const prefix = 'fixture.quest-'
 const harbor = 'fixture.gray-harbor'
 const woods = 'fixture.whispering-grove'
+/** Mercado do Porto Cinzento (FEAT-16); fora dele, `market: null`. */
+const harborMarket = partyInSessionFixture.members[0]!.player.market
 const offer = (questCardId: string) => ({
   questCardId,
   title: questCardId === 'B' ? 'Entrega' : questCardId,
@@ -308,6 +310,7 @@ export function getQuestScenario(
         },
         {
           zoneId: name === 'board' ? woods : harbor,
+          market: name === 'board' ? null : harborMarket,
           moveTargets: [name === 'board' ? harbor : woods],
           peak: ['trial', 'progress'].includes(name) ? 30 : 10,
           gold: 200,
@@ -565,6 +568,7 @@ export function questPartyAction(party: Party, body: unknown) {
     return save(
       {
         zoneId: raw.zoneId,
+        market: raw.zoneId === harbor ? harborMarket : null,
         moveTargets: [player.zoneId],
         questBoard: raw.zoneId === woods ? originBoards.get(party.id)! : [],
       },

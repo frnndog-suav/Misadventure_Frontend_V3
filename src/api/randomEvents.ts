@@ -165,6 +165,8 @@ export const pendingRewardSchema = z.object({
       questCardId: z.string(),
     }),
     z.object({ type: z.literal('combatEvent'), combatId: z.string() }),
+    // FEAT-16: cópias de um booster aberto que não couberam.
+    z.object({ type: z.literal('booster'), boosterCardId: z.string() }),
   ]),
   destination: z.enum(['inventory', 'tcgFolder']),
   discardOptions: z.array(

@@ -149,6 +149,11 @@ export const zoneCardSchema = z.object({
   zoneActions: z.array(zoneActionSchema),
   questDeck: z.array(z.string()).default([]),
   effects: z.array(zoneEffectSchema),
+  /** FEAT-16 (README 3.4): só em zona com `visitMarket`; senão `null`. */
+  market: z
+    .object({ stock: z.array(z.string()), singles: z.boolean() })
+    .nullable()
+    .default(null),
 })
 
 /** README 4.3 */
@@ -161,6 +166,8 @@ export const attributeCardSchema = z.object({
   attributeKind: z.enum(['basic', 'synergy', 'enhanced']),
   attributes: z.array(attributeSchema).min(1),
   effects: z.array(effectSchema),
+  /** FEAT-16 (README 24.4). Legado: 1. */
+  priceMultiplier: z.number().min(0.8).max(1.5).default(1),
 })
 
 /** README 5.1 */
@@ -206,6 +213,11 @@ export const itemCardSchema = z.object({
   scavengeZoneTypes: z.array(zoneTypeSchema),
   /** FEAT-32: como em `equipmentCardSchema`. */
   scavengeTool: z.string().nullable(),
+  /** FEAT-16: ajuste de preço, preço e lote de estoque, coleção do booster (legado: 1, null, 1, null). */
+  priceMultiplier: z.number().min(0.8).max(1.5).default(1),
+  stockPrice: z.number().int().min(1).nullable().default(null),
+  stockQuantity: z.number().int().min(1).default(1),
+  boosterCollectionId: z.string().nullable().default(null),
 })
 
 /** README 14.1 */

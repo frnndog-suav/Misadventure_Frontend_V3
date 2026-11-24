@@ -125,3 +125,5 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 093 | RETORNO | [FEAT-15 validada contra o backend real](093-feat-15-validacao-integrada.md) | aguardando revisão |
 | 094 | RETORNO | [FEAT-16: contrato acordado](094-RETORNO-feat-16-contrato-acordado.md) | acordado na v0.80 |
 | 095 | RETORNO | [FEAT-16: implementado no backend](095-RETORNO-feat-16-implementado-be.md) | v0.81; validação aguarda o FE |
+| 096 | FEAT-16 | [Planejamento do Mercado na spec](096-feat-16-planejamento.md) | aprovada |
+| 097 | FEAT-16 | [T-70: cliente e fixtures MSW do Mercado](097-T-70-cliente-feat-16.md) | concluída |

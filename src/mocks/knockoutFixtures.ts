@@ -59,6 +59,7 @@ const atRisk = withPlayer(
   { ...base, turn: { ...base.turn, round: 6, actionPoints: 2 } },
   {
     zoneId: woods,
+    market: null,
     respawnZoneId: town,
     moveTargets: [town],
     health: 2,
@@ -327,6 +328,7 @@ function respawn(
     },
     {
       zoneId: town,
+      market: null,
       moveTargets: [harbor, woods],
       availableActions: urbanActions,
       health: 2,
@@ -420,6 +422,7 @@ export function knockoutAction(party: Party, body: unknown) {
         { ...party, turn: { ...party.turn, actionPoints: 2 } },
         {
           zoneId: town,
+          market: null,
           moveTargets: [harbor, woods],
         },
       ),

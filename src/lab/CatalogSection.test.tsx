@@ -56,7 +56,9 @@ const unavailable = 'Servidor indisponível. Tente novamente.'
 /** As 25 cartas da `fixture`, incluindo o exemplo executável da FEAT-12. */
 const expectedOrder = [
   'Varinha Arcana · Equipamento',
+  'Flechas · Item',
   'Lâmina do Crepúsculo · Equipamento',
+  'Booster de Teste · Item',
   'Destreza · Atributo',
   'Resistência · Atributo',
   'Carroça na estrada · Evento aleatório',
@@ -105,18 +107,18 @@ describe('CatalogSection', () => {
       .getAllByRole('radio')
       .map((r) => r.closest('label')?.textContent)
     expect(options).toEqual([
-      'Todos (25)',
+      'Todos (27)',
       'Zona (4)',
       'Atributo (3)',
       'Equipamento (7)',
-      'Item (7)',
+      'Item (9)',
       'Evento aleatório (2)',
       'Evento de combate (1)',
       'Missão de zona (0)',
       'Dimensão (1)',
     ])
     expect(
-      within(filter).getByRole('radio', { name: 'Todos (25)' }),
+      within(filter).getByRole('radio', { name: 'Todos (27)' }),
     ).toBeChecked()
   })
 

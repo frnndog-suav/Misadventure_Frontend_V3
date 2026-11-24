@@ -88,6 +88,45 @@ const fieldLabels: Record<NumericKey, string> = {
     'Trava de especialização (reforço de essencial)',
   zoneQuestPeakGain: 'Pico por missão de zona',
   genericQuestPeakGain: 'Pico por missão genérica',
+  // FEAT-16 (REQ-71)
+  singlesShowcaseSlots: 'Slots da vitrine de singles',
+  singlesDecayMax: 'Decaimento dos singles (D20 até)',
+  singlesPoolSize: 'Tamanho do pool de singles',
+  marketFactorMinPercent: 'Fator do mercado mínimo (%)',
+  marketFactorMaxPercent: 'Fator do mercado máximo (%)',
+  singlesStockCommon: 'Estoque de single Comum',
+  singlesStockUncommon: 'Estoque de single Incomum',
+  singlesStockRare: 'Estoque de single Rara',
+  singlesStockEpic: 'Estoque de single Épica',
+  singlesStockLegendary: 'Estoque de single Lendária',
+  singlesPriceCommon: 'Preço base Comum',
+  singlesPriceUncommon: 'Preço base Incomum',
+  singlesPriceRare: 'Preço base Rara',
+  singlesPriceEpic: 'Preço base Épica',
+  singlesPriceLegendary: 'Preço base Lendária',
+  scarcityStepPercent: 'Escassez por cópia vendida (%)',
+  treasureValueCommon: 'Valor de tesouro Comum',
+  treasureValueUncommon: 'Valor de tesouro Incomum',
+  treasureValueRare: 'Valor de tesouro Rara',
+  treasureValueEpic: 'Valor de tesouro Épica',
+  treasureValueLegendary: 'Valor de tesouro Lendária',
+  boosterPrice: 'Preço do booster',
+  boosterCardCount: 'Cartas por booster',
+  boosterSalePrice: 'Venda do booster fechado',
+  boosterChanceCommon: 'Chance Comum no booster (milésimos)',
+  boosterChanceUncommon: 'Chance Incomum no booster (milésimos)',
+  boosterChanceRare: 'Chance Rara no booster (milésimos)',
+  boosterChanceEpic: 'Chance Épica no booster (milésimos)',
+  boosterChanceLegendary: 'Chance Lendária no booster (milésimos)',
+  vaultExpansionSlots: 'Slots por expansão do cofre',
+  vaultExpansionBasePrice: 'Preço base da expansão do cofre',
+  deckSlotExpansionSlots: 'Slots por expansão de deck',
+  deckSlotExpansionBasePrice: 'Preço base do slot de deck',
+  tcgFolderExpansionSlots: 'Cartas por expansão da pasta de TCG',
+  tcgFolderExpansionBasePrice: 'Preço base da expansão da pasta de TCG',
+  purseExpansionPricePercent: 'Preço da expansão da bolsa (% da capacidade)',
+  vaultGoldExpansionPricePercent:
+    'Preço da expansão do ouro do cofre (% da capacidade)',
 }
 
 const fieldKeys = Object.keys(fieldLabels) as NumericKey[]
@@ -244,6 +283,8 @@ function fieldErrorText(
       return 'Use um número inteiro.'
     case 'minAboveMax':
       return 'O mínimo de jogadores não pode passar do máximo.'
+    case 'sumMismatch':
+      return 'As cinco chances do booster precisam somar 1000 milésimos.'
     case 'unknownKey':
     case 'invalidBody':
       return null

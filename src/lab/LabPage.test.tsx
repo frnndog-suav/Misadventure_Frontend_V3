@@ -146,6 +146,11 @@ const labels = [
   ['vaultGoldCapacity', 'Capacidade de ouro do cofre'],
 ] as const
 
+// T-70 (autor, 2026-11-23): com as 37 chaves da FEAT-16 a página tem cerca de
+// 100 campos e cada consulta por papel fica lenta no jsdom; na suíte inteira
+// um teste passava dos 5 s. Só o prazo muda, nenhuma asserção.
+vi.setConfig({ testTimeout: 15_000 })
+
 async function loaded(): Promise<void> {
   await screen.findByRole('spinbutton', { name: 'Pontos de ação por vez' })
 }

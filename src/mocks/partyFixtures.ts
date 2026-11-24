@@ -63,8 +63,15 @@ const member: Party['members'][number] = {
     lastKnockout: null,
     skipNextTurn: false,
     moveTargets: ['fixture.stone-bend', 'fixture.whispering-grove'],
-    // FEAT-32: a cidade inicial tem `useVault` (CONTRATO v0.46).
-    availableActions: ['move', 'recover', 'adjustDeck', 'useVault', 'endTurn'],
+    // FEAT-32 e FEAT-16: a cidade inicial tem `useVault` e `visitMarket` (CONTRATO v0.81).
+    availableActions: [
+      'move',
+      'recover',
+      'adjustDeck',
+      'useVault',
+      'visitMarket',
+      'endTurn',
+    ],
     build: [
       { cardId: endurance, copies: 30 },
       { cardId: strength, copies: 30 },
@@ -104,6 +111,58 @@ const member: Party['members'][number] = {
     vaultGoldCapacity: 2000,
     scavengeTargets: [],
     lastScavenge: null,
+    // FEAT-16 (CONTRATO v0.81, cenário "Estado inicial" com fator 115). A
+    // vitrine é sorteada pelo backend; aqui é fixa, de exemplo (D-62 item 5).
+    expansions: {
+      vaultSlots: 0,
+      deckSlots: 0,
+      tcgFolder: 0,
+      purse: 0,
+      vaultGold: 0,
+    },
+    market: {
+      zoneId: 'fixture.gray-harbor',
+      factorPercent: 115,
+      stock: [
+        { cardId: potion, price: 7, copiesPerPurchase: 1 },
+        { cardId: 'fixture.arrows', price: 4, copiesPerPurchase: 10 },
+        { cardId: 'fixture.fishing-rod', price: 23, copiesPerPurchase: 1 },
+      ],
+      boosters: [{ cardId: 'fixture.booster', price: 30 }],
+      showcase: [
+        {
+          slotIndex: 0,
+          offer: { cardId: strength, price: 6, destination: 'tcgFolder' },
+        },
+        {
+          slotIndex: 1,
+          offer: {
+            cardId: 'fixture.short-sword',
+            price: 7,
+            destination: 'inventory',
+          },
+        },
+        {
+          slotIndex: 2,
+          offer: {
+            cardId: 'fixture.iron-ore',
+            price: 6,
+            destination: 'inventory',
+          },
+        },
+        { slotIndex: 3, offer: null },
+      ],
+      services: [
+        { expansion: 'vaultSlots', price: 50, capacity: 35 },
+        { expansion: 'deckSlots', price: 100, capacity: 11 },
+        { expansion: 'tcgFolder', price: 60, capacity: 40 },
+        { expansion: 'purse', price: 150, capacity: 600 },
+        { expansion: 'vaultGold', price: 500, capacity: 4000 },
+      ],
+      sellOffers: [],
+    },
+    lastMarketVisit: null,
+    lastBoosterOpening: null,
     handCopies: [
       strength,
       endurance,
@@ -191,7 +250,8 @@ function partyMovedTo(zoneId: string, moveTargets: string[]): Party {
           ...member.player,
           zoneId,
           moveTargets,
-          // Fora da cidade: sem `useVault` (FEAT-32).
+          // Fora da cidade: sem `useVault` (FEAT-32) e sem mercado (FEAT-16).
+          market: null,
           availableActions: ['move', 'recover', 'adjustDeck', 'endTurn'],
         },
       },
@@ -308,6 +368,7 @@ export const partyGearInSessionFixture: Party = {
           'prepare',
           'adjustDeck',
           'useVault',
+          'visitMarket',
           'endTurn',
         ],
       },
@@ -409,6 +470,7 @@ export const partyFishingRodGrantedFixture: Party = {
           'adjustDeck',
           'scavenge',
           'useVault',
+          'visitMarket',
           'endTurn',
         ],
       },

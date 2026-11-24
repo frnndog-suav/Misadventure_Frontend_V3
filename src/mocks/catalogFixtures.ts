@@ -21,7 +21,7 @@ export const collectionsFixture: CollectionSummary[] = [
       zone: 4,
       attribute: 3,
       equipment: 7,
-      item: 7,
+      item: 9,
       randomEvent: 2,
       combatEvent: 1,
       zoneQuest: 0,
@@ -89,6 +89,10 @@ export const healingPotionFixture: Extract<Card, { type: 'item' }> = {
   toolKind: null,
   scavengeZoneTypes: [],
   scavengeTool: null,
+  priceMultiplier: 1,
+  stockPrice: 6,
+  stockQuantity: 1,
+  boosterCollectionId: null,
   type: 'item',
   collectionId: 'fixture',
 }
@@ -135,6 +139,7 @@ export const howlingWolvesFixture: CombatEventCard = {
 
 /** Cópia exata do 3º cenário do contrato. */
 export const strengthBasicFixture: Card = {
+  priceMultiplier: 1,
   type: 'attribute',
   id: 'fixture.strength-basic',
   collectionId: 'fixture',
@@ -148,6 +153,7 @@ export const strengthBasicFixture: Card = {
 
 /** Cópia exata do backend (coleção `fixture`, CONTRATO v0.12). */
 export const whisperingGroveFixture: Card = {
+  market: null,
   id: 'fixture.whispering-grove',
   title: 'Bosque Sussurrante',
   zoneType: 'forest',
@@ -172,8 +178,19 @@ export const grayHarborFixture: Card = {
   connectionArrows: 4,
   arrowLayout: null,
   questDeck: [],
-  zoneActions: ['startEvent', 'scavenge', 'useVault', 'saveRespawnPoint'],
+  // FEAT-16 (CONTRATO v0.81): mercado com estoque e singles.
+  zoneActions: [
+    'startEvent',
+    'scavenge',
+    'useVault',
+    'visitMarket',
+    'saveRespawnPoint',
+  ],
   effects: [],
+  market: {
+    stock: ['fixture.healing-potion', 'fixture.arrows', 'fixture.fishing-rod'],
+    singles: true,
+  },
 }
 
 export const respawnTownFixture: Card = {
@@ -181,10 +198,14 @@ export const respawnTownFixture: Card = {
   id: 'fixture.respawn-town',
   title: 'Vila do Retorno',
   connectionArrows: 2,
+  // Só o Porto Cinzento tem mercado na `fixture` (FEAT-16).
+  zoneActions: ['startEvent', 'scavenge', 'useVault', 'saveRespawnPoint'],
+  market: null,
 }
 
 /** Cópia exata do backend (coleção `fixture`, CONTRATO v0.25). */
 export const stoneBendFixture: Card = {
+  market: null,
   type: 'zone',
   id: 'fixture.stone-bend',
   collectionId: 'fixture',
@@ -200,6 +221,7 @@ export const stoneBendFixture: Card = {
 
 /** Cópia exata do backend (coleção `fixture`, CONTRATO v0.25). */
 export const oldMineFixture: Card = {
+  market: null,
   type: 'zone',
   id: 'fixture.old-mine',
   collectionId: 'fixture',
@@ -215,6 +237,7 @@ export const oldMineFixture: Card = {
 
 /** Cópia exata do backend (coleção `fixture`, CONTRATO v0.25). */
 export const enduranceBasicFixture: Card = {
+  priceMultiplier: 1,
   type: 'attribute',
   id: 'fixture.endurance-basic',
   collectionId: 'fixture',
@@ -228,6 +251,7 @@ export const enduranceBasicFixture: Card = {
 
 /** Cópia exata do backend (coleção `fixture`, CONTRATO v0.25). */
 export const dexterityBasicFixture: Card = {
+  priceMultiplier: 1,
   type: 'attribute',
   id: 'fixture.dexterity-basic',
   collectionId: 'fixture',
@@ -313,7 +337,8 @@ export const shortSwordFixture: Card = {
   effects: [],
   refinement: null,
   enchantment: null,
-  priceMultiplier: 1,
+  // FEAT-16 (CONTRATO v0.81): ×1,2.
+  priceMultiplier: 1.2,
   scavengeTool: null,
   type: 'equipment',
   collectionId: 'fixture',
@@ -383,6 +408,10 @@ export const arcaneWandFixture: Card = {
 }
 
 export const pickaxeFixture: Card = {
+  priceMultiplier: 1,
+  stockPrice: null,
+  stockQuantity: 1,
+  boosterCollectionId: null,
   id: 'fixture.pickaxe',
   name: 'Picareta',
   flavorText: null,
@@ -414,11 +443,61 @@ export const fishingRodFixture: Card = {
   toolKind: 'fishing-rod',
   scavengeZoneTypes: ['coastal', 'fluvial', 'lacustrine', 'urban'],
   scavengeTool: null,
+  priceMultiplier: 1,
+  stockPrice: 20,
+  stockQuantity: 1,
+  boosterCollectionId: null,
+  type: 'item',
+  collectionId: 'fixture',
+}
+
+/**
+ * Cartas acrescentadas à `fixture` na FEAT-16 (CONTRATO v0.81), só com o que
+ * o contrato fixa (nome, categoria, raridade, estoque, lote e coleção).
+ */
+export const arrowsFixture: Card = {
+  id: 'fixture.arrows',
+  name: 'Flechas',
+  flavorText: null,
+  rarity: 'common',
+  itemCategory: 'consumable',
+  tags: [],
+  effects: [],
+  toolKind: null,
+  scavengeZoneTypes: [],
+  scavengeTool: null,
+  priceMultiplier: 1,
+  stockPrice: 3,
+  stockQuantity: 10,
+  boosterCollectionId: null,
+  type: 'item',
+  collectionId: 'fixture',
+}
+
+export const boosterFixture: Card = {
+  id: 'fixture.booster',
+  name: 'Booster de Teste',
+  flavorText: null,
+  rarity: 'common',
+  itemCategory: 'booster',
+  tags: [],
+  effects: [],
+  toolKind: null,
+  scavengeZoneTypes: [],
+  scavengeTool: null,
+  priceMultiplier: 1,
+  stockPrice: null,
+  stockQuantity: 1,
+  boosterCollectionId: 'fixture',
   type: 'item',
   collectionId: 'fixture',
 }
 
 export const silverFishFixture: Card = {
+  priceMultiplier: 1,
+  stockPrice: null,
+  stockQuantity: 1,
+  boosterCollectionId: null,
   id: 'fixture.silver-fish',
   name: 'Peixe Prateado',
   flavorText: null,
@@ -434,6 +513,10 @@ export const silverFishFixture: Card = {
 }
 
 export const ironOreFixture: Card = {
+  priceMultiplier: 1,
+  stockPrice: null,
+  stockQuantity: 1,
+  boosterCollectionId: null,
   id: 'fixture.iron-ore',
   name: 'Minério de Ferro',
   flavorText: null,
@@ -576,7 +659,9 @@ export const executableEventFixture = {
 /** GET /catalog/collections/fixture/cards — 25 cartas na ordem de `id`. */
 export const fixtureCardsFixture: Card[] = [
   arcaneWandFixture,
+  arrowsFixture,
   bladeOfDuskFixture,
+  boosterFixture,
   dexterityBasicFixture,
   enduranceBasicFixture,
   executableEventFixture,
@@ -625,6 +710,8 @@ export const fixtureCardsByTypeFixture: Record<CardType, Card[]> = {
     shortSwordFixture,
   ],
   item: [
+    arrowsFixture,
+    boosterFixture,
     fishingRodFixture,
     healingPotionFixture,
     ironOreFixture,

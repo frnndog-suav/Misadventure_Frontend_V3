@@ -155,6 +155,7 @@ describe('REQ-44: PlayerState com inventário, equipamentos, bolsa e modificador
       'recover',
       'adjustDeck',
       'useVault',
+      'visitMarket',
       'endTurn',
     ])
   })
@@ -235,6 +236,7 @@ describe('REQ-44: PlayerState com inventário, equipamentos, bolsa e modificador
       'prepare',
       'adjustDeck',
       'useVault',
+      'visitMarket',
       'endTurn',
     ])
   })
@@ -252,6 +254,7 @@ describe('REQ-44: PlayerState com inventário, equipamentos, bolsa e modificador
       'continueQuest',
       'finishQuest',
       'takeTrialQuest',
+      'visitMarket',
       'trainWithMentor',
       'saveRespawnPoint',
       'startEvent',
@@ -291,8 +294,8 @@ describe('REQ-44: cartas novas da fixture', () => {
       (card) => card.id,
     )
     expect(ids).toEqual([...ids].sort())
-    expect(ids).toHaveLength(25)
-    expect(fixtureCardsFixture).toHaveLength(25)
+    expect(ids).toHaveLength(27)
+    expect(fixtureCardsFixture).toHaveLength(27)
     expect(ids).toEqual(expect.arrayContaining([W, D, H, R, K]))
   })
 
@@ -330,7 +333,7 @@ describe('REQ-44: cartas novas da fixture', () => {
       zone: 4,
       attribute: 3,
       equipment: 7,
-      item: 7,
+      item: 9,
       randomEvent: 2,
       combatEvent: 1,
       zoneQuest: 0,
@@ -349,6 +352,8 @@ describe('REQ-44: cartas novas da fixture', () => {
       W,
     ])
     expect(fixtureCardsByTypeFixture.item.map((c) => c.id)).toEqual([
+      'fixture.arrows',
+      'fixture.booster',
       'fixture.fishing-rod',
       P,
       'fixture.iron-ore',
