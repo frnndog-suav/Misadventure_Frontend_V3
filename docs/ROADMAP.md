@@ -1,6 +1,6 @@
 # Misadventures — Roadmap de desenvolvimento
 
-> **Versão:** 0.79 · **Data:** 2026-11-24
+> **Versão:** 0.80 · **Data:** 2026-11-24
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend; o autor copia o arquivo inteiro quando ele muda. Base: README Parte III (III.2 e III.4). As regras estão em [`README.md`](README.md); o que trafega entre os lados, em [`CONTRATO.md`](CONTRATO.md).
 
@@ -69,7 +69,7 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | FEAT-14 | Nocaute, spawn, respawn e Salvar ponto de respawn (inclui o nocaute no jogo solo) | 20, 12.2 | validado | validado |
 | FEAT-15 | Missões de zona, provação e mentor; especializações e multiclasse | 21, 8.3, 8.4 | validado | validado |
 | FEAT-16 | Mercado: estoque, venda, boosters, singles, serviços | 24 | validado | validado |
-| FEAT-17 | Ferreiro e Oficina do Artífice | 25 | aguardando outro lado | pronto |
+| FEAT-17 | Ferreiro e Oficina do Artífice | 25 | validado | validado |
 | FEAT-18 | Montarias e Estábulo | 26 | a fazer | a fazer |
 | FEAT-19 | Conclusão da dimensão, chefe final, passagem para a próxima, save congelado | 3.2, 28.1 | a fazer | a fazer |
 
@@ -192,3 +192,4 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | 0.77 | 2026-11-24 | FEAT-17: contrato `acordado` pelo BE (CONTRATO v0.85, pedidos do FE aceitos); FE `a fazer` (falta planejar REQs e tarefas na spec); BE sai de `aguardando outro lado` para `a fazer` (T-67 liberada). |
 | 0.78 | 2026-11-24 | FEAT-17: FE `aguardando outro lado` (T-75 a T-78 prontas com MSW); falta o BE e a validação contra o backend real (T-79). |
 | 0.79 | 2026-11-24 | FEAT-17: BE `pronto` (`implementado (BE)` no CONTRATO v0.86, T-67 a T-73); falta a validação integrada do FE (T-79). |
+| 0.80 | 2026-11-24 | FEAT-17 `validado` nos dois lados (T-79, CONTRATO v0.87). |

@@ -138,3 +138,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 105 | T-76 | [Laboratório, catálogo e editor do ferreiro](105-T-76-laboratorio-catalogo-editor-feat-17.md) | aguardando revisão |
 | 106 | T-77 | [Estado do equipamento e venda por cópia](106-T-77-estado-equipamento-venda-feat-17.md) | aguardando revisão |
 | 107 | T-78 | [Ir ao Ferreiro e Oficina: seção e lote](107-T-78-ferreiro-oficina-feat-17.md) | concluída com MSW |
+| 108 | T-79 | [Validação integrada da FEAT-17](108-T-79-validacao-integrada-feat-17.md) | concluída |

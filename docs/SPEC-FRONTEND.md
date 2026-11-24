@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.95 · **Data:** 2026-11-24
+> **Versão da spec:** 0.96 · **Data:** 2026-11-24
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -988,7 +988,7 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 - [x] **T-76 — Laboratório, catálogo e editor** (REQ-77, REQ-78). E2E nas áreas `lab` e `editor`.
 - [x] **T-77 — Estado do equipamento e venda por cópia** (REQ-79). E2E na área `party`.
 - [x] **T-78 — Ir ao Ferreiro e Oficina: seção e lote** (REQ-80, REQ-81). E2E na área `party`.
-- [ ] **T-79 — Validação integrada da FEAT-17.** Repetir os cenários do contrato contra o backend real com MSW desligado, com as campanhas preparadas pelo backend (Artífice ativo e Ferreiro Arcano).
+- [x] **T-79 — Validação integrada da FEAT-17.** Repetir os cenários do contrato contra o backend real com MSW desligado, com as campanhas preparadas pelo backend (Artífice ativo e Ferreiro Arcano).
 
 ## 8. Histórico
 
@@ -1089,3 +1089,4 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 | 0.93 | 2026-11-24 | T-76 concluída: laboratório, catálogo e editor do ferreiro (REQ-77, REQ-78, D-63 item 9). REQ-10 e REQ-21 alinhados ao REQ-78 (blocos "Refino" e "Encantamento"; "Slots"); rótulo "Identificador do encantamento {n}". |
 | 0.94 | 2026-11-24 | T-77 concluída: estado do equipamento na tela do grupo e venda por cópia no Mercado (REQ-79), com MSW; formato do sufixo, descrição da venda e total por cópia fixados no REQ-79. |
 | 0.95 | 2026-11-24 | T-78 concluída: seção do ferreiro e da Oficina com lote, confirmação, resultado e textos dos motivos (REQ-80, REQ-81), com MSW; formatação fixada na D-63 item 10. |
+| 0.96 | 2026-11-24 | T-79 concluída: FEAT-17 validada contra o backend real (CONTRATO v0.87). O cenário "Lote com falha e quebra" tem 5 operações e nenhuma `skipped`; o MSW e o teste da T-75 (6 operações, D-63 item 8) ficam a alinhar. |
