@@ -134,4 +134,5 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 101 | T-74 | [Validação integrada da FEAT-16](101-T-74-validacao-integrada-feat-16.md) | concluída |
 | 102 | FEAT-16 | [Fechamento da FEAT-16](102-feat-16-fechamento.md) | concluída |
 | 103 | FEAT-17 | [Planejamento do ferreiro na spec](103-feat-17-planejamento.md) | concluída |
-| 104 | T-75 | [Cliente e fixtures MSW do ferreiro](104-T-75-cliente-feat-17.md) | aguardando revisão |
+| 104 | T-75 | [Cliente e fixtures MSW do ferreiro](104-T-75-cliente-feat-17.md) | concluída com MSW |
+| 105 | T-76 | [Laboratório, catálogo e editor do ferreiro](105-T-76-laboratorio-catalogo-editor-feat-17.md) | aguardando revisão |

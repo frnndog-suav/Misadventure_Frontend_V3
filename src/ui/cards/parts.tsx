@@ -5,6 +5,7 @@ import {
   useCatalogCard,
   useCollections,
   type Ability,
+  type MaterialRequirement,
   type Rarity,
   type RuleText,
 } from '../../api/catalog'
@@ -197,6 +198,27 @@ export function Effects({
             : effect.mark && effectMarkLabels[effect.mark]
         return label ? `${label}: ${effect.text}` : effect.text
       }}
+    />
+  )
+}
+
+/** Materiais como "{quantity}× {nome}" (REQ-78); a lista some quando vazia. */
+export function Materials({
+  label,
+  materials,
+}: {
+  label: string
+  materials: readonly MaterialRequirement[]
+}) {
+  return (
+    <LabeledList
+      label={label}
+      items={materials}
+      render={(m) => (
+        <>
+          {formatNumber(m.quantity)}× <CardName cardId={m.cardId} />
+        </>
+      )}
     />
   )
 }

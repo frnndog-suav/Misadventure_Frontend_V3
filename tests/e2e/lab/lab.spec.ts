@@ -256,3 +256,64 @@ test('REQ-72: o Catálogo mostra o preço da carta e o mercado da zona (MSW)', a
   await expect(harbor.getByRole('list', { name: 'Estoque' })).toBeVisible()
   await expect(harbor.getByText('Vende singles')).toBeVisible()
 })
+
+test('REQ-77: a configuração mostra as chaves do ferreiro com padrão e limites (MSW)', async ({
+  page,
+}) => {
+  await page.goto('/lab')
+  const region = page.getByRole('region', { name: 'Configuração' })
+  const breakFrom = region.getByRole('spinbutton', {
+    name: 'Refino quebra a partir do nível',
+  })
+  await expect(breakFrom).toBeVisible()
+  await expect(breakFrom).toHaveAccessibleDescription(
+    'Padrão: 7 · Mín. 1 · Máx. 11',
+  )
+  await expect(
+    region.getByRole('spinbutton', { name: 'Bônus do Artífice no D20' }),
+  ).toBeVisible()
+  await expect(
+    region.getByRole('spinbutton', {
+      name: 'Desconto do conserto na Oficina (%)',
+    }),
+  ).toBeVisible()
+})
+
+test('REQ-78: o Catálogo mostra Refino, Encantamento, Receita e Ferreiro (MSW)', async ({
+  page,
+}) => {
+  await page.goto('/lab')
+  const section = page.getByRole('region', { name: 'Catálogo' })
+  const list = section.getByRole('list', { name: 'Cartas' })
+
+  await list.getByRole('button', { name: 'Espada Curta · Equipamento' }).click()
+  const sword = section.getByRole('article', { name: 'Espada Curta' })
+  const refine = sword.getByRole('region', { name: 'Refino' })
+  await expect(refine.getByText('Até +10')).toBeVisible()
+  await expect(
+    refine.getByRole('list', { name: 'Materiais por tentativa' }),
+  ).toContainText('1× Minério de Ferro')
+  await expect(
+    sword
+      .getByRole('region', { name: 'Encantamento' })
+      .getByText('Slot 1: elemento, a partir do refino +2'),
+  ).toBeVisible()
+
+  await list
+    .getByRole('button', { name: 'Projeto: Espada Curta · Item' })
+    .click()
+  const blueprint = section.getByRole('article', {
+    name: 'Projeto: Espada Curta',
+  })
+  const recipe = blueprint.getByRole('region', { name: 'Receita' })
+  await expect(recipe.getByText('Cria Espada Curta')).toBeVisible()
+  await expect(recipe.getByText('15 de ouro')).toBeVisible()
+
+  await list.getByRole('button', { name: 'Porto Cinzento · Zona' }).click()
+  const harbor = section.getByRole('article', { name: 'Porto Cinzento' })
+  await expect(
+    harbor
+      .getByRole('region', { name: 'Ferreiro' })
+      .getByText('Fio de Brasa — elemento Fogo (+10%)'),
+  ).toBeVisible()
+})

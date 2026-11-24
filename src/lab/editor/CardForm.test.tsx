@@ -411,6 +411,7 @@ describe('REQ-21: salvar', () => {
         },
       ],
       market: null,
+      blacksmith: null,
     })
   })
 
@@ -668,7 +669,7 @@ describe('REQ-21: equipamento', () => {
     expect(field('Bloqueia escudo')).toBeChecked()
     expect(field('Refino')).toBeChecked()
     expect(field('Nível máximo')).toHaveValue('3')
-    // FEAT-17: materiais em lista e Lâmina sem encantamento (controles na T-76).
+    // FEAT-17 (T-76): materiais em lista e Lâmina sem encantamento.
     expect(field('Encantamento')).not.toBeChecked()
     expect(field('Ajuste de preço')).toHaveValue('1')
   })
@@ -949,6 +950,7 @@ describe('REQ-21: item', () => {
       stockPrice: null,
       stockQuantity: 1,
       boosterCollectionId: null,
+      recipe: null,
     })
   })
 
@@ -2139,5 +2141,518 @@ describe('REQ-72: campos do mercado no editor', () => {
         'O lote deve ser inteiro.',
       ),
     )
+  })
+})
+
+describe('REQ-78: campos do ferreiro no editor', () => {
+  const group = (name: string) => within(form()).getByRole('group', { name })
+
+  function rejectWith(
+    method: 'post' | 'put',
+    fields: { path: string; message: string }[],
+  ): void {
+    server.use(
+      http[method](method === 'post' ? cardsUrl : cardUrl, () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: 'CONTENT_INVALID',
+              message: 'Conteúdo inválido.',
+              details: { fields },
+            },
+          },
+          { status: 400 },
+        ),
+      ),
+    )
+  }
+
+  function fillEspada(): void {
+    type('Identificador', 'espada')
+    type('Nome', 'Espada')
+    fireEvent.change(field('Raridade'), { target: { value: 'common' } })
+    fireEvent.change(field('Slot'), { target: { value: 'weapon' } })
+  }
+
+  function fillPraca(): void {
+    type('Identificador', 'praca')
+    type('Título', 'Praça')
+    fireEvent.change(field('Tipo de zona'), { target: { value: 'urban' } })
+    type('Local', 'Cidade')
+    type('Setas de conexão', '4')
+  }
+
+  function fillPocao(): void {
+    type('Identificador', 'pocao')
+    type('Nome', 'Poção')
+    fireEvent.change(field('Raridade'), { target: { value: 'common' } })
+    fireEvent.change(field('Categoria'), { target: { value: 'consumable' } })
+  }
+
+  const add = (list: HTMLElement) =>
+    fireEvent.click(within(list).getByRole('button', { name: 'Adicionar' }))
+
+  describe('equipamento: "Materiais" do "Refino" e "Slots" do "Encantamento"', () => {
+    it('REQ-78: equipamento refinável abre com os materiais e os slots, e salvar não os apaga', async () => {
+      const bodies = recordBodies()
+      renderEditor()
+      await openCard('Espada Curta · Equipamento · Publicada')
+      expect(field('Refino')).toBeChecked()
+      expect(field('Nível máximo')).toHaveValue('10')
+      const materials = group('Materiais')
+      expect(within(materials).getByLabelText('Material 1')).toHaveValue(
+        'fixture.iron-ore',
+      )
+      expect(within(materials).getByLabelText('Quantidade 1')).toHaveValue('1')
+      expect(field('Encantamento')).toBeChecked()
+      const slots = group('Slots')
+      expect(within(slots).getByLabelText('Tipo 1')).toHaveValue('element')
+      expect(within(slots).getByLabelText('Refino mínimo 1')).toHaveValue('2')
+      expect(screen.queryByLabelText('Texto do encantamento')).toBeNull()
+      type('Nome', 'Espada Curta Boa')
+      fireEvent.click(saveButton())
+      await waitFor(() => expect(bodies).toHaveLength(1))
+      expect(bodies[0].body).toMatchObject({
+        refinement: {
+          maxLevel: 10,
+          materials: [{ cardId: 'fixture.iron-ore', quantity: 1 }],
+        },
+        enchantment: { slots: [{ kind: 'element', minRefinement: 2 }] },
+      })
+    })
+
+    it('REQ-78: "Materiais" e "Slots" só aparecem com "Refino" e "Encantamento" ligados; o corpo leva números e a ordem da lista', async () => {
+      const bodies = recordBodies()
+      renderEditor()
+      await newCard('Equipamento')
+      fillEspada()
+      expect(
+        within(form()).queryByRole('group', { name: 'Materiais' }),
+      ).toBeNull()
+      expect(within(form()).queryByRole('group', { name: 'Slots' })).toBeNull()
+
+      fireEvent.click(field('Refino'))
+      type('Nível máximo', '3')
+      const materials = group('Materiais')
+      add(materials)
+      add(materials)
+      fireEvent.change(within(materials).getByLabelText('Material 1'), {
+        target: { value: 'fixture.iron-ore' },
+      })
+      fireEvent.change(within(materials).getByLabelText('Quantidade 1'), {
+        target: { value: '2' },
+      })
+      fireEvent.change(within(materials).getByLabelText('Material 2'), {
+        target: { value: 'fixture.ember-shard' },
+      })
+      fireEvent.change(within(materials).getByLabelText('Quantidade 2'), {
+        target: { value: '1' },
+      })
+      fireEvent.click(
+        within(within(materials).getAllByRole('listitem')[1]).getByRole(
+          'button',
+          { name: 'Subir' },
+        ),
+      )
+      expect(within(materials).getByLabelText('Material 1')).toHaveValue(
+        'fixture.ember-shard',
+      )
+
+      fireEvent.click(field('Encantamento'))
+      const slots = group('Slots')
+      add(slots)
+      add(slots)
+      fireEvent.change(within(slots).getByLabelText('Tipo 1'), {
+        target: { value: 'element' },
+      })
+      fireEvent.change(within(slots).getByLabelText('Refino mínimo 1'), {
+        target: { value: '2' },
+      })
+      fireEvent.change(within(slots).getByLabelText('Tipo 2'), {
+        target: { value: 'effect' },
+      })
+      fireEvent.change(within(slots).getByLabelText('Refino mínimo 2'), {
+        target: { value: '0' },
+      })
+      fireEvent.click(saveButton())
+      await waitFor(() =>
+        expect(formStatus()).toHaveTextContent('Rascunho salvo.'),
+      )
+      expect(bodies[0].body).toMatchObject({
+        refinement: {
+          maxLevel: 3,
+          materials: [
+            { cardId: 'fixture.ember-shard', quantity: 1 },
+            { cardId: 'fixture.iron-ore', quantity: 2 },
+          ],
+        },
+        enchantment: {
+          slots: [
+            { kind: 'element', minRefinement: 2 },
+            { kind: 'effect', minRefinement: 0 },
+          ],
+        },
+      })
+    })
+
+    it('REQ-78: material sem id ou quantidade, slot sem tipo ou refino não numérico desabilitam "Salvar rascunho"', async () => {
+      renderEditor()
+      await newCard('Equipamento')
+      fillEspada()
+      expect(saveButton()).toBeEnabled()
+      fireEvent.click(field('Refino'))
+      type('Nível máximo', '3')
+      add(group('Materiais'))
+      expect(saveButton()).toBeDisabled()
+      const materials = group('Materiais')
+      fireEvent.change(within(materials).getByLabelText('Material 1'), {
+        target: { value: 'fixture.iron-ore' },
+      })
+      expect(saveButton()).toBeDisabled()
+      fireEvent.change(within(materials).getByLabelText('Quantidade 1'), {
+        target: { value: 'duas' },
+      })
+      expect(saveButton()).toBeDisabled()
+      fireEvent.change(within(materials).getByLabelText('Quantidade 1'), {
+        target: { value: '2' },
+      })
+      expect(saveButton()).toBeEnabled()
+
+      fireEvent.click(field('Encantamento'))
+      add(group('Slots'))
+      expect(saveButton()).toBeDisabled()
+      const slots = group('Slots')
+      fireEvent.change(within(slots).getByLabelText('Tipo 1'), {
+        target: { value: 'element' },
+      })
+      expect(saveButton()).toBeDisabled()
+      fireEvent.change(within(slots).getByLabelText('Refino mínimo 1'), {
+        target: { value: '0' },
+      })
+      expect(saveButton()).toBeEnabled()
+    })
+
+    it('REQ-78: erros em refinement.materials e enchantment.slots.0.minRefinement aparecem nos campos', async () => {
+      rejectWith('put', [
+        { path: 'refinement.materials', message: 'Defina os materiais.' },
+        {
+          path: 'enchantment.slots.0.minRefinement',
+          message: 'O refino mínimo passa do máximo.',
+        },
+      ])
+      renderEditor()
+      await openCard('Espada Curta · Equipamento · Publicada')
+      fireEvent.click(saveButton())
+      await waitFor(() =>
+        expect(group('Materiais')).toHaveAccessibleDescription(
+          'Defina os materiais.',
+        ),
+      )
+      expect(
+        within(group('Slots')).getByLabelText('Refino mínimo 1'),
+      ).toHaveAccessibleDescription('O refino mínimo passa do máximo.')
+    })
+  })
+
+  describe('item: "Receita"', () => {
+    it('REQ-78: documento com receita abre com os campos preenchidos e salvar não os apaga', async () => {
+      const bodies = recordBodies()
+      renderEditor()
+      await openCard('Projeto: Espada Curta · Item · Publicada')
+      expect(field('Receita')).toBeChecked()
+      expect(field('Equipamento criado')).toHaveValue('fixture.short-sword')
+      const materials = group('Materiais')
+      expect(within(materials).getByLabelText('Material 1')).toHaveValue(
+        'fixture.iron-ore',
+      )
+      expect(within(materials).getByLabelText('Quantidade 1')).toHaveValue('2')
+      expect(field('Ouro')).toHaveValue('15')
+      expect(field('Consumida ao criar')).not.toBeChecked()
+      fireEvent.click(field('Consumida ao criar'))
+      fireEvent.click(saveButton())
+      await waitFor(() => expect(bodies).toHaveLength(1))
+      expect(bodies[0].body).toMatchObject({
+        recipe: {
+          equipmentId: 'fixture.short-sword',
+          materials: [{ cardId: 'fixture.iron-ore', quantity: 2 }],
+          gold: 15,
+          consumed: true,
+        },
+      })
+    })
+
+    it('REQ-78: desligar "Receita" envia recipe null e esconde os campos', async () => {
+      const bodies = recordBodies()
+      renderEditor()
+      await openCard('Projeto: Espada Curta · Item · Publicada')
+      fireEvent.click(field('Receita'))
+      expect(screen.queryByLabelText('Equipamento criado')).toBeNull()
+      expect(screen.queryByLabelText('Consumida ao criar')).toBeNull()
+      fireEvent.click(saveButton())
+      await waitFor(() => expect(bodies).toHaveLength(1))
+      expect(bodies[0].body).toMatchObject({ recipe: null })
+    })
+
+    it('REQ-78: item novo não tem receita; ligada, exige "Equipamento criado" e "Ouro" e envia números', async () => {
+      const bodies = recordBodies()
+      renderEditor()
+      await newCard('Item')
+      fillPocao()
+      expect(field('Receita')).not.toBeChecked()
+      expect(screen.queryByLabelText('Equipamento criado')).toBeNull()
+      expect(saveButton()).toBeEnabled()
+      fireEvent.click(field('Receita'))
+      expect(saveButton()).toBeDisabled()
+      type('Equipamento criado', 'fixture.short-sword')
+      expect(saveButton()).toBeDisabled()
+      type('Ouro', 'muito')
+      expect(saveButton()).toBeDisabled()
+      type('Ouro', '0')
+      expect(saveButton()).toBeEnabled()
+      fireEvent.click(saveButton())
+      await waitFor(() =>
+        expect(formStatus()).toHaveTextContent('Rascunho salvo.'),
+      )
+      expect(bodies[0].body).toMatchObject({
+        recipe: {
+          equipmentId: 'fixture.short-sword',
+          materials: [],
+          gold: 0,
+          consumed: false,
+        },
+      })
+    })
+
+    it('REQ-78: item sem receita envia recipe null', async () => {
+      const bodies = recordBodies()
+      renderEditor()
+      await newCard('Item')
+      fillPocao()
+      fireEvent.click(saveButton())
+      await waitFor(() => expect(bodies).toHaveLength(1))
+      expect(bodies[0].body).toMatchObject({ recipe: null })
+    })
+
+    it('REQ-78: erros em recipe e recipe.equipmentId aparecem nos campos', async () => {
+      rejectWith('put', [
+        { path: 'recipe', message: 'Só documentos têm receita.' },
+        { path: 'recipe.equipmentId', message: 'Equipamento inexistente.' },
+      ])
+      renderEditor()
+      await openCard('Projeto: Espada Curta · Item · Publicada')
+      fireEvent.click(saveButton())
+      await waitFor(() =>
+        expect(field('Equipamento criado')).toHaveAccessibleDescription(
+          'Equipamento inexistente.',
+        ),
+      )
+      expect(field('Receita')).toHaveAccessibleDescription(
+        'Só documentos têm receita.',
+      )
+    })
+  })
+
+  describe('zona: "Ferreiro"', () => {
+    const enchantment = (n: number) =>
+      within(group('Encantamentos')).getByRole('group', {
+        name: `Encantamento ${n}`,
+      })
+
+    it('REQ-78: zona com ferreiro abre com o encantamento de elemento e salvar não o apaga', async () => {
+      const bodies = recordBodies()
+      renderEditor()
+      await openCard('Porto Cinzento · Zona · Publicada')
+      expect(field('Tem ferreiro')).toBeChecked()
+      const first = enchantment(1)
+      expect(
+        within(first).getByLabelText('Identificador do encantamento 1'),
+      ).toHaveValue('ember-edge')
+      expect(within(first).getByLabelText('Nome')).toHaveValue('Fio de Brasa')
+      expect(within(first).getByLabelText('Tipo')).toHaveValue('element')
+      expect(within(first).getByLabelText('Elemento')).toHaveValue('fire')
+      expect(within(first).getByLabelText('Bônus (%)')).toHaveValue('10')
+      const materials = within(first).getByRole('group', { name: 'Materiais' })
+      expect(within(materials).getByLabelText('Material 1')).toHaveValue(
+        'fixture.ember-shard',
+      )
+      expect(within(materials).getByLabelText('Quantidade 1')).toHaveValue('1')
+      expect(within(first).queryByRole('group', { name: 'Efeitos' })).toBeNull()
+      expect(
+        within(first).queryByRole('group', { name: 'Habilidades' }),
+      ).toBeNull()
+      fireEvent.click(saveButton())
+      await waitFor(() => expect(bodies).toHaveLength(1))
+      expect(bodies[0].body).toMatchObject({
+        blacksmith: {
+          enchantments: [
+            {
+              id: 'ember-edge',
+              name: 'Fio de Brasa',
+              kind: 'element',
+              element: 'fire',
+              bonusPercent: 10,
+              materials: [{ cardId: 'fixture.ember-shard', quantity: 1 }],
+            },
+          ],
+        },
+      })
+    })
+
+    it('REQ-78: desmarcar "Tem ferreiro" envia blacksmith null e esconde "Encantamentos"', async () => {
+      const bodies = recordBodies()
+      renderEditor()
+      await openCard('Porto Cinzento · Zona · Publicada')
+      fireEvent.click(field('Tem ferreiro'))
+      expect(
+        within(form()).queryByRole('group', { name: 'Encantamentos' }),
+      ).toBeNull()
+      fireEvent.click(saveButton())
+      await waitFor(() => expect(bodies).toHaveLength(1))
+      expect(bodies[0].body).toMatchObject({ blacksmith: null })
+    })
+
+    it('REQ-78: zona nova sem ferreiro envia blacksmith null', async () => {
+      const bodies = recordBodies()
+      renderEditor()
+      await newCard('Zona')
+      expect(field('Tem ferreiro')).not.toBeChecked()
+      fillPraca()
+      fireEvent.click(saveButton())
+      await waitFor(() => expect(bodies).toHaveLength(1))
+      expect(bodies[0].body).toMatchObject({ blacksmith: null })
+    })
+
+    it('REQ-78: encantamento de efeito mostra "Efeitos", "Habilidades" e "Materiais" no lugar de "Elemento" e "Bônus (%)"', async () => {
+      const bodies = recordBodies()
+      renderEditor()
+      await newCard('Zona')
+      fillPraca()
+      fireEvent.click(field('Tem ferreiro'))
+      add(group('Encantamentos'))
+      const first = enchantment(1)
+      expect(within(first).getByLabelText('Tipo')).toHaveValue('element')
+      expect(within(first).getByLabelText('Elemento')).toBeVisible()
+      expect(within(first).getByLabelText('Bônus (%)')).toBeVisible()
+      fireEvent.change(within(first).getByLabelText('Tipo'), {
+        target: { value: 'effect' },
+      })
+      expect(within(first).queryByLabelText('Elemento')).toBeNull()
+      expect(within(first).queryByLabelText('Bônus (%)')).toBeNull()
+      fireEvent.change(
+        within(first).getByLabelText('Identificador do encantamento 1'),
+        {
+          target: { value: 'whisper' },
+        },
+      )
+      fireEvent.change(within(first).getByLabelText('Nome'), {
+        target: { value: 'Sussurro' },
+      })
+      add(within(first).getByRole('group', { name: 'Efeitos' }))
+      fireEvent.change(within(first).getByLabelText('Texto do efeito 1'), {
+        target: { value: 'Chamas lambem a lâmina.' },
+      })
+      add(within(first).getByRole('group', { name: 'Habilidades' }))
+      fireEvent.change(within(first).getByLabelText('Nome da habilidade 1'), {
+        target: { value: 'Brasa' },
+      })
+      fireEvent.change(within(first).getByLabelText('Texto da habilidade 1'), {
+        target: { value: 'Queima o alvo.' },
+      })
+      const materials = within(first).getByRole('group', { name: 'Materiais' })
+      add(materials)
+      fireEvent.change(within(materials).getByLabelText('Material 1'), {
+        target: { value: 'fixture.ember-shard' },
+      })
+      fireEvent.change(within(materials).getByLabelText('Quantidade 1'), {
+        target: { value: '3' },
+      })
+      fireEvent.click(saveButton())
+      await waitFor(() =>
+        expect(formStatus()).toHaveTextContent('Rascunho salvo.'),
+      )
+      expect(bodies[0].body).toMatchObject({
+        blacksmith: {
+          enchantments: [
+            {
+              id: 'whisper',
+              name: 'Sussurro',
+              kind: 'effect',
+              effects: [
+                {
+                  text: 'Chamas lambem a lâmina.',
+                  trigger: null,
+                  cost: [],
+                  activation: [],
+                  duration: { kind: 'immediate' },
+                  mark: null,
+                },
+              ],
+              abilities: [{ name: 'Brasa', text: 'Queima o alvo.' }],
+              materials: [{ cardId: 'fixture.ember-shard', quantity: 3 }],
+            },
+          ],
+        },
+      })
+      expect(
+        (bodies[0].body as { blacksmith: { enchantments: object[] } })
+          .blacksmith.enchantments[0],
+      ).not.toHaveProperty('element')
+    })
+
+    it('REQ-78: identificador, nome, elemento ou bônus faltando desabilitam "Salvar rascunho"', async () => {
+      renderEditor()
+      await newCard('Zona')
+      fillPraca()
+      fireEvent.click(field('Tem ferreiro'))
+      expect(saveButton()).toBeEnabled()
+      add(group('Encantamentos'))
+      const first = enchantment(1)
+      expect(saveButton()).toBeDisabled()
+      fireEvent.change(
+        within(first).getByLabelText('Identificador do encantamento 1'),
+        {
+          target: { value: 'ember-edge' },
+        },
+      )
+      fireEvent.change(within(first).getByLabelText('Nome'), {
+        target: { value: 'Fio de Brasa' },
+      })
+      expect(saveButton()).toBeDisabled()
+      fireEvent.change(within(first).getByLabelText('Elemento'), {
+        target: { value: 'fire' },
+      })
+      expect(saveButton()).toBeDisabled()
+      fireEvent.change(within(first).getByLabelText('Bônus (%)'), {
+        target: { value: 'dez' },
+      })
+      expect(saveButton()).toBeDisabled()
+      fireEvent.change(within(first).getByLabelText('Bônus (%)'), {
+        target: { value: '10' },
+      })
+      expect(saveButton()).toBeEnabled()
+    })
+
+    it('REQ-78: erros em blacksmith e blacksmith.enchantments.0.id aparecem nos campos', async () => {
+      rejectWith('put', [
+        { path: 'blacksmith', message: 'A zona precisa de visitBlacksmith.' },
+        {
+          path: 'blacksmith.enchantments.0.id',
+          message: 'Identificador repetido.',
+        },
+      ])
+      renderEditor()
+      await openCard('Porto Cinzento · Zona · Publicada')
+      fireEvent.click(saveButton())
+      await waitFor(() =>
+        expect(
+          within(enchantment(1)).getByLabelText(
+            'Identificador do encantamento 1',
+          ),
+        ).toHaveAccessibleDescription('Identificador repetido.'),
+      )
+      expect(field('Tem ferreiro')).toHaveAccessibleDescription(
+        'A zona precisa de visitBlacksmith.',
+      )
+    })
   })
 })

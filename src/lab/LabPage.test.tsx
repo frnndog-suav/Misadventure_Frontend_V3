@@ -201,6 +201,29 @@ const marketLabels = [
   ],
 ] as const
 
+/** FEAT-17 (REQ-77): as 19 chaves, na ordem da tela, depois das anteriores. */
+const blacksmithLabels = [
+  ['repairBaseGold', 'Conserto: ouro base'],
+  ['repairGoldPerLevel', 'Conserto: ouro por nível de refino'],
+  ['repairMarkPercent', 'Desvalorização por marca de reparo (%)'],
+  ['refineGoldPerLevel', 'Refino: ouro por nível'],
+  ['refineThreshold1to3', 'Limiar do refino +1 a +3'],
+  ['refineThreshold4to6', 'Limiar do refino +4 a +6'],
+  ['refineThreshold7to9', 'Limiar do refino +7 a +9'],
+  ['refineThreshold10', 'Limiar do refino +10'],
+  ['refineBreakFromLevel', 'Refino quebra a partir do nível'],
+  ['refineBonusPercent', 'Bônus por nível de refino (%)'],
+  ['enchantElementGold', 'Encantamento de elemento: ouro'],
+  ['enchantEffectGold', 'Encantamento de efeito: ouro'],
+  ['enchantElementThreshold', 'Limiar do encantamento de elemento'],
+  ['enchantEffectThreshold', 'Limiar do encantamento de efeito'],
+  ['saleRefinePercent', 'Valorização na venda por refino (%)'],
+  ['saleEnchantPercent', 'Valorização na venda por encantamento (%)'],
+  ['artificerRepairDiscountPercent', 'Desconto do conserto na Oficina (%)'],
+  ['artificerMaxRefineLevel', 'Refino máximo na Oficina'],
+  ['artificerD20Bonus', 'Bônus do Artífice no D20'],
+] as const
+
 async function loaded(): Promise<void> {
   await screen.findByRole('spinbutton', { name: 'Pontos de ação por vez' })
 }
@@ -449,6 +472,75 @@ describe('REQ-06: configuração ajustável do jogo', () => {
       .filter((name) => wanted.includes(name))
     expect(names).toEqual(wanted)
     expect(marketLabels).toHaveLength(37)
+  })
+
+  it('REQ-77: as 19 chaves do ferreiro têm rótulo pt-BR, na ordem da tela', async () => {
+    renderLab()
+    await loaded()
+    const wanted = blacksmithLabels.map(([, label]) => label as string)
+    const names = screen
+      .getAllByRole('spinbutton')
+      .map(
+        (input) => (input as HTMLInputElement).labels?.[0]?.textContent ?? '',
+      )
+      .filter((name) => wanted.includes(name))
+    expect(names).toEqual(wanted)
+    expect(blacksmithLabels).toHaveLength(19)
+  })
+
+  it('REQ-77: cada chave mostra "Padrão: … · Mín. … · Máx. …" e leva os limites ao campo', async () => {
+    renderLab()
+    await loaded()
+    const expected = [
+      ['Refino quebra a partir do nível', '7', '1', '11'],
+      ['Limiar do refino +10', '16', '0', '21'],
+      ['Bônus do Artífice no D20', '2', '0', '20'],
+      ['Conserto: ouro base', '5', '0', '1000000'],
+    ] as const
+    for (const [name, value, min, max] of expected) {
+      expect(field(name)).toHaveValue(Number(value))
+      expect(field(name)).toHaveAttribute('min', min)
+      expect(field(name)).toHaveAttribute('max', max)
+      expect(field(name)).toHaveAccessibleDescription(
+        `Padrão: ${value} · Mín. ${min} · Máx. ${max}`,
+      )
+    }
+  })
+
+  it('REQ-77: outOfRange e notInteger de uma chave do ferreiro usam os textos do REQ-06', async () => {
+    server.use(
+      http.patch('*/lab/config', () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: 'LAB_CONFIG_INVALID',
+              message: 'Configuração do laboratório inválida.',
+              details: {
+                fields: [
+                  { field: 'refineThreshold10', reason: 'outOfRange' },
+                  { field: 'artificerD20Bonus', reason: 'notInteger' },
+                ],
+              },
+            },
+          },
+          { status: 400 },
+        ),
+      ),
+    )
+    renderLab()
+    await loaded()
+    setField('Limiar do refino +10', '30')
+    setField('Bônus do Artífice no D20', '1.5')
+    fireEvent.click(saveButton())
+
+    await waitFor(() =>
+      expect(field('Limiar do refino +10')).toHaveAccessibleDescription(
+        expect.stringContaining('Use um valor entre 0 e 21.'),
+      ),
+    )
+    expect(field('Bônus do Artífice no D20')).toHaveAccessibleDescription(
+      expect.stringContaining('Use um número inteiro.'),
+    )
   })
 
   it('REQ-71: 400 sumMismatch liga o texto às cinco chances do booster', async () => {

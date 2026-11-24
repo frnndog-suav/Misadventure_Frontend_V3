@@ -150,3 +150,9 @@ export const effectPolarityLabels = {
   positive: 'Positivo',
   negative: 'Negativo',
 } as const
+
+/** Tipos de encantamento (CONTRATO §2.7, FEAT-17): slot do equipamento e encantamento do ferreiro. */
+export const enchantmentKindLabels = {
+  element: 'Elemento',
+  effect: 'Efeito',
+} as const

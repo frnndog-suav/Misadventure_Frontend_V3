@@ -1,6 +1,7 @@
 import type { ZoneCard as ZoneCardData } from '../../api/catalog'
-import { zoneActionLabels, zoneTypeLabels } from '../labels'
-import { CardFrame, CardName, Effects, LabeledList } from './parts'
+import { elementLabels, zoneActionLabels, zoneTypeLabels } from '../labels'
+import { formatNumber } from './format'
+import { CardFrame, CardName, Effects, LabeledList, Materials } from './parts'
 
 /** Forma das setas (REQ-28); com `null`, nada aparece. */
 const arrowLayoutLabels = {
@@ -25,6 +26,7 @@ export function ZoneCard({ card }: { card: ZoneCardData }) {
       />
       <Effects effects={card.effects} />
       {card.market !== null && <Market market={card.market} />}
+      {card.blacksmith !== null && <Blacksmith blacksmith={card.blacksmith} />}
     </CardFrame>
   )
 }
@@ -41,6 +43,35 @@ function Market({ market }: { market: NonNullable<ZoneCardData['market']> }) {
         render={(id) => <CardName cardId={id} />}
       />
       <p>{market.singles ? 'Vende singles' : 'Sem singles'}</p>
+    </section>
+  )
+}
+
+/** Bloco "Ferreiro" (REQ-78): encantamentos oferecidos, com os materiais de cada um. */
+function Blacksmith({
+  blacksmith,
+}: {
+  blacksmith: NonNullable<ZoneCardData['blacksmith']>
+}) {
+  return (
+    <section aria-label="Ferreiro">
+      <h4>Ferreiro</h4>
+      {blacksmith.enchantments.length === 0 ? (
+        <p>Sem encantamentos.</p>
+      ) : (
+        <ul className="game-card-list" aria-label="Encantamentos">
+          {blacksmith.enchantments.map((enchantment) => (
+            <li key={enchantment.id}>
+              <span>
+                {enchantment.kind === 'element'
+                  ? `${enchantment.name} — elemento ${elementLabels[enchantment.element]} (+${formatNumber(enchantment.bonusPercent)}%)`
+                  : `${enchantment.name} — efeito`}
+              </span>
+              <Materials label="Materiais" materials={enchantment.materials} />
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   )
 }

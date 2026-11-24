@@ -39,6 +39,7 @@ import {
   attributeKindLabels,
   behaviorLabels,
   elementLabels,
+  enchantmentKindLabels,
   enemyCategoryLabels,
   enemyTypeLabels,
   playerClassLabels,
@@ -60,6 +61,7 @@ import {
   effectPartLabels,
   effectParts,
   emptyEffect,
+  emptyEnchantment,
   emptyEnemy,
   enemyTypeOrder,
   formFromCard,
@@ -75,10 +77,13 @@ import {
   type CombatEventForm,
   type DimensionForm,
   type EffectForm,
+  type EnchantmentForm,
   type EnemyForm,
+  type MaterialForm,
   type EquipmentForm,
   type RandomEventForm,
   type ItemForm,
+  type SlotForm,
   type ZoneForm,
   type QuestForm,
   emptyQuestStage,
@@ -253,22 +258,25 @@ function EffectFields({
   onChange,
   polarized = false,
   errors,
+  listPath = 'effects',
 }: {
   items: EffectForm[]
   onChange: (effects: EffectForm[]) => void
   polarized?: boolean
   errors: Errors
+  /** Caminho da lista no corpo (dentro de um encantamento, REQ-78). */
+  listPath?: string
 }) {
   return (
     <ListField
       label="Efeitos"
-      path="effects"
+      path={listPath}
       items={items}
       onChange={onChange}
       newItem={emptyEffect}
       errors={errors}
       renderItem={(effect, index, setEffect) => {
-        const path = `effects.${index}`
+        const path = `${listPath}.${index}`
         const number = index + 1
         return (
           <>
@@ -324,6 +332,201 @@ function EffectFields({
     />
   )
 }
+/** "Habilidades" (nome, texto e dados executáveis); `listPath` varia dentro de um encantamento (REQ-78). */
+function AbilityFields({
+  items,
+  onChange,
+  errors,
+  listPath = 'abilities',
+}: {
+  items: AbilityForm[]
+  onChange: (abilities: AbilityForm[]) => void
+  errors: Errors
+  listPath?: string
+}) {
+  return (
+    <ListField<AbilityForm>
+      label="Habilidades"
+      path={listPath}
+      items={items}
+      onChange={onChange}
+      newItem={() => ({ name: '', text: '' })}
+      errors={errors}
+      renderItem={(ability, index, setAbility) => (
+        <>
+          <TextField
+            label={`Nome da habilidade ${index + 1}`}
+            path={`${listPath}.${index}.name`}
+            value={ability.name}
+            onChange={(name) => setAbility({ ...ability, name })}
+            errors={errors}
+          />
+          <TextField
+            label={`Texto da habilidade ${index + 1}`}
+            path={`${listPath}.${index}.text`}
+            value={ability.text}
+            onChange={(text) => setAbility({ ...ability, text })}
+            errors={errors}
+          />
+          <TextField
+            label={`Dados executáveis da habilidade ${index + 1} (JSON)`}
+            path={`${listPath}.${index}.executable`}
+            value={ability.executable ?? ''}
+            onChange={(executable) => setAbility({ ...ability, executable })}
+            errors={errors}
+            multiline
+            includeChildErrors
+          />
+        </>
+      )}
+    />
+  )
+}
+
+/** "Materiais" (REQ-78): id da carta e quantidade, na ordem da lista. */
+function MaterialsField({
+  path,
+  items,
+  onChange,
+  errors,
+}: {
+  path: string
+  items: MaterialForm[]
+  onChange: (items: MaterialForm[]) => void
+  errors: Errors
+}) {
+  return (
+    <ListField<MaterialForm>
+      label="Materiais"
+      path={path}
+      items={items}
+      onChange={onChange}
+      newItem={() => ({ cardId: '', quantity: '' })}
+      errors={errors}
+      renderItem={(material, index, setMaterial) => (
+        <>
+          <TextField
+            label={`Material ${index + 1}`}
+            path={`${path}.${index}.cardId`}
+            value={material.cardId}
+            onChange={(cardId) => setMaterial({ ...material, cardId })}
+            errors={errors}
+          />
+          <TextField
+            label={`Quantidade ${index + 1}`}
+            path={`${path}.${index}.quantity`}
+            value={material.quantity}
+            onChange={(quantity) => setMaterial({ ...material, quantity })}
+            errors={errors}
+          />
+        </>
+      )}
+    />
+  )
+}
+
+const enchantmentKindOptions = options(
+  ['element', 'effect'] as const,
+  enchantmentKindLabels,
+)
+
+/** "Encantamentos" do ferreiro (REQ-78): elemento com bônus, ou efeitos e habilidades. */
+function EnchantmentFields({
+  items,
+  onChange,
+  errors,
+}: {
+  items: EnchantmentForm[]
+  onChange: (items: EnchantmentForm[]) => void
+  errors: Errors
+}) {
+  return (
+    <ListField<EnchantmentForm>
+      label="Encantamentos"
+      path="blacksmith.enchantments"
+      items={items}
+      onChange={onChange}
+      newItem={emptyEnchantment}
+      errors={errors}
+      renderItem={(enchantment, index, set) => {
+        const path = `blacksmith.enchantments.${index}`
+        return (
+          <fieldset>
+            <legend>Encantamento {index + 1}</legend>
+            <TextField
+              label={`Identificador do encantamento ${index + 1}`}
+              path={`${path}.id`}
+              value={enchantment.id}
+              onChange={(id) => set({ ...enchantment, id })}
+              errors={errors}
+            />
+            <TextField
+              label="Nome"
+              path={`${path}.name`}
+              value={enchantment.name}
+              onChange={(name) => set({ ...enchantment, name })}
+              errors={errors}
+            />
+            <SelectField
+              label="Tipo"
+              path={`${path}.kind`}
+              value={enchantment.kind}
+              options={enchantmentKindOptions}
+              onChange={(kind) =>
+                set({ ...enchantment, kind: kind || enchantment.kind })
+              }
+              errors={errors}
+              emptyLabel={null}
+            />
+            {enchantment.kind === 'element' ? (
+              <>
+                <SelectField
+                  label="Elemento"
+                  path={`${path}.element`}
+                  value={enchantment.element}
+                  options={elementOptions}
+                  onChange={(element) => set({ ...enchantment, element })}
+                  errors={errors}
+                />
+                <TextField
+                  label="Bônus (%)"
+                  path={`${path}.bonusPercent`}
+                  value={enchantment.bonusPercent}
+                  onChange={(bonusPercent) =>
+                    set({ ...enchantment, bonusPercent })
+                  }
+                  errors={errors}
+                />
+              </>
+            ) : (
+              <>
+                <EffectFields
+                  items={enchantment.effects}
+                  onChange={(effects) => set({ ...enchantment, effects })}
+                  errors={errors}
+                  listPath={`${path}.effects`}
+                />
+                <AbilityFields
+                  items={enchantment.abilities}
+                  onChange={(abilities) => set({ ...enchantment, abilities })}
+                  errors={errors}
+                  listPath={`${path}.abilities`}
+                />
+              </>
+            )}
+            <MaterialsField
+              path={`${path}.materials`}
+              items={enchantment.materials}
+              onChange={(materials) => set({ ...enchantment, materials })}
+              errors={errors}
+            />
+          </fieldset>
+        )
+      }}
+    />
+  )
+}
+
 const rarityOptions = options(raritySchema.options, rarityLabels)
 const zoneTypeOptions = options(zoneTypeSchema.options, zoneTypeLabels)
 /** "Forma das setas" (REQ-31); a opção vazia é "Não se aplica" (`null`). */
@@ -457,6 +660,27 @@ function ZoneFields({
               onChange={(marketSingles) => set({ ...values, marketSingles })}
             />
           </>
+        )}
+      </fieldset>
+      <fieldset>
+        <legend>Ferreiro</legend>
+        <CheckboxField
+          label="Tem ferreiro"
+          checked={values.blacksmithEnabled}
+          onChange={(blacksmithEnabled) =>
+            set({ ...values, blacksmithEnabled })
+          }
+          describedBy={errors.describedBy('blacksmith')}
+        />
+        {errors.errorText('blacksmith')}
+        {values.blacksmithEnabled && (
+          <EnchantmentFields
+            items={values.blacksmithEnchantments}
+            onChange={(blacksmithEnchantments) =>
+              set({ ...values, blacksmithEnchantments })
+            }
+            errors={errors}
+          />
         )}
       </fieldset>
       <EffectFields
@@ -775,40 +999,10 @@ function EquipmentFields({
         checked={values.blocksShield}
         onChange={(blocksShield) => set({ ...values, blocksShield })}
       />
-      <ListField<AbilityForm>
-        label="Habilidades"
-        path="abilities"
+      <AbilityFields
         items={values.abilities}
         onChange={(abilities) => set({ ...values, abilities })}
-        newItem={() => ({ name: '', text: '' })}
         errors={errors}
-        renderItem={(ability, index, setAbility) => (
-          <>
-            <TextField
-              label={`Nome da habilidade ${index + 1}`}
-              path={`abilities.${index}.name`}
-              value={ability.name}
-              onChange={(name) => setAbility({ ...ability, name })}
-              errors={errors}
-            />
-            <TextField
-              label={`Texto da habilidade ${index + 1}`}
-              path={`abilities.${index}.text`}
-              value={ability.text}
-              onChange={(text) => setAbility({ ...ability, text })}
-              errors={errors}
-            />
-            <TextField
-              label={`Dados executáveis da habilidade ${index + 1} (JSON)`}
-              path={`abilities.${index}.executable`}
-              value={ability.executable ?? ''}
-              onChange={(executable) => setAbility({ ...ability, executable })}
-              errors={errors}
-              multiline
-              includeChildErrors
-            />
-          </>
-        )}
       />
       <EffectFields
         items={values.effects}
@@ -833,6 +1027,17 @@ function EquipmentFields({
             }
             errors={errors}
           />
+          <MaterialsField
+            path="refinement.materials"
+            items={values.refinement.materials}
+            onChange={(materials) =>
+              set({
+                ...values,
+                refinement: { ...values.refinement, materials },
+              })
+            }
+            errors={errors}
+          />
         </>
       )}
       <CheckboxField
@@ -842,6 +1047,39 @@ function EquipmentFields({
           set({ ...values, enchantment: { ...values.enchantment, enabled } })
         }
       />
+      {values.enchantment.enabled && (
+        <ListField<SlotForm>
+          label="Slots"
+          path="enchantment.slots"
+          items={values.enchantment.slots}
+          onChange={(slots) =>
+            set({ ...values, enchantment: { ...values.enchantment, slots } })
+          }
+          newItem={() => ({ kind: '', minRefinement: '' })}
+          errors={errors}
+          renderItem={(slot, index, setSlot) => (
+            <>
+              <SelectField
+                label={`Tipo ${index + 1}`}
+                path={`enchantment.slots.${index}.kind`}
+                value={slot.kind}
+                options={enchantmentKindOptions}
+                onChange={(kind) => setSlot({ ...slot, kind })}
+                errors={errors}
+              />
+              <TextField
+                label={`Refino mínimo ${index + 1}`}
+                path={`enchantment.slots.${index}.minRefinement`}
+                value={slot.minRefinement}
+                onChange={(minRefinement) =>
+                  setSlot({ ...slot, minRefinement })
+                }
+                errors={errors}
+              />
+            </>
+          )}
+        />
+      )}
       <TextField
         label="Ajuste de preço"
         path="priceMultiplier"
@@ -986,6 +1224,44 @@ function ItemFields({
         errors={errors}
         emptyLabel="Nenhuma"
       />
+      <CheckboxField
+        label="Receita"
+        checked={values.recipeEnabled}
+        onChange={(recipeEnabled) => set({ ...values, recipeEnabled })}
+        describedBy={errors.describedBy('recipe')}
+      />
+      {errors.errorText('recipe')}
+      {values.recipeEnabled && (
+        <>
+          <TextField
+            label="Equipamento criado"
+            path="recipe.equipmentId"
+            value={values.recipeEquipmentId}
+            onChange={(recipeEquipmentId) =>
+              set({ ...values, recipeEquipmentId })
+            }
+            errors={errors}
+          />
+          <MaterialsField
+            path="recipe.materials"
+            items={values.recipeMaterials}
+            onChange={(recipeMaterials) => set({ ...values, recipeMaterials })}
+            errors={errors}
+          />
+          <TextField
+            label="Ouro"
+            path="recipe.gold"
+            value={values.recipeGold}
+            onChange={(recipeGold) => set({ ...values, recipeGold })}
+            errors={errors}
+          />
+          <CheckboxField
+            label="Consumida ao criar"
+            checked={values.recipeConsumed}
+            onChange={(recipeConsumed) => set({ ...values, recipeConsumed })}
+          />
+        </>
+      )}
     </>
   )
 }

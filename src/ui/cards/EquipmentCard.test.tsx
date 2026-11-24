@@ -1,8 +1,42 @@
-import { render, screen, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { render as baseRender, screen, within } from '@testing-library/react'
+import { setupServer } from 'msw/node'
+import type { ReactElement } from 'react'
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from 'vitest'
 import type { EquipmentCard as EquipmentCardData } from '../../api/catalog'
 import { bladeOfDuskFixture } from '../../mocks/catalogFixtures'
+import { handlers } from '../../mocks/handlers'
 import { EquipmentCard } from './EquipmentCard'
+
+const server = setupServer(...handlers)
+
+beforeAll(() => {
+  vi.stubEnv('VITE_API_URL', 'http://localhost:3000')
+  server.listen({ onUnhandledFrame: 'error' })
+})
+afterEach(() => server.resetHandlers())
+afterAll(() => {
+  server.close()
+  vi.unstubAllEnvs()
+})
+
+/** O refino mostra o nome dos materiais (consulta ao catálogo, D-48). */
+function render(ui: ReactElement) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  })
+  return baseRender(
+    <QueryClientProvider client={client}>{ui}</QueryClientProvider>,
+  )
+}
 
 if (bladeOfDuskFixture.type !== 'equipment') throw new Error('fixture')
 const blade: EquipmentCardData = bladeOfDuskFixture
@@ -72,7 +106,7 @@ describe('EquipmentCard', () => {
     render(<EquipmentCard card={minimal} />)
     expect(screen.queryByText(/Pico/)).toBeNull()
     expect(screen.queryByText('Bloqueia escudo')).toBeNull()
-    expect(screen.queryByText(/Refinável/)).toBeNull()
+    expect(screen.queryByRole('region', { name: 'Refino' })).toBeNull()
     expect(screen.queryByRole('list', { name: 'Habilidades' })).toBeNull()
     expect(screen.queryByRole('list', { name: 'Efeitos' })).toBeNull()
     expect(screen.queryByRole('list', { name: 'Classes' })).toBeNull()
@@ -112,7 +146,7 @@ describe('EquipmentCard', () => {
       screen.getByText('Uma vez por combate, ataque duas vezes.'),
     ).toBeVisible()
     expect(screen.getByText('Debuff: −10% de Celeridade.')).toBeVisible()
-    expect(screen.getByText('Refinável até +5')).toBeVisible()
+    expect(screen.getByText('Até +5')).toBeVisible()
     expect(screen.getByText('Pesa como uma coroa.')).toBeVisible()
     expect(screen.getByText('Pesada')).toBeVisible()
   })

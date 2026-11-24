@@ -405,3 +405,48 @@ test('REQ-72: item e zona têm os campos do mercado (MSW)', async ({ page }) => 
   await form.getByLabel('Tem mercado').uncheck()
   await expect(form.getByLabel('Vende singles')).toHaveCount(0)
 })
+
+test('REQ-78: equipamento, item e zona têm os campos do ferreiro (MSW)', async ({
+  page,
+}) => {
+  await page.goto('/lab/editor')
+  await page.getByRole('button', { name: /Coleção de Teste/ }).click()
+  const cards = page.getByRole('region', { name: 'Cartas' })
+  const form = page.getByRole('region', { name: 'Carta', exact: true })
+
+  await cards
+    .getByRole('button', { name: 'Espada Curta · Equipamento · Publicada' })
+    .click()
+  const materials = form.getByRole('group', { name: 'Materiais' })
+  await expect(materials.getByLabel('Material 1')).toHaveValue(
+    'fixture.iron-ore',
+  )
+  await expect(materials.getByLabel('Quantidade 1')).toHaveValue('1')
+  const slots = form.getByRole('group', { name: 'Slots' })
+  await expect(slots.getByLabel('Tipo 1')).toHaveValue('element')
+  await expect(slots.getByLabel('Refino mínimo 1')).toHaveValue('2')
+
+  await cards
+    .getByRole('button', { name: 'Projeto: Espada Curta · Item · Publicada' })
+    .click()
+  await expect(form.getByLabel('Receita')).toBeChecked()
+  await expect(form.getByLabel('Equipamento criado')).toHaveValue(
+    'fixture.short-sword',
+  )
+  await expect(form.getByLabel('Ouro')).toHaveValue('15')
+
+  await cards
+    .getByRole('button', { name: 'Porto Cinzento · Zona · Publicada' })
+    .click()
+  await expect(form.getByLabel('Tem ferreiro')).toBeChecked()
+  const first = form.getByRole('group', { name: 'Encantamento 1' })
+  await expect(first.getByLabel('Identificador do encantamento 1')).toHaveValue(
+    'ember-edge',
+  )
+  await expect(first.getByLabel('Elemento')).toHaveValue('fire')
+  await expect(first.getByLabel('Bônus (%)')).toHaveValue('10')
+  await form.getByLabel('Tem ferreiro').uncheck()
+  await expect(form.getByRole('group', { name: 'Encantamentos' })).toHaveCount(
+    0,
+  )
+})

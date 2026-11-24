@@ -5,14 +5,16 @@ import { zoneTypeLabels } from '../labels'
 import { formatNumber } from './format'
 import {
   CardFrame,
+  CardName,
   CollectionName,
   Effects,
+  Materials,
   PriceAdjust,
   ScavengeTool,
   Tags,
 } from './parts'
 
-/** Carta de item (REQ-11, README 5.2); ferramenta e coleta (REQ-48, D-59); mercado (REQ-72). */
+/** Carta de item (REQ-11, README 5.2); ferramenta e coleta (REQ-48, D-59); mercado (REQ-72); receita (REQ-78). */
 export function ItemCard({ card }: { card: ItemCardData }) {
   return (
     <CardFrame
@@ -43,6 +45,26 @@ export function ItemCard({ card }: { card: ItemCardData }) {
         </>
       )}
       <ScavengeTool tool={card.scavengeTool} />
+      {card.recipe !== null && <Recipe recipe={card.recipe} />}
     </CardFrame>
+  )
+}
+
+/** Bloco "Receita" (REQ-78): o equipamento criado, os materiais, o ouro e se some ao criar. */
+function Recipe({ recipe }: { recipe: NonNullable<ItemCardData['recipe']> }) {
+  return (
+    <section aria-label="Receita">
+      <h4>Receita</h4>
+      <p>
+        Cria <CardName cardId={recipe.equipmentId} />
+      </p>
+      {recipe.materials.length === 0 ? (
+        <p>Sem materiais.</p>
+      ) : (
+        <Materials label="Materiais" materials={recipe.materials} />
+      )}
+      <p>{formatNumber(recipe.gold)} de ouro</p>
+      {recipe.consumed && <p>A receita é consumida.</p>}
+    </section>
   )
 }

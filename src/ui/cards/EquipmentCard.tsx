@@ -1,7 +1,7 @@
 import type { EquipmentCard as EquipmentCardData } from '../../api/catalog'
 import { CardCategory } from '../CardCategory'
 import { categoryCatalog } from '../categories'
-import { playerClassLabels } from '../labels'
+import { enchantmentKindLabels, playerClassLabels } from '../labels'
 import { Term } from '../Term'
 import { formatNumber, formatSigned } from './format'
 import {
@@ -9,6 +9,7 @@ import {
   CardFrame,
   Effects,
   LabeledList,
+  Materials,
   ScavengeTool,
   Tags,
 } from './parts'
@@ -49,11 +50,56 @@ export function EquipmentCard({ card }: { card: EquipmentCardData }) {
       <Abilities abilities={card.abilities} />
       <Effects effects={card.effects} />
       <ScavengeTool tool={card.scavengeTool} />
-      {card.refinement !== null && (
-        <div className="game-card-block">
-          <p>Refinável até +{card.refinement.maxLevel}</p>
-        </div>
+      {card.refinement !== null && <Refinement refinement={card.refinement} />}
+      {card.enchantment !== null && (
+        <Enchantment enchantment={card.enchantment} />
       )}
     </CardFrame>
+  )
+}
+
+/** Bloco "Refino" (REQ-78): nível máximo e materiais de cada tentativa. */
+function Refinement({
+  refinement,
+}: {
+  refinement: NonNullable<EquipmentCardData['refinement']>
+}) {
+  return (
+    <section aria-label="Refino">
+      <h4>Refino</h4>
+      <p>Até +{refinement.maxLevel}</p>
+      {refinement.materials.length === 0 ? (
+        <p>Sem materiais definidos.</p>
+      ) : (
+        <Materials
+          label="Materiais por tentativa"
+          materials={refinement.materials}
+        />
+      )}
+    </section>
+  )
+}
+
+/** Bloco "Encantamento" (REQ-78): um slot por linha, com o refino mínimo quando > 0. */
+function Enchantment({
+  enchantment,
+}: {
+  enchantment: NonNullable<EquipmentCardData['enchantment']>
+}) {
+  return (
+    <section aria-label="Encantamento">
+      <h4>Encantamento</h4>
+      <LabeledList
+        label="Slots"
+        items={enchantment.slots}
+        render={(slot, i) =>
+          `Slot ${i + 1}: ${enchantmentKindLabels[slot.kind].toLowerCase()}${
+            slot.minRefinement > 0
+              ? `, a partir do refino +${slot.minRefinement}`
+              : ''
+          }`
+        }
+      />
+    </section>
   )
 }

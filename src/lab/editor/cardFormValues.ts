@@ -24,14 +24,12 @@ import {
   type PlayerClass,
   type Rarity,
   type ZoneAction,
-  type EquipmentCard,
-  type ItemCard,
+  type BlacksmithEnchantment,
   type MaterialRequirement,
   type ZoneCard,
   type ZoneType,
 } from '../../api/catalog'
 
-type EnchantmentSlots = NonNullable<EquipmentCard['enchantment']>['slots']
 import type { CardInput } from '../../api/editor'
 import type { randomEventRulesSchema } from '../../api/randomEvents'
 import {
@@ -127,8 +125,113 @@ export interface ZoneForm {
   marketEnabled: boolean
   marketStock: string[]
   marketSingles: boolean
-  /** FEAT-17: transportado sem controle até a T-76 (salvar não apaga). */
-  blacksmith?: ZoneCard['blacksmith']
+  /** FEAT-17 (REQ-78): desmarcado = `blacksmith: null`; o que foi digitado fica guardado. */
+  blacksmithEnabled: boolean
+  blacksmithEnchantments: EnchantmentForm[]
+}
+
+/** FEAT-17 (REQ-78): material (id em texto, quantidade em texto até conferir o formato). */
+export interface MaterialForm {
+  cardId: string
+  quantity: string
+}
+
+function materialToForm({
+  cardId,
+  quantity,
+}: MaterialRequirement): MaterialForm {
+  return { cardId, quantity: String(quantity) }
+}
+
+/** Materiais no formato do contrato, ou `null` se falta id ou a quantidade não é número. */
+function toMaterials(forms: MaterialForm[]): MaterialRequirement[] | null {
+  const materials: MaterialRequirement[] = []
+  for (const { cardId, quantity } of forms) {
+    const amount = parseNumber(quantity)
+    if (!filled(cardId) || amount === null) return null
+    materials.push({ cardId, quantity: amount })
+  }
+  return materials
+}
+
+/** FEAT-17 (REQ-78): slot de encantamento; `''` = tipo ainda não escolhido. */
+export interface SlotForm {
+  kind: 'element' | 'effect' | ''
+  minRefinement: string
+}
+
+/** FEAT-17 (REQ-78): encantamento do ferreiro; o que não é do `kind` atual fica guardado. */
+export interface EnchantmentForm {
+  id: string
+  name: string
+  kind: BlacksmithEnchantment['kind']
+  element: Element | ''
+  bonusPercent: string
+  effects: EffectForm[]
+  abilities: AbilityForm[]
+  materials: MaterialForm[]
+}
+
+export function emptyEnchantment(): EnchantmentForm {
+  return {
+    id: '',
+    name: '',
+    kind: 'element',
+    element: '',
+    bonusPercent: '',
+    effects: [],
+    abilities: [],
+    materials: [],
+  }
+}
+
+function enchantmentToForm(e: BlacksmithEnchantment): EnchantmentForm {
+  const base = {
+    ...emptyEnchantment(),
+    id: e.id,
+    name: e.name,
+    materials: e.materials.map(materialToForm),
+  }
+  return e.kind === 'element'
+    ? {
+        ...base,
+        element: e.element,
+        bonusPercent: String(e.bonusPercent),
+      }
+    : {
+        ...base,
+        kind: 'effect',
+        effects: e.effects.map(effectToForm),
+        abilities: e.abilities.map(abilityFromCard),
+      }
+}
+
+function toEnchantments(
+  forms: EnchantmentForm[],
+): BlacksmithEnchantment[] | null {
+  const enchantments: BlacksmithEnchantment[] = []
+  for (const form of forms) {
+    const materials = toMaterials(form.materials)
+    if (!filled(form.id) || !filled(form.name) || materials === null)
+      return null
+    const base = { id: form.id, name: form.name, materials }
+    if (form.kind === 'element') {
+      const bonusPercent = parseNumber(form.bonusPercent)
+      if (form.element === '' || bonusPercent === null) return null
+      enchantments.push({
+        ...base,
+        kind: 'element',
+        element: form.element,
+        bonusPercent,
+      })
+    } else {
+      const effects = toEffects(form.effects, effectSchema)
+      const abilities = toAbilities(form.abilities)
+      if (effects === undefined || abilities === null) return null
+      enchantments.push({ ...base, kind: 'effect', effects, abilities })
+    }
+  }
+  return enchantments
 }
 
 export interface AttributeForm {
@@ -162,11 +265,11 @@ export interface EquipmentForm {
   refinement: {
     enabled: boolean
     maxLevel: string
-    /** FEAT-17: transportados sem controle até a T-76 (salvar não apaga). */
-    materials: MaterialRequirement[]
+    /** FEAT-17 (REQ-78): materiais de cada tentativa. */
+    materials: MaterialForm[]
   }
-  /** Desligado = não encantável. FEAT-17: slots transportados sem controle até a T-76. */
-  enchantment: { enabled: boolean; slots: EnchantmentSlots }
+  /** Desligado = não encantável. FEAT-17 (REQ-78): ligado, a lista de slots. */
+  enchantment: { enabled: boolean; slots: SlotForm[] }
   priceMultiplier: string
   /** FEAT-32: vazio = `null`. */
   scavengeTool: string
@@ -193,8 +296,12 @@ export interface ItemForm {
   stockQuantity: string
   /** Vazio = `null` ("Nenhuma"). */
   boosterCollectionId: string
-  /** FEAT-17: transportada sem controle até a T-76 (salvar não apaga). */
-  recipe?: ItemCard['recipe']
+  /** FEAT-17 (REQ-78): desligada = `recipe: null`; o que foi digitado fica guardado. */
+  recipeEnabled: boolean
+  recipeEquipmentId: string
+  recipeMaterials: MaterialForm[]
+  recipeGold: string
+  recipeConsumed: boolean
 }
 
 export interface RandomEventForm {
@@ -424,6 +531,8 @@ export function emptyForm(type: FormCardType): CardForm {
         arrowLayout: '',
         zoneActions: [],
         effects: [],
+        blacksmithEnabled: false,
+        blacksmithEnchantments: [],
         marketEnabled: false,
         marketStock: [],
         marketSingles: false,
@@ -477,6 +586,11 @@ export function emptyForm(type: FormCardType): CardForm {
         stockPrice: '',
         stockQuantity: '1',
         boosterCollectionId: '',
+        recipeEnabled: false,
+        recipeEquipmentId: '',
+        recipeMaterials: [],
+        recipeGold: '',
+        recipeConsumed: false,
       }
     case 'randomEvent':
       return {
@@ -582,7 +696,9 @@ export function formFromCard(card: Card): CardForm {
         marketEnabled: card.market !== null,
         marketStock: card.market?.stock ?? [],
         marketSingles: card.market?.singles ?? false,
-        blacksmith: card.blacksmith,
+        blacksmithEnabled: card.blacksmith !== null,
+        blacksmithEnchantments:
+          card.blacksmith?.enchantments.map(enchantmentToForm) ?? [],
       }
     case 'attribute':
       return {
@@ -623,12 +739,20 @@ export function formFromCard(card: Card): CardForm {
             : {
                 enabled: true,
                 maxLevel: String(card.refinement.maxLevel),
-                materials: card.refinement.materials,
+                materials: card.refinement.materials.map(materialToForm),
               },
         enchantment:
           card.enchantment === null
             ? { enabled: false, slots: [] }
-            : { enabled: true, slots: card.enchantment.slots },
+            : {
+                enabled: true,
+                slots: card.enchantment.slots.map(
+                  ({ kind, minRefinement }) => ({
+                    kind,
+                    minRefinement: String(minRefinement),
+                  }),
+                ),
+              },
         priceMultiplier: String(card.priceMultiplier),
         scavengeTool: card.scavengeTool ?? '',
       }
@@ -649,7 +773,11 @@ export function formFromCard(card: Card): CardForm {
         stockPrice: card.stockPrice === null ? '' : String(card.stockPrice),
         stockQuantity: String(card.stockQuantity),
         boosterCollectionId: card.boosterCollectionId ?? '',
-        recipe: card.recipe,
+        recipeEnabled: card.recipe !== null,
+        recipeEquipmentId: card.recipe?.equipmentId ?? '',
+        recipeMaterials: card.recipe?.materials.map(materialToForm) ?? [],
+        recipeGold: card.recipe === null ? '' : String(card.recipe.gold),
+        recipeConsumed: card.recipe?.consumed ?? false,
       }
     case 'randomEvent':
       return {
@@ -840,12 +968,14 @@ export function toInput(form: CardForm): CardInput | null {
       const effects = toEffects(form.effects, zoneEffectSchema)
       if (effects === undefined) return null
       const arrows = parseNumber(form.connectionArrows)
+      const enchantments = toEnchantments(form.blacksmithEnchantments)
       if (
         !filled(form.slug) ||
         !filled(form.title) ||
         !filled(form.location) ||
         form.zoneType === '' ||
-        arrows === null
+        arrows === null ||
+        (form.blacksmithEnabled && enchantments === null)
       )
         return null
       return {
@@ -862,9 +992,10 @@ export function toInput(form: CardForm): CardInput | null {
         market: form.marketEnabled
           ? { stock: form.marketStock, singles: form.marketSingles }
           : null,
-        ...(form.blacksmith !== undefined
-          ? { blacksmith: form.blacksmith }
-          : {}),
+        blacksmith:
+          form.blacksmithEnabled && enchantments !== null
+            ? { enchantments }
+            : null,
       }
     }
     case 'attribute': {
@@ -906,6 +1037,13 @@ export function toInput(form: CardForm): CardInput | null {
       const peak = parseNumber(form.peakRequirement)
       const price = parseNumber(form.priceMultiplier)
       const maxLevel = parseNumber(form.refinement.maxLevel)
+      const refineMaterials = toMaterials(form.refinement.materials)
+      const slots: { kind: 'element' | 'effect'; minRefinement: number }[] = []
+      for (const { kind, minRefinement } of form.enchantment.slots) {
+        const min = parseNumber(minRefinement)
+        if (kind !== '' && min !== null)
+          slots.push({ kind, minRefinement: min })
+      }
       if (
         !filled(form.slug) ||
         !filled(form.name) ||
@@ -915,7 +1053,10 @@ export function toInput(form: CardForm): CardInput | null {
         (filled(form.peakRequirement) && peak === null) ||
         price === null ||
         abilities === null ||
-        (form.refinement.enabled && maxLevel === null)
+        (form.refinement.enabled &&
+          (maxLevel === null || refineMaterials === null)) ||
+        (form.enchantment.enabled &&
+          slots.length !== form.enchantment.slots.length)
       )
         return null
       return {
@@ -933,12 +1074,12 @@ export function toInput(form: CardForm): CardInput | null {
         abilities,
         effects,
         refinement:
-          form.refinement.enabled && maxLevel !== null
-            ? { maxLevel, materials: form.refinement.materials }
+          form.refinement.enabled &&
+          maxLevel !== null &&
+          refineMaterials !== null
+            ? { maxLevel, materials: refineMaterials }
             : null,
-        enchantment: form.enchantment.enabled
-          ? { slots: form.enchantment.slots }
-          : null,
+        enchantment: form.enchantment.enabled ? { slots } : null,
         priceMultiplier: price,
         scavengeTool: filled(form.scavengeTool) ? form.scavengeTool : null,
       }
@@ -949,7 +1090,13 @@ export function toInput(form: CardForm): CardInput | null {
       const price = parseNumber(form.priceMultiplier)
       const stockPrice = parseNumber(form.stockPrice)
       const stockQuantity = parseNumber(form.stockQuantity)
+      const recipeMaterials = toMaterials(form.recipeMaterials)
+      const recipeGold = parseNumber(form.recipeGold)
       if (
+        (form.recipeEnabled &&
+          (!filled(form.recipeEquipmentId) ||
+            recipeMaterials === null ||
+            recipeGold === null)) ||
         price === null ||
         (filled(form.stockPrice) && stockPrice === null) ||
         stockQuantity === null ||
@@ -978,7 +1125,15 @@ export function toInput(form: CardForm): CardInput | null {
         boosterCollectionId: filled(form.boosterCollectionId)
           ? form.boosterCollectionId
           : null,
-        ...(form.recipe !== undefined ? { recipe: form.recipe } : {}),
+        recipe:
+          form.recipeEnabled && recipeMaterials !== null && recipeGold !== null
+            ? {
+                equipmentId: form.recipeEquipmentId,
+                materials: recipeMaterials,
+                gold: recipeGold,
+                consumed: form.recipeConsumed,
+              }
+            : null,
       }
     }
     case 'randomEvent': {
