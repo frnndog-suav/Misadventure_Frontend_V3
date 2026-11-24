@@ -463,3 +463,61 @@ test.describe('REQ-52: Usar cofre (MSW)', () => {
     await expect(items.nth(1)).toContainText('Recusada')
   })
 })
+
+test.describe('REQ-73 e REQ-74: Ir ao Mercado (MSW)', () => {
+  test('REQ-74: montar um lote, confirmar e ver o resultado; lote de 2 expansões do cofre é recusado', async ({
+    page,
+  }) => {
+    await page.goto('/grupo/party-os-teimosos')
+    const turn = page.getByRole('region', { name: 'A vez' })
+    await turn.getByRole('button', { name: 'Ir ao Mercado' }).click()
+    const market = page.getByRole('region', { name: 'Mercado' })
+    await expect(market).toContainText('Fator do mercado 115%')
+    await expect(market).toContainText('Nenhuma operação.')
+
+    const operations = market.getByRole('list', { name: 'Operações' })
+    const service = market
+      .getByRole('list', { name: 'Serviços' })
+      .getByRole('button', { name: 'Comprar Expansão do cofre' })
+    await service.click()
+    await service.click()
+    await expect(operations.getByRole('listitem')).toContainText([
+      '1. Comprar Expansão do cofre',
+      '2. Comprar Expansão do cofre',
+    ])
+    await market
+      .getByRole('button', { name: 'Confirmar (1 ponto de ação)' })
+      .click()
+    await expect(market).toContainText('Não há ouro suficiente na bolsa.')
+    await expect(operations.getByRole('listitem').nth(1)).toContainText(
+      'Recusada',
+    )
+
+    await operations
+      .getByRole('listitem')
+      .nth(1)
+      .getByRole('button', { name: 'Remover' })
+      .click()
+    await operations
+      .getByRole('listitem')
+      .first()
+      .getByRole('button', { name: 'Remover' })
+      .click()
+    const stock = market.getByRole('list', { name: 'Estoque' })
+    await stock
+      .getByRole('listitem')
+      .filter({ hasText: 'Flechas' })
+      .getByRole('button', { name: 'Acrescentar' })
+      .click()
+    await market
+      .getByRole('button', { name: 'Confirmar (1 ponto de ação)' })
+      .click()
+    await expect(page.getByRole('status').first()).toHaveText(
+      'Mercado: 1 operação feita.',
+    )
+    await expect(market).toHaveCount(0)
+    await expect(
+      page.getByRole('list', { name: 'Resultado do mercado' }),
+    ).toHaveText('Comprou 20× Flechas por 8 de ouro')
+  })
+})

@@ -10,6 +10,7 @@ import {
   type EquipmentSlot,
 } from '../../api/catalog'
 import { combatActionTypes } from '../../api/combat'
+import type { MarketOperation } from '../../api/market'
 import { ApiError } from '../../api/http'
 import {
   ActionNotAllowedError,
@@ -39,6 +40,9 @@ import { nameOf } from './cardNames'
 import { RandomEventPanel } from './RandomEventPanel'
 import { RewardChoice } from './RewardChoice'
 import { QuestPanel } from './QuestPanel'
+import { MarketPanel, MarketResult } from './MarketPanel'
+import { byCardId, invalidQuantity, isIntFrom } from './fieldRules'
+import { NumberField } from './fields'
 import {
   CombatPanel,
   CombatReport,
@@ -77,6 +81,28 @@ function eventReceiptCardIds(
   )
 }
 
+/** Cartas do mercado e do último resultado (REQ-73, REQ-74). */
+function marketCardIds(player: PartyMember['player']): string[] {
+  const { market, lastMarketVisit } = player
+  return [
+    ...(market === null
+      ? []
+      : [
+          ...market.stock.map(({ cardId }) => cardId),
+          ...market.boosters.map(({ cardId }) => cardId),
+          ...(market.showcase ?? []).flatMap(({ offer }) =>
+            offer === null ? [] : [offer.cardId],
+          ),
+          ...market.sellOffers.map(({ cardId }) => cardId),
+        ]),
+    ...(lastMarketVisit === null
+      ? []
+      : lastMarketVisit.results.flatMap((result) =>
+          'cardId' in result ? [result.cardId] : [],
+        )),
+  ]
+}
+
 /** Ids das cartas cujos nomes a partida mostra (REQ-30). */
 function cardIdsOf(party: Party): string[] {
   return [
@@ -110,6 +136,7 @@ function cardIdsOf(party: Party): string[] {
             ...eventReceiptCardIds(player.lastRandomEvent.payments),
           ]),
       ...(player.lastScavenge === null ? [] : [player.lastScavenge.cardId]),
+      ...marketCardIds(player),
     ]),
   ]
 }
@@ -288,6 +315,9 @@ function MemberState({
         </ul>
       )}
       <p>{`Ouro no cofre ${player.vault.gold} (capacidade ${player.vaultGoldCapacity})`}</p>
+      {Object.values(player.expansions).some((count) => count > 0) && (
+        <p>{`Expansões: cofre ${player.expansions.vaultSlots}, slots de deck ${player.expansions.deckSlots}, pasta de TCG ${player.expansions.tcgFolder}, bolsa ${player.expansions.purse}, ouro do cofre ${player.expansions.vaultGold}`}</p>
+      )}
       <h3 id={decksId}>
         Decks guardados (até {player.vaultDeckSlots} slots de deck, contando a
         build em uso)
@@ -433,7 +463,7 @@ function reasonText(error: ActionNotAllowedError, name: string): string {
     case 'questClassIneligible':
     case 'questSpecializationIneligible':
     case 'questPeakTooLow':
-    case 'notInMarketStock': // FEAT-16: textos nas T-72 e T-73
+    case 'notInMarketStock': // FEAT-16: textos do mercado em marketReasonText (REQ-74); abrir booster na T-73
     case 'notMarketBooster':
     case 'singlesUnavailable':
     case 'showcaseSlotNotFound':
@@ -632,7 +662,7 @@ function vaultReasonText(error: ActionNotAllowedError, name: string): string {
     case 'questClassIneligible':
     case 'questSpecializationIneligible':
     case 'questPeakTooLow':
-    case 'notInMarketStock': // FEAT-16: textos nas T-72 e T-73
+    case 'notInMarketStock': // FEAT-16: textos do mercado em marketReasonText (REQ-74); abrir booster na T-73
     case 'notMarketBooster':
     case 'singlesUnavailable':
     case 'showcaseSlotNotFound':
@@ -648,15 +678,44 @@ function vaultReasonText(error: ActionNotAllowedError, name: string): string {
   }
 }
 
-const invalidQuantity = 'Use um número inteiro a partir de 1.'
-
-/** Inteiro ≥ `min` digitado num campo (formato, não regra do jogo). */
-function isIntFrom(value: string, min: number): boolean {
-  return /^\d+$/.test(value) && Number(value) >= min
+/**
+ * Texto de cada motivo de recusa do Ir ao Mercado (REQ-74). Os motivos do
+ * cofre que o mercado também devolve (`notInInventory`, `notInTcgFolder`)
+ * seguem o REQ-52; outro motivo → '' ou só a `message`.
+ */
+function marketReasonText(error: ActionNotAllowedError, name: string): string {
+  switch (error.reason) {
+    case 'notInMarketStock':
+      return `${name} não está no estoque deste mercado.`
+    case 'notMarketBooster':
+      return `${name} não está à venda neste mercado.`
+    case 'singlesUnavailable':
+      return 'Este mercado não vende singles.'
+    case 'showcaseSlotNotFound':
+      return 'Esse slot não existe na vitrine.'
+    case 'showcaseSlotEmpty':
+      return 'Esse slot da vitrine está vazio.'
+    case 'notLotMultiple':
+      return `${name} só é vendido em lotes inteiros.`
+    case 'tcgFolderFull':
+      return 'Não há espaço na pasta de TCG.'
+    default:
+      return vaultReasonText(error, name)
+  }
 }
 
-function byCardId(a: string, b: string): number {
-  return a < b ? -1 : a > b ? 1 : 0
+/** Recusa ou erro do último "Confirmar" do mercado (REQ-74). */
+function marketFailureText(
+  error: Error,
+  refused: MarketOperation | undefined,
+  cards: Cards,
+): string {
+  if (!(error instanceof ActionNotAllowedError)) return errorText(error)
+  const cardId =
+    error.cardId ??
+    (refused !== undefined && 'cardId' in refused ? refused.cardId : '')
+  const reason = marketReasonText(error, nameOf(cards, cardId))
+  return reason === '' ? error.message : `${error.message} ${reason}`
 }
 
 /** Descrição de uma operação na lista "Operações" (REQ-52). */
@@ -689,39 +748,6 @@ function describeOperation(op: VaultOperation, cards: Cards): string {
       return _exhaustive
     }
   }
-}
-
-/** Campo numérico com o erro ligado por `aria-describedby` (REQ-52). */
-function NumberField({
-  label,
-  value,
-  onChange,
-  min,
-  error,
-}: {
-  label: string
-  value: string
-  onChange: (value: string) => void
-  min: number
-  error: string
-}) {
-  const id = useId()
-  const errorId = `${id}-error`
-  return (
-    <>
-      <label htmlFor={id}>{label}</label>
-      <input
-        id={id}
-        type="number"
-        min={min}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        aria-invalid={error !== ''}
-        aria-describedby={error !== '' ? errorId : undefined}
-      />
-      {error !== '' && <p id={errorId}>{error}</p>}
-    </>
-  )
 }
 
 /** "Guardar no cofre", "Retirar do cofre", "Descartar do cofre": carta + quantidade. */
@@ -1095,8 +1121,10 @@ function TurnState({
   onAdjust,
   onScavenge,
   onVault,
+  onMarket,
   adjusting,
   vaulting,
+  marketing,
   pending,
 }: {
   party: Party
@@ -1107,8 +1135,10 @@ function TurnState({
   onAdjust: () => void
   onScavenge: (cardId: string) => void
   onVault: () => void
+  onMarket: () => void
   adjusting: boolean
   vaulting: boolean
+  marketing: boolean
   pending: boolean
 }) {
   const { round, memberId, actionPoints } = party.turn
@@ -1168,6 +1198,15 @@ function TurnState({
           Usar cofre
         </button>
       )}
+      {host?.player.availableActions.includes('visitMarket') && (
+        <button
+          type="button"
+          onClick={onMarket}
+          disabled={pending || marketing}
+        >
+          Ir ao Mercado
+        </button>
+      )}
       {host?.id === memberId &&
         host.player.availableActions.includes('saveRespawnPoint') && (
           <button type="button" onClick={onSaveRespawnPoint} disabled={pending}>
@@ -1195,6 +1234,7 @@ function PreparedMatch({
   onScavenge,
   onSaveBuild,
   onUseVault,
+  onVisitMarket,
   onEquip,
   onUnequip,
   onActivate,
@@ -1205,6 +1245,8 @@ function PreparedMatch({
   setAdjusting,
   vaulting,
   setVaulting,
+  marketing,
+  setMarketing,
   moving,
 }: {
   party: Party
@@ -1220,6 +1262,10 @@ function PreparedMatch({
     operations: VaultOperation[],
     onError: (error: Error) => void,
   ) => void
+  onVisitMarket: (
+    operations: MarketOperation[],
+    onError: (error: Error) => void,
+  ) => void
   onEquip: NonNullable<PrepareControls['onEquip']>
   onUnequip: NonNullable<PrepareControls['onUnequip']>
   onActivate: ActivateEffect
@@ -1230,6 +1276,8 @@ function PreparedMatch({
   setAdjusting: (open: boolean) => void
   vaulting: boolean
   setVaulting: (open: boolean) => void
+  marketing: boolean
+  setMarketing: (open: boolean) => void
   moving: boolean
 }) {
   const names = new Map(party.members.map((m) => [m.id, m.characterName]))
@@ -1248,8 +1296,10 @@ function PreparedMatch({
           onAdjust={() => setAdjusting(true)}
           onScavenge={onScavenge}
           onVault={() => setVaulting(true)}
+          onMarket={() => setMarketing(true)}
           adjusting={adjusting}
           vaulting={vaulting}
+          marketing={marketing}
           pending={moving}
         />
       )}
@@ -1286,6 +1336,21 @@ function PreparedMatch({
             onConfirm={onUseVault}
             onCancel={() => setVaulting(false)}
             pending={moving}
+          />
+        )}
+      {!party.combat &&
+        !party.triggeredEffectChoice &&
+        marketing &&
+        host !== undefined && (
+          <MarketPanel
+            player={host.player}
+            cards={cards}
+            onConfirm={onVisitMarket}
+            onCancel={() => setMarketing(false)}
+            pending={moving}
+            failureText={(error, refused) =>
+              marketFailureText(error, refused, cards)
+            }
           />
         )}
       {!party.combat && (
@@ -1443,6 +1508,9 @@ export function PartySession() {
   const [vaulting, setVaulting] = useState(false)
   // Erros do "Usar cofre" também ficam na seção (REQ-52).
   const vaultFailed = action.isError && action.variables.type === 'useVault'
+  const [marketing, setMarketing] = useState(false)
+  // Erros do Ir ao Mercado também ficam na seção (REQ-74).
+  const marketFailed = action.isError && action.variables.type === 'visitMarket'
   const eventAction =
     action.variables &&
     randomEventActionTypes.some((type) => type === action.variables.type)
@@ -1453,7 +1521,7 @@ export function PartySession() {
 
   let status = ''
   if (end.isError) status = errorText(end.error)
-  else if (action.isError && !adjustFailed && !vaultFailed) {
+  else if (action.isError && !adjustFailed && !vaultFailed && !marketFailed) {
     if (action.variables.type === 'prepare') {
       status = ['activate', 'useAbility'].includes(action.variables.operation)
         ? errorText(action.error)
@@ -1467,7 +1535,10 @@ export function PartySession() {
       status = `${action.error.message} Não há espaço no inventário.`
     } else status = errorText(action.error)
   } else if (action.isSuccess && party !== undefined && host !== undefined) {
-    if (action.variables.type === 'useVault') {
+    if (action.variables.type === 'visitMarket') {
+      const n = action.variables.operations.length
+      status = `Mercado: ${n} ${n === 1 ? 'operação feita' : 'operações feitas'}.`
+    } else if (action.variables.type === 'useVault') {
       const n = action.variables.operations.length
       status = `Cofre: ${n} ${n === 1 ? 'operação feita' : 'operações feitas'}.`
     } else if (
@@ -1614,6 +1685,12 @@ export function PartySession() {
                 { onSuccess: () => setVaulting(false), onError },
               )
             }
+            onVisitMarket={(operations, onError) =>
+              action.mutate(
+                { type: 'visitMarket', operations },
+                { onSuccess: () => setMarketing(false), onError },
+              )
+            }
             onEquip={(cardId) => {
               setPreparedCardId(cardId)
               action.mutate({ type: 'prepare', operation: 'equip', cardId })
@@ -1644,6 +1721,8 @@ export function PartySession() {
             setAdjusting={setAdjusting}
             vaulting={vaulting}
             setVaulting={setVaulting}
+            marketing={marketing}
+            setMarketing={setMarketing}
             moving={action.isPending || end.isPending}
           />
           {delivery && (
@@ -1696,6 +1775,14 @@ export function PartySession() {
         </>
       )}
       <p role="status">{status}</p>
+      {action.isSuccess &&
+        action.variables.type === 'visitMarket' &&
+        host?.player.lastMarketVisit != null && (
+          <MarketResult
+            visit={host.player.lastMarketVisit}
+            cards={cards.cards}
+          />
+        )}
       {notFound && <Link to="/">Voltar ao início</Link>}
     </main>
   )
