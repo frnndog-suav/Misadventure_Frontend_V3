@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.93 · **Data:** 2026-11-24
+> **Versão da spec:** 0.94 · **Data:** 2026-11-24
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -724,6 +724,7 @@ Alinha os REQ-44, REQ-50 e REQ-73.
 
 - **Dado** a seção de cada membro, **então** cada categoria ocupada em "Equipamentos" e cada slot de equipamento do "Inventário" e do cofre acrescenta ao nome o estado recebido (`equipmentStates[slot]` ou `equipmentState`), só o que difere do padrão, nesta ordem: "+{refinement}", "quebrado", "Reparado ×{repairMarks}", "encantamentos: {nome}, {nome} (desligado)". Ex.: "Arma: Espada Curta +3, quebrado, Reparado ×1, encantamentos: Fio de Brasa (desligado)". "(desligado)" só no encantamento com `active: false`.
 - **Dado** a seção "Mercado" (REQ-73), **então** cada oferta de venda com `equipmentState` mostra o mesmo sufixo depois do nome, não tem campo de unidades e "Acrescentar" envia `{ operation: "sell", source, cardId, quantity: 1, inventorySlotIndex }`.
+- Sufixo (fixado na T-77): o refino entra com espaço ("Espada Curta +3"), os demais itens com ", " ("Espada Curta, Reparado ×1"). A operação de venda na lista leva o sufixo da cópia ("Vender 1× Espada Curta +3, Reparado ×1"), e o "Total previsto" usa o preço da oferta da mesma cópia (`inventorySlotIndex`). O texto da oferta mantém o resto do REQ-73 ("({origem}, {owned} unidades) — {price} de ouro por unidade").
 
 ### REQ-80 — Ir ao Ferreiro e Oficina: o que é oferecido
 
@@ -985,7 +986,7 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 
 - [x] **T-75 — Cliente e fixtures MSW do ferreiro** (REQ-77 a REQ-81). Schemas e tipos do CONTRATO v0.85 (`EquipmentState`, `equipmentStates`, `equipmentState` no inventário, no cofre e em `sellOffers`, `inventorySlotIndex` no `sell`, `blacksmith`, `lastBlacksmithVisit`, `VisitBlacksmithAction`, `ArtificerWorkshopAction`, `MaterialRequirement`, `refinement.materials` e `enchantment` estruturados, `recipe`, `ZoneCard.blacksmith`, 19 chaves, motivos novos), `usePartyAction` com as ações novas e as fixtures da D-63 item 6, inclusive `visitBlacksmith` nos `availableActions` já existentes na cidade. Testes primeiro; tipos e testes afetados verdes.
 - [x] **T-76 — Laboratório, catálogo e editor** (REQ-77, REQ-78). E2E nas áreas `lab` e `editor`.
-- [ ] **T-77 — Estado do equipamento e venda por cópia** (REQ-79). E2E na área `party`.
+- [x] **T-77 — Estado do equipamento e venda por cópia** (REQ-79). E2E na área `party`.
 - [ ] **T-78 — Ir ao Ferreiro e Oficina: seção e lote** (REQ-80, REQ-81). E2E na área `party`.
 - [ ] **T-79 — Validação integrada da FEAT-17.** Repetir os cenários do contrato contra o backend real com MSW desligado, com as campanhas preparadas pelo backend (Artífice ativo e Ferreiro Arcano).
 
@@ -1086,3 +1087,4 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 | 0.91 | 2026-11-24 | Proposta da FEAT-17 para aprovação: REQ-77 a REQ-81, D-63, T-75 a T-79. Base: CONTRATO v0.85 (`acordado`) e ROADMAP v0.77. |
 | 0.92 | 2026-11-24 | Autor aprovou a v0.91 com a fixture de dev do Artífice. T-75 concluída com MSW conforme CONTRATO v0.85 (D-63 item 8). |
 | 0.93 | 2026-11-24 | T-76 concluída: laboratório, catálogo e editor do ferreiro (REQ-77, REQ-78, D-63 item 9). REQ-10 e REQ-21 alinhados ao REQ-78 (blocos "Refino" e "Encantamento"; "Slots"); rótulo "Identificador do encantamento {n}". |
+| 0.94 | 2026-11-24 | T-77 concluída: estado do equipamento na tela do grupo e venda por cópia no Mercado (REQ-79), com MSW; formato do sufixo, descrição da venda e total por cópia fixados no REQ-79. |

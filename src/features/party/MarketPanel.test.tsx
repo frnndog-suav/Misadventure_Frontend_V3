@@ -590,3 +590,58 @@ describe('REQ-76: capacidades e expansões na tela do grupo', () => {
     expect(region).toHaveTextContent('Ouro 10 (bolsa para 600)')
   })
 })
+
+describe('REQ-79: venda por cópia de equipamento no Mercado', () => {
+  it('REQ-79: oferta com equipmentState mostra o sufixo, não tem campo de unidades e envia quantity 1 com inventorySlotIndex', async () => {
+    let sent: unknown
+    sessionWith({
+      market: {
+        ...market,
+        sellOffers: [
+          {
+            source: 'inventory',
+            cardId: 'fixture.short-sword',
+            owned: 1,
+            lotSize: 1,
+            price: 3,
+            inventorySlotIndex: 1,
+            equipmentState: {
+              refinement: 3,
+              enchantments: [],
+              repairMarks: 1,
+              broken: false,
+            },
+          },
+        ],
+      },
+    })
+    server.use(
+      http.post('*/parties/:partyId/actions', async ({ request }) => {
+        sent = await request.json()
+        return HttpResponse.json(partyMarketArrowsFixture)
+      }),
+    )
+    await openSection()
+    const li = entry('Vender', /^Espada Curta \+3, Reparado ×1 \(/)
+    expect(within(li).queryByRole('spinbutton')).toBeNull()
+    fireEvent.click(within(li).getByRole('button', { name: 'Acrescentar' }))
+    expect(opTexts()).toEqual(['1. Vender 1× Espada Curta +3, Reparado ×1'])
+    expect(section()).toHaveTextContent(
+      'Total previsto: 0 de ouro a pagar, 3 de ouro a receber',
+    )
+    fireEvent.click(inSection('Confirmar (1 ponto de ação)'))
+    await waitFor(() => expect(sent).toBeDefined())
+    expect(sent).toEqual({
+      type: 'visitMarket',
+      operations: [
+        {
+          operation: 'sell',
+          source: 'inventory',
+          cardId: 'fixture.short-sword',
+          quantity: 1,
+          inventorySlotIndex: 1,
+        },
+      ],
+    })
+  })
+})

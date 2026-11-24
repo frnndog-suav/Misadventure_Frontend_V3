@@ -543,3 +543,37 @@ test.describe('REQ-75: abrir booster (MSW)', () => {
     ).toHaveCount(0)
   })
 })
+
+test.describe('REQ-79: estado do equipamento e venda por cópia (MSW)', () => {
+  test('REQ-79: a espada guardada mostra o estado no inventário e é vendida por cópia no Mercado', async ({
+    page,
+  }) => {
+    await page.goto('/grupo/party-ferreiro')
+    await page.getByRole('button', { name: 'Guardar Espada Curta' }).click()
+    await expect(
+      page.getByRole('list', { name: /^Inventário/ }).getByRole('listitem'),
+    ).toContainText([
+      '1× Projeto',
+      '1× Espada Curta +3, Reparado ×1, encantamentos: Fio de Brasa',
+    ])
+    await page
+      .getByRole('region', { name: 'A vez' })
+      .getByRole('button', { name: 'Ir ao Mercado' })
+      .click()
+    const market = page.getByRole('region', { name: 'Mercado' })
+    const offer = market
+      .getByRole('list', { name: 'Vender' })
+      .getByRole('listitem')
+      .filter({ hasText: 'Espada Curta +3, Reparado ×1' })
+    await expect(offer.getByRole('spinbutton')).toHaveCount(0)
+    await offer.getByRole('button', { name: 'Acrescentar' }).click()
+    await expect(
+      market.getByRole('list', { name: 'Operações' }).getByRole('listitem'),
+    ).toContainText([
+      '1. Vender 1× Espada Curta +3, Reparado ×1, encantamentos: Fio de Brasa',
+    ])
+    await expect(market).toContainText(
+      'Total previsto: 0 de ouro a pagar, 3 de ouro a receber',
+    )
+  })
+})

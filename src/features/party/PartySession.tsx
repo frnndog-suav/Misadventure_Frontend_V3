@@ -37,6 +37,7 @@ import { Term } from '../../ui/Term'
 import { PartyMap } from './PartyMap'
 import { EffectsPanel, type ActivateEffect } from './EffectsPanel'
 import { nameOf } from './cardNames'
+import { equipmentStateSuffix } from './equipmentState'
 import { RandomEventPanel } from './RandomEventPanel'
 import { RewardChoice } from './RewardChoice'
 import { QuestPanel } from './QuestPanel'
@@ -268,7 +269,10 @@ function MemberState({
           return (
             <li key={slot}>
               {categoryCatalog[slot].label}:{' '}
-              {cardId === null ? 'vazio' : nameOf(cards, cardId)}
+              {cardId === null
+                ? 'vazio'
+                : nameOf(cards, cardId) +
+                  equipmentStateSuffix(player.equipmentStates[slot])}
               {cardId !== null && prepare?.onUnequip && (
                 <button
                   type="button"
@@ -290,9 +294,10 @@ function MemberState({
         <p>Inventário vazio.</p>
       ) : (
         <ul aria-labelledby={inventoryId}>
-          {player.inventory.map(({ cardId, quantity }, i) => (
+          {player.inventory.map(({ cardId, quantity, equipmentState }, i) => (
             <li key={i}>
               {quantity}× {nameOf(cards, cardId)}
+              {equipmentStateSuffix(equipmentState)}
               {/* Tipo da carta do catálogo: dado de exibição, não regra (D-58). */}
               {prepare?.onEquip && cards.get(cardId)?.type === 'equipment' && (
                 <button
@@ -324,9 +329,10 @@ function MemberState({
         <p>Cofre vazio.</p>
       ) : (
         <ul aria-labelledby={vaultId}>
-          {player.vault.slots.map(({ cardId, quantity }, i) => (
+          {player.vault.slots.map(({ cardId, quantity, equipmentState }, i) => (
             <li key={i}>
               {quantity}× {nameOf(cards, cardId)}
+              {equipmentStateSuffix(equipmentState)}
             </li>
           ))}
         </ul>

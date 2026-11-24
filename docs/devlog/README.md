@@ -136,3 +136,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 103 | FEAT-17 | [Planejamento do ferreiro na spec](103-feat-17-planejamento.md) | concluída |
 | 104 | T-75 | [Cliente e fixtures MSW do ferreiro](104-T-75-cliente-feat-17.md) | concluída com MSW |
 | 105 | T-76 | [Laboratório, catálogo e editor do ferreiro](105-T-76-laboratorio-catalogo-editor-feat-17.md) | aguardando revisão |
+| 106 | T-77 | [Estado do equipamento e venda por cópia](106-T-77-estado-equipamento-venda-feat-17.md) | aguardando revisão |

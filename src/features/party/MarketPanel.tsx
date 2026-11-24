@@ -8,6 +8,7 @@ import type {
   MarketVisitResult,
 } from '../../api/market'
 import { nameOf } from './cardNames'
+import { equipmentStateSuffix } from './equipmentState'
 import { invalidQuantity, isIntFrom } from './fieldRules'
 import { NumberField } from './fields'
 
@@ -29,6 +30,19 @@ const destinationLabel = {
   tcgFolder: 'a pasta de TCG',
 }
 
+/** Oferta de venda de uma operação; equipamento, pela cópia (REQ-79). */
+function sellOffer(
+  market: Market,
+  op: Extract<MarketOperation, { operation: 'sell' }>,
+) {
+  return market.sellOffers.find(
+    (o) =>
+      o.source === op.source &&
+      o.cardId === op.cardId &&
+      o.inventorySlotIndex === op.inventorySlotIndex,
+  )
+}
+
 /** Descrição de uma operação na lista "Operações" (REQ-73). */
 function describeOperation(
   op: MarketOperation,
@@ -46,7 +60,7 @@ function describeOperation(
       return `Comprar ${nameOf(cards, offer?.cardId ?? '')} (slot ${op.slotIndex + 1})`
     }
     case 'sell':
-      return `Vender ${op.quantity}× ${nameOf(cards, op.cardId)}`
+      return `Vender ${op.quantity}× ${nameOf(cards, op.cardId)}${equipmentStateSuffix(sellOffer(market, op)?.equipmentState)}`
     case 'buyExpansion':
       return `Comprar ${expansionLabel[op.expansion]}`
     default: {
@@ -84,9 +98,7 @@ function forecast(
             ?.price ?? 0
         break
       case 'sell': {
-        const offer = market.sellOffers.find(
-          (o) => o.source === op.source && o.cardId === op.cardId,
-        )
+        const offer = sellOffer(market, op)
         // O preço exibido é por unidade, ou por lote de `lotSize`.
         receive +=
           offer === undefined
@@ -351,8 +363,38 @@ export function MarketPanel({
         {market.sellOffers.length === 0 && <p>Nada para vender.</p>}
         <ul aria-labelledby="market-sell-title">
           {market.sellOffers.map(
-            ({ source, cardId, owned, lotSize, price }) => {
+            ({
+              source,
+              cardId,
+              owned,
+              lotSize,
+              price,
+              inventorySlotIndex,
+              equipmentState,
+            }) => {
               const name = nameOf(cards, cardId)
+              // REQ-79: equipamento é vendido por cópia, sem campo de unidades.
+              if (equipmentState !== undefined)
+                return (
+                  <li key={`${source}:${cardId}:${inventorySlotIndex}`}>
+                    <span>{`${name}${equipmentStateSuffix(equipmentState)} (${sourceLabel[source]}, ${owned} unidades) — ${price} de ouro ${lotSize > 1 ? `por lote de ${lotSize}` : 'por unidade'}`}</span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        append({
+                          operation: 'sell',
+                          source,
+                          cardId,
+                          quantity: 1,
+                          inventorySlotIndex,
+                        })
+                      }
+                      disabled={pending}
+                    >
+                      Acrescentar
+                    </button>
+                  </li>
+                )
               return (
                 <QuantityEntry
                   key={`${source}:${cardId}`}

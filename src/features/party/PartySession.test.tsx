@@ -24,6 +24,7 @@ import { partySchema } from '../../api/parties'
 import { getJson, requestJson } from '../../api/http'
 import App from '../../App'
 import { partyEffectsReadyFixture } from '../../mocks/effectFixtures'
+import { partyBlacksmithBatchFixture } from '../../mocks/blacksmithFixtures'
 import { internalErrorFixture } from '../../mocks/fixtures'
 import { shortSwordFixture } from '../../mocks/catalogFixtures'
 import {
@@ -3991,5 +3992,79 @@ describe('REQ-75: abrir booster (Preparar e Usar cofre)', () => {
       name: 'Recompensa pendente',
     })
     expect(section).toHaveTextContent(`Origem: Booster ${boosterName}`)
+  })
+})
+
+describe('REQ-79: estado do equipamento na tela do grupo', () => {
+  it('REQ-79: Equipamentos, Inventário e Cofre acrescentam ao nome o estado recebido, só o que difere do padrão', async () => {
+    const [smith] = partyBlacksmithBatchFixture.members
+    const broken = smith.player.equipmentStates.weapon!
+    const repaired = {
+      ...broken,
+      broken: false,
+      repairMarks: 1,
+      enchantments: broken.enchantments.map((e) => ({ ...e, active: true })),
+    }
+    server.use(
+      http.post('*/parties/:partyId/session', () =>
+        HttpResponse.json({
+          ...partyBlacksmithBatchFixture,
+          members: [
+            {
+              ...smith,
+              player: {
+                ...smith.player,
+                availableActions: ['endTurn'],
+                inventory: [
+                  {
+                    cardId: 'fixture.short-sword',
+                    quantity: 1,
+                    equipmentState: repaired,
+                  },
+                  {
+                    cardId: 'fixture.short-sword',
+                    quantity: 1,
+                    equipmentState: {
+                      refinement: 0,
+                      enchantments: [],
+                      repairMarks: 0,
+                      broken: false,
+                    },
+                  },
+                ],
+                vault: {
+                  ...smith.player.vault,
+                  slots: [
+                    {
+                      cardId: 'fixture.short-sword',
+                      quantity: 1,
+                      equipmentState: { ...repaired, refinement: 0 },
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        } satisfies Party),
+      ),
+    )
+    renderParty(partyBlacksmithBatchFixture.id)
+    const equipment = await screen.findByRole('list', { name: 'Equipamentos' })
+    const texts = (list: HTMLElement) =>
+      within(list)
+        .getAllByRole('listitem')
+        .map((li) => li.textContent)
+    await waitFor(() =>
+      expect(texts(equipment)).toContain(
+        'Arma: Espada Curta +3, quebrado, encantamentos: Fio de Brasa (desligado)',
+      ),
+    )
+    expect(texts(screen.getByRole('list', { name: /^Inventário/ }))).toEqual([
+      '1× Espada Curta +3, Reparado ×1, encantamentos: Fio de Brasa',
+      '1× Espada Curta',
+    ])
+    expect(texts(screen.getByRole('list', { name: /^Cofre/ }))).toEqual([
+      '1× Espada Curta, Reparado ×1, encantamentos: Fio de Brasa',
+    ])
   })
 })
