@@ -1,6 +1,6 @@
 # Misadventures — Roadmap de desenvolvimento
 
-> **Versão:** 0.74 · **Data:** 2026-11-24
+> **Versão:** 0.76 · **Data:** 2026-11-24
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend; o autor copia o arquivo inteiro quando ele muda. Base: README Parte III (III.2 e III.4). As regras estão em [`README.md`](README.md); o que trafega entre os lados, em [`CONTRATO.md`](CONTRATO.md).
 
@@ -69,7 +69,7 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | FEAT-14 | Nocaute, spawn, respawn e Salvar ponto de respawn (inclui o nocaute no jogo solo) | 20, 12.2 | validado | validado |
 | FEAT-15 | Missões de zona, provação e mentor; especializações e multiclasse | 21, 8.3, 8.4 | validado | validado |
 | FEAT-16 | Mercado: estoque, venda, boosters, singles, serviços | 24 | validado | validado |
-| FEAT-17 | Ferreiro e Oficina do Artífice | 25 | a fazer | a fazer |
+| FEAT-17 | Ferreiro e Oficina do Artífice | 25 | aguardando outro lado | aguardando outro lado |
 | FEAT-18 | Montarias e Estábulo | 26 | a fazer | a fazer |
 | FEAT-19 | Conclusão da dimensão, chefe final, passagem para a próxima, save congelado | 3.2, 28.1 | a fazer | a fazer |
 
@@ -187,3 +187,5 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | 0.72 | 2026-11-23 | Correção da linha da FEAT-16 na tabela do momento 1: a v0.71 trazia as colunas trocadas (FE `pronto`, BE `a fazer`). O certo é FE `a fazer` (REQs e tarefas ainda não planejados) e BE `pronto`. |
 | 0.73 | 2026-11-24 | FEAT-16: FE `aguardando outro lado` (T-70 a T-73 prontas com MSW); falta a validação contra o backend real (T-74). |
 | 0.74 | 2026-11-24 | FEAT-16 `validado` nas duas colunas (CONTRATO v0.82): T-74 com as 11 campanhas da T-66 contra o backend real, MSW desligado. |
+| 0.75 | 2026-11-24 | FEAT-17: planejada no BE (SPEC-BACKEND v0.81, T-67 a T-73); contrato proposto pelo BE (CONTRATO v0.83); BE `aguardando outro lado`. |
+| 0.76 | 2026-11-24 | FEAT-17: FE pede mudanças na seção (CONTRATO v0.84, `proposto (FE)`); FE `aguardando outro lado` (REQs e tarefas só depois do acordo). |
