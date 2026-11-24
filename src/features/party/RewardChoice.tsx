@@ -33,6 +33,9 @@ export function RewardChoice({
         1× {nameOf(cards, cardId)} para{' '}
         {destination === 'inventory' ? 'o inventário' : 'a pasta de TCG'}.
       </p>
+      {reward.source.type === 'booster' && (
+        <p>Origem: Booster {nameOf(cards, reward.source.boosterCardId)}</p>
+      )}
       {decisionDeadlineAt !== null && (
         <p>
           Prazo da escolha{' '}

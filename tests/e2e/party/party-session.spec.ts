@@ -521,3 +521,25 @@ test.describe('REQ-73 e REQ-74: Ir ao Mercado (MSW)', () => {
     ).toHaveText('Comprou 20× Flechas por 8 de ouro')
   })
 })
+
+test.describe('REQ-75: abrir booster (MSW)', () => {
+  test('REQ-75: "Abrir Booster de Teste" no Preparar mostra o status e as 8 cartas com destino', async ({
+    page,
+  }) => {
+    await page.goto('/grupo/party-com-booster')
+    await page.getByRole('button', { name: 'Abrir Booster de Teste' }).click()
+    await expect(page.getByRole('status').first()).toHaveText(
+      'Abriu Booster de Teste.',
+    )
+    const list = page.getByRole('list', {
+      name: 'Cartas do booster Booster de Teste',
+    })
+    await expect(list.getByRole('listitem')).toHaveCount(8)
+    await expect(list.getByRole('listitem').first()).toHaveText(
+      'Força → pasta de TCG',
+    )
+    await expect(
+      page.getByRole('button', { name: 'Abrir Booster de Teste' }),
+    ).toHaveCount(0)
+  })
+})

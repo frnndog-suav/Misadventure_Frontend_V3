@@ -40,6 +40,7 @@ import { nameOf } from './cardNames'
 import { RandomEventPanel } from './RandomEventPanel'
 import { RewardChoice } from './RewardChoice'
 import { QuestPanel } from './QuestPanel'
+import { BoosterResult } from './BoosterResult'
 import { MarketPanel, MarketResult } from './MarketPanel'
 import { byCardId, invalidQuantity, isIntFrom } from './fieldRules'
 import { NumberField } from './fields'
@@ -51,6 +52,11 @@ import {
 } from './CombatPanel'
 
 type Cards = ReadonlyMap<string, Card>
+
+/** Booster pela categoria do item no catálogo: dado de exibição (D-62 item 4). */
+function isBooster(card: Card | undefined): boolean {
+  return card?.type === 'item' && card.itemCategory === 'booster'
+}
 
 function combatantNames(combat: Party['combat'], members: Party['members']) {
   const names = new Map(
@@ -145,6 +151,7 @@ function cardIdsOf(party: Party): string[] {
 type PrepareControls = {
   onEquip?: (cardId: string) => void
   onUnequip?: (slot: EquipmentSlot, cardId: string) => void
+  onOpenBooster?: (cardId: string) => void
   onActivate: ActivateEffect
   pending: boolean
 }
@@ -294,6 +301,16 @@ function MemberState({
                   disabled={prepare.pending}
                 >
                   Equipar {nameOf(cards, cardId)}
+                </button>
+              )}
+              {/* Categoria do item do catálogo: dado de exibição, não regra (D-58, D-62 item 4). */}
+              {prepare?.onOpenBooster && isBooster(cards.get(cardId)) && (
+                <button
+                  type="button"
+                  onClick={() => prepare.onOpenBooster?.(cardId)}
+                  disabled={prepare.pending}
+                >
+                  Abrir {nameOf(cards, cardId)}
                 </button>
               )}
             </li>
@@ -463,15 +480,17 @@ function reasonText(error: ActionNotAllowedError, name: string): string {
     case 'questClassIneligible':
     case 'questSpecializationIneligible':
     case 'questPeakTooLow':
-    case 'notInMarketStock': // FEAT-16: textos do mercado em marketReasonText (REQ-74); abrir booster na T-73
+    case 'notInMarketStock': // FEAT-16: textos do mercado em marketReasonText (REQ-74)
     case 'notMarketBooster':
     case 'singlesUnavailable':
     case 'showcaseSlotNotFound':
     case 'showcaseSlotEmpty':
     case 'notLotMultiple':
-    case 'notBooster':
-    case 'boosterEmpty':
       return error.message
+    case 'notBooster':
+      return `${name} não é um booster.`
+    case 'boosterEmpty':
+      return 'A coleção deste booster não tem cartas disponíveis.'
     default: {
       const _exhaustive: never = error.reason
       return _exhaustive
@@ -662,15 +681,17 @@ function vaultReasonText(error: ActionNotAllowedError, name: string): string {
     case 'questClassIneligible':
     case 'questSpecializationIneligible':
     case 'questPeakTooLow':
-    case 'notInMarketStock': // FEAT-16: textos do mercado em marketReasonText (REQ-74); abrir booster na T-73
+    case 'notInMarketStock': // FEAT-16: textos do mercado em marketReasonText (REQ-74)
     case 'notMarketBooster':
     case 'singlesUnavailable':
     case 'showcaseSlotNotFound':
     case 'showcaseSlotEmpty':
     case 'notLotMultiple':
-    case 'notBooster':
-    case 'boosterEmpty':
       return error.message
+    case 'notBooster':
+      return `${name} não é um booster.`
+    case 'boosterEmpty':
+      return 'A coleção deste booster não tem cartas disponíveis.'
     default: {
       const _exhaustive: never = error.reason
       return _exhaustive
@@ -803,6 +824,47 @@ function CardOperationForm({
       />
       {warning !== undefined && <p>{warning}</p>}
       <button type="button" onClick={add} disabled={pending || cardId === ''}>
+        Acrescentar
+      </button>
+    </fieldset>
+  )
+}
+
+/** "Abrir booster": boosters de `vault.slots`, um por vez (REQ-75). */
+function BoosterForm({
+  cardIds,
+  cards,
+  onAdd,
+  pending,
+}: {
+  cardIds: string[]
+  cards: Cards
+  onAdd: (cardId: string) => void
+  pending: boolean
+}) {
+  const selectId = useId()
+  const [cardId, setCardId] = useState('')
+  return (
+    <fieldset disabled={pending}>
+      <legend>Abrir booster</legend>
+      <label htmlFor={selectId}>Booster</label>
+      <select
+        id={selectId}
+        value={cardId}
+        onChange={(e) => setCardId(e.target.value)}
+      >
+        <option value="">Escolha um booster</option>
+        {cardIds.map((id) => (
+          <option key={id} value={id}>
+            {nameOf(cards, id)}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        onClick={() => onAdd(cardId)}
+        disabled={pending || cardId === ''}
+      >
         Acrescentar
       </button>
     </fieldset>
@@ -956,6 +1018,9 @@ function UseVault({
       vaultCardIds.filter((id) => cards.get(id)?.type === 'attribute'),
     ),
   ].sort(byCardId)
+  const vaultBoosters = vaultCardIds
+    .filter((id) => isBooster(cards.get(id)))
+    .sort(byCardId)
   const buildRows = [
     ...new Set([
       ...player.build.map(({ cardId }) => cardId),
@@ -1066,6 +1131,12 @@ function UseVault({
         onAdd={(cardId, quantity) =>
           append({ operation: 'discard', cardId, quantity })
         }
+        pending={pending}
+      />
+      <BoosterForm
+        cardIds={vaultBoosters}
+        cards={cards}
+        onAdd={(cardId) => append({ operation: 'openBooster', cardId })}
         pending={pending}
       />
       <GoldForm onAdd={append} pending={pending} />
@@ -1237,6 +1308,7 @@ function PreparedMatch({
   onVisitMarket,
   onEquip,
   onUnequip,
+  onOpenBooster,
   onActivate,
   onEvent,
   eventError,
@@ -1268,6 +1340,7 @@ function PreparedMatch({
   ) => void
   onEquip: NonNullable<PrepareControls['onEquip']>
   onUnequip: NonNullable<PrepareControls['onUnequip']>
+  onOpenBooster: NonNullable<PrepareControls['onOpenBooster']>
   onActivate: ActivateEffect
   onEvent: (action: RandomEventAction) => void
   eventError: Error | null
@@ -1385,6 +1458,7 @@ function PreparedMatch({
                   ...(party.randomEventEncounter === null && {
                     onEquip,
                     onUnequip,
+                    onOpenBooster,
                   }),
                   onActivate,
                   pending: moving,
@@ -1525,7 +1599,11 @@ export function PartySession() {
     if (action.variables.type === 'prepare') {
       status = ['activate', 'useAbility'].includes(action.variables.operation)
         ? errorText(action.error)
-        : refusalText(action.error, preparedName)
+        : action.variables.operation === 'openBooster' &&
+            action.error instanceof ActionNotAllowedError &&
+            action.error.reason === 'tcgFolderFull'
+          ? `${action.error.message} A pasta de TCG precisa de espaço para todas as cartas do booster.`
+          : refusalText(action.error, preparedName)
     } else if (
       action.variables.type === 'scavenge' &&
       action.error instanceof ActionNotAllowedError &&
@@ -1562,9 +1640,11 @@ export function PartySession() {
           ? `Equipou ${preparedName}.`
           : action.variables.operation === 'unequip'
             ? `Guardou ${preparedName}.`
-            : action.variables.operation === 'useAbility'
-              ? 'Habilidade usada.'
-              : 'Efeito ativado.'
+            : action.variables.operation === 'openBooster'
+              ? `Abriu ${preparedName}.`
+              : action.variables.operation === 'useAbility'
+                ? 'Habilidade usada.'
+                : 'Efeito ativado.'
     } else if (action.variables.type === 'adjustDeck') {
       status = `Build salva: ${host.player.buildSize} cartas.`
     } else if (action.variables.type === 'endTurn') {
@@ -1699,6 +1779,14 @@ export function PartySession() {
               setPreparedCardId(cardId)
               action.mutate({ type: 'prepare', operation: 'unequip', slot })
             }}
+            onOpenBooster={(cardId) => {
+              setPreparedCardId(cardId)
+              action.mutate({
+                type: 'prepare',
+                operation: 'openBooster',
+                cardId,
+              })
+            }}
             onActivate={(activation, onSuccess) =>
               action.mutate(activation, { onSuccess })
             }
@@ -1780,6 +1868,19 @@ export function PartySession() {
         host?.player.lastMarketVisit != null && (
           <MarketResult
             visit={host.player.lastMarketVisit}
+            cards={cards.cards}
+          />
+        )}
+      {action.isSuccess &&
+        (action.variables.type === 'prepare'
+          ? action.variables.operation === 'openBooster'
+          : action.variables.type === 'useVault' &&
+            action.variables.operations.some(
+              ({ operation }) => operation === 'openBooster',
+            )) &&
+        host?.player.lastBoosterOpening != null && (
+          <BoosterResult
+            opening={host.player.lastBoosterOpening}
             cards={cards.cards}
           />
         )}

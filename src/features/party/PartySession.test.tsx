@@ -31,6 +31,12 @@ import {
   resetCombatScenarios,
 } from '../../mocks/combatFixtures'
 import { handlers } from '../../mocks/handlers'
+import {
+  marketRefusalFixture,
+  partyBoosterOpenedFixture,
+  partyVaultBoosterOpenedFixture,
+  partyWithBoosterFixture,
+} from '../../mocks/marketFixtures'
 import { resetKnockoutScenarios } from '../../mocks/knockoutFixtures'
 import { resetQuestScenarios } from '../../mocks/questFixtures'
 import {
@@ -3688,4 +3694,302 @@ it('REQ-69 displays shared progress before reward delivery and keeps it on reloa
   expect(within(restored).getAllByText('Êxitos em eventos: 1/3')).toHaveLength(
     2,
   )
+})
+
+describe('REQ-75: abrir booster (Preparar e Usar cofre)', () => {
+  const booster = 'fixture.booster'
+  const boosterName = 'Booster de Teste'
+  const [base] = partyInSessionFixture.members
+  const openButton = () =>
+    screen.getByRole('button', { name: `Abrir ${boosterName}` })
+
+  function sessionWith(party: Party): void {
+    server.use(
+      http.post('*/parties/:partyId/session', () => HttpResponse.json(party)),
+    )
+  }
+
+  function actionReturns(response: () => Response): { body: () => unknown } {
+    let body: unknown
+    server.use(
+      http.post('*/parties/:partyId/actions', async ({ request }) => {
+        body = await request.json()
+        return response()
+      }),
+    )
+    return { body: () => body }
+  }
+
+  it('REQ-75: com prepare, só o slot de booster do inventário tem "Abrir {nome}"', async () => {
+    sessionWith(partyWithBoosterFixture)
+    renderParty(partyWithBoosterFixture.id)
+    await screen.findByRole('button', { name: `Abrir ${boosterName}` })
+    expect(screen.getAllByRole('button', { name: /^Abrir / })).toHaveLength(1)
+  })
+
+  it('REQ-75: sem prepare em availableActions não há "Abrir {nome}"', async () => {
+    const [member] = partyWithBoosterFixture.members
+    sessionWith({
+      ...partyWithBoosterFixture,
+      members: [
+        {
+          ...member,
+          player: { ...member.player, availableActions: ['move', 'endTurn'] },
+        },
+      ],
+    })
+    renderParty(partyWithBoosterFixture.id)
+    await screen.findByText(`1× ${boosterName}`)
+    expect(
+      screen.queryByRole('button', { name: /^Abrir / }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('REQ-75: "Abrir {nome}" envia { prepare, openBooster, cardId } sem confirmação e, com 200, mostra "Abriu {nome}." e as cartas na ordem recebida', async () => {
+    sessionWith(partyWithBoosterFixture)
+    const sent = actionReturns(() =>
+      HttpResponse.json(partyBoosterOpenedFixture),
+    )
+    renderParty(partyWithBoosterFixture.id)
+    await screen.findByRole('button', { name: `Abrir ${boosterName}` })
+    fireEvent.click(openButton())
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(`Abriu ${boosterName}.`),
+    )
+    expect(sent.body()).toEqual({
+      type: 'prepare',
+      operation: 'openBooster',
+      cardId: booster,
+    })
+    const list = screen.getByRole('list', {
+      name: `Cartas do booster ${boosterName}`,
+    })
+    expect(
+      within(list)
+        .getAllByRole('listitem')
+        .map((li) => li.textContent),
+    ).toEqual([
+      'Força → pasta de TCG',
+      'Resistência → pasta de TCG',
+      'Poção de Cura → inventário',
+      'Destreza → pasta de TCG',
+      'Minério de Ferro → inventário',
+      'Força → pasta de TCG',
+      'Peixe Prateado → inventário',
+      'Lâmina do Crepúsculo → inventário',
+    ])
+  })
+
+  it('REQ-75: durante o pedido o botão fica desabilitado', async () => {
+    let release: () => void = () => {}
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    sessionWith(partyWithBoosterFixture)
+    server.use(
+      http.post('*/parties/:partyId/actions', async () => {
+        await gate
+        return HttpResponse.json(partyBoosterOpenedFixture)
+      }),
+    )
+    renderParty(partyWithBoosterFixture.id)
+    await screen.findByRole('button', { name: `Abrir ${boosterName}` })
+    fireEvent.click(openButton())
+    await waitFor(() => expect(openButton()).toBeDisabled())
+    release()
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(`Abriu ${boosterName}.`),
+    )
+  })
+
+  for (const [reason, text] of [
+    ['notBooster', `${boosterName} não é um booster.`],
+    ['boosterEmpty', 'A coleção deste booster não tem cartas disponíveis.'],
+    [
+      'tcgFolderFull',
+      'A pasta de TCG precisa de espaço para todas as cartas do booster.',
+    ],
+  ] as const) {
+    it(`REQ-75: 409 ${reason} no Preparar mostra a mensagem e o texto próprio`, async () => {
+      sessionWith(partyWithBoosterFixture)
+      actionReturns(() =>
+        HttpResponse.json(marketRefusalFixture({ reason, cardId: booster }), {
+          status: 409,
+        }),
+      )
+      renderParty(partyWithBoosterFixture.id)
+      await screen.findByRole('button', { name: `Abrir ${boosterName}` })
+      fireEvent.click(openButton())
+      await waitFor(() =>
+        expect(status()).toHaveTextContent(
+          `Esta ação não é permitida agora. ${text}`,
+        ),
+      )
+      expect(
+        screen.queryByRole('list', {
+          name: `Cartas do booster ${boosterName}`,
+        }),
+      ).not.toBeInTheDocument()
+    })
+  }
+
+  function vaultSession(): void {
+    sessionWith({
+      ...partyInSessionFixture,
+      members: [
+        {
+          ...base,
+          player: {
+            ...base.player,
+            inventory: [],
+            vault: {
+              slots: [
+                { cardId: 'fixture.healing-potion', quantity: 1 },
+                { cardId: booster, quantity: 1 },
+                { cardId: 'fixture.arrows', quantity: 2 },
+              ],
+              decks: [],
+              gold: 0,
+            },
+          },
+        },
+      ],
+    })
+  }
+
+  async function openVault(): Promise<HTMLElement> {
+    renderParty()
+    await screen.findByRole('region', { name: 'A vez' })
+    fireEvent.click(screen.getByRole('button', { name: 'Usar cofre' }))
+    return screen.findByRole('region', { name: 'Usar cofre' })
+  }
+
+  function addOpenBooster(vault: HTMLElement): void {
+    const form = within(vault).getByRole('group', { name: 'Abrir booster' })
+    fireEvent.change(within(form).getByRole('combobox', { name: 'Booster' }), {
+      target: { value: booster },
+    })
+    fireEvent.click(within(form).getByRole('button', { name: 'Acrescentar' }))
+  }
+
+  it('REQ-75: o formulário "Abrir booster" lista só boosters do cofre e acrescenta "Abrir {nome}"', async () => {
+    vaultSession()
+    const vault = await openVault()
+    const form = within(vault).getByRole('group', { name: 'Abrir booster' })
+    const select = within(form).getByRole('combobox', { name: 'Booster' })
+    expect(
+      within(select)
+        .getAllByRole('option')
+        .map((o) => o.textContent),
+    ).toEqual(['Escolha um booster', boosterName])
+    expect(
+      within(form).getByRole('button', { name: 'Acrescentar' }),
+    ).toBeDisabled()
+    addOpenBooster(vault)
+    const items = within(
+      within(vault).getByRole('list', { name: 'Operações' }),
+    ).getAllByRole('listitem')
+    expect(items[0]?.firstChild?.textContent).toBe(`1. Abrir ${boosterName}`)
+  })
+
+  it('REQ-75: lote do cofre com openBooster envia { openBooster, cardId } e, com 200, mostra as cartas com destino cofre', async () => {
+    vaultSession()
+    const sent = actionReturns(() =>
+      HttpResponse.json(partyVaultBoosterOpenedFixture),
+    )
+    const vault = await openVault()
+    addOpenBooster(vault)
+    fireEvent.click(
+      within(vault).getByRole('button', {
+        name: 'Confirmar (1 ponto de ação)',
+      }),
+    )
+    await waitFor(() =>
+      expect(status()).toHaveTextContent('Cofre: 1 operação feita.'),
+    )
+    expect(sent.body()).toEqual({
+      type: 'useVault',
+      operations: [{ operation: 'openBooster', cardId: booster }],
+    })
+    const list = screen.getByRole('list', {
+      name: `Cartas do booster ${boosterName}`,
+    })
+    expect(within(list).getAllByRole('listitem')).toHaveLength(8)
+    expect(within(list).getAllByRole('listitem')[0]).toHaveTextContent(
+      'Força → cofre',
+    )
+  })
+
+  it('REQ-75: 409 boosterEmpty no cofre mostra a mensagem e o texto na seção', async () => {
+    vaultSession()
+    actionReturns(() =>
+      HttpResponse.json(
+        marketRefusalFixture({
+          reason: 'boosterEmpty',
+          cardId: booster,
+          operationIndex: 0,
+        }),
+        { status: 409 },
+      ),
+    )
+    const vault = await openVault()
+    addOpenBooster(vault)
+    fireEvent.click(
+      within(vault).getByRole('button', {
+        name: 'Confirmar (1 ponto de ação)',
+      }),
+    )
+    await waitFor(() =>
+      expect(vault).toHaveTextContent(
+        'Esta ação não é permitida agora. A coleção deste booster não tem cartas disponíveis.',
+      ),
+    )
+  })
+
+  it('REQ-75: 409 notBooster no cofre mostra o texto com o nome', async () => {
+    vaultSession()
+    actionReturns(() =>
+      HttpResponse.json(
+        marketRefusalFixture({
+          reason: 'notBooster',
+          cardId: booster,
+          operationIndex: 0,
+        }),
+        { status: 409 },
+      ),
+    )
+    const vault = await openVault()
+    addOpenBooster(vault)
+    fireEvent.click(
+      within(vault).getByRole('button', {
+        name: 'Confirmar (1 ponto de ação)',
+      }),
+    )
+    await waitFor(() =>
+      expect(vault).toHaveTextContent(`${boosterName} não é um booster.`),
+    )
+  })
+
+  it('REQ-75: entrega pendente com source booster mostra a origem "Booster {nome}"', async () => {
+    const pending: Party = {
+      ...partyInSessionFixture,
+      pendingRewards: [
+        {
+          id: 'reward-1',
+          memberId: base.id,
+          cardId: 'fixture.iron-ore',
+          origin: { type: 'fixed' },
+          source: { type: 'booster', boosterCardId: booster },
+          destination: 'inventory',
+          discardOptions: [],
+          decisionDeadlineAt: null,
+        },
+      ],
+    }
+    sessionWith(pending)
+    server.use(http.get('*/parties/:partyId', () => HttpResponse.json(pending)))
+    renderParty()
+    const section = await screen.findByRole('region', {
+      name: 'Recompensa pendente',
+    })
+    expect(section).toHaveTextContent(`Origem: Booster ${boosterName}`)
+  })
 })

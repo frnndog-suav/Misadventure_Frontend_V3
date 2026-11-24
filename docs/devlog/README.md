@@ -67,6 +67,7 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 035 | T-25 | [Formulários de evento aleatório e de combate](035-T-25-formularios-de-evento.md) | concluída |
 | 036 | T-26 | [Publicar, duplicar e excluir carta](036-T-26-publicar-duplicar-excluir.md) | concluída |
 | 037 | T-27 | [Validar como dimensão, exportar e importar](037-T-27-validar-exportar-importar.md) | aguardando revisão |
+| 100 | T-73 | [Abrir booster no Preparar e no cofre](100-T-73-abrir-booster.md) | aguardando revisão |
 | 038 | RETORNO | [FEAT-31 validada contra o backend real](038-RETORNO-feat-31-validada.md) | aguardando revisão |
 | 039 | T-28 | [Cliente alinhado à FEAT-06](039-T-28-cliente-feat-06.md) | aguardando revisão |
 | 040 | T-29 | [Laboratório e catálogo alinhados à FEAT-06](040-T-29-laboratorio-catalogo-feat-06.md) | concluída |
