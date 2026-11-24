@@ -219,3 +219,40 @@ test('REQ-46: doa carta e ouro na seção "Doação" (MSW)', async ({ page }) =>
     'Doação feita. Lia: ouro 300, 0 slots no inventário, 0 cartas diferentes na pasta.',
   )
 })
+
+test('REQ-71: a configuração mostra as chaves do mercado com padrão e limites (MSW)', async ({
+  page,
+}) => {
+  await page.goto('/lab')
+  const region = page.getByRole('region', { name: 'Configuração' })
+  const boosterPrice = region.getByRole('spinbutton', {
+    name: 'Preço do booster',
+  })
+  await expect(boosterPrice).toBeVisible()
+  await expect(boosterPrice).toHaveAccessibleDescription(/Padrão: .* Mín\. .*/)
+  await expect(
+    region.getByRole('spinbutton', {
+      name: 'Chance Lendária no booster (milésimos)',
+    }),
+  ).toBeVisible()
+  await expect(
+    region.getByRole('spinbutton', { name: 'Fator do mercado mínimo (%)' }),
+  ).toBeVisible()
+})
+
+test('REQ-72: o Catálogo mostra o preço da carta e o mercado da zona (MSW)', async ({
+  page,
+}) => {
+  await page.goto('/lab')
+  const section = page.getByRole('region', { name: 'Catálogo' })
+  const list = section.getByRole('list', { name: 'Cartas' })
+  await list.getByRole('button', { name: 'Flechas · Item' }).click()
+  const arrows = section.getByRole('article', { name: 'Flechas' })
+  await expect(arrows.getByText('Preço ×1')).toBeVisible()
+  await expect(arrows.getByText('Preço de estoque 3')).toBeVisible()
+
+  await list.getByRole('button', { name: 'Porto Cinzento · Zona' }).click()
+  const harbor = section.getByRole('article', { name: 'Porto Cinzento' })
+  await expect(harbor.getByRole('list', { name: 'Estoque' })).toBeVisible()
+  await expect(harbor.getByText('Vende singles')).toBeVisible()
+})

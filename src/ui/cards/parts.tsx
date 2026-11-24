@@ -1,8 +1,15 @@
 import type { Effect, ZoneEffect } from '../../api/effects'
 import { effectMarkLabels, effectPolarityLabels } from '../labels'
 import { useId, type ReactNode } from 'react'
-import type { Ability, Rarity, RuleText } from '../../api/catalog'
+import {
+  useCatalogCard,
+  useCollections,
+  type Ability,
+  type Rarity,
+  type RuleText,
+} from '../../api/catalog'
 import { rarityLabels } from '../labels'
+import { formatNumber } from './format'
 import './cards.css'
 
 /**
@@ -65,6 +72,28 @@ export function LabeledList<T>({
 export function ScavengeTool({ tool }: { tool: string | null }) {
   if (tool === null) return null
   return <p>Coletada com: {tool}</p>
+}
+
+/** Ajuste de preço (REQ-72, README 24.1): "Preço ×1,2". */
+export function PriceAdjust({ multiplier }: { multiplier: number }) {
+  return <p>Preço ×{formatNumber(multiplier)}</p>
+}
+
+/**
+ * Nome da carta de `GET /catalog/cards/:cardId` (mesmo cache, D-48); até
+ * chegar, "…"; com erro, o id da carta.
+ */
+export function CardName({ cardId }: { cardId: string }) {
+  const { data, isError } = useCatalogCard(cardId)
+  if (data !== undefined) return 'name' in data ? data.name : data.title
+  return isError ? cardId : '…'
+}
+
+/** "Coleção: {nome}" (REQ-72): sem a coleção na lista (ou com erro), o id. */
+export function CollectionName({ collectionId }: { collectionId: string }) {
+  const { data } = useCollections()
+  const name = data?.find((c) => c.id === collectionId)?.name
+  return <p>Coleção: {name ?? collectionId}</p>
 }
 
 export function Tags({ tags }: { tags: readonly string[] }) {

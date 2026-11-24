@@ -356,6 +356,7 @@ describe('REQ-21: salvar', () => {
           attributeKind: 'basic',
           attributes: ['strength'],
           effects: [],
+          priceMultiplier: 1,
         },
       },
     ])
@@ -409,6 +410,7 @@ describe('REQ-21: salvar', () => {
           polarity: 'negative',
         },
       ],
+      market: null,
     })
   })
 
@@ -961,6 +963,10 @@ describe('REQ-21: item', () => {
       toolKind: null,
       scavengeZoneTypes: [],
       scavengeTool: null,
+      priceMultiplier: 1,
+      stockPrice: null,
+      stockQuantity: 1,
+      boosterCollectionId: null,
     })
   })
 
@@ -1933,4 +1939,223 @@ it('REQ-70 opens a zone quest draft with editable stages', async () => {
   type('ID do evento da coleção', 'fixture.wounded-traveler')
   fireEvent.click(saveButton())
   await waitFor(() => expect(formStatus()).toHaveTextContent(/salv/i))
+})
+
+describe('REQ-72: campos do mercado no editor', () => {
+  const group = (name: string) => within(form()).getByRole('group', { name })
+
+  function rejectWith(
+    method: 'post' | 'put',
+    fields: { path: string; message: string }[],
+  ): void {
+    server.use(
+      http[method](method === 'post' ? cardsUrl : cardUrl, () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: 'CONTENT_INVALID',
+              message: 'Conteúdo inválido.',
+              details: { fields },
+            },
+          },
+          { status: 400 },
+        ),
+      ),
+    )
+  }
+
+  function fillPraca(): void {
+    type('Identificador', 'praca')
+    type('Título', 'Praça')
+    fireEvent.change(field('Tipo de zona'), { target: { value: 'urban' } })
+    type('Local', 'Cidade')
+    type('Setas de conexão', '4')
+  }
+
+  function fillPocao(): void {
+    type('Identificador', 'pocao')
+    type('Nome', 'Poção')
+    fireEvent.change(field('Raridade'), { target: { value: 'common' } })
+    fireEvent.change(field('Categoria'), { target: { value: 'consumable' } })
+  }
+
+  it('REQ-72: atributo novo começa com "Ajuste de preço" 1, exige número e envia o corpo', async () => {
+    const bodies = recordBodies()
+    renderEditor()
+    await newCard('Atributo')
+    expect(field('Ajuste de preço')).toHaveValue('1')
+    fillForca('forca')
+    expect(saveButton()).toBeEnabled()
+    type('Ajuste de preço', 'caro')
+    expect(saveButton()).toBeDisabled()
+    type('Ajuste de preço', '1.2')
+    fireEvent.click(saveButton())
+    await waitFor(() =>
+      expect(formStatus()).toHaveTextContent('Rascunho salvo.'),
+    )
+    expect(bodies[0].body).toMatchObject({
+      type: 'attribute',
+      priceMultiplier: 1.2,
+    })
+  })
+
+  it('REQ-72: item novo tem preço, "Preço de estoque" vazio, "Lote" 1 e coleção "Nenhuma"', async () => {
+    const bodies = recordBodies()
+    renderEditor()
+    await newCard('Item')
+    expect(field('Ajuste de preço')).toHaveValue('1')
+    expect(field('Preço de estoque')).toHaveValue('')
+    expect(field('Lote')).toHaveValue('1')
+    expect(field('Coleção do booster')).toHaveValue('')
+    await waitFor(() =>
+      expect(
+        within(field('Coleção do booster'))
+          .getAllByRole('option')
+          .map((o) => o.textContent),
+      ).toEqual(['Nenhuma', 'Coleção de Teste']),
+    )
+    fillPocao()
+    expect(saveButton()).toBeEnabled()
+    type('Preço de estoque', 'muito')
+    expect(saveButton()).toBeDisabled()
+    type('Preço de estoque', '6')
+    type('Lote', '10')
+    type('Ajuste de preço', '0.9')
+    fireEvent.change(field('Coleção do booster'), {
+      target: { value: 'fixture' },
+    })
+    expect(saveButton()).toBeEnabled()
+    fireEvent.click(saveButton())
+    await waitFor(() =>
+      expect(formStatus()).toHaveTextContent('Rascunho salvo.'),
+    )
+    expect(bodies[0].body).toMatchObject({
+      type: 'item',
+      priceMultiplier: 0.9,
+      stockPrice: 6,
+      stockQuantity: 10,
+      boosterCollectionId: 'fixture',
+    })
+  })
+
+  it('REQ-72: item sem estoque nem coleção envia stockPrice e boosterCollectionId null', async () => {
+    const bodies = recordBodies()
+    renderEditor()
+    await newCard('Item')
+    fillPocao()
+    fireEvent.click(saveButton())
+    await waitFor(() =>
+      expect(formStatus()).toHaveTextContent('Rascunho salvo.'),
+    )
+    expect(bodies[0].body).toMatchObject({
+      priceMultiplier: 1,
+      stockPrice: null,
+      stockQuantity: 1,
+      boosterCollectionId: null,
+    })
+  })
+
+  it('REQ-72: item existente abre com os valores do mercado e salvar não os apaga', async () => {
+    const bodies = recordBodies()
+    renderEditor()
+    await openCard('Flechas · Item · Publicada')
+    expect(field('Preço de estoque')).toHaveValue('3')
+    expect(field('Lote')).toHaveValue('10')
+    type('Nome', 'Flechas longas')
+    fireEvent.click(saveButton())
+    await waitFor(() => expect(bodies).toHaveLength(1))
+    expect(bodies[0].body).toMatchObject({
+      stockPrice: 3,
+      stockQuantity: 10,
+      priceMultiplier: 1,
+    })
+  })
+
+  it('REQ-72: zona nova não tem mercado; "Tem mercado" mostra "Estoque" e "Vende singles"', async () => {
+    const bodies = recordBodies()
+    renderEditor()
+    await newCard('Zona')
+    expect(field('Tem mercado')).not.toBeChecked()
+    expect(
+      within(group('Mercado')).queryByRole('group', { name: 'Estoque' }),
+    ).toBeNull()
+    expect(
+      within(group('Mercado')).queryByLabelText('Vende singles'),
+    ).toBeNull()
+    fillPraca()
+    fireEvent.click(field('Tem mercado'))
+    const stock = within(group('Mercado')).getByRole('group', {
+      name: 'Estoque',
+    })
+    fireEvent.click(within(stock).getByRole('button', { name: 'Adicionar' }))
+    fireEvent.click(within(stock).getByRole('button', { name: 'Adicionar' }))
+    fireEvent.change(within(stock).getByLabelText('Carta 1'), {
+      target: { value: 'fixture.healing-potion' },
+    })
+    fireEvent.change(within(stock).getByLabelText('Carta 2'), {
+      target: { value: 'fixture.arrows' },
+    })
+    fireEvent.click(field('Vende singles'))
+    fireEvent.click(saveButton())
+    await waitFor(() =>
+      expect(formStatus()).toHaveTextContent('Rascunho salvo.'),
+    )
+    expect(bodies[0].body).toMatchObject({
+      type: 'zone',
+      market: {
+        stock: ['fixture.healing-potion', 'fixture.arrows'],
+        singles: true,
+      },
+    })
+  })
+
+  it('REQ-72: desmarcar "Tem mercado" envia market null', async () => {
+    const bodies = recordBodies()
+    renderEditor()
+    await openCard('Porto Cinzento · Zona · Publicada')
+    expect(field('Tem mercado')).toBeChecked()
+    expect(field('Vende singles')).toBeChecked()
+    fireEvent.click(field('Tem mercado'))
+    fireEvent.click(saveButton())
+    await waitFor(() => expect(bodies).toHaveLength(1))
+    expect(bodies[0].body).toMatchObject({ market: null })
+  })
+
+  it('REQ-72: zona sem mercado envia market null', async () => {
+    const bodies = recordBodies()
+    renderEditor()
+    await newCard('Zona')
+    fillPraca()
+    fireEvent.click(saveButton())
+    await waitFor(() => expect(bodies).toHaveLength(1))
+    expect(bodies[0].body).toMatchObject({ market: null })
+  })
+
+  it('REQ-72: erro CONTENT_INVALID em market.stock.1 aparece no segundo item do estoque', async () => {
+    rejectWith('put', [
+      { path: 'market.stock.1', message: 'Carta fora da coleção.' },
+    ])
+    renderEditor()
+    await openCard('Porto Cinzento · Zona · Publicada')
+    fireEvent.click(saveButton())
+    await waitFor(() =>
+      expect(field('Carta 2')).toHaveAccessibleDescription(
+        'Carta fora da coleção.',
+      ),
+    )
+  })
+
+  it('REQ-72: erro CONTENT_INVALID em stockQuantity aparece abaixo de "Lote"', async () => {
+    rejectWith('put', [
+      { path: 'stockQuantity', message: 'O lote deve ser inteiro.' },
+    ])
+    renderEditor()
+    await openCard('Flechas · Item · Publicada')
+    fireEvent.click(saveButton())
+    await waitFor(() =>
+      expect(field('Lote')).toHaveAccessibleDescription(
+        'O lote deve ser inteiro.',
+      ),
+    )
+  })
 })

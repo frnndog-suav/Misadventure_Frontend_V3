@@ -1,6 +1,6 @@
 import type { ZoneCard as ZoneCardData } from '../../api/catalog'
 import { zoneActionLabels, zoneTypeLabels } from '../labels'
-import { CardFrame, Effects, LabeledList } from './parts'
+import { CardFrame, CardName, Effects, LabeledList } from './parts'
 
 /** Forma das setas (REQ-28); com `null`, nada aparece. */
 const arrowLayoutLabels = {
@@ -24,6 +24,23 @@ export function ZoneCard({ card }: { card: ZoneCardData }) {
         render={(a) => zoneActionLabels[a]}
       />
       <Effects effects={card.effects} />
+      {card.market !== null && <Market market={card.market} />}
     </CardFrame>
+  )
+}
+
+/** Bloco "Mercado" (REQ-72): estoque na ordem recebida e se vende singles. */
+function Market({ market }: { market: NonNullable<ZoneCardData['market']> }) {
+  return (
+    <section aria-label="Mercado">
+      <h4>Mercado</h4>
+      {market.stock.length === 0 && <p>Sem estoque.</p>}
+      <LabeledList
+        label="Estoque"
+        items={market.stock}
+        render={(id) => <CardName cardId={id} />}
+      />
+      <p>{market.singles ? 'Vende singles' : 'Sem singles'}</p>
+    </section>
   )
 }

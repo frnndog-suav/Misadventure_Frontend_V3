@@ -273,6 +273,7 @@ function errorText(error: Error): string {
 
 /** Texto por campo, montado de `reason` + `limits` (D-23). Sem texto: só a `message`. */
 function fieldErrorText(
+  field: NumericKey,
   reason: LabConfigInvalidDetails['fields'][number]['reason'],
   limits: { min: number; max: number },
 ): string | null {
@@ -282,7 +283,10 @@ function fieldErrorText(
     case 'notInteger':
       return 'Use um número inteiro.'
     case 'minAboveMax':
-      return 'O mínimo de jogadores não pode passar do máximo.'
+      return field === 'marketFactorMinPercent' ||
+        field === 'marketFactorMaxPercent'
+        ? 'O fator mínimo do mercado não pode passar do máximo.'
+        : 'O mínimo de jogadores não pode passar do máximo.'
     case 'sumMismatch':
       return 'As cinco chances do booster precisam somar 1000 milésimos.'
     case 'unknownKey':
@@ -359,7 +363,7 @@ function ConfigForm({ config }: { config: LabConfig }) {
   for (const { field, reason } of backendErrors) {
     if (!isFieldKey(field)) continue
     const limits = config.limits[field]
-    const text = limits && fieldErrorText(reason, limits)
+    const text = limits && fieldErrorText(field, reason, limits)
     if (text) fieldErrors[field] = text
   }
   const pending = update.isPending || reset.isPending

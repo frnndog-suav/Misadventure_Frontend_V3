@@ -1,7 +1,7 @@
 import type { AttributeCard as AttributeCardData } from '../../api/catalog'
 import { attributeKindLabels } from '../labels'
 import { Term } from '../Term'
-import { CardFrame, Effects, LabeledList } from './parts'
+import { CardFrame, Effects, LabeledList, PriceAdjust } from './parts'
 
 /** Carta de atributo (REQ-09, README 4.3). Cada atributo vale 1. */
 export function AttributeCard({ card }: { card: AttributeCardData }) {
@@ -23,6 +23,7 @@ export function AttributeCard({ card }: { card: AttributeCardData }) {
           </>
         )}
       />
+      <PriceAdjust multiplier={card.priceMultiplier} />
       <Effects effects={card.effects} />
     </CardFrame>
   )

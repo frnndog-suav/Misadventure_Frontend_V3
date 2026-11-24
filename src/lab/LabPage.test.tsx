@@ -23,8 +23,10 @@ import {
   internalErrorFixture,
   labConfigDefaultsFixture,
   labConfigInvalidFixture,
+  labConfigMarketFactorFixture,
   labConfigMinAboveMaxFixture,
   labConfigNotIntegerFixture,
+  labConfigSumMismatchFixture,
   labConfigUpdatedFixture,
   notFoundFixture,
 } from '../mocks/fixtures'
@@ -144,6 +146,53 @@ const labels = [
   ['vaultCapacity', 'Capacidade do cofre'],
   ['vaultDeckSlots', 'Slots de decks do cofre (a build em uso ocupa um)'],
   ['vaultGoldCapacity', 'Capacidade de ouro do cofre'],
+] as const
+
+/** FEAT-16 (REQ-71): as 37 chaves, na ordem da tela, depois das anteriores. */
+const marketLabels = [
+  ['singlesShowcaseSlots', 'Slots da vitrine de singles'],
+  ['singlesDecayMax', 'Decaimento dos singles (D20 até)'],
+  ['singlesPoolSize', 'Tamanho do pool de singles'],
+  ['marketFactorMinPercent', 'Fator do mercado mínimo (%)'],
+  ['marketFactorMaxPercent', 'Fator do mercado máximo (%)'],
+  ['singlesStockCommon', 'Estoque de single Comum'],
+  ['singlesStockUncommon', 'Estoque de single Incomum'],
+  ['singlesStockRare', 'Estoque de single Rara'],
+  ['singlesStockEpic', 'Estoque de single Épica'],
+  ['singlesStockLegendary', 'Estoque de single Lendária'],
+  ['singlesPriceCommon', 'Preço base Comum'],
+  ['singlesPriceUncommon', 'Preço base Incomum'],
+  ['singlesPriceRare', 'Preço base Rara'],
+  ['singlesPriceEpic', 'Preço base Épica'],
+  ['singlesPriceLegendary', 'Preço base Lendária'],
+  ['scarcityStepPercent', 'Escassez por cópia vendida (%)'],
+  ['treasureValueCommon', 'Valor de tesouro Comum'],
+  ['treasureValueUncommon', 'Valor de tesouro Incomum'],
+  ['treasureValueRare', 'Valor de tesouro Rara'],
+  ['treasureValueEpic', 'Valor de tesouro Épica'],
+  ['treasureValueLegendary', 'Valor de tesouro Lendária'],
+  ['boosterPrice', 'Preço do booster'],
+  ['boosterCardCount', 'Cartas por booster'],
+  ['boosterSalePrice', 'Venda do booster fechado'],
+  ['boosterChanceCommon', 'Chance Comum no booster (milésimos)'],
+  ['boosterChanceUncommon', 'Chance Incomum no booster (milésimos)'],
+  ['boosterChanceRare', 'Chance Rara no booster (milésimos)'],
+  ['boosterChanceEpic', 'Chance Épica no booster (milésimos)'],
+  ['boosterChanceLegendary', 'Chance Lendária no booster (milésimos)'],
+  ['vaultExpansionSlots', 'Slots por expansão do cofre'],
+  ['vaultExpansionBasePrice', 'Preço base da expansão do cofre'],
+  ['deckSlotExpansionSlots', 'Slots por expansão de deck'],
+  ['deckSlotExpansionBasePrice', 'Preço base do slot de deck'],
+  ['tcgFolderExpansionSlots', 'Cartas por expansão da pasta de TCG'],
+  ['tcgFolderExpansionBasePrice', 'Preço base da expansão da pasta de TCG'],
+  [
+    'purseExpansionPricePercent',
+    'Preço da expansão da bolsa (% da capacidade)',
+  ],
+  [
+    'vaultGoldExpansionPricePercent',
+    'Preço da expansão do ouro do cofre (% da capacidade)',
+  ],
 ] as const
 
 // T-70 (autor, 2026-11-23): com as 37 chaves da FEAT-16 a página tem cerca de
@@ -385,6 +434,74 @@ describe('REQ-06: configuração ajustável do jogo', () => {
     expect(field('Jogadores (máximo)')).toHaveAccessibleDescription(
       expect.stringContaining(text),
     )
+  })
+
+  it('REQ-71: as 37 chaves do mercado têm rótulo pt-BR, na ordem da tela', async () => {
+    renderLab()
+    await loaded()
+    const wanted = marketLabels.map(([, label]) => label as string)
+    const names = screen
+      .getAllByRole('spinbutton')
+      .map(
+        (input) => (input as HTMLInputElement).labels?.[0]?.textContent ?? '',
+      )
+      .filter((name) => wanted.includes(name))
+    expect(names).toEqual(wanted)
+    expect(marketLabels).toHaveLength(37)
+  })
+
+  it('REQ-71: 400 sumMismatch liga o texto às cinco chances do booster', async () => {
+    server.use(
+      http.patch('*/lab/config', () =>
+        HttpResponse.json(labConfigSumMismatchFixture, { status: 400 }),
+      ),
+    )
+    renderLab()
+    await loaded()
+    setField('Chance Comum no booster (milésimos)', '700')
+    fireEvent.click(saveButton())
+
+    const text = 'As cinco chances do booster precisam somar 1000 milésimos.'
+    for (const name of [
+      'Chance Comum no booster (milésimos)',
+      'Chance Incomum no booster (milésimos)',
+      'Chance Rara no booster (milésimos)',
+      'Chance Épica no booster (milésimos)',
+      'Chance Lendária no booster (milésimos)',
+    ]) {
+      await waitFor(() =>
+        expect(field(name)).toHaveAccessibleDescription(
+          expect.stringContaining(text),
+        ),
+      )
+    }
+  })
+
+  it('REQ-71: 400 minAboveMax do fator do mercado usa o texto do mercado', async () => {
+    server.use(
+      http.patch('*/lab/config', () =>
+        HttpResponse.json(labConfigMarketFactorFixture, { status: 400 }),
+      ),
+    )
+    renderLab()
+    await loaded()
+    setField('Fator do mercado mínimo (%)', '130')
+    fireEvent.click(saveButton())
+
+    const text = 'O fator mínimo do mercado não pode passar do máximo.'
+    for (const name of [
+      'Fator do mercado mínimo (%)',
+      'Fator do mercado máximo (%)',
+    ]) {
+      await waitFor(() =>
+        expect(field(name)).toHaveAccessibleDescription(
+          expect.stringContaining(text),
+        ),
+      )
+      expect(field(name)).not.toHaveAccessibleDescription(
+        expect.stringContaining('jogadores'),
+      )
+    }
   })
 
   it('REQ-06: 400 invalidBody (field null) fica só com a message', async () => {

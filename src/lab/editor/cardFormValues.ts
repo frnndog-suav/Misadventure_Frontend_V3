@@ -118,8 +118,10 @@ export interface ZoneForm {
   questDeck?: string[]
   zoneActions: ZoneAction[]
   effects: EffectForm[]
-  /** FEAT-16: transportado sem controle até a T-71 (salvar não apaga). */
-  market?: ZoneCard['market']
+  /** FEAT-16 (REQ-72): desmarcado = `market: null`; o que foi digitado fica guardado. */
+  marketEnabled: boolean
+  marketStock: string[]
+  marketSingles: boolean
 }
 
 export interface AttributeForm {
@@ -131,8 +133,8 @@ export interface AttributeForm {
   attributeKind: AttributeKind | ''
   attributes: (Attribute | '')[]
   effects: EffectForm[]
-  /** FEAT-16: transportado sem controle até a T-71 (salvar não apaga). */
-  priceMultiplier?: number
+  /** FEAT-16 (REQ-72). */
+  priceMultiplier: string
 }
 
 export interface EquipmentForm {
@@ -172,13 +174,13 @@ export interface ItemForm {
   scavengeZoneTypes: ZoneType[]
   /** FEAT-32: vazio = `null`. */
   scavengeTool: string
-  /** FEAT-16: transportados sem controle até a T-71 (salvar não apaga). */
-  market?: {
-    priceMultiplier: number
-    stockPrice: number | null
-    stockQuantity: number
-    boosterCollectionId: string | null
-  }
+  /** FEAT-16 (REQ-72). */
+  priceMultiplier: string
+  /** Vazio = `null`. */
+  stockPrice: string
+  stockQuantity: string
+  /** Vazio = `null` ("Nenhuma"). */
+  boosterCollectionId: string
 }
 
 export interface RandomEventForm {
@@ -408,6 +410,9 @@ export function emptyForm(type: FormCardType): CardForm {
         arrowLayout: '',
         zoneActions: [],
         effects: [],
+        marketEnabled: false,
+        marketStock: [],
+        marketSingles: false,
       }
     case 'attribute':
       return {
@@ -419,6 +424,7 @@ export function emptyForm(type: FormCardType): CardForm {
         attributeKind: '',
         attributes: [],
         effects: [],
+        priceMultiplier: '1',
       }
     case 'equipment':
       return {
@@ -453,6 +459,10 @@ export function emptyForm(type: FormCardType): CardForm {
         toolKind: '',
         scavengeZoneTypes: [],
         scavengeTool: '',
+        priceMultiplier: '1',
+        stockPrice: '',
+        stockQuantity: '1',
+        boosterCollectionId: '',
       }
     case 'randomEvent':
       return {
@@ -555,7 +565,9 @@ export function formFromCard(card: Card): CardForm {
           card.zoneActions.includes(a),
         ),
         effects: card.effects.map(effectToForm),
-        market: card.market,
+        marketEnabled: card.market !== null,
+        marketStock: card.market?.stock ?? [],
+        marketSingles: card.market?.singles ?? false,
       }
     case 'attribute':
       return {
@@ -567,7 +579,7 @@ export function formFromCard(card: Card): CardForm {
         attributeKind: card.attributeKind,
         attributes: [...card.attributes],
         effects: card.effects.map(effectToForm),
-        priceMultiplier: card.priceMultiplier,
+        priceMultiplier: String(card.priceMultiplier),
       }
     case 'equipment':
       return {
@@ -618,12 +630,10 @@ export function formFromCard(card: Card): CardForm {
         toolKind: card.toolKind ?? '',
         scavengeZoneTypes: [...card.scavengeZoneTypes],
         scavengeTool: card.scavengeTool ?? '',
-        market: {
-          priceMultiplier: card.priceMultiplier,
-          stockPrice: card.stockPrice,
-          stockQuantity: card.stockQuantity,
-          boosterCollectionId: card.boosterCollectionId,
-        },
+        priceMultiplier: String(card.priceMultiplier),
+        stockPrice: card.stockPrice === null ? '' : String(card.stockPrice),
+        stockQuantity: String(card.stockQuantity),
+        boosterCollectionId: card.boosterCollectionId ?? '',
       }
     case 'randomEvent':
       return {
@@ -833,14 +843,18 @@ export function toInput(form: CardForm): CardInput | null {
         ...(form.questDeck !== undefined ? { questDeck: form.questDeck } : {}),
         zoneActions: form.zoneActions,
         effects,
-        ...(form.market !== undefined ? { market: form.market } : {}),
+        market: form.marketEnabled
+          ? { stock: form.marketStock, singles: form.marketSingles }
+          : null,
       }
     }
     case 'attribute': {
       const effects = toEffects(form.effects, effectSchema)
       if (effects === undefined) return null
       const attributes = chosen(form.attributes)
+      const price = parseNumber(form.priceMultiplier)
       if (
+        price === null ||
         !filled(form.slug) ||
         !filled(form.name) ||
         form.rarity === '' ||
@@ -857,9 +871,7 @@ export function toInput(form: CardForm): CardInput | null {
         attributeKind: form.attributeKind,
         attributes,
         effects,
-        ...(form.priceMultiplier !== undefined
-          ? { priceMultiplier: form.priceMultiplier }
-          : {}),
+        priceMultiplier: price,
       }
     }
     case 'equipment': {
@@ -917,7 +929,13 @@ export function toInput(form: CardForm): CardInput | null {
     case 'item': {
       const effects = toEffects(form.effects, effectSchema)
       if (effects === undefined) return null
+      const price = parseNumber(form.priceMultiplier)
+      const stockPrice = parseNumber(form.stockPrice)
+      const stockQuantity = parseNumber(form.stockQuantity)
       if (
+        price === null ||
+        (filled(form.stockPrice) && stockPrice === null) ||
+        stockQuantity === null ||
         !filled(form.slug) ||
         !filled(form.name) ||
         form.rarity === '' ||
@@ -937,7 +955,12 @@ export function toInput(form: CardForm): CardInput | null {
         toolKind: filled(form.toolKind) ? form.toolKind : null,
         scavengeZoneTypes: form.scavengeZoneTypes,
         scavengeTool: filled(form.scavengeTool) ? form.scavengeTool : null,
-        ...form.market,
+        priceMultiplier: price,
+        stockPrice,
+        stockQuantity,
+        boosterCollectionId: filled(form.boosterCollectionId)
+          ? form.boosterCollectionId
+          : null,
       }
     }
     case 'randomEvent': {

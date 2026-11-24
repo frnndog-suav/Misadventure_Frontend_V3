@@ -24,6 +24,7 @@ import {
   useDeleteCard,
   useDuplicateCard,
   useEditorCollection,
+  useEditorCollections,
   usePublishCard,
   useSaveCard,
   type ContentStatus,
@@ -424,6 +425,40 @@ function ZoneFields({
           </label>
         ))}
       </fieldset>
+      <fieldset>
+        <legend>Mercado</legend>
+        <CheckboxField
+          label="Tem mercado"
+          checked={values.marketEnabled}
+          onChange={(marketEnabled) => set({ ...values, marketEnabled })}
+        />
+        {values.marketEnabled && (
+          <>
+            <ListField
+              label="Estoque"
+              path="market.stock"
+              items={values.marketStock}
+              onChange={(marketStock) => set({ ...values, marketStock })}
+              newItem={() => ''}
+              errors={errors}
+              renderItem={(item, index, update) => (
+                <TextField
+                  label={`Carta ${index + 1}`}
+                  path={`market.stock.${index}`}
+                  value={item}
+                  onChange={update}
+                  errors={errors}
+                />
+              )}
+            />
+            <CheckboxField
+              label="Vende singles"
+              checked={values.marketSingles}
+              onChange={(marketSingles) => set({ ...values, marketSingles })}
+            />
+          </>
+        )}
+      </fieldset>
       <EffectFields
         items={values.effects}
         onChange={(effects) => set({ ...values, effects })}
@@ -493,6 +528,13 @@ function AttributeFields({
             errors={errors}
           />
         )}
+      />
+      <TextField
+        label="Ajuste de preço"
+        path="priceMultiplier"
+        value={values.priceMultiplier}
+        onChange={(priceMultiplier) => set({ ...values, priceMultiplier })}
+        errors={errors}
       />
       <EffectFields
         items={values.effects}
@@ -852,6 +894,7 @@ function ItemFields({
   errors: Errors
   tags: readonly string[]
 }) {
+  const { data: collections } = useEditorCollections()
   return (
     <>
       <TextField
@@ -930,6 +973,41 @@ function ItemFields({
         value={values.scavengeTool}
         onChange={(scavengeTool) => set({ ...values, scavengeTool })}
         errors={errors}
+      />
+      <TextField
+        label="Ajuste de preço"
+        path="priceMultiplier"
+        value={values.priceMultiplier}
+        onChange={(priceMultiplier) => set({ ...values, priceMultiplier })}
+        errors={errors}
+      />
+      <TextField
+        label="Preço de estoque"
+        path="stockPrice"
+        value={values.stockPrice}
+        onChange={(stockPrice) => set({ ...values, stockPrice })}
+        errors={errors}
+      />
+      <TextField
+        label="Lote"
+        path="stockQuantity"
+        value={values.stockQuantity}
+        onChange={(stockQuantity) => set({ ...values, stockQuantity })}
+        errors={errors}
+      />
+      <SelectField
+        label="Coleção do booster"
+        path="boosterCollectionId"
+        value={values.boosterCollectionId}
+        options={(collections ?? []).map((c) => ({
+          value: c.id,
+          label: c.name,
+        }))}
+        onChange={(boosterCollectionId) =>
+          set({ ...values, boosterCollectionId })
+        }
+        errors={errors}
+        emptyLabel="Nenhuma"
       />
     </>
   )

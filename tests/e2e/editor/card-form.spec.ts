@@ -384,3 +384,25 @@ test('REQ-49: ferramenta do item e decks de recompensas da dimensão (MSW)', asy
   await form.getByRole('button', { name: 'Salvar rascunho' }).click()
   await expect(form.getByRole('status')).toHaveText('Carta salva.')
 })
+
+test('REQ-72: item e zona têm os campos do mercado (MSW)', async ({ page }) => {
+  await page.goto('/lab/editor')
+  await page.getByRole('button', { name: /Coleção de Teste/ }).click()
+  const cards = page.getByRole('region', { name: 'Cartas' })
+  await cards
+    .getByRole('button', { name: 'Flechas · Item · Publicada' })
+    .click()
+  const form = page.getByRole('region', { name: 'Carta', exact: true })
+  await expect(form.getByLabel('Preço de estoque')).toHaveValue('3')
+  await expect(form.getByLabel('Lote')).toHaveValue('10')
+  await expect(form.getByLabel('Coleção do booster')).toBeVisible()
+
+  await cards
+    .getByRole('button', { name: 'Porto Cinzento · Zona · Publicada' })
+    .click()
+  await expect(form.getByLabel('Tem mercado')).toBeChecked()
+  await expect(form.getByLabel('Vende singles')).toBeChecked()
+  await expect(form.getByLabel('Carta 1')).toHaveValue('fixture.healing-potion')
+  await form.getByLabel('Tem mercado').uncheck()
+  await expect(form.getByLabel('Vende singles')).toHaveCount(0)
+})

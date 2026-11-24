@@ -1,9 +1,6 @@
-import {
-  useCatalogCard,
-  type DimensionCard as DimensionCardData,
-} from '../../api/catalog'
+import type { DimensionCard as DimensionCardData } from '../../api/catalog'
 import { zoneTypeLabels } from '../labels'
-import { CardFrame, Effects, LabeledList } from './parts'
+import { CardFrame, CardName, Effects, LabeledList } from './parts'
 
 /** Carta de Dimensão (REQ-28, README 3.2). A zona `null` é sorteada pelo backend. */
 export function DimensionCard({ card }: { card: DimensionCardData }) {
@@ -46,10 +43,4 @@ function RewardDecks({ decks }: { decks: DimensionCardData['rewardDecks'] }) {
       )}
     />
   )
-}
-
-function CardName({ cardId }: { cardId: string }) {
-  const { data, isError } = useCatalogCard(cardId)
-  if (data !== undefined) return 'name' in data ? data.name : data.title
-  return isError ? cardId : '…'
 }

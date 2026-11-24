@@ -127,3 +127,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 095 | RETORNO | [FEAT-16: implementado no backend](095-RETORNO-feat-16-implementado-be.md) | v0.81; validação aguarda o FE |
 | 096 | FEAT-16 | [Planejamento do Mercado na spec](096-feat-16-planejamento.md) | aprovada |
 | 097 | FEAT-16 | [T-70: cliente e fixtures MSW do Mercado](097-T-70-cliente-feat-16.md) | concluída |
+| 098 | T-71 | [Laboratório, catálogo e editor do Mercado](098-T-71-laboratorio-catalogo-editor-feat-16.md) | concluída com MSW |
