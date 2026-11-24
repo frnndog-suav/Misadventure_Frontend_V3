@@ -641,6 +641,7 @@ describe('REQ-37: PlayerState.availableActions', () => {
       'recover',
       'adjustDeck',
       'useVault',
+      'visitBlacksmith',
       'visitMarket',
       'endTurn',
     ])

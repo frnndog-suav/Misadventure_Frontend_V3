@@ -127,6 +127,26 @@ const fieldLabels: Record<NumericKey, string> = {
   purseExpansionPricePercent: 'Preço da expansão da bolsa (% da capacidade)',
   vaultGoldExpansionPricePercent:
     'Preço da expansão do ouro do cofre (% da capacidade)',
+  // FEAT-17 (REQ-77)
+  repairBaseGold: 'Conserto: ouro base',
+  repairGoldPerLevel: 'Conserto: ouro por nível de refino',
+  repairMarkPercent: 'Desvalorização por marca de reparo (%)',
+  refineGoldPerLevel: 'Refino: ouro por nível',
+  refineThreshold1to3: 'Limiar do refino +1 a +3',
+  refineThreshold4to6: 'Limiar do refino +4 a +6',
+  refineThreshold7to9: 'Limiar do refino +7 a +9',
+  refineThreshold10: 'Limiar do refino +10',
+  refineBreakFromLevel: 'Refino quebra a partir do nível',
+  refineBonusPercent: 'Bônus por nível de refino (%)',
+  enchantElementGold: 'Encantamento de elemento: ouro',
+  enchantEffectGold: 'Encantamento de efeito: ouro',
+  enchantElementThreshold: 'Limiar do encantamento de elemento',
+  enchantEffectThreshold: 'Limiar do encantamento de efeito',
+  saleRefinePercent: 'Valorização na venda por refino (%)',
+  saleEnchantPercent: 'Valorização na venda por encantamento (%)',
+  artificerRepairDiscountPercent: 'Desconto do conserto na Oficina (%)',
+  artificerMaxRefineLevel: 'Refino máximo na Oficina',
+  artificerD20Bonus: 'Bônus do Artífice no D20',
 }
 
 const fieldKeys = Object.keys(fieldLabels) as NumericKey[]

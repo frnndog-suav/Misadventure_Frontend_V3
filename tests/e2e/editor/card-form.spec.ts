@@ -116,7 +116,6 @@ test('REQ-21: cria um equipamento com refino e pré-visualização (MSW)', async
   await form.getByLabel('Refino').check()
   await expect(save).toBeDisabled()
   await form.getByLabel('Nível máximo').fill('3')
-  await form.getByLabel('Materiais').fill('1 Minério por nível.')
   await expect(save).toBeEnabled()
 
   await save.click()

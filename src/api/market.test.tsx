@@ -84,6 +84,7 @@ describe('REQ-73 e REQ-76: estado inicial na cidade com mercado', () => {
       'recover',
       'adjustDeck',
       'useVault',
+      'visitBlacksmith',
       'visitMarket',
       'endTurn',
     ])
@@ -377,6 +378,7 @@ describe('REQ-72: campos do mercado nas cartas', () => {
         'startEvent',
         'scavenge',
         'useVault',
+        'visitBlacksmith',
         'visitMarket',
         'saveRespawnPoint',
       ],

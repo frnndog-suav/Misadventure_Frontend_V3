@@ -50,6 +50,7 @@ import {
   partyGrantedGoldFixture,
   partyInSessionFixture,
   partyNotFoundFixture,
+  standardEquipmentState,
 } from '../mocks/partyFixtures'
 import { handlers } from '../mocks/handlers'
 
@@ -155,6 +156,7 @@ describe('REQ-44: PlayerState com inventário, equipamentos, bolsa e modificador
       'recover',
       'adjustDeck',
       'useVault',
+      'visitBlacksmith',
       'visitMarket',
       'endTurn',
     ])
@@ -224,10 +226,10 @@ describe('REQ-44: PlayerState com inventário, equipamentos, bolsa e modificador
     const gear = partyGearInSessionFixture.members[0].player
     expect(partySchema.safeParse(partyGearInSessionFixture).success).toBe(true)
     expect(gear.inventory).toEqual([
-      { cardId: B, quantity: 1 },
-      { cardId: D, quantity: 1 },
-      { cardId: H, quantity: 1 },
-      { cardId: R, quantity: 1 },
+      { cardId: B, quantity: 1, equipmentState: standardEquipmentState },
+      { cardId: D, quantity: 1, equipmentState: standardEquipmentState },
+      { cardId: H, quantity: 1, equipmentState: standardEquipmentState },
+      { cardId: R, quantity: 1, equipmentState: standardEquipmentState },
       { cardId: P, quantity: 2 },
     ])
     expect(gear.availableActions).toEqual([
@@ -236,6 +238,7 @@ describe('REQ-44: PlayerState com inventário, equipamentos, bolsa e modificador
       'prepare',
       'adjustDeck',
       'useVault',
+      'visitBlacksmith',
       'visitMarket',
       'endTurn',
     ])
@@ -248,12 +251,14 @@ describe('REQ-44: PlayerState com inventário, equipamentos, bolsa e modificador
       'prepare',
       'adjustDeck',
       'abandonQuest',
+      'artificerWorkshop',
       'scavenge',
       'useVault',
       'takeQuest',
       'continueQuest',
       'finishQuest',
       'takeTrialQuest',
+      'visitBlacksmith',
       'visitMarket',
       'trainWithMentor',
       'saveRespawnPoint',
@@ -294,8 +299,8 @@ describe('REQ-44: cartas novas da fixture', () => {
       (card) => card.id,
     )
     expect(ids).toEqual([...ids].sort())
-    expect(ids).toHaveLength(27)
-    expect(fixtureCardsFixture).toHaveLength(27)
+    expect(ids).toHaveLength(29)
+    expect(fixtureCardsFixture).toHaveLength(29)
     expect(ids).toEqual(expect.arrayContaining([W, D, H, R, K]))
   })
 
@@ -333,7 +338,7 @@ describe('REQ-44: cartas novas da fixture', () => {
       zone: 4,
       attribute: 3,
       equipment: 7,
-      item: 9,
+      item: 11,
       randomEvent: 2,
       combatEvent: 1,
       zoneQuest: 0,
@@ -354,6 +359,7 @@ describe('REQ-44: cartas novas da fixture', () => {
     expect(fixtureCardsByTypeFixture.item.map((c) => c.id)).toEqual([
       'fixture.arrows',
       'fixture.booster',
+      'fixture.ember-shard',
       'fixture.fishing-rod',
       P,
       'fixture.iron-ore',
@@ -361,6 +367,7 @@ describe('REQ-44: cartas novas da fixture', () => {
       K,
       'fixture.silver-fish',
       'fixture.strength-tonic',
+      'fixture.sword-blueprint',
     ])
   })
 })
@@ -418,7 +425,11 @@ describe('REQ-45: Preparar por usePartyAction', () => {
     expect(unequipped.data).toEqual(partyBladeUnequippedFixture)
     const player = partyBladeUnequippedFixture.members[0].player
     expect(player.equipment.weapon).toBeNull()
-    expect(player.inventory.at(-1)).toEqual({ cardId: B, quantity: 1 })
+    expect(player.inventory.at(-1)).toEqual({
+      cardId: B,
+      quantity: 1,
+      equipmentState: standardEquipmentState,
+    })
     expect(player.effectiveModifiers.attack).toBe(6)
   })
 

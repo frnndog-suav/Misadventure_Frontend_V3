@@ -1,5 +1,5 @@
 import type { Party, PlayerState } from '../api/parties'
-import { partyInSessionFixture } from './partyFixtures'
+import { partyInSessionFixture, standardEquipmentState } from './partyFixtures'
 
 /**
  * Respostas fixas dos cenários do CONTRATO §3 FEAT-16 (v0.81), sem estado
@@ -153,6 +153,7 @@ export const partyWithBoosterFixture: Party = withPlayer('party-com-booster', {
     'prepare',
     'adjustDeck',
     'useVault',
+    'visitBlacksmith',
     'visitMarket',
     'endTurn',
   ],
@@ -182,7 +183,11 @@ export const partyBoosterOpenedFixture: Party = withPlayer(
       { cardId: 'fixture.healing-potion', quantity: 1 },
       { cardId: 'fixture.iron-ore', quantity: 1 },
       { cardId: 'fixture.silver-fish', quantity: 1 },
-      { cardId: 'fixture.blade-of-dusk', quantity: 1 },
+      {
+        cardId: 'fixture.blade-of-dusk',
+        quantity: 1,
+        equipmentState: standardEquipmentState,
+      },
     ],
     tcgFolder: [
       { cardId: 'fixture.dexterity-basic', copies: 1 },
@@ -209,7 +214,11 @@ export const partyVaultBoosterOpenedFixture: Party = {
         { cardId: 'fixture.dexterity-basic', quantity: 1 },
         { cardId: 'fixture.iron-ore', quantity: 1 },
         { cardId: 'fixture.silver-fish', quantity: 1 },
-        { cardId: 'fixture.blade-of-dusk', quantity: 1 },
+        {
+          cardId: 'fixture.blade-of-dusk',
+          quantity: 1,
+          equipmentState: standardEquipmentState,
+        },
       ],
     },
     lastBoosterOpening: {

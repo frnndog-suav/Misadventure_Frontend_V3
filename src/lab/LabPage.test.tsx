@@ -63,6 +63,12 @@ function renderLab(): void {
   )
 }
 
+// T-70 (autor, 2026-11-23): com as 37 chaves da FEAT-16 a página tem cerca de
+// 100 campos e cada consulta por papel fica lenta no jsdom; na suíte inteira
+// um teste passava dos 5 s. Só o prazo muda, nenhuma asserção. T-75: com as 19
+// chaves da FEAT-17, o prazo passa a valer desde o primeiro teste do arquivo.
+vi.setConfig({ testTimeout: 15_000 })
+
 it('REQ-65: exibe os ajustes de nocaute, salva, associa erros e restaura os padrões', async () => {
   renderLab()
   const fields = [
@@ -194,11 +200,6 @@ const marketLabels = [
     'Preço da expansão do ouro do cofre (% da capacidade)',
   ],
 ] as const
-
-// T-70 (autor, 2026-11-23): com as 37 chaves da FEAT-16 a página tem cerca de
-// 100 campos e cada consulta por papel fica lenta no jsdom; na suíte inteira
-// um teste passava dos 5 s. Só o prazo muda, nenhuma asserção.
-vi.setConfig({ testTimeout: 15_000 })
 
 async function loaded(): Promise<void> {
   await screen.findByRole('spinbutton', { name: 'Pontos de ação por vez' })

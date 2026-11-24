@@ -27,6 +27,8 @@ const harbor = 'fixture.gray-harbor'
 const woods = 'fixture.whispering-grove'
 /** Mercado do Porto Cinzento (FEAT-16); fora dele, `market: null`. */
 const harborMarket = partyInSessionFixture.members[0]!.player.market
+/** Ferreiro do Porto Cinzento (FEAT-17); fora dele, `blacksmith: null`. */
+const harborBlacksmith = partyInSessionFixture.members[0]!.player.blacksmith
 const offer = (questCardId: string) => ({
   questCardId,
   title: questCardId === 'B' ? 'Entrega' : questCardId,
@@ -311,6 +313,7 @@ export function getQuestScenario(
         {
           zoneId: name === 'board' ? woods : harbor,
           market: name === 'board' ? null : harborMarket,
+          blacksmith: name === 'board' ? null : harborBlacksmith,
           moveTargets: [name === 'board' ? harbor : woods],
           peak: ['trial', 'progress'].includes(name) ? 30 : 10,
           gold: 200,
@@ -569,6 +572,7 @@ export function questPartyAction(party: Party, body: unknown) {
       {
         zoneId: raw.zoneId,
         market: raw.zoneId === harbor ? harborMarket : null,
+        blacksmith: raw.zoneId === harbor ? harborBlacksmith : null,
         moveTargets: [player.zoneId],
         questBoard: raw.zoneId === woods ? originBoards.get(party.id)! : [],
       },

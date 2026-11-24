@@ -103,6 +103,34 @@ const combatOutcomeSchema = z.union([
 ])
 export type Ability = z.infer<typeof abilitySchema>
 
+/** FEAT-17: item `material` e quantidade (README 25.2). */
+export const materialRequirementSchema = z.object({
+  cardId: z.string().min(1),
+  quantity: z.number().int().min(1),
+})
+export type MaterialRequirement = z.infer<typeof materialRequirementSchema>
+
+/** FEAT-17 (README 25.3): encantamento oferecido pelo ferreiro de uma zona. */
+export const blacksmithEnchantmentSchema = z.discriminatedUnion('kind', [
+  z.object({
+    id: z.string().min(1),
+    name: z.string(),
+    kind: z.literal('element'),
+    element: elementSchema,
+    bonusPercent: z.number().int().min(1).max(100),
+    materials: z.array(materialRequirementSchema),
+  }),
+  z.object({
+    id: z.string().min(1),
+    name: z.string(),
+    kind: z.literal('effect'),
+    effects: z.array(effectSchema),
+    abilities: z.array(abilitySchema),
+    materials: z.array(materialRequirementSchema),
+  }),
+])
+export type BlacksmithEnchantment = z.infer<typeof blacksmithEnchantmentSchema>
+
 const countByCardType = z.number().int().min(0)
 
 export const collectionSummarySchema = z.object({
@@ -154,6 +182,11 @@ export const zoneCardSchema = z.object({
     .object({ stock: z.array(z.string()), singles: z.boolean() })
     .nullable()
     .default(null),
+  /** FEAT-17 (README 3.4, 25.3): só em zona com `visitBlacksmith`; senão `null`. */
+  blacksmith: z
+    .object({ enchantments: z.array(blacksmithEnchantmentSchema) })
+    .nullable()
+    .default(null),
 })
 
 /** README 4.3 */
@@ -185,13 +218,26 @@ export const equipmentCardSchema = z.object({
   blocksShield: z.boolean(),
   abilities: z.array(abilitySchema),
   effects: z.array(effectSchema),
+  /** FEAT-17: `materials` = 1 conjunto por tentativa (README 25.2). */
   refinement: z
     .object({
       maxLevel: z.number().int().min(1).max(10),
-      materials: ruleTextSchema,
+      materials: z.array(materialRequirementSchema),
     })
     .nullable(),
-  enchantment: ruleTextSchema.nullable(),
+  /** FEAT-17: slots por tipo, com o refino mínimo de cada um. */
+  enchantment: z
+    .object({
+      slots: z
+        .array(
+          z.object({
+            kind: z.enum(['element', 'effect']),
+            minRefinement: z.number().int().min(0).max(10),
+          }),
+        )
+        .min(1),
+    })
+    .nullable(),
   priceMultiplier: z.number().min(0.8).max(1.5),
   /** FEAT-32: `toolKind` da ferramenta que coleta esta carta; `null` = não coletável. */
   scavengeTool: z.string().nullable(),
@@ -218,6 +264,16 @@ export const itemCardSchema = z.object({
   stockPrice: z.number().int().min(1).nullable().default(null),
   stockQuantity: z.number().int().min(1).default(1),
   boosterCollectionId: z.string().nullable().default(null),
+  /** FEAT-17: só em `document` (opcional ali); legado: `null`. */
+  recipe: z
+    .object({
+      equipmentId: z.string().min(1),
+      materials: z.array(materialRequirementSchema),
+      gold: z.number().int().min(0),
+      consumed: z.boolean(),
+    })
+    .nullable()
+    .default(null),
 })
 
 /** README 14.1 */

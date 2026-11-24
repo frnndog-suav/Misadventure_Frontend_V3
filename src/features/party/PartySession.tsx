@@ -486,6 +486,22 @@ function reasonText(error: ActionNotAllowedError, name: string): string {
     case 'showcaseSlotNotFound':
     case 'showcaseSlotEmpty':
     case 'notLotMultiple':
+    case 'artificerInactive': // FEAT-17: textos do ferreiro na T-78 (REQ-81)
+    case 'equipmentNotFound':
+    case 'notBroken':
+    case 'equipmentBroken':
+    case 'notRefinable':
+    case 'refinementMaterialsMissing':
+    case 'refineLevelMax':
+    case 'refineLevelTooHigh':
+    case 'enchantNotAvailable':
+    case 'enchantmentNotOffered':
+    case 'notEnchantable':
+    case 'enchantSlotUnavailable':
+    case 'replaceIndexRequired':
+    case 'replaceIndexInvalid':
+    case 'recipeMissing':
+    case 'materialsMissing':
       return error.message
     case 'notBooster':
       return `${name} não é um booster.`
@@ -687,6 +703,22 @@ function vaultReasonText(error: ActionNotAllowedError, name: string): string {
     case 'showcaseSlotNotFound':
     case 'showcaseSlotEmpty':
     case 'notLotMultiple':
+    case 'artificerInactive': // FEAT-17: textos do ferreiro na T-78 (REQ-81)
+    case 'equipmentNotFound':
+    case 'notBroken':
+    case 'equipmentBroken':
+    case 'notRefinable':
+    case 'refinementMaterialsMissing':
+    case 'refineLevelMax':
+    case 'refineLevelTooHigh':
+    case 'enchantNotAvailable':
+    case 'enchantmentNotOffered':
+    case 'notEnchantable':
+    case 'enchantSlotUnavailable':
+    case 'replaceIndexRequired':
+    case 'replaceIndexInvalid':
+    case 'recipeMissing':
+    case 'materialsMissing':
       return error.message
     case 'notBooster':
       return `${name} não é um booster.`

@@ -53,13 +53,14 @@ const status = () => screen.getByRole('status')
 const cardsUrl = '*/catalog/collections/:collectionId/cards'
 const unavailable = 'Servidor indisponível. Tente novamente.'
 
-/** As 25 cartas da `fixture`, incluindo o exemplo executável da FEAT-12. */
+/** As 29 cartas da `fixture`, incluindo o exemplo executável da FEAT-12. */
 const expectedOrder = [
   'Varinha Arcana · Equipamento',
   'Flechas · Item',
   'Lâmina do Crepúsculo · Equipamento',
   'Booster de Teste · Item',
   'Destreza · Atributo',
+  'Fragmento de Brasa · Item',
   'Resistência · Atributo',
   'Carroça na estrada · Evento aleatório',
   'Vara de Pesca · Item',
@@ -79,6 +80,7 @@ const expectedOrder = [
   'Curva de Pedra · Zona',
   'Força · Atributo',
   'Tônico de Força · Item',
+  'Projeto: Espada Curta · Item',
   'Dimensão de Teste · Dimensão',
   'Bosque Sussurrante · Zona',
   'Viajante Ferido · Evento aleatório',
@@ -107,18 +109,18 @@ describe('CatalogSection', () => {
       .getAllByRole('radio')
       .map((r) => r.closest('label')?.textContent)
     expect(options).toEqual([
-      'Todos (27)',
+      'Todos (29)',
       'Zona (4)',
       'Atributo (3)',
       'Equipamento (7)',
-      'Item (9)',
+      'Item (11)',
       'Evento aleatório (2)',
       'Evento de combate (1)',
       'Missão de zona (0)',
       'Dimensão (1)',
     ])
     expect(
-      within(filter).getByRole('radio', { name: 'Todos (27)' }),
+      within(filter).getByRole('radio', { name: 'Todos (29)' }),
     ).toBeChecked()
   })
 

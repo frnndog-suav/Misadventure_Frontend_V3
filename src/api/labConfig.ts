@@ -181,6 +181,51 @@ export const marketConfigLimits = {
   vaultGoldExpansionPricePercent: { min: 0, max: 1000 },
 }
 
+/** FEAT-17 (CONTRATO v0.85): padrões das 19 chaves do ferreiro. */
+export const blacksmithConfigDefaults = {
+  repairBaseGold: 5,
+  repairGoldPerLevel: 2,
+  repairMarkPercent: 12,
+  refineGoldPerLevel: 10,
+  refineThreshold1to3: 0,
+  refineThreshold4to6: 8,
+  refineThreshold7to9: 12,
+  refineThreshold10: 16,
+  refineBreakFromLevel: 7,
+  refineBonusPercent: 5,
+  enchantElementGold: 50,
+  enchantEffectGold: 100,
+  enchantElementThreshold: 10,
+  enchantEffectThreshold: 13,
+  saleRefinePercent: 8,
+  saleEnchantPercent: 20,
+  artificerRepairDiscountPercent: 50,
+  artificerMaxRefineLevel: 6,
+  artificerD20Bonus: 2,
+}
+
+export const blacksmithConfigLimits = {
+  repairBaseGold: { min: 0, max: 1000000 },
+  repairGoldPerLevel: { min: 0, max: 1000000 },
+  repairMarkPercent: { min: 0, max: 100 },
+  refineGoldPerLevel: { min: 0, max: 1000000 },
+  refineThreshold1to3: { min: 0, max: 21 },
+  refineThreshold4to6: { min: 0, max: 21 },
+  refineThreshold7to9: { min: 0, max: 21 },
+  refineThreshold10: { min: 0, max: 21 },
+  refineBreakFromLevel: { min: 1, max: 11 },
+  refineBonusPercent: { min: 0, max: 1000 },
+  enchantElementGold: { min: 0, max: 1000000 },
+  enchantEffectGold: { min: 0, max: 1000000 },
+  enchantElementThreshold: { min: 0, max: 21 },
+  enchantEffectThreshold: { min: 0, max: 21 },
+  saleRefinePercent: { min: 0, max: 1000 },
+  saleEnchantPercent: { min: 0, max: 1000 },
+  artificerRepairDiscountPercent: { min: 0, max: 100 },
+  artificerMaxRefineLevel: { min: 0, max: 10 },
+  artificerD20Bonus: { min: 0, max: 20 },
+}
+
 export type KnockoutConfigKey = keyof typeof knockoutConfigDefaults
 
 const positiveInt = gameConfigInt.min(1)
@@ -334,6 +379,63 @@ export const gameConfigValuesSchema = numericGameConfigValuesSchema.extend({
   ),
   vaultGoldExpansionPricePercent: gameConfigInt.default(
     marketConfigDefaults.vaultGoldExpansionPricePercent,
+  ),
+  repairBaseGold: gameConfigInt.default(
+    blacksmithConfigDefaults.repairBaseGold,
+  ),
+  repairGoldPerLevel: gameConfigInt.default(
+    blacksmithConfigDefaults.repairGoldPerLevel,
+  ),
+  repairMarkPercent: gameConfigInt.default(
+    blacksmithConfigDefaults.repairMarkPercent,
+  ),
+  refineGoldPerLevel: gameConfigInt.default(
+    blacksmithConfigDefaults.refineGoldPerLevel,
+  ),
+  refineThreshold1to3: gameConfigInt.default(
+    blacksmithConfigDefaults.refineThreshold1to3,
+  ),
+  refineThreshold4to6: gameConfigInt.default(
+    blacksmithConfigDefaults.refineThreshold4to6,
+  ),
+  refineThreshold7to9: gameConfigInt.default(
+    blacksmithConfigDefaults.refineThreshold7to9,
+  ),
+  refineThreshold10: gameConfigInt.default(
+    blacksmithConfigDefaults.refineThreshold10,
+  ),
+  refineBreakFromLevel: gameConfigInt.default(
+    blacksmithConfigDefaults.refineBreakFromLevel,
+  ),
+  refineBonusPercent: gameConfigInt.default(
+    blacksmithConfigDefaults.refineBonusPercent,
+  ),
+  enchantElementGold: gameConfigInt.default(
+    blacksmithConfigDefaults.enchantElementGold,
+  ),
+  enchantEffectGold: gameConfigInt.default(
+    blacksmithConfigDefaults.enchantEffectGold,
+  ),
+  enchantElementThreshold: gameConfigInt.default(
+    blacksmithConfigDefaults.enchantElementThreshold,
+  ),
+  enchantEffectThreshold: gameConfigInt.default(
+    blacksmithConfigDefaults.enchantEffectThreshold,
+  ),
+  saleRefinePercent: gameConfigInt.default(
+    blacksmithConfigDefaults.saleRefinePercent,
+  ),
+  saleEnchantPercent: gameConfigInt.default(
+    blacksmithConfigDefaults.saleEnchantPercent,
+  ),
+  artificerRepairDiscountPercent: gameConfigInt.default(
+    blacksmithConfigDefaults.artificerRepairDiscountPercent,
+  ),
+  artificerMaxRefineLevel: gameConfigInt.default(
+    blacksmithConfigDefaults.artificerMaxRefineLevel,
+  ),
+  artificerD20Bonus: gameConfigInt.default(
+    blacksmithConfigDefaults.artificerD20Bonus,
   ),
   // A configuração das versões anteriores à FEAT-13 omite os campos de combate.
   maxCombatCycles: gameConfigInt.optional(),
@@ -539,6 +641,61 @@ export const labConfigSchema = z.object({
     ),
     vaultGoldExpansionPricePercent: limitSchema.default(
       marketConfigLimits.vaultGoldExpansionPricePercent,
+    ),
+    repairBaseGold: limitSchema.default(blacksmithConfigLimits.repairBaseGold),
+    repairGoldPerLevel: limitSchema.default(
+      blacksmithConfigLimits.repairGoldPerLevel,
+    ),
+    repairMarkPercent: limitSchema.default(
+      blacksmithConfigLimits.repairMarkPercent,
+    ),
+    refineGoldPerLevel: limitSchema.default(
+      blacksmithConfigLimits.refineGoldPerLevel,
+    ),
+    refineThreshold1to3: limitSchema.default(
+      blacksmithConfigLimits.refineThreshold1to3,
+    ),
+    refineThreshold4to6: limitSchema.default(
+      blacksmithConfigLimits.refineThreshold4to6,
+    ),
+    refineThreshold7to9: limitSchema.default(
+      blacksmithConfigLimits.refineThreshold7to9,
+    ),
+    refineThreshold10: limitSchema.default(
+      blacksmithConfigLimits.refineThreshold10,
+    ),
+    refineBreakFromLevel: limitSchema.default(
+      blacksmithConfigLimits.refineBreakFromLevel,
+    ),
+    refineBonusPercent: limitSchema.default(
+      blacksmithConfigLimits.refineBonusPercent,
+    ),
+    enchantElementGold: limitSchema.default(
+      blacksmithConfigLimits.enchantElementGold,
+    ),
+    enchantEffectGold: limitSchema.default(
+      blacksmithConfigLimits.enchantEffectGold,
+    ),
+    enchantElementThreshold: limitSchema.default(
+      blacksmithConfigLimits.enchantElementThreshold,
+    ),
+    enchantEffectThreshold: limitSchema.default(
+      blacksmithConfigLimits.enchantEffectThreshold,
+    ),
+    saleRefinePercent: limitSchema.default(
+      blacksmithConfigLimits.saleRefinePercent,
+    ),
+    saleEnchantPercent: limitSchema.default(
+      blacksmithConfigLimits.saleEnchantPercent,
+    ),
+    artificerRepairDiscountPercent: limitSchema.default(
+      blacksmithConfigLimits.artificerRepairDiscountPercent,
+    ),
+    artificerMaxRefineLevel: limitSchema.default(
+      blacksmithConfigLimits.artificerMaxRefineLevel,
+    ),
+    artificerD20Bonus: limitSchema.default(
+      blacksmithConfigLimits.artificerD20Bonus,
     ),
     maxCombatCycles: limitSchema.optional(),
     combatEscapeThreshold: limitSchema.optional(),

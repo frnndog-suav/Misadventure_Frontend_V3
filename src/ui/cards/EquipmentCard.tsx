@@ -9,7 +9,6 @@ import {
   CardFrame,
   Effects,
   LabeledList,
-  RuleBlock,
   ScavengeTool,
   Tags,
 } from './parts'
@@ -53,11 +52,7 @@ export function EquipmentCard({ card }: { card: EquipmentCardData }) {
       {card.refinement !== null && (
         <div className="game-card-block">
           <p>Refinável até +{card.refinement.maxLevel}</p>
-          <p>{card.refinement.materials.text}</p>
         </div>
-      )}
-      {card.enchantment !== null && (
-        <RuleBlock title="Encantamento" rule={card.enchantment} />
       )}
     </CardFrame>
   )

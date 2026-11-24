@@ -44,8 +44,11 @@ const full: EquipmentCardData = {
       mark: 'debuff',
     },
   ],
-  refinement: { maxLevel: 5, materials: { text: '2 Minério de Ferro.' } },
-  enchantment: { text: 'Aceita encantamento de Fogo.' },
+  refinement: {
+    maxLevel: 5,
+    materials: [{ cardId: 'fixture.iron-ore', quantity: 2 }],
+  },
+  enchantment: { slots: [{ kind: 'element', minRefinement: 0 }] },
   priceMultiplier: 1.2,
 }
 
@@ -110,8 +113,6 @@ describe('EquipmentCard', () => {
     ).toBeVisible()
     expect(screen.getByText('Debuff: −10% de Celeridade.')).toBeVisible()
     expect(screen.getByText('Refinável até +5')).toBeVisible()
-    expect(screen.getByText('2 Minério de Ferro.')).toBeVisible()
-    expect(screen.getByText('Aceita encantamento de Fogo.')).toBeVisible()
     expect(screen.getByText('Pesa como uma coroa.')).toBeVisible()
     expect(screen.getByText('Pesada')).toBeVisible()
   })

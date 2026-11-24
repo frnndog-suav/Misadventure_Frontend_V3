@@ -833,18 +833,6 @@ function EquipmentFields({
             }
             errors={errors}
           />
-          <TextField
-            label="Materiais"
-            path="refinement.materials.text"
-            value={values.refinement.materials}
-            onChange={(materials) =>
-              set({
-                ...values,
-                refinement: { ...values.refinement, materials },
-              })
-            }
-            errors={errors}
-          />
         </>
       )}
       <CheckboxField
@@ -854,17 +842,6 @@ function EquipmentFields({
           set({ ...values, enchantment: { ...values.enchantment, enabled } })
         }
       />
-      {values.enchantment.enabled && (
-        <TextField
-          label="Texto do encantamento"
-          path="enchantment.text"
-          value={values.enchantment.text}
-          onChange={(text) =>
-            set({ ...values, enchantment: { ...values.enchantment, text } })
-          }
-          errors={errors}
-        />
-      )}
       <TextField
         label="Ajuste de preço"
         path="priceMultiplier"

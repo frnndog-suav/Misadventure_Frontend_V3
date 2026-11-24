@@ -24,9 +24,14 @@ import {
   type PlayerClass,
   type Rarity,
   type ZoneAction,
+  type EquipmentCard,
+  type ItemCard,
+  type MaterialRequirement,
   type ZoneCard,
   type ZoneType,
 } from '../../api/catalog'
+
+type EnchantmentSlots = NonNullable<EquipmentCard['enchantment']>['slots']
 import type { CardInput } from '../../api/editor'
 import type { randomEventRulesSchema } from '../../api/randomEvents'
 import {
@@ -122,6 +127,8 @@ export interface ZoneForm {
   marketEnabled: boolean
   marketStock: string[]
   marketSingles: boolean
+  /** FEAT-17: transportado sem controle até a T-76 (salvar não apaga). */
+  blacksmith?: ZoneCard['blacksmith']
 }
 
 export interface AttributeForm {
@@ -152,9 +159,14 @@ export interface EquipmentForm {
   abilities: AbilityForm[]
   effects: EffectForm[]
   /** Desligado = não refinável; o que foi digitado fica guardado. */
-  refinement: { enabled: boolean; maxLevel: string; materials: string }
-  /** Desligado = não encantável. */
-  enchantment: { enabled: boolean; text: string }
+  refinement: {
+    enabled: boolean
+    maxLevel: string
+    /** FEAT-17: transportados sem controle até a T-76 (salvar não apaga). */
+    materials: MaterialRequirement[]
+  }
+  /** Desligado = não encantável. FEAT-17: slots transportados sem controle até a T-76. */
+  enchantment: { enabled: boolean; slots: EnchantmentSlots }
   priceMultiplier: string
   /** FEAT-32: vazio = `null`. */
   scavengeTool: string
@@ -181,6 +193,8 @@ export interface ItemForm {
   stockQuantity: string
   /** Vazio = `null` ("Nenhuma"). */
   boosterCollectionId: string
+  /** FEAT-17: transportada sem controle até a T-76 (salvar não apaga). */
+  recipe?: ItemCard['recipe']
 }
 
 export interface RandomEventForm {
@@ -441,8 +455,8 @@ export function emptyForm(type: FormCardType): CardForm {
         blocksShield: false,
         abilities: [],
         effects: [],
-        refinement: { enabled: false, maxLevel: '', materials: '' },
-        enchantment: { enabled: false, text: '' },
+        refinement: { enabled: false, maxLevel: '', materials: [] },
+        enchantment: { enabled: false, slots: [] },
         priceMultiplier: '1',
         scavengeTool: '',
       }
@@ -568,6 +582,7 @@ export function formFromCard(card: Card): CardForm {
         marketEnabled: card.market !== null,
         marketStock: card.market?.stock ?? [],
         marketSingles: card.market?.singles ?? false,
+        blacksmith: card.blacksmith,
       }
     case 'attribute':
       return {
@@ -604,16 +619,16 @@ export function formFromCard(card: Card): CardForm {
         effects: card.effects.map(effectToForm),
         refinement:
           card.refinement === null
-            ? { enabled: false, maxLevel: '', materials: '' }
+            ? { enabled: false, maxLevel: '', materials: [] }
             : {
                 enabled: true,
                 maxLevel: String(card.refinement.maxLevel),
-                materials: card.refinement.materials.text,
+                materials: card.refinement.materials,
               },
         enchantment:
           card.enchantment === null
-            ? { enabled: false, text: '' }
-            : { enabled: true, text: card.enchantment.text },
+            ? { enabled: false, slots: [] }
+            : { enabled: true, slots: card.enchantment.slots },
         priceMultiplier: String(card.priceMultiplier),
         scavengeTool: card.scavengeTool ?? '',
       }
@@ -634,6 +649,7 @@ export function formFromCard(card: Card): CardForm {
         stockPrice: card.stockPrice === null ? '' : String(card.stockPrice),
         stockQuantity: String(card.stockQuantity),
         boosterCollectionId: card.boosterCollectionId ?? '',
+        recipe: card.recipe,
       }
     case 'randomEvent':
       return {
@@ -846,6 +862,9 @@ export function toInput(form: CardForm): CardInput | null {
         market: form.marketEnabled
           ? { stock: form.marketStock, singles: form.marketSingles }
           : null,
+        ...(form.blacksmith !== undefined
+          ? { blacksmith: form.blacksmith }
+          : {}),
       }
     }
     case 'attribute': {
@@ -896,9 +915,7 @@ export function toInput(form: CardForm): CardInput | null {
         (filled(form.peakRequirement) && peak === null) ||
         price === null ||
         abilities === null ||
-        (form.refinement.enabled &&
-          (maxLevel === null || !filled(form.refinement.materials))) ||
-        (form.enchantment.enabled && !filled(form.enchantment.text))
+        (form.refinement.enabled && maxLevel === null)
       )
         return null
       return {
@@ -917,10 +934,10 @@ export function toInput(form: CardForm): CardInput | null {
         effects,
         refinement:
           form.refinement.enabled && maxLevel !== null
-            ? { maxLevel, materials: { text: form.refinement.materials } }
+            ? { maxLevel, materials: form.refinement.materials }
             : null,
         enchantment: form.enchantment.enabled
-          ? { text: form.enchantment.text }
+          ? { slots: form.enchantment.slots }
           : null,
         priceMultiplier: price,
         scavengeTool: filled(form.scavengeTool) ? form.scavengeTool : null,
@@ -961,6 +978,7 @@ export function toInput(form: CardForm): CardInput | null {
         boosterCollectionId: filled(form.boosterCollectionId)
           ? form.boosterCollectionId
           : null,
+        ...(form.recipe !== undefined ? { recipe: form.recipe } : {}),
       }
     }
     case 'randomEvent': {

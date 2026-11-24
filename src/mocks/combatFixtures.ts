@@ -2,6 +2,7 @@ import type { Party, PartyActionResponse } from '../api/parties'
 import type { CombatEventCard } from '../api/catalog'
 import { howlingWolvesFixture } from './catalogFixtures'
 import { partyAnticipationFixture } from './randomEventFixtures'
+import { standardEquipmentState } from './partyFixtures'
 
 const member = partyAnticipationFixture.members[0]!
 const player = member.player
@@ -434,6 +435,10 @@ const soloSnapshot: Party = {
       player: {
         ...resumedCombat.members[0]!.player,
         equipment: { ...player.equipment, weapon },
+        equipmentStates: {
+          ...player.equipmentStates,
+          weapon: standardEquipmentState,
+        },
         availableActions: [...soloActions],
       },
     },
@@ -553,6 +558,10 @@ function soloEnd(resolution: 'escaped' | 'defeat'): PartyActionResponse {
 const preparePlayer: Party['members'][number]['player'] = {
   ...player,
   equipment: { ...player.equipment, weapon },
+  equipmentStates: {
+    ...player.equipmentStates,
+    weapon: standardEquipmentState,
+  },
   inventory: [{ cardId: ore, quantity: 2 }],
   availableActions: ['prepare', 'endTurn'],
   usableAbilities: [
@@ -608,6 +617,7 @@ const prepared: PartyActionResponse = {
       player: {
         ...preparePlayer,
         equipment: { ...preparePlayer.equipment, weapon: null },
+        equipmentStates: { ...preparePlayer.equipmentStates, weapon: null },
         inventory: [],
         hand: preparePlayer.hand.slice(1),
         handCopies: preparePlayer.handCopies.filter(

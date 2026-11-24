@@ -181,7 +181,7 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
       zone: 4,
       attribute: 3,
       equipment: 7,
-      item: 9,
+      item: 11,
       randomEvent: 2,
       combatEvent: 1,
       zoneQuest: 0,
@@ -199,7 +199,7 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
     ).toBe(false)
   })
 
-  it('REQ-28: o handler padrão da coleção fixture lista as 27 cartas na ordem de id', async () => {
+  it('REQ-28: o handler padrão da coleção fixture lista as 29 cartas na ordem de id', async () => {
     const response = await fetch(
       'http://localhost:3000/catalog/collections/fixture/cards',
     )
@@ -212,6 +212,7 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
       'fixture.blade-of-dusk',
       'fixture.booster',
       'fixture.dexterity-basic',
+      'fixture.ember-shard',
       'fixture.endurance-basic',
       'fixture.event-cart-test',
       'fixture.fishing-rod',
@@ -231,11 +232,12 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
       'fixture.stone-bend',
       'fixture.strength-basic',
       'fixture.strength-tonic',
+      'fixture.sword-blueprint',
       'fixture.test-dimension',
       'fixture.whispering-grove',
       'fixture.wounded-traveler',
     ])
-    expect(fixtureCardsFixture).toHaveLength(27)
+    expect(fixtureCardsFixture).toHaveLength(29)
   })
 })
 
@@ -482,6 +484,13 @@ describe('REQ-30: Party preparado (dimension, turnOrder, player)', () => {
       }),
       lastMarketVisit: null,
       lastBoosterOpening: null,
+      // FEAT-17 (CONTRATO v0.85): nada equipado; ferreiro do Porto Cinzento.
+      equipmentStates: expect.objectContaining({ weapon: null }),
+      blacksmith: expect.objectContaining({
+        zoneId: 'fixture.gray-harbor',
+        workshop: null,
+      }),
+      lastBlacksmithVisit: null,
       playerClasses: [{ playerClass: 'warrior', deckLockMet: true }],
       gold: 10,
       baseHealth: 20,
@@ -510,6 +519,7 @@ describe('REQ-30: Party preparado (dimension, turnOrder, player)', () => {
         'recover',
         'adjustDeck',
         'useVault',
+        'visitBlacksmith',
         'visitMarket',
         'endTurn',
       ],

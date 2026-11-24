@@ -66,8 +66,8 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 034 | T-24 | [Formulários de equipamento e item](034-T-24-formularios-equipamento-item.md) | concluída |
 | 035 | T-25 | [Formulários de evento aleatório e de combate](035-T-25-formularios-de-evento.md) | concluída |
 | 036 | T-26 | [Publicar, duplicar e excluir carta](036-T-26-publicar-duplicar-excluir.md) | concluída |
-| 037 | T-27 | [Validar como dimensão, exportar e importar](037-T-27-validar-exportar-importar.md) | aguardando revisão |
-| 100 | T-73 | [Abrir booster no Preparar e no cofre](100-T-73-abrir-booster.md) | aguardando revisão |
+| 037 | T-27 | [Validar como dimensão, exportar e importar](037-T-27-validar-exportar-importar.md) | concluída |
+| 100 | T-73 | [Abrir booster no Preparar e no cofre](100-T-73-abrir-booster.md) | concluída |
 | 038 | RETORNO | [FEAT-31 validada contra o backend real](038-RETORNO-feat-31-validada.md) | aguardando revisão |
 | 039 | T-28 | [Cliente alinhado à FEAT-06](039-T-28-cliente-feat-06.md) | aguardando revisão |
 | 040 | T-29 | [Laboratório e catálogo alinhados à FEAT-06](040-T-29-laboratorio-catalogo-feat-06.md) | concluída |
@@ -133,3 +133,5 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 100 | T-73 | [Abrir booster no Preparar e no cofre](100-T-73-abrir-booster.md) | aguardando revisão |
 | 101 | T-74 | [Validação integrada da FEAT-16](101-T-74-validacao-integrada-feat-16.md) | concluída |
 | 102 | FEAT-16 | [Fechamento da FEAT-16](102-feat-16-fechamento.md) | concluída |
+| 103 | FEAT-17 | [Planejamento do ferreiro na spec](103-feat-17-planejamento.md) | concluída |
+| 104 | T-75 | [Cliente e fixtures MSW do ferreiro](104-T-75-cliente-feat-17.md) | aguardando revisão |

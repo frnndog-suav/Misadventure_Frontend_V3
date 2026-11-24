@@ -21,6 +21,19 @@ const helm = 'fixture.iron-helm'
 const wand = 'fixture.arcane-wand'
 const potion = 'fixture.healing-potion'
 
+/** FEAT-17 (CONTRATO v0.85): estado padrão de uma cópia de equipamento. */
+export const standardEquipmentState = {
+  refinement: 0,
+  enchantments: [],
+  repairMarks: 0,
+  broken: false,
+}
+const gear = (cardId: string) => ({
+  cardId,
+  quantity: 1,
+  equipmentState: standardEquipmentState,
+})
+
 const member: Party['members'][number] = {
   id: 'member-lia',
   characterName: 'Lia',
@@ -63,12 +76,14 @@ const member: Party['members'][number] = {
     lastKnockout: null,
     skipNextTurn: false,
     moveTargets: ['fixture.stone-bend', 'fixture.whispering-grove'],
-    // FEAT-32 e FEAT-16: a cidade inicial tem `useVault` e `visitMarket` (CONTRATO v0.81).
+    // FEAT-32, FEAT-16 e FEAT-17: a cidade inicial tem `useVault`,
+    // `visitBlacksmith` e `visitMarket` (CONTRATO v0.85).
     availableActions: [
       'move',
       'recover',
       'adjustDeck',
       'useVault',
+      'visitBlacksmith',
       'visitMarket',
       'endTurn',
     ],
@@ -163,6 +178,39 @@ const member: Party['members'][number] = {
     },
     lastMarketVisit: null,
     lastBoosterOpening: null,
+    // FEAT-17 (CONTRATO v0.85): nada equipado; ferreiro do Porto Cinzento,
+    // com o Fio de Brasa do cenário "Estado inicial" (limiar 0 no laboratório).
+    equipmentStates: {
+      head: null,
+      torso: null,
+      legs: null,
+      feet: null,
+      cape: null,
+      weapon: null,
+      shield: null,
+      accessory: null,
+    },
+    blacksmith: {
+      zoneId: 'fixture.gray-harbor',
+      blacksmith: { equipment: [] },
+      workshop: null,
+      enchantments: [
+        {
+          enchantment: {
+            id: 'ember-edge',
+            name: 'Fio de Brasa',
+            kind: 'element',
+            element: 'fire',
+            bonusPercent: 10,
+            materials: [{ cardId: 'fixture.ember-shard', quantity: 1 }],
+          },
+          gold: 50,
+          threshold: 0,
+        },
+      ],
+      recipes: [],
+    },
+    lastBlacksmithVisit: null,
     handCopies: [
       strength,
       endurance,
@@ -250,8 +298,10 @@ function partyMovedTo(zoneId: string, moveTargets: string[]): Party {
           ...member.player,
           zoneId,
           moveTargets,
-          // Fora da cidade: sem `useVault` (FEAT-32) e sem mercado (FEAT-16).
+          // Fora da cidade: sem `useVault` (FEAT-32), sem mercado (FEAT-16)
+          // e sem ferreiro (FEAT-17).
           market: null,
+          blacksmith: null,
           availableActions: ['move', 'recover', 'adjustDeck', 'endTurn'],
         },
       },
@@ -356,10 +406,10 @@ export const partyGearInSessionFixture: Party = {
       player: {
         ...member.player,
         inventory: [
-          { cardId: blade, quantity: 1 },
-          { cardId: shield, quantity: 1 },
-          { cardId: helm, quantity: 1 },
-          { cardId: wand, quantity: 1 },
+          gear(blade),
+          gear(shield),
+          gear(helm),
+          gear(wand),
           { cardId: potion, quantity: 2 },
         ],
         availableActions: [
@@ -368,6 +418,7 @@ export const partyGearInSessionFixture: Party = {
           'prepare',
           'adjustDeck',
           'useVault',
+          'visitBlacksmith',
           'visitMarket',
           'endTurn',
         ],
@@ -388,12 +439,16 @@ export const partyBladeEquippedFixture: Party = {
       player: {
         ...gearPlayer,
         inventory: [
-          { cardId: shield, quantity: 1 },
-          { cardId: helm, quantity: 1 },
-          { cardId: wand, quantity: 1 },
+          gear(shield),
+          gear(helm),
+          gear(wand),
           { cardId: potion, quantity: 2 },
         ],
         equipment: { ...gearPlayer.equipment, weapon: blade },
+        equipmentStates: {
+          ...gearPlayer.equipmentStates,
+          weapon: standardEquipmentState,
+        },
         effectiveModifiers: {
           ...gearPlayer.effectiveModifiers,
           attack: 9,
@@ -414,11 +469,11 @@ export const partyBladeUnequippedFixture: Party = {
       player: {
         ...gearPlayer,
         inventory: [
-          { cardId: shield, quantity: 1 },
-          { cardId: helm, quantity: 1 },
-          { cardId: wand, quantity: 1 },
+          gear(shield),
+          gear(helm),
+          gear(wand),
           { cardId: potion, quantity: 2 },
-          { cardId: blade, quantity: 1 },
+          gear(blade),
         ],
       },
     },
@@ -470,6 +525,7 @@ export const partyFishingRodGrantedFixture: Party = {
           'adjustDeck',
           'scavenge',
           'useVault',
+          'visitBlacksmith',
           'visitMarket',
           'endTurn',
         ],

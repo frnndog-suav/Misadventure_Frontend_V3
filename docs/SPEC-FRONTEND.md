@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 0.90 · **Data:** 2026-11-24
+> **Versão da spec:** 0.92 · **Data:** 2026-11-24
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -102,9 +102,9 @@ Base comum (T-08): `requestJson(method, path, body?)` em `src/api/http.ts` faz t
 | Área | Rota | Telas | FEAT |
 |---|---|---|---|
 | app | `/` | rota inicial: menu da campanha e "Seus jogos" com o abandono (REQ-14, REQ-17) + área de status da ponte com o servidor (REQ-01); tema e tipografia da base visual (REQ-02) | FEAT-01, FEAT-02 |
-| lab | `/lab` (só dev, D-07) | laboratório: configuração ajustável do jogo e vitrine de componentes (REQ-05 a REQ-07); catálogo de cartas (REQ-08 a REQ-13); valores e cartas da FEAT-06 (REQ-27, REQ-28); valores da FEAT-09 (REQ-39); valores e doação da FEAT-10 (REQ-43, REQ-46); valores e cartas da FEAT-32 (REQ-47, REQ-48); valores e campos do mercado (REQ-71, REQ-72) | FEAT-03, FEAT-04, FEAT-06, FEAT-09, FEAT-10, FEAT-32, FEAT-16 |
-| party | `/novo`, `/grupo/:partyId` | novo jogo (grupo de 1) com escolha de classe e grupo em sessão com a partida preparada, o mapa, o Movimentar, a vez, o deck de atributos, o inventário com Preparar, o cofre e o Vasculhar, Ir ao Mercado e abrir booster (REQ-15, REQ-16, REQ-29, REQ-30, REQ-34 a REQ-38, REQ-40 a REQ-42, REQ-44, REQ-45, REQ-50 a REQ-52, REQ-73 a REQ-76) | FEAT-05, FEAT-06, FEAT-07, FEAT-08, FEAT-09, FEAT-10, FEAT-32, FEAT-16 |
-| editor | `/lab/editor` (só dev, D-07) | editor de conteúdo: coleções, cartas e classes (REQ-18 a REQ-26, REQ-31 a REQ-33, REQ-49, REQ-72) | FEAT-31, FEAT-06, FEAT-32, FEAT-16 |
+| lab | `/lab` (só dev, D-07) | laboratório: configuração ajustável do jogo e vitrine de componentes (REQ-05 a REQ-07); catálogo de cartas (REQ-08 a REQ-13); valores e cartas da FEAT-06 (REQ-27, REQ-28); valores da FEAT-09 (REQ-39); valores e doação da FEAT-10 (REQ-43, REQ-46); valores e cartas da FEAT-32 (REQ-47, REQ-48); valores e campos do mercado (REQ-71, REQ-72); valores e campos do ferreiro (REQ-77, REQ-78) | FEAT-03, FEAT-04, FEAT-06, FEAT-09, FEAT-10, FEAT-32, FEAT-16, FEAT-17 |
+| party | `/novo`, `/grupo/:partyId` | novo jogo (grupo de 1) com escolha de classe e grupo em sessão com a partida preparada, o mapa, o Movimentar, a vez, o deck de atributos, o inventário com Preparar, o cofre e o Vasculhar, Ir ao Mercado e abrir booster (REQ-15, REQ-16, REQ-29, REQ-30, REQ-34 a REQ-38, REQ-40 a REQ-42, REQ-44, REQ-45, REQ-50 a REQ-52, REQ-73 a REQ-76, REQ-79 a REQ-81) | FEAT-05, FEAT-06, FEAT-07, FEAT-08, FEAT-09, FEAT-10, FEAT-32, FEAT-16, FEAT-17 |
+| editor | `/lab/editor` (só dev, D-07) | editor de conteúdo: coleções, cartas e classes (REQ-18 a REQ-26, REQ-31 a REQ-33, REQ-49, REQ-72, REQ-78) | FEAT-31, FEAT-06, FEAT-32, FEAT-16, FEAT-17 |
 
 Os componentes compartilhados da FEAT-02 (termo do jogo, categoria de carta) ainda não aparecem em nenhuma tela: são verificados por testes de componente até entrarem no laboratório (FEAT-03) e nas telas da FEAT-04.
 
@@ -697,6 +697,59 @@ Alinha os REQ-40, REQ-44 e REQ-50.
 
 - **Dado** o `Party`, **então** as capacidades exibidas (bolsa, cofre, slots de deck, ouro do cofre, pasta de TCG) são as recebidas, já efetivas (sem conta no frontend); a seção do membro mostra "Expansões: cofre {vaultSlots}, slots de deck {deckSlots}, pasta de TCG {tcgFolder}, bolsa {purse}, ouro do cofre {vaultGold}" só quando alguma é > 0.
 
+### Ferreiro e Oficina do Artífice (FEAT-17)
+
+Base: CONTRATO v0.85 (`acordado`), seção FEAT-17; README 3.4, 5.1, 5.2, 8.8, 12.2, 16.1, 24.2, 25; ROADMAP v0.77. Estado de cada cópia de equipamento, custos, limiares, bônus, níveis seguintes, encantamentos que cabem, receitas e resultados chegam prontos do backend (D-63); o frontend só exibe, monta o lote e envia.
+
+### REQ-77 — Valores do ferreiro no laboratório
+
+Alinha o REQ-06.
+
+- **Dado** o `/lab`, **então** as 19 chaves da FEAT-17 aparecem com rótulos pt-BR (texto de cada rótulo fixado na T-76, como na D-49) no formato do REQ-06 ("Padrão: … · Mín. … · Máx. …"). Os erros `outOfRange` e `notInteger` usam os textos do REQ-06.
+
+### REQ-78 — Campos do ferreiro no catálogo e no editor
+
+Alinha os REQ-10 a REQ-12, REQ-21 e REQ-22 (e a D-44). Regras comuns do editor valem; o formulário não confere combinações (o backend confere, D-38).
+
+- **Dado** uma carta `equipment` refinável no catálogo, **então** o bloco "Refino" mostra "Até +{maxLevel}" e a lista "Materiais por tentativa" ("{quantity}× {nome}"), ou "Sem materiais definidos.". Encantável: o bloco "Encantamento" lista os slots, "Slot {n}: elemento | efeito, a partir do refino +{minRefinement}" (com `minRefinement` 0, sem o "a partir…").
+- **Dado** um item `document` com `recipe`, **então** mostra o bloco "Receita": "Cria {nome do equipamento}", a lista "Materiais" (ou "Sem materiais."), "{gold} de ouro" e, com `consumed`, "A receita é consumida.".
+- **Dado** uma carta `zone` com `blacksmith`, **então** mostra o bloco "Ferreiro" com a lista "Encantamentos" ("{name} — elemento {rótulo do elemento} (+{bonusPercent}%)" ou "{name} — efeito", seguido dos materiais), ou "Sem encantamentos.".
+- **Dado** o formulário de equipamento, **então** "Materiais" do "Refino" vira uma lista (regras de lista do REQ-21; cada item com "Material", id em texto, e "Quantidade", inteiro ≥ 1), e "Encantamento" ligado mostra a lista "Slots" (cada item com "Tipo", elemento ou efeito, e "Refino mínimo", inteiro ≥ 0) no lugar do texto.
+- **Dado** o formulário de item, **então** há a caixa "Receita" (desligada = `null`); ligada, "Equipamento criado" (id em texto), a lista "Materiais", "Ouro" (inteiro ≥ 0) e a caixa "Consumida ao criar".
+- **Dado** o formulário de zona, **então** há o bloco "Ferreiro" com a caixa "Tem ferreiro" (desmarcada = `blacksmith: null`); marcada, a lista "Encantamentos", cada item com "Identificador", "Nome", "Tipo" e, conforme o tipo, "Elemento" e "Bônus (%)" ou "Efeitos" e "Habilidades" (os subformulários do REQ-55 e do REQ-60), mais a lista "Materiais". Os erros `CONTENT_INVALID` chegam pelo caminho (ex.: `refinement.materials`, `enchantment.slots.0.minRefinement`, `recipe.equipmentId`, `blacksmith`, `blacksmith.enchantments.0.id`); `CONTENT_REFERENCED` ao excluir mostra a `message` recebida.
+
+### REQ-79 — Estado do equipamento na tela do grupo
+
+Alinha os REQ-44, REQ-50 e REQ-73.
+
+- **Dado** a seção de cada membro, **então** cada categoria ocupada em "Equipamentos" e cada slot de equipamento do "Inventário" e do cofre acrescenta ao nome o estado recebido (`equipmentStates[slot]` ou `equipmentState`), só o que difere do padrão, nesta ordem: "+{refinement}", "quebrado", "Reparado ×{repairMarks}", "encantamentos: {nome}, {nome} (desligado)". Ex.: "Arma: Espada Curta +3, quebrado, Reparado ×1, encantamentos: Fio de Brasa (desligado)". "(desligado)" só no encantamento com `active: false`.
+- **Dado** a seção "Mercado" (REQ-73), **então** cada oferta de venda com `equipmentState` mostra o mesmo sufixo depois do nome, não tem campo de unidades e "Acrescentar" envia `{ operation: "sell", source, cardId, quantity: 1, inventorySlotIndex }`.
+
+### REQ-80 — Ir ao Ferreiro e Oficina: o que é oferecido
+
+- **Dado** `availableActions` do host contém `visitBlacksmith` ou `artificerWorkshop`, **então** a região "A vez" mostra "Ir ao Ferreiro" (logo antes de "Ir ao Mercado") ou "Oficina do Artífice", na ordem de `availableActions`. Sem a ação, não há botão.
+- **Quando** o jogador clica um deles, **então** abre, abaixo da região "A vez", a seção "Ferreiro" ou "Oficina do Artífice" (os dois botões ficam desabilitados enquanto ela está aberta), montada de `player.blacksmith.blacksmith` ou `player.blacksmith.workshop`, com "Ouro na bolsa {gold}" e o aviso "Gasta todos os pontos de ação restantes ({actionPoints})." (ferreiro) ou "Gasta 1 ponto de ação." (Oficina). Depois, os grupos:
+  - "Equipamentos": um item por entrada de `equipment`, na ordem recebida, com o título "{nome}{sufixo do REQ-79} — {Em uso: {rótulo do slot} | Inventário, slot {inventorySlotIndex + 1}}"; dentro dele:
+    - com `repair`: "Consertar — {repair.gold} de ouro" e o botão "Consertar {nome}" → `{ operation: "repair", target }`;
+    - com `refineSteps` não vazia: "Refinar para +{targetLevel} — {materiais}, {gold} de ouro, {teste}" e o botão "Refinar {nome}" → `{ operation: "refine", target }`, descrita "Refinar {nome} para +{targetLevel}". O passo exibido é `refineSteps[k]`, k = refinos desse alvo já na lista (D-63 item 2); com k ≥ `refineSteps.length`, o botão fica desabilitado e o texto some. {teste}: `threshold` 0 → "sem teste"; senão "D20 + {d20Bonus} ≥ {threshold}" (sem "+ 0"), e com `breaksOnFailure` "; quebra se falhar";
+    - por entrada de `enchantOptions` (só no ferreiro): "{encantamento} — {materiais}, {gold} de ouro, {teste}" (de `blacksmith.enchantments`), mais "; requer refino +{requiresRefinement}" quando > 0 e "; encantamento extra" quando `extra`, e o botão "Encantar {nome} com {encantamento}" → `{ operation: "enchant", target, enchantmentId }` (com `extra: true` quando `extra`). Com `replaceRequired`, antes do botão há a seleção "Substituir" com os encantamentos do estado ("{n + 1}: {nome}"), e o envio leva `replaceIndex`. O frontend não confere se o refino da lista alcança o requisito (o backend recusa com `enchantSlotUnavailable`).
+  - "Receitas": por entrada de `recipes`, "{receita}: cria {equipamento} — {materiais}, {gold} de ouro" (+ ", consumida") e o botão "Criar {equipamento}" → `{ operation: "craft", inventorySlotIndex }`. Com `canCraft` `false`, acrescenta " (faltam materiais ou ouro)"; o botão continua. Lista vazia: "Nenhuma receita no inventário.".
+  - Descrição de cada operação na lista: o texto do botão (refino: com o nível).
+- **Dado** a vista do local `null` com a ação disponível (fora do contrato), **então** a seção mostra "Servidor indisponível. Tente novamente." sem grupos.
+
+### REQ-81 — Ir ao Ferreiro e Oficina: lote, confirmação e resultado
+
+- **Dado** a lista "Operações" da seção (começa com "Nenhuma operação."), **então** vale o REQ-52 para itens, "Remover", "Subir", "Descer", "Cancelar" e "Confirmar" desabilitado com a lista vazia; o rótulo é "Confirmar (todos os pontos de ação)" no ferreiro e "Confirmar (1 ponto de ação)" na Oficina; até 50 itens (com 50, os botões de acrescentar ficam desabilitados). "Total previsto: {n} de ouro", soma dos preços exibidos (só exibição; o cobrado vem do resultado). Mover ou remover itens recalcula o nível e o preço de cada refino pela posição (D-63 item 2).
+- **Quando** confirma, **então** envia `{ "type": "visitBlacksmith" | "artificerWorkshop", "operations": [...] }` na ordem da lista; enquanto o pedido está em curso, os botões da seção e os de ação ficam desabilitados.
+- **Dado** o `200`, **então** a seção fecha, a tela mostra o `Party` devolvido, a área de status mostra "Ferreiro: {n} operações, {actionPointsSpent} pontos de ação gastos." (ou "Oficina do Artífice: …"; singular "1 operação", "1 ponto de ação gasto") e, abaixo, a lista "Resultado do ferreiro" de `lastBlacksmithVisit.results`, um item por operação, na ordem ({rolagem}: `roll` `null` → vazio; senão ", D20 {roll} + {d20Bonus} contra {threshold}", sem "+ 0"):
+  - `skipped` → "{descrição}: não feito (a operação anterior falhou).";
+  - `repair` → "Consertou {nome} por {−gold} de ouro (Reparado ×{repairMarks}).";
+  - `refine` → "Refinou {nome} para +{targetLevel} por {−gold} de ouro{rolagem}." ou "Falhou ao refinar {nome} para +{targetLevel}: {−gold} de ouro perdidos{rolagem}." e, com `broke`, " {nome} quebrou.";
+  - `enchant` → "Encantou {nome} com {encantamento} por {−gold} de ouro{rolagem}." (com `replaced`, " Substituiu {nome do substituído}.") ou "Falhou ao encantar {nome} com {encantamento}: {−gold} de ouro perdidos{rolagem}.";
+  - `craft` → "Criou {equipamento} por {−gold} de ouro.".
+  - `lastBlacksmithVisit` `null` num `200` (fora do contrato) deixa a lista ausente.
+- **Dado** `409` `ACTION_NOT_ALLOWED` com `operationIndex`, **então** vale o REQ-52 (lista mantida, item `operationIndex + 1` marcado "Recusada", `message` + texto do motivo; {nome} = carta de `details.cardId`, senão a da operação): `equipmentNotFound` → "Esse equipamento não está mais lá."; `notBroken` → "{nome} não está quebrado."; `equipmentBroken` → "{nome} está quebrado: conserte antes."; `notRefinable` → "{nome} não pode ser refinado."; `refinementMaterialsMissing` → "{nome} não tem materiais de refino definidos."; `refineLevelMax` → "{nome} já está no refino máximo."; `refineLevelTooHigh` → "A Oficina não refina acima desse nível."; `enchantNotAvailable` → "A Oficina não encanta."; `enchantmentNotOffered` → "Este ferreiro não oferece esse encantamento."; `notEnchantable` → "{nome} não pode ser encantado."; `enchantSlotUnavailable` → "{nome} não tem slot para esse encantamento."; `replaceIndexRequired` → "Escolha o encantamento a substituir."; `replaceIndexInvalid` → "O encantamento a substituir não existe."; `recipeMissing` → "{nome} não é uma receita."; `materialsMissing` → "Faltam materiais."; `notEnoughGold` → "Não há ouro suficiente na bolsa."; `inventoryFull` → "Não há espaço no inventário."; `notInInventory` → texto do REQ-52; outro motivo → só a `message`. Sem `operationIndex` (`artificerInactive`, `zoneActionUnavailable`, `noActionPoints`, `choicePending`, `combatInProgress`), a `message` aparece na área de status, sem marcar item. Outro erro §1.4 ou falha de rede/validação: como no REQ-52.
+
 ## Decisões
 
 - **D-01 — Formato de erro:** os erros do backend chegam no formato de [`CONTRATO.md`](CONTRATO.md) §1.4 (`{ "error": { "code", "message" } }`). A UI mostra `message` (pt-BR) e decide o comportamento pelo `code`. Erro esperado nunca vira exceção na UI. Códigos: os do contrato.
@@ -764,6 +817,8 @@ Alinha os REQ-40, REQ-44 e REQ-50.
 
 **Pendências (decidir antes da tarefa indicada):**
 - **P-02 — Como o jogador vê as vezes dos outros no momento 2** (antes da FEAT-21): proposta: o backend devolve a lista ordenada de eventos do domínio e o frontend anima um por um; no momento 3 só o transporte muda (socket). Registrada também no ROADMAP.
+
+- **D-63 — Ferreiro e Oficina do Artífice (FEAT-17):** (1) Ir ao Ferreiro e a Oficina são lotes montados numa seção própria, no padrão do Usar cofre e do mercado (D-59, D-62): o ferreiro gasta todos os PA, então o lote é a única chance da vez (vantagem: vários refinos e o encantamento que o refino libera numa visita; desvantagem: o jogador vê os preços antes de saber se os testes passam; alternativa descartada: uma operação por envio, que no ferreiro gastaria a vez inteira na primeira). (2) O k-ésimo refino de um mesmo alvo na lista exibe `refineSteps[k]` (o contrato traz cada nível seguinte "supondo os níveis anteriores alcançados", v0.84): é indexar a projeção pela posição, não calcular custo; sem mais passos, o botão fica desabilitado. O que a falha de um teste muda dentro do lote é do backend (`skipped`). (3) "Total previsto" soma os preços exibidos (como D-62 item 3); o cobrado vem de `lastBlacksmithVisit`. (4) O frontend não confere materiais, ouro, slots, requisito de refino nem receita: mostra `canCraft` e `requiresRefinement` como texto e o backend recusa. Equipamento criado por `craft` não é alvo no mesmo lote (CONTRATO v0.85): ele não aparece na projeção até o `200`, então a tela não precisa de regra para isso. (5) O sufixo de estado (REQ-79) é só formatação do `EquipmentState` recebido; o efeito em modificadores e no preço de venda já vem pronto. (6) MSW sem estado (D-29): a `fixture` ganha os campos e as cartas do contrato (`fixture.ember-shard`, `fixture.sword-blueprint`, `item` +2, refino e encantamento da `fixture.short-sword`, ferreiro do Porto Cinzento), `equipmentStates`/`equipmentState` padrão em todo equipamento, `blacksmith` e `lastBlacksmithVisit` `null` fora do cenário, e `visitBlacksmith` no `availableActions` da cidade logo antes de `visitMarket`; respostas fixas por cenário do contrato ("Estado inicial", "Lote com falha e quebra", "Lote recusado" com `operationIndex` 1, "Consertar", "Venda valorizada", "Criar", "Oficina sem Artífice", "Fora do ferreiro", "Formato"). Um grupo de dev com Artífice ativo mostra a seção da Oficina (dado inventado só para a tela; o contrato não traz cenário com Artífice para o FE). (7) Sem termos novos com tooltip nesta FEAT ("Refino", "Encantamento" e "Ferreiro" já estão no glossário); ícones de estado e a animação da forja são da FEAT-30. (8) Na T-75 (2026-11-24): os schemas ficam em `src/api/blacksmith.ts` (estado, vista, resultado, ações) e em `catalog.ts` (`MaterialRequirement`, `BlacksmithEnchantment`, campos das cartas); `recipe`, `blacksmith`, `equipmentStates`, `blacksmith` do jogador e `lastBlacksmithVisit` entram com `.default()` nos valores legados; `equipmentState` é opcional no slot (só em equipamento). Materiais em texto (formato anterior) são recusados: o backend converte o legado (CONTRATO v0.85). Exigidos pelo tipo, como na D-62 item 8: os 19 rótulos do laboratório (a T-76 confirma), os 16 motivos novos no `switch` da tela só com a `message` (textos na T-78), e o editor transporta materiais, slots, receita e ferreiro sem controles; os campos de texto "Materiais" e "Texto do encantamento" saíram (as listas do REQ-78 entram na T-76) e a carta de equipamento mostra só "Refinável até +N" até lá. MSW: grupos `party-ferreiro` (cenário "Estado inicial") e `party-artifice` (Artífice ativo, exemplo); o `visitBlacksmith` escolhe a resposta pela forma do lote (com `enchant` → "Lote com falha e quebra"; dois consertos → `notBroken` na operação 1; um refino só → `equipmentBroken`; conserto → "Consertar"; `craft` do slot 2 → "Criar", de outro → `recipeMissing`; lote não reconhecido → "Lote com falha e quebra", como o fallback do mercado na D-62 item 8); `artificerWorkshop` fora do `party-artifice` → `artificerInactive`; Preparar `unequip` no `party-ferreiro` → "Venda valorizada". O cenário "Lote com falha e quebra" do contrato lista 5 operações no pedido e descreve 6 resultados (o último `skipped`); o MSW e o teste seguem a descrição (6 operações), a confirmar com o backend na T-79. Equipamento nas fixtures ganhou `equipmentState` padrão. O `vi.setConfig` de 15 s do `LabPage.test.tsx` passou para o topo do arquivo (o teste do REQ-65, antes dele, passava dos 5 s na suíte inteira; só o prazo). *(Planejamento da FEAT-17, 2026-11-24; item 8 na T-75.)*
 
 ## 4. Tarefas
 
@@ -926,6 +981,14 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 - [x] **T-73 — Abrir booster** (REQ-75). Preparar, Usar cofre e origem da entrega pendente; e2e na área `party`.
 - [x] **T-74 — Validação integrada da FEAT-16.** Repetir os cenários do contrato contra o backend real com MSW desligado, com as campanhas preparadas pelo backend (CONTRATO v0.81).
 
+### FEAT-17 — Ferreiro e Oficina do Artífice
+
+- [x] **T-75 — Cliente e fixtures MSW do ferreiro** (REQ-77 a REQ-81). Schemas e tipos do CONTRATO v0.85 (`EquipmentState`, `equipmentStates`, `equipmentState` no inventário, no cofre e em `sellOffers`, `inventorySlotIndex` no `sell`, `blacksmith`, `lastBlacksmithVisit`, `VisitBlacksmithAction`, `ArtificerWorkshopAction`, `MaterialRequirement`, `refinement.materials` e `enchantment` estruturados, `recipe`, `ZoneCard.blacksmith`, 19 chaves, motivos novos), `usePartyAction` com as ações novas e as fixtures da D-63 item 6, inclusive `visitBlacksmith` nos `availableActions` já existentes na cidade. Testes primeiro; tipos e testes afetados verdes.
+- [ ] **T-76 — Laboratório, catálogo e editor** (REQ-77, REQ-78). E2E nas áreas `lab` e `editor`.
+- [ ] **T-77 — Estado do equipamento e venda por cópia** (REQ-79). E2E na área `party`.
+- [ ] **T-78 — Ir ao Ferreiro e Oficina: seção e lote** (REQ-80, REQ-81). E2E na área `party`.
+- [ ] **T-79 — Validação integrada da FEAT-17.** Repetir os cenários do contrato contra o backend real com MSW desligado, com as campanhas preparadas pelo backend (Artífice ativo e Ferreiro Arcano).
+
 ## 8. Histórico
 
 | Versão | Data | Mudança |
@@ -1020,3 +1083,5 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 | 0.88 | 2026-11-24 | T-72 concluída: Ir ao Mercado na tela do grupo (REQ-73, REQ-74) e linha de expansões (REQ-76), com MSW (D-62 item 10). Abrir booster e validação integrada seguem nas T-73 e T-74. |
 | 0.89 | 2026-11-24 | T-73 concluída: Abrir booster no Preparar e no Usar cofre, lista "Cartas do booster" e origem da entrega pendente (REQ-75, D-62 item 11), com MSW. Falta a T-74 (validação integrada). |
 | 0.90 | 2026-11-24 | T-74 concluída: FEAT-16 validada contra o backend real (CONTRATO v0.82). |
+| 0.91 | 2026-11-24 | Proposta da FEAT-17 para aprovação: REQ-77 a REQ-81, D-63, T-75 a T-79. Base: CONTRATO v0.85 (`acordado`) e ROADMAP v0.77. |
+| 0.92 | 2026-11-24 | Autor aprovou a v0.91 com a fixture de dev do Artífice. T-75 concluída com MSW conforme CONTRATO v0.85 (D-63 item 8). |

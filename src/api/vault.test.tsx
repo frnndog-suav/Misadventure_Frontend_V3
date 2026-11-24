@@ -135,11 +135,11 @@ describe('REQ-47: GameConfigValues com as chaves da FEAT-32', () => {
 })
 
 describe('REQ-48: ferramentas e decks de recompensas nas cartas', () => {
-  it('REQ-48: a fixture tem 27 cartas (item 9) em ordem de id e todas validam', () => {
+  it('REQ-48: a fixture tem 29 cartas (item 11) em ordem de id e todas validam', () => {
     expect(
       collectionSummarySchema.parse(collectionsFixture[0]).cardCounts.item,
-    ).toBe(9)
-    expect(fixtureCardsFixture).toHaveLength(27)
+    ).toBe(11)
+    expect(fixtureCardsFixture).toHaveLength(29)
     const ids = fixtureCardsFixture.map((card) => card.id)
     expect(ids).toEqual([...ids].sort())
     for (const card of fixtureCardsFixture) {
@@ -148,6 +148,7 @@ describe('REQ-48: ferramentas e decks de recompensas nas cartas', () => {
     expect(fixtureCardsByTypeFixture.item.map((card) => card.id)).toEqual([
       'fixture.arrows',
       'fixture.booster',
+      'fixture.ember-shard',
       F,
       P,
       I,
@@ -155,6 +156,7 @@ describe('REQ-48: ferramentas e decks de recompensas nas cartas', () => {
       'fixture.pickaxe',
       S,
       'fixture.strength-tonic',
+      'fixture.sword-blueprint',
     ])
   })
 
@@ -198,6 +200,7 @@ describe('REQ-48: ferramentas e decks de recompensas nas cartas', () => {
         'startEvent',
         'scavenge',
         'useVault',
+        'visitBlacksmith',
         'visitMarket',
         'saveRespawnPoint',
       ],
@@ -239,6 +242,7 @@ describe('REQ-50: PlayerState com o cofre e o Vasculhar', () => {
       'recover',
       'adjustDeck',
       'useVault',
+      'visitBlacksmith',
       'visitMarket',
       'endTurn',
     ])
@@ -256,6 +260,7 @@ describe('REQ-50: PlayerState com o cofre e o Vasculhar', () => {
       'prepare',
       'adjustDeck',
       'useVault',
+      'visitBlacksmith',
       'visitMarket',
       'endTurn',
     ])
@@ -268,12 +273,14 @@ describe('REQ-50: PlayerState com o cofre e o Vasculhar', () => {
       'prepare',
       'adjustDeck',
       'abandonQuest',
+      'artificerWorkshop',
       'scavenge',
       'useVault',
       'takeQuest',
       'continueQuest',
       'finishQuest',
       'takeTrialQuest',
+      'visitBlacksmith',
       'visitMarket',
       'trainWithMentor',
       'saveRespawnPoint',
@@ -337,6 +344,7 @@ describe('REQ-50: PlayerState com o cofre e o Vasculhar', () => {
       'adjustDeck',
       'scavenge',
       'useVault',
+      'visitBlacksmith',
       'visitMarket',
       'endTurn',
     ])

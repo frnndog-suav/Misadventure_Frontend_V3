@@ -21,6 +21,16 @@ import {
   partyWithBoosterFixture,
 } from './marketFixtures'
 import {
+  blacksmithRefusalFixture,
+  partyArtificerFixture,
+  partyArtificerWorkshopFixture,
+  partyBlacksmithBatchFixture,
+  partyBlacksmithCraftedFixture,
+  partyBlacksmithFixture,
+  partyBlacksmithRepairedFixture,
+  partyBlacksmithSaleFixture,
+} from './blacksmithFixtures'
+import {
   acceptCombatResponse,
   combatScenario,
   executableCombatCardFixture,
@@ -510,7 +520,9 @@ async function partyActionScenario(
     type !== 'prepare' &&
     type !== 'scavenge' &&
     type !== 'useVault' &&
-    type !== 'visitMarket'
+    type !== 'visitMarket' &&
+    type !== 'visitBlacksmith' &&
+    type !== 'artificerWorkshop'
   ) {
     return HttpResponse.json(actionInvalidUnknownActionFixture, { status: 400 })
   }
@@ -520,7 +532,10 @@ async function partyActionScenario(
   }
   const operations = field(body, 'operations')
   if (
-    (type === 'useVault' || type === 'visitMarket') &&
+    (type === 'useVault' ||
+      type === 'visitMarket' ||
+      type === 'visitBlacksmith' ||
+      type === 'artificerWorkshop') &&
     Array.isArray(operations) &&
     operations.length === 0
   ) {
@@ -532,6 +547,16 @@ async function partyActionScenario(
     const malformed = marketFormatScenario(operations)
     if (malformed) return malformed
   }
+  if (type === 'visitBlacksmith' || type === 'artificerWorkshop') {
+    const malformed = blacksmithFormatScenario(operations)
+    if (malformed) return malformed
+  }
+  if (
+    type === 'prepare' &&
+    partyId === partyBlacksmithFixture.id &&
+    field(body, 'operation') === 'unequip'
+  )
+    return HttpResponse.json(partyBlacksmithSaleFixture)
   if (type === 'prepare') return prepareScenario(body)
   if (partyId === partyNoPointsFixture.id) {
     return HttpResponse.json(actionNoActionPointsFixture, { status: 409 })
@@ -545,6 +570,14 @@ async function partyActionScenario(
   }
   if (type === 'useVault') return vaultBatchScenario(operations)
   if (type === 'visitMarket') return marketScenario(operations)
+  if (type === 'artificerWorkshop')
+    return partyId === partyArtificerFixture.id
+      ? HttpResponse.json(partyArtificerWorkshopFixture)
+      : HttpResponse.json(
+          blacksmithRefusalFixture({ reason: 'artificerInactive' }),
+          { status: 409 },
+        )
+  if (type === 'visitBlacksmith') return blacksmithScenario(operations)
   switch (field(body, 'zoneId')) {
     case 'fixture.stone-bend':
       return HttpResponse.json(partyMovedToStoneBendFixture)
@@ -748,6 +781,72 @@ function marketScenario(operations: unknown): Response {
 }
 
 /**
+ * `visitBlacksmith` e `artificerWorkshop`, formato (cenário "Formato" do
+ * CONTRATO §3 FEAT-17): a primeira operação fora do formato responde o `400`.
+ */
+function blacksmithFormatScenario(operations: unknown): Response | undefined {
+  if (!Array.isArray(operations)) return undefined
+  const known = ['repair', 'refine', 'enchant', 'craft']
+  for (const [index, item] of operations.entries()) {
+    const invalid = (key: string, reason: string) =>
+      HttpResponse.json(
+        marketInvalidFixture(`operations.${index}.${key}`, reason),
+        { status: 400 },
+      )
+    const operation = field(item, 'operation')
+    if (!known.includes(String(operation)))
+      return invalid('operation', 'unknownOperation')
+    const location = field(field(item, 'target'), 'location')
+    if (
+      operation !== 'craft' &&
+      location !== 'equipment' &&
+      location !== 'inventory'
+    )
+      return invalid('target.location', 'unknownOption')
+    const slotIndex = field(item, 'inventorySlotIndex')
+    if (
+      operation === 'craft' &&
+      (typeof slotIndex !== 'number' ||
+        !Number.isInteger(slotIndex) ||
+        slotIndex < 0)
+    )
+      return invalid('inventorySlotIndex', 'notNonNegativeInteger')
+  }
+  return undefined
+}
+
+/**
+ * `visitBlacksmith`: tabela dos cenários do CONTRATO §3 FEAT-17 pela forma do
+ * lote (D-63 item 6). Sem estado nem simulação: com `enchant` → "Lote com
+ * falha e quebra"; dois consertos → `notBroken` na operação 1; um refino só →
+ * `equipmentBroken` ("Lote recusado"); conserto → "Consertar"; `craft` do
+ * slot 2 (o Projeto do grupo do ferreiro) → "Criar", de outro → `recipeMissing`.
+ * Qualquer outro lote devolve o "Lote com falha e quebra".
+ */
+function blacksmithScenario(operations: unknown): Response {
+  const list: unknown[] = Array.isArray(operations) ? operations : []
+  const refuse = (reason: string, operationIndex: number) =>
+    HttpResponse.json(blacksmithRefusalFixture({ reason, operationIndex }), {
+      status: 409,
+    })
+  const kinds = list.map((item) => field(item, 'operation'))
+  if (kinds.includes('enchant'))
+    return HttpResponse.json(partyBlacksmithBatchFixture)
+  if (kinds.length === 2 && kinds.every((kind) => kind === 'repair'))
+    return refuse('notBroken', 1)
+  if (kinds.length === 1 && kinds[0] === 'refine')
+    return refuse('equipmentBroken', 0)
+  if (kinds[0] === 'repair')
+    return HttpResponse.json(partyBlacksmithRepairedFixture)
+  const craftIndex = kinds.indexOf('craft')
+  if (craftIndex >= 0)
+    return field(list[craftIndex], 'inventorySlotIndex') === 2
+      ? HttpResponse.json(partyBlacksmithCraftedFixture)
+      : refuse('recipeMissing', craftIndex)
+  return HttpResponse.json(partyBlacksmithBatchFixture)
+}
+
+/**
  * POST /lab/parties/:partyId/members/:memberId/grants: tabela dos cenários do
  * contrato (D-58 item 4), na ordem do contrato: membro, corpo, carta.
  */
@@ -863,6 +962,8 @@ function knownParty(
     partyId === partyNoPointsFixture.id ||
     partyId === partyGearInSessionFixture.id ||
     partyId === partyWithBoosterFixture.id ||
+    partyId === partyBlacksmithFixture.id ||
+    partyId === partyArtificerFixture.id ||
     partyId === partyFishingRodInSessionFixture.id ||
     partyId === partyEffectsReadyFixture.id ||
     partyId === partyRandomEventReadyFixture.id ||
@@ -1369,6 +1470,8 @@ export const handlers: RequestHandler[] = [
             partyNoPointsFixture,
             partyGearInSessionFixture,
             partyWithBoosterFixture,
+            partyBlacksmithFixture,
+            partyArtificerFixture,
             partyFishingRodInSessionFixture,
             partyEffectsReadyFixture,
             partyRandomEventReadyFixture,
@@ -1392,6 +1495,8 @@ export const handlers: RequestHandler[] = [
             partyNoPointsFixture,
             partyGearInSessionFixture,
             partyWithBoosterFixture,
+            partyBlacksmithFixture,
+            partyArtificerFixture,
             partyFishingRodInSessionFixture,
             partyEffectsReadyFixture,
             partyRandomEventReadyFixture,

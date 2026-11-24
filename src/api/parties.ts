@@ -13,6 +13,12 @@ import {
 import { z } from 'zod'
 import { playerMarketFields, type VisitMarketAction } from './market'
 import {
+  equipmentStateSchema,
+  playerBlacksmithFields,
+  type ArtificerWorkshopAction,
+  type VisitBlacksmithAction,
+} from './blacksmith'
+import {
   executableRandomEventCardSchema,
   modifierValuesSchema,
   playerClassSchema,
@@ -95,12 +101,14 @@ export const partyActionTypeSchema = z.enum([
   'prepare',
   'adjustDeck',
   'abandonQuest',
+  'artificerWorkshop',
   'scavenge',
   'useVault',
   'takeQuest',
   'continueQuest',
   'finishQuest',
   'takeTrialQuest',
+  'visitBlacksmith',
   'visitMarket',
   'trainWithMentor',
   'saveRespawnPoint',
@@ -129,6 +137,8 @@ export type CardCopies = z.infer<typeof cardCopiesSchema>
 export const inventorySlotSchema = z.object({
   cardId: z.string(),
   quantity: z.number().int().min(1),
+  /** FEAT-17: só em equipamento (no inventário e no cofre). */
+  equipmentState: equipmentStateSchema.optional(),
 })
 export type InventorySlot = z.infer<typeof inventorySlotSchema>
 
@@ -221,6 +231,8 @@ export const playerStateSchema = z.object({
   ...randomEventPlayerFields,
   /** Mercado, expansões e resultados, prontos do backend (FEAT-16, D-62). */
   ...playerMarketFields,
+  /** Estado do equipamento, ferreiro e resultado, prontos do backend (FEAT-17, D-63). */
+  ...playerBlacksmithFields,
 })
 export type PlayerState = z.infer<typeof playerStateSchema>
 
@@ -421,6 +433,8 @@ export type PartyAction =
   | UseVaultAction
   | ScavengeAction
   | VisitMarketAction
+  | VisitBlacksmithAction
+  | ArtificerWorkshopAction
   | RandomEventAction
   | ResolveRewardAction
   | CombatAction
@@ -576,6 +590,23 @@ export const actionNotAllowedDetailsSchema = z.object({
     'notLotMultiple',
     'notBooster',
     'boosterEmpty',
+    // FEAT-17
+    'artificerInactive',
+    'equipmentNotFound',
+    'notBroken',
+    'equipmentBroken',
+    'notRefinable',
+    'refinementMaterialsMissing',
+    'refineLevelMax',
+    'refineLevelTooHigh',
+    'enchantNotAvailable',
+    'enchantmentNotOffered',
+    'notEnchantable',
+    'enchantSlotUnavailable',
+    'replaceIndexRequired',
+    'replaceIndexInvalid',
+    'recipeMissing',
+    'materialsMissing',
   ]),
   questId: z.string().optional(),
   questCardId: z.string().optional(),
@@ -584,7 +615,7 @@ export const actionNotAllowedDetailsSchema = z.object({
   checks: z.array(eventMinimumCheckSchema).optional(),
   /** Carta envolvida na recusa, inclusive `paymentInvalid` (FEAT-11). */
   cardId: z.string().optional(),
-  /** FEAT-32 e FEAT-16: no `useVault` e no `visitMarket`, índice da operação recusada (a partir de 0). */
+  /** FEAT-32, FEAT-16 e FEAT-17: nos lotes (cofre, mercado, ferreiro), índice da operação recusada (a partir de 0). */
   operationIndex: nonNegativeInt.optional(),
 })
 export type ActionNotAllowedDetails = z.infer<

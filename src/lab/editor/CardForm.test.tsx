@@ -668,11 +668,8 @@ describe('REQ-21: equipamento', () => {
     expect(field('Bloqueia escudo')).toBeChecked()
     expect(field('Refino')).toBeChecked()
     expect(field('Nível máximo')).toHaveValue('3')
-    expect(field('Materiais')).toHaveValue('1 Minério de Ferro por nível.')
-    expect(field('Encantamento')).toBeChecked()
-    expect(field('Texto do encantamento')).toHaveValue(
-      'Encantamento: causa dano sombrio extra.',
-    )
+    // FEAT-17: materiais em lista e Lâmina sem encantamento (controles na T-76).
+    expect(field('Encantamento')).not.toBeChecked()
     expect(field('Ajuste de preço')).toHaveValue('1')
   })
 
@@ -738,30 +735,17 @@ describe('REQ-21: equipamento', () => {
     expect(saveButton()).toBeEnabled()
   })
 
-  it('REQ-21: "Refino" ligado mostra "Nível máximo" e "Materiais" e exige os dois; desligado, não aparecem', async () => {
+  it('REQ-21: "Refino" ligado mostra "Nível máximo" e o exige; desligado, não aparece', async () => {
     await newEquipment()
     fillEspada()
     expect(within(form()).queryByLabelText('Nível máximo')).toBeNull()
-    expect(within(form()).queryByLabelText('Materiais')).toBeNull()
     fireEvent.click(field('Refino'))
     expect(saveButton()).toBeDisabled()
     type('Nível máximo', '3')
-    expect(saveButton()).toBeDisabled()
-    type('Materiais', 'Minério')
     expect(saveButton()).toBeEnabled()
     type('Nível máximo', 'três')
     expect(saveButton()).toBeDisabled()
     fireEvent.click(field('Refino'))
-    expect(saveButton()).toBeEnabled()
-  })
-
-  it('REQ-21: "Encantamento" ligado mostra o texto e o exige', async () => {
-    await newEquipment()
-    fillEspada()
-    expect(within(form()).queryByLabelText('Texto do encantamento')).toBeNull()
-    fireEvent.click(field('Encantamento'))
-    expect(saveButton()).toBeDisabled()
-    type('Texto do encantamento', 'Brilha.')
     expect(saveButton()).toBeEnabled()
   })
 
@@ -846,9 +830,7 @@ describe('REQ-21: equipamento', () => {
     fireEvent.click(field('Bloqueia escudo'))
     fireEvent.click(field('Refino'))
     type('Nível máximo', '3')
-    type('Materiais', 'Minério')
     fireEvent.click(field('Encantamento'))
-    type('Texto do encantamento', 'Brilha.')
     type('Ajuste de preço', '1.5')
     fireEvent.click(
       within(group('Modificadores')).getByRole('button', { name: 'Adicionar' }),
@@ -863,8 +845,8 @@ describe('REQ-21: equipamento', () => {
       peakRequirement: 2,
       classRestriction: ['warrior', 'mage'],
       blocksShield: true,
-      refinement: { maxLevel: 3, materials: { text: 'Minério' } },
-      enchantment: { text: 'Brilha.' },
+      refinement: { maxLevel: 3, materials: [] },
+      enchantment: { slots: [] },
       priceMultiplier: 1.5,
       modifiers: [{ modifier: 'defense', value: 2 }],
     })

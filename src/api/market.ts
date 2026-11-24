@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { equipmentStateSchema } from './blacksmith'
 
 /**
  * Mercado (CONTRATO §3 FEAT-16, D-62): projeção com preços, resultado da
@@ -53,6 +54,9 @@ export const marketViewSchema = z.object({
       owned: positive,
       lotSize: positive,
       price: count,
+      /** FEAT-17: equipamento do inventário, uma oferta por cópia. */
+      inventorySlotIndex: count.optional(),
+      equipmentState: equipmentStateSchema.optional(),
     }),
   ),
 })
@@ -146,6 +150,8 @@ export type MarketOperation =
       source: 'inventory' | 'tcgFolder'
       cardId: string
       quantity: number
+      /** FEAT-17: a cópia de equipamento a vender (sem ela, as de estado padrão primeiro). */
+      inventorySlotIndex?: number
     }
   | { operation: 'buyExpansion'; expansion: MarketExpansion }
 
