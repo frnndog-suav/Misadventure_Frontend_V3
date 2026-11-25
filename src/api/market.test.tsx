@@ -178,6 +178,7 @@ describe('REQ-74: Ir ao Mercado (lote)', () => {
           quantity: 2,
           copiesReceived: 20,
           gold: -8,
+          received: [{ space: 'inventory', quantity: 20 }],
         },
       ],
       goldLost: 0,

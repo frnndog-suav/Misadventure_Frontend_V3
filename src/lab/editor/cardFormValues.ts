@@ -125,6 +125,8 @@ export interface ZoneForm {
   marketEnabled: boolean
   marketStock: string[]
   marketSingles: boolean
+  /** FEAT-18: Estábulo, só transportado até a T-81 (salvar não apaga). */
+  marketMounts: string[]
   /** FEAT-17 (REQ-78): desmarcado = `blacksmith: null`; o que foi digitado fica guardado. */
   blacksmithEnabled: boolean
   blacksmithEnchantments: EnchantmentForm[]
@@ -470,6 +472,19 @@ export type QuestForm = {
   rewards: string
 }
 
+/** FEAT-18 (README 26): campos transportados; os controles são da T-81. */
+export interface MountForm {
+  type: 'mount'
+  slug: string
+  name: string
+  flavorText: string
+  rarity: Rarity | ''
+  mountTypes: EnemyType[]
+  creature: string
+  effects: EffectForm[]
+  abilities: AbilityForm[]
+}
+
 export type CardForm =
   | QuestForm
   | ZoneForm
@@ -479,6 +494,7 @@ export type CardForm =
   | RandomEventForm
   | CombatEventForm
   | DimensionForm
+  | MountForm
 
 export type FormCardType = CardForm['type']
 
@@ -536,6 +552,19 @@ export function emptyForm(type: FormCardType): CardForm {
         marketEnabled: false,
         marketStock: [],
         marketSingles: false,
+        marketMounts: [],
+      }
+    case 'mount':
+      return {
+        type,
+        slug: '',
+        name: '',
+        flavorText: '',
+        rarity: '',
+        mountTypes: [],
+        creature: '',
+        effects: [],
+        abilities: [],
       }
     case 'attribute':
       return {
@@ -696,6 +725,7 @@ export function formFromCard(card: Card): CardForm {
         marketEnabled: card.market !== null,
         marketStock: card.market?.stock ?? [],
         marketSingles: card.market?.singles ?? false,
+        marketMounts: card.market?.mounts ?? [],
         blacksmithEnabled: card.blacksmith !== null,
         blacksmithEnchantments:
           card.blacksmith?.enchantments.map(enchantmentToForm) ?? [],
@@ -861,6 +891,18 @@ export function formFromCard(card: Card): CardForm {
           })),
         })),
       }
+    case 'mount':
+      return {
+        type: 'mount',
+        slug: slugOf(card),
+        name: card.name,
+        flavorText: card.flavorText ?? '',
+        rarity: card.rarity,
+        mountTypes: [...card.mountTypes],
+        creature: card.creature,
+        effects: card.effects.map(effectToForm),
+        abilities: card.abilities.map(abilityFromCard),
+      }
     default: {
       const _exhaustive: never = card
       return _exhaustive
@@ -990,12 +1032,39 @@ export function toInput(form: CardForm): CardInput | null {
         zoneActions: form.zoneActions,
         effects,
         market: form.marketEnabled
-          ? { stock: form.marketStock, singles: form.marketSingles }
+          ? {
+              stock: form.marketStock,
+              singles: form.marketSingles,
+              mounts: form.marketMounts,
+            }
           : null,
         blacksmith:
           form.blacksmithEnabled && enchantments !== null
             ? { enchantments }
             : null,
+      }
+    }
+    case 'mount': {
+      const effects = toEffects(form.effects, effectSchema)
+      const abilities = toAbilities(form.abilities)
+      if (
+        effects === undefined ||
+        abilities === null ||
+        !filled(form.slug) ||
+        !filled(form.name) ||
+        form.rarity === ''
+      )
+        return null
+      return {
+        slug: form.slug,
+        type: 'mount',
+        name: form.name,
+        flavorText: filled(form.flavorText) ? form.flavorText : null,
+        rarity: form.rarity,
+        mountTypes: form.mountTypes,
+        creature: form.creature,
+        effects,
+        abilities,
       }
     }
     case 'attribute': {

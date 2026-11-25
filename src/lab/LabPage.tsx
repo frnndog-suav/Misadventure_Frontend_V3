@@ -147,6 +147,14 @@ const fieldLabels: Record<NumericKey, string> = {
   artificerRepairDiscountPercent: 'Desconto do conserto na Oficina (%)',
   artificerMaxRefineLevel: 'Refino máximo na Oficina',
   artificerD20Bonus: 'Bônus do Artífice no D20',
+  // FEAT-18 (REQ-82; textos confirmados na T-81)
+  mountPriceCommon: 'Montaria comum: preço base',
+  mountPriceUncommon: 'Montaria incomum: preço base',
+  mountPriceRare: 'Montaria rara: preço base',
+  mountPriceEpic: 'Montaria épica: preço base',
+  mountPriceLegendary: 'Montaria lendária: preço base',
+  mountInventorySlots: 'Slots do inventário extra da montaria',
+  mountFolderCapacity: 'Capacidade da pasta extra da montaria',
 }
 
 const fieldKeys = Object.keys(fieldLabels) as NumericKey[]

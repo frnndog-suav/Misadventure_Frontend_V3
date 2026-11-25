@@ -488,6 +488,7 @@ function soloAfterOption(
             actorId: member.id,
             abilityId: combatAbility.abilityId,
             equipmentSlot: 'weapon',
+            mountAbility: false,
           }
         : {
             type: 'combatEffectActivated',

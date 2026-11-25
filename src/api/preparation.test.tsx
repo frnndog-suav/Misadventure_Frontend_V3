@@ -186,6 +186,7 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
       combatEvent: 1,
       zoneQuest: 0,
       dimension: 1,
+      mount: 2,
     })
     const counts: Record<string, unknown> = {
       ...collectionsFixture[0].cardCounts,
@@ -199,7 +200,7 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
     ).toBe(false)
   })
 
-  it('REQ-28: o handler padrão da coleção fixture lista as 29 cartas na ordem de id', async () => {
+  it('REQ-28: o handler padrão da coleção fixture lista as 31 cartas na ordem de id', async () => {
     const response = await fetch(
       'http://localhost:3000/catalog/collections/fixture/cards',
     )
@@ -227,6 +228,7 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
       'fixture.oak-shield',
       'fixture.old-mine',
       'fixture.pickaxe',
+      'fixture.plow-horse',
       'fixture.short-sword',
       'fixture.silver-fish',
       'fixture.stone-bend',
@@ -234,10 +236,11 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
       'fixture.strength-tonic',
       'fixture.sword-blueprint',
       'fixture.test-dimension',
+      'fixture.war-pony',
       'fixture.whispering-grove',
       'fixture.wounded-traveler',
     ])
-    expect(fixtureCardsFixture).toHaveLength(29)
+    expect(fixtureCardsFixture).toHaveLength(31)
   })
 })
 
@@ -514,6 +517,12 @@ describe('REQ-30: Party preparado (dimension, turnOrder, player)', () => {
       lastKnockout: null,
       skipNextTurn: false,
       moveTargets: ['fixture.stone-bend', 'fixture.whispering-grove'],
+      // FEAT-18 (CONTRATO v0.88, cenário "Estado inicial")
+      moveRoutes: [
+        { zoneId: 'fixture.stone-bend', direct: true, via: [] },
+        { zoneId: 'fixture.whispering-grove', direct: true, via: [] },
+      ],
+      mount: null,
       availableActions: [
         'move',
         'recover',

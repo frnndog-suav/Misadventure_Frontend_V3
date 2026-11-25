@@ -183,7 +183,7 @@ describe('REQ-08: useCollections (GET /catalog/collections)', () => {
 })
 
 describe('REQ-08: useCards (GET /catalog/collections/:collectionId/cards)', () => {
-  it('REQ-08: sem type, pede sem query e entrega as 29 cartas na ordem recebida', async () => {
+  it('REQ-08: sem type, pede sem query e entrega as 31 cartas na ordem recebida', async () => {
     let search = 'x'
     server.use(
       http.get('*/catalog/collections/:collectionId/cards', ({ request }) => {
@@ -215,6 +215,7 @@ describe('REQ-08: useCards (GET /catalog/collections/:collectionId/cards)', () =
       'fixture.oak-shield',
       'fixture.old-mine',
       'fixture.pickaxe',
+      'fixture.plow-horse',
       'fixture.short-sword',
       'fixture.silver-fish',
       'fixture.stone-bend',
@@ -222,6 +223,7 @@ describe('REQ-08: useCards (GET /catalog/collections/:collectionId/cards)', () =
       'fixture.strength-tonic',
       'fixture.sword-blueprint',
       'fixture.test-dimension',
+      'fixture.war-pony',
       'fixture.whispering-grove',
       'fixture.wounded-traveler',
     ])

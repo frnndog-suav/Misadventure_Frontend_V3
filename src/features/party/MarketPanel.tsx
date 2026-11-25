@@ -28,6 +28,8 @@ const sourceLabel = { inventory: 'Inventário', tcgFolder: 'Pasta de TCG' }
 const destinationLabel = {
   inventory: 'o inventário',
   tcgFolder: 'a pasta de TCG',
+  mountInventory: 'o inventário extra',
+  mountTcgFolder: 'a pasta extra',
 }
 
 /** Oferta de venda de uma operação; equipamento, pela cópia (REQ-79). */
@@ -63,6 +65,10 @@ function describeOperation(
       return `Vender ${op.quantity}× ${nameOf(cards, op.cardId)}${equipmentStateSuffix(sellOffer(market, op)?.equipmentState)}`
     case 'buyExpansion':
       return `Comprar ${expansionLabel[op.expansion]}`
+    case 'buyMount':
+      return `Comprar a montaria ${nameOf(cards, op.cardId)}`
+    case 'sellMount':
+      return `Vender a montaria ${nameOf(cards, market.stable?.currentMount?.cardId ?? '')}`
     default: {
       const _exhaustive: never = op
       return _exhaustive
@@ -109,6 +115,13 @@ function forecast(
       case 'buyExpansion':
         pay +=
           market.services.find((s) => s.expansion === op.expansion)?.price ?? 0
+        break
+      case 'buyMount':
+        pay +=
+          market.stable?.offers.find((o) => o.cardId === op.cardId)?.price ?? 0
+        break
+      case 'sellMount':
+        receive += market.stable?.currentMount?.price ?? 0
         break
       default: {
         const _exhaustive: never = op
@@ -447,6 +460,10 @@ function resultText(result: MarketOperationResult, cards: Cards): string {
       return `Vendeu ${result.quantity}× ${name(result.cardId)} por ${result.gold} de ouro`
     case 'buyExpansion':
       return `Comprou ${expansionLabel[result.expansion]} por ${-result.gold} de ouro (capacidade ${result.capacity})`
+    case 'buyMount':
+      return `Comprou a montaria ${name(result.cardId)} por ${-result.gold} de ouro`
+    case 'sellMount':
+      return `Vendeu a montaria ${name(result.cardId)} por ${result.gold} de ouro`
     default: {
       const _exhaustive: never = result
       return _exhaustive

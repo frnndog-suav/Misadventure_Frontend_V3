@@ -56,7 +56,7 @@ export class LabGrantInvalidError extends ApiError {
 }
 
 export const labGrantNoSpaceDetailsSchema = z.object({
-  reason: z.enum(['inventoryFull', 'tcgFolderFull']),
+  reason: z.enum(['inventoryFull', 'tcgFolderFull', 'mountAlreadyOwned']),
 })
 export type LabGrantNoSpaceDetails = z.infer<
   typeof labGrantNoSpaceDetailsSchema

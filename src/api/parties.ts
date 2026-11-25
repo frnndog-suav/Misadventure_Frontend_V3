@@ -30,6 +30,7 @@ import {
   combatStateSchema,
   combatUpdateSchema,
   triggeredEffectChoiceSchema,
+  type AbilitySource,
   type CombatAction,
   type ResolveTriggeredEffectAction,
 } from './combat'
@@ -142,6 +143,24 @@ export const inventorySlotSchema = z.object({
 })
 export type InventorySlot = z.infer<typeof inventorySlotSchema>
 
+/** FEAT-18 (README 26): montaria, inventário extra e pasta extra. */
+export const mountStateSchema = z.object({
+  cardId: z.string(),
+  inventory: z.array(inventorySlotSchema),
+  inventoryCapacity: nonNegativeInt,
+  tcgFolder: z.array(cardCopiesSchema),
+  tcgFolderCapacity: nonNegativeInt,
+})
+export type MountState = z.infer<typeof mountStateSchema>
+
+/** FEAT-18: para cada destino de `moveTargets`, travessia direta e zonas do meio. */
+export const moveRouteSchema = z.object({
+  zoneId: z.string(),
+  direct: z.boolean(),
+  via: z.array(z.string()),
+})
+export type MoveRoute = z.infer<typeof moveRouteSchema>
+
 /** As 8 categorias de equipamento em uso; `null` = slot vazio (FEAT-10). */
 const equipmentInUseSchema = z.object({
   head: z.string().nullable(),
@@ -197,6 +216,10 @@ export const playerStateSchema = z.object({
   skipNextTurn: z.boolean().default(false),
   /** Destinos válidos do Movimentar, prontos do backend (FEAT-07, D-55). */
   moveTargets: z.array(z.string()),
+  /** FEAT-18: rotas de cada destino (legado: `[]`). */
+  moveRoutes: z.array(moveRouteSchema).default([]),
+  /** FEAT-18: `null` = sem montaria (saves anteriores). */
+  mount: mountStateSchema.nullable().default(null),
   /** Ações que o jogador pode mandar agora, prontas do backend (FEAT-08, D-56). */
   availableActions: z.array(partyActionTypeSchema),
   // Saves e respostas de versões anteriores do backend omitem os campos da FEAT-13.
@@ -225,7 +248,13 @@ export const playerStateSchema = z.object({
     .object({
       cardId: z.string(),
       found: z.boolean(),
-      delivery: z.enum(['inventory', 'pending', 'left', 'none']),
+      delivery: z.enum([
+        'inventory',
+        'mountInventory',
+        'pending',
+        'left',
+        'none',
+      ]),
     })
     .nullable(),
   ...randomEventPlayerFields,
@@ -444,6 +473,8 @@ export type PartyAction =
 export interface MoveAction {
   type: 'move'
   zoneId: string
+  /** FEAT-18: zona do meio; só com montaria. */
+  viaZoneId?: string
 }
 
 /** Encerrar a vez (README 11.1); sem campos. */
@@ -466,13 +497,12 @@ export interface AdjustDeckAction {
 /** Preparar (README 12.2, parte a): equipar uma carta ou guardar um slot. */
 export type PrepareAction =
   | { type: 'prepare'; operation: 'equip'; cardId: string }
-  | {
+  | ({
       type: 'prepare'
       operation: 'useAbility'
-      equipmentSlot: EquipmentSlot
       abilityId: string
       payment?: EventPayment
-    }
+    } & AbilitySource)
   | { type: 'prepare'; operation: 'unequip'; slot: EquipmentSlot }
   | {
       type: 'prepare'
@@ -483,6 +513,16 @@ export type PrepareAction =
     }
   /** FEAT-16: abre 1 booster do inventário (README 24.3). */
   | { type: 'prepare'; operation: 'openBooster'; cardId: string }
+  /** FEAT-18 (Apêndice B U1): gratuita; `inventorySlotIndex` escolhe a cópia de equipamento. */
+  | {
+      type: 'prepare'
+      operation: 'transferMount'
+      direction: 'toMount' | 'fromMount'
+      space: 'inventory' | 'tcgFolder'
+      cardId: string
+      quantity: number
+      inventorySlotIndex?: number
+    }
 
 /** Usar cofre (README 6.4, 12.2): lote aplicado em ordem pelo backend (D-59). */
 export interface UseVaultAction {
@@ -607,6 +647,11 @@ export const actionNotAllowedDetailsSchema = z.object({
     'replaceIndexInvalid',
     'recipeMissing',
     'materialsMissing',
+    // FEAT-18
+    'noMount',
+    'mountAlreadyOwned',
+    'mountNotOffered',
+    'mountNotEmpty',
   ]),
   questId: z.string().optional(),
   questCardId: z.string().optional(),

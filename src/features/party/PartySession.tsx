@@ -540,6 +540,10 @@ function reasonText(error: ActionNotAllowedError, name: string): string {
     case 'replaceIndexInvalid':
     case 'recipeMissing':
     case 'materialsMissing':
+    case 'noMount': // FEAT-18: textos próprios nas T-82 a T-86.
+    case 'mountAlreadyOwned':
+    case 'mountNotOffered':
+    case 'mountNotEmpty':
       return error.message
     case 'notBooster':
       return `${name} não é um booster.`
@@ -757,6 +761,10 @@ function vaultReasonText(error: ActionNotAllowedError, name: string): string {
     case 'replaceIndexInvalid':
     case 'recipeMissing':
     case 'materialsMissing':
+    case 'noMount': // FEAT-18: textos próprios nas T-82 a T-86.
+    case 'mountAlreadyOwned':
+    case 'mountNotOffered':
+    case 'mountNotEmpty':
       return error.message
     case 'notBooster':
       return `${name} não é um booster.`
@@ -1855,6 +1863,7 @@ export function PartySession() {
         const name = nameOf(cards.cards, last.cardId)
         status = {
           inventory: `Você achou ${name}.`,
+          mountInventory: `Você achou ${name}; foi para o inventário extra.`,
           pending: `${name} aguarda uma escolha.`,
           left: `Você deixou ${name}.`,
           none: `${name} não estava no deck de recompensas.`,

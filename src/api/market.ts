@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { equipmentStateSchema } from './blacksmith'
+import { receiveSpaceSchema } from './vocabulary'
 
 /**
  * Mercado (CONTRATO §3 FEAT-16, D-62): projeção com preços, resultado da
@@ -21,7 +22,24 @@ export const marketExpansionSchema = z.enum([
 export type MarketExpansion = z.infer<typeof marketExpansionSchema>
 
 const sellSource = z.enum(['inventory', 'tcgFolder'])
-const singleDestination = z.enum(['inventory', 'tcgFolder'])
+/** FEAT-18: quanto entrou em cada espaço (legado: `[]`). */
+const received = z
+  .array(
+    z.object({
+      space: z.enum(['inventory', 'mountInventory']),
+      quantity: positive,
+    }),
+  )
+  .default([])
+
+/** FEAT-18 (README 26): Estábulo; só em zona com montarias à venda. */
+export const stableViewSchema = z.object({
+  offers: z.array(z.object({ cardId: id, price: count })),
+  currentMount: z
+    .object({ cardId: id, price: count, sellable: z.boolean() })
+    .nullable(),
+})
+export type StableView = z.infer<typeof stableViewSchema>
 
 export const marketViewSchema = z.object({
   zoneId: id,
@@ -35,7 +53,7 @@ export const marketViewSchema = z.object({
       z.object({
         slotIndex: count,
         offer: z
-          .object({ cardId: id, price: count, destination: singleDestination })
+          .object({ cardId: id, price: count, destination: receiveSpaceSchema })
           .nullable(),
       }),
     )
@@ -59,6 +77,7 @@ export const marketViewSchema = z.object({
       equipmentState: equipmentStateSchema.optional(),
     }),
   ),
+  stable: stableViewSchema.nullable().default(null),
 })
 export type MarketView = z.infer<typeof marketViewSchema>
 
@@ -69,18 +88,20 @@ export const marketOperationResultSchema = z.discriminatedUnion('operation', [
     quantity: positive,
     copiesReceived: positive,
     gold: z.number().int(),
+    received,
   }),
   z.object({
     operation: z.literal('buyBooster'),
     cardId: id,
     quantity: positive,
     gold: z.number().int(),
+    received,
   }),
   z.object({
     operation: z.literal('buySingle'),
     slotIndex: count,
     cardId: id,
-    destination: singleDestination,
+    destination: receiveSpaceSchema,
     gold: z.number().int(),
   }),
   z.object({
@@ -94,6 +115,16 @@ export const marketOperationResultSchema = z.discriminatedUnion('operation', [
     operation: z.literal('buyExpansion'),
     expansion: marketExpansionSchema,
     capacity: count,
+    gold: z.number().int(),
+  }),
+  z.object({
+    operation: z.literal('buyMount'),
+    cardId: id,
+    gold: z.number().int(),
+  }),
+  z.object({
+    operation: z.literal('sellMount'),
+    cardId: id,
     gold: z.number().int(),
   }),
 ])
@@ -112,7 +143,7 @@ export const boosterOpeningResultSchema = z.object({
   cards: z.array(
     z.object({
       cardId: id,
-      destination: z.enum(['tcgFolder', 'inventory', 'vault', 'pending']),
+      destination: z.union([receiveSpaceSchema, z.enum(['vault', 'pending'])]),
     }),
   ),
 })
@@ -154,6 +185,10 @@ export type MarketOperation =
       inventorySlotIndex?: number
     }
   | { operation: 'buyExpansion'; expansion: MarketExpansion }
+  /** FEAT-18: a montaria chega vazia. */
+  | { operation: 'buyMount'; cardId: string }
+  /** FEAT-18: a montaria sai do jogo. */
+  | { operation: 'sellMount' }
 
 /** Ir ao Mercado (README 12.2, 24): 1 PA, lote aplicado em ordem (D-62). */
 export interface VisitMarketAction {

@@ -137,7 +137,9 @@ describe('REQ-72: campos do mercado nas cartas', () => {
 
   it('REQ-72: zona com market sem estoque e sem singles mostra "Sem estoque." e "Sem singles"', () => {
     renderWithClient(
-      <ZoneCard card={{ ...harbor, market: { stock: [], singles: false } }} />,
+      <ZoneCard
+        card={{ ...harbor, market: { stock: [], singles: false, mounts: [] } }}
+      />,
     )
     expect(screen.getByText('Sem estoque.')).toBeVisible()
     expect(screen.getByText('Sem singles')).toBeVisible()

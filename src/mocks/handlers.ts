@@ -6,6 +6,7 @@ import {
 } from './questEditorFixtures'
 import { getQuestScenario, questPartyAction } from './questFixtures'
 import { knockoutAction, knockoutParty } from './knockoutFixtures'
+import { mountAction, mountGrant, mountParty } from './mountFixtures'
 import { knockoutConfigLimits, questConfigLimits } from '../api/labConfig'
 import type { GameConfigValues } from '../api/labConfig'
 import { http, HttpResponse, type RequestHandler } from 'msw'
@@ -240,6 +241,9 @@ async function partyActionScenario(
 ): Promise<Response> {
   const body: unknown = await request.json().catch(() => undefined)
   const type = field(body, 'type')
+  // FEAT-18 (D-64 item 6): montaria, Estábulo, Transferir e rotas.
+  const mount = mountAction(partyId, body)
+  if (mount) return mount
   const quest = questParty(partyId)
   if (quest) return questPartyAction(quest, body)
   const knockout = knockoutParty(partyId)
@@ -851,6 +855,7 @@ function blacksmithScenario(operations: unknown): Response {
  * contrato (D-58 item 4), na ordem do contrato: membro, corpo, carta.
  */
 async function labGrantScenario(
+  partyId: unknown,
   memberId: unknown,
   request: Request,
 ): Promise<Response> {
@@ -858,6 +863,8 @@ async function labGrantScenario(
     return HttpResponse.json(memberNotFoundFixture, { status: 404 })
   }
   const body = await jsonBody(request)
+  const mount = mountGrant(partyId, body)
+  if (mount) return mount
   if (field(body, 'type') === 'gold') {
     return HttpResponse.json(partyGrantedGoldFixture)
   }
@@ -955,6 +962,7 @@ function knownParty(
   ok: () => Response | Promise<Response>,
 ): Response | Promise<Response> {
   return questParty(partyId) !== undefined ||
+    mountParty(partyId) !== undefined ||
     knockoutParty(partyId) !== undefined ||
     combatScenario(partyId) !== undefined ||
     eventScenario(partyId) !== undefined ||
@@ -1463,6 +1471,7 @@ export const handlers: RequestHandler[] = [
     knownParty(params.partyId, () =>
       HttpResponse.json(
         questParty(params.partyId) ??
+          mountParty(params.partyId) ??
           knockoutParty(params.partyId) ??
           combatScenario(params.partyId)?.party ??
           eventScenarioParty(params.partyId) ??
@@ -1488,6 +1497,7 @@ export const handlers: RequestHandler[] = [
     knownParty(params.partyId, () =>
       HttpResponse.json(
         questParty(params.partyId, 'inSession') ??
+          mountParty(params.partyId) ??
           knockoutParty(params.partyId, 'inSession') ??
           combatScenario(params.partyId)?.party ??
           eventScenarioParty(params.partyId) ??
@@ -1527,7 +1537,7 @@ export const handlers: RequestHandler[] = [
     '*/lab/parties/:partyId/members/:memberId/grants',
     ({ params, request }) =>
       knownParty(params.partyId, () =>
-        labGrantScenario(params.memberId, request),
+        labGrantScenario(params.partyId, params.memberId, request),
       ),
   ),
   http.delete('*/parties/:partyId', ({ params }) =>

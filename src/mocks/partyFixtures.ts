@@ -34,6 +34,11 @@ const gear = (cardId: string) => ({
   equipmentState: standardEquipmentState,
 })
 
+/** Rotas sem montaria: uma travessia direta por destino (CONTRATO v0.88). */
+export function directRoutes(moveTargets: string[]) {
+  return moveTargets.map((zoneId) => ({ zoneId, direct: true, via: [] }))
+}
+
 const member: Party['members'][number] = {
   id: 'member-lia',
   characterName: 'Lia',
@@ -76,6 +81,12 @@ const member: Party['members'][number] = {
     lastKnockout: null,
     skipNextTurn: false,
     moveTargets: ['fixture.stone-bend', 'fixture.whispering-grove'],
+    // FEAT-18: sem montaria, todas as rotas são diretas.
+    moveRoutes: directRoutes([
+      'fixture.stone-bend',
+      'fixture.whispering-grove',
+    ]),
+    mount: null,
     // FEAT-32, FEAT-16 e FEAT-17: a cidade inicial tem `useVault`,
     // `visitBlacksmith` e `visitMarket` (CONTRATO v0.85).
     availableActions: [
@@ -175,6 +186,8 @@ const member: Party['members'][number] = {
         { expansion: 'vaultGold', price: 500, capacity: 4000 },
       ],
       sellOffers: [],
+      // FEAT-18: Porto Cinzento sem Estábulo.
+      stable: null,
     },
     lastMarketVisit: null,
     lastBoosterOpening: null,
@@ -298,6 +311,7 @@ function partyMovedTo(zoneId: string, moveTargets: string[]): Party {
           ...member.player,
           zoneId,
           moveTargets,
+          moveRoutes: directRoutes(moveTargets),
           // Fora da cidade: sem `useVault` (FEAT-32), sem mercado (FEAT-16)
           // e sem ferreiro (FEAT-17).
           market: null,

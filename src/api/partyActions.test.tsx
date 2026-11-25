@@ -893,7 +893,9 @@ it('REQ-59: a full slot must be freed before presenting the reserve reward', asy
       type: 'resolveReward',
       rewardId: 'r1',
       choice: 'keep',
-      discard: [{ cardId: 'fixture.silver-fish', copies: 1 }],
+      discard: [
+        { cardId: 'fixture.silver-fish', space: 'inventory', copies: 1 },
+      ],
     })
     expect(party.pendingRewards).toMatchObject([
       { id: 'r2', origin: { type: 'reserveDeck' } },

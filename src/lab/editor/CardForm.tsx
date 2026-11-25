@@ -1964,6 +1964,9 @@ function TypeFields({
       return <CombatEventFields values={values} set={set} errors={errors} />
     case 'dimension':
       return <DimensionFields values={values} set={set} errors={errors} />
+    case 'mount':
+      // Os campos da montaria entram na T-81 (REQ-83); até lá, só transportados.
+      return null
     default: {
       const _exhaustive: never = values
       return _exhaustive

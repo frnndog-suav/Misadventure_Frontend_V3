@@ -60,6 +60,7 @@ export const editorCollectionSchema = editorCollectionSummarySchema.extend({
     combatEvent: count,
     zoneQuest: count.default(0),
     dimension: count,
+    mount: count.default(0),
   }) satisfies z.ZodType<Record<CardType, number>>,
   rarityCounts: z.object({
     common: count,

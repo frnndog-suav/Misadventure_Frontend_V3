@@ -337,7 +337,7 @@ it('REQ-59: restaura a pendência pelo GET e envia o lote escolhido sem perder a
       type: 'resolveReward',
       rewardId: 'restored',
       choice: 'keep',
-      discard: [{ cardId: 'fixture.iron-ore', copies: 1 }],
+      discard: [{ cardId: 'fixture.iron-ore', space: 'inventory', copies: 1 }],
     },
   ])
 })

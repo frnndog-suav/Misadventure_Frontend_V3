@@ -4,6 +4,8 @@ import {
   attributeSchema,
   equipmentSlotSchema,
   modifierSchema,
+  receiveSpaceSchema,
+  type ReceiveSpace,
   zoneTypeSchema,
 } from './vocabulary'
 
@@ -151,29 +153,54 @@ const rewardOrigin = z.discriminatedUnion('type', [
   z.object({ type: z.literal('fixed') }),
 ])
 
-export const pendingRewardSchema = z.object({
-  id: z.string(),
-  memberId: z.string(),
-  cardId: z.string(),
-  origin: rewardOrigin,
-  source: z.discriminatedUnion('type', [
-    z.object({ type: z.literal('randomEvent'), encounterId: z.string() }),
-    z.object({ type: z.literal('scavenge') }),
-    z.object({
-      type: z.literal('quest'),
-      questId: z.string(),
-      questCardId: z.string(),
-    }),
-    z.object({ type: z.literal('combatEvent'), combatId: z.string() }),
-    // FEAT-16: cópias de um booster aberto que não couberam.
-    z.object({ type: z.literal('booster'), boosterCardId: z.string() }),
-  ]),
-  destination: z.enum(['inventory', 'tcgFolder']),
-  discardOptions: z.array(
-    z.object({ cardId: z.string(), maxCopies: positive }),
-  ),
-  decisionDeadlineAt: z.iso.datetime().nullable(),
-})
+export const pendingRewardSchema = z
+  .object({
+    id: z.string(),
+    memberId: z.string(),
+    cardId: z.string(),
+    origin: rewardOrigin,
+    source: z.discriminatedUnion('type', [
+      z.object({ type: z.literal('randomEvent'), encounterId: z.string() }),
+      z.object({ type: z.literal('scavenge') }),
+      z.object({
+        type: z.literal('quest'),
+        questId: z.string(),
+        questCardId: z.string(),
+      }),
+      z.object({ type: z.literal('combatEvent'), combatId: z.string() }),
+      // FEAT-16: cópias de um booster aberto que não couberam.
+      z.object({ type: z.literal('booster'), boosterCardId: z.string() }),
+    ]),
+    /** FEAT-18: onde a cópia entra se o jogador mantiver (pronto do backend). */
+    destination: receiveSpaceSchema,
+    /** FEAT-18: uma entrada por carta e espaço (legado sem `space`: o do destino). */
+    discardOptions: z.array(
+      z.object({
+        cardId: z.string(),
+        space: receiveSpaceSchema.optional(),
+        maxCopies: positive,
+      }),
+    ),
+    decisionDeadlineAt: z.iso.datetime().nullable(),
+  })
+  .transform((reward) => ({
+    ...reward,
+    discardOptions: reward.discardOptions.map((option) => ({
+      cardId: option.cardId,
+      space: option.space ?? legacyDiscardSpace(reward.destination),
+      maxCopies: option.maxCopies,
+    })),
+  }))
+export type PendingReward = z.infer<typeof pendingRewardSchema>
+
+/** Antes da FEAT-18 o descarte saía do espaço de mesmo tipo do destino. */
+function legacyDiscardSpace(destination: ReceiveSpace): ReceiveSpace {
+  return destination === 'mountInventory'
+    ? 'inventory'
+    : destination === 'mountTcgFolder'
+      ? 'tcgFolder'
+      : destination
+}
 
 export const randomEventPlayerFields = {
   handCopies: z.array(copy),
@@ -188,6 +215,8 @@ export const randomEventPlayerFields = {
       cardId: z.string(),
       origin: rewardOrigin,
       disposition: z.enum(['kept', 'returnedToDeck', 'removed', 'sentToLimbo']),
+      /** FEAT-18: onde a carta ficou; `null` quando não ficou com o jogador. */
+      space: receiveSpaceSchema.nullable().default(null),
     })
     .nullable(),
 }
@@ -233,5 +262,8 @@ export type ResolveRewardAction = {
   rewardId: string
 } & (
   | { choice: 'leave' }
-  | { choice: 'keep'; discard: z.infer<typeof cardCopies>[] }
+  | {
+      choice: 'keep'
+      discard: { cardId: string; space: ReceiveSpace; copies: number }[]
+    }
 )

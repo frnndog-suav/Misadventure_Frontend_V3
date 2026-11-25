@@ -614,6 +614,8 @@ export const activationSchema = z.discriminatedUnion('kind', [
     kind: z.literal('removeBuffs'),
     target: z.enum(['self', 'allyInZone', 'enemy']),
   }),
+  /** FEAT-18: montaria, inventário extra e pasta extra vão ao limbo. */
+  z.object({ kind: z.literal('loseMount') }),
 ])
 export type Activation = z.infer<typeof activationSchema>
 
@@ -867,7 +869,8 @@ export type PlayerStatus = z.infer<typeof playerStatusSchema>
 export const activatableEffectSchema = z.object({
   cardId: z.string(),
   effectIndex: z.number().int().min(0),
-  source: z.enum(['inventory', 'equipment']),
+  /** FEAT-18: `mount` = efeito da carta de montaria. */
+  source: z.enum(['inventory', 'equipment', 'mount']),
   handPayment: z
     .object({ count: z.number().int().min(1), text: z.string() })
     .nullable(),

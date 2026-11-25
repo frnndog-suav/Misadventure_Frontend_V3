@@ -299,8 +299,8 @@ describe('REQ-44: cartas novas da fixture', () => {
       (card) => card.id,
     )
     expect(ids).toEqual([...ids].sort())
-    expect(ids).toHaveLength(29)
-    expect(fixtureCardsFixture).toHaveLength(29)
+    expect(ids).toHaveLength(31)
+    expect(fixtureCardsFixture).toHaveLength(31)
     expect(ids).toEqual(expect.arrayContaining([W, D, H, R, K]))
   })
 
@@ -343,6 +343,7 @@ describe('REQ-44: cartas novas da fixture', () => {
       combatEvent: 1,
       zoneQuest: 0,
       dimension: 1,
+      mount: 2,
     })
     expect(
       collectionSummarySchema.safeParse(collectionsFixture[0]).success,

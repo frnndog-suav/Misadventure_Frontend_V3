@@ -9,8 +9,18 @@ export const cardTypeSchema = z.enum([
   'combatEvent',
   'zoneQuest',
   'dimension',
+  'mount',
 ])
 export type CardType = z.infer<typeof cardTypeSchema>
+
+/** FEAT-18 (CONTRATO v0.89): espaço onde uma carta chegou ou de onde sai. */
+export const receiveSpaceSchema = z.enum([
+  'inventory',
+  'tcgFolder',
+  'mountInventory',
+  'mountTcgFolder',
+])
+export type ReceiveSpace = z.infer<typeof receiveSpaceSchema>
 
 export const raritySchema = z.enum([
   'common',

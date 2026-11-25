@@ -22,7 +22,10 @@ const statusLabels = {
   published: 'Publicada',
 } satisfies Record<ContentStatus, string>
 
-const cardTypes = Object.keys(cardTypeLabels) as CardType[]
+// A montaria entra no editor com os controles da T-81 (REQ-83).
+const cardTypes = (Object.keys(cardTypeLabels) as CardType[]).filter(
+  (type) => type !== 'mount',
+)
 const statuses = Object.keys(statusLabels) as ContentStatus[]
 
 /** Carta escolhida ou tipo da carta nova (D-42). */

@@ -24,6 +24,7 @@ export const cardTypeLabels = {
   zoneQuest: 'Missão de zona',
   combatEvent: 'Evento de combate',
   dimension: 'Dimensão',
+  mount: 'Montaria',
 } satisfies Record<CardType, string>
 
 /** Tipo da carta de atributo (CONTRATO §2, README 4.3). */

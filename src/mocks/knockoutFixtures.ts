@@ -310,7 +310,9 @@ function pendingReward(
       ? { type: 'randomEvent', encounterId: 'e2' }
       : { type: 'combatEvent', combatId: combat.id },
     destination: 'inventory',
-    discardOptions: [{ cardId: 'fixture.healing-potion', maxCopies: 1 }],
+    discardOptions: [
+      { cardId: 'fixture.healing-potion', space: 'inventory', maxCopies: 1 },
+    ],
     decisionDeadlineAt: null,
   }
 }

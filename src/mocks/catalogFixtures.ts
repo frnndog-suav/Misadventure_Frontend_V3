@@ -27,6 +27,7 @@ export const collectionsFixture: CollectionSummary[] = [
       combatEvent: 1,
       zoneQuest: 0,
       dimension: 1,
+      mount: 2,
     },
   },
 ]
@@ -191,6 +192,8 @@ export const grayHarborFixture: Card = {
   market: {
     stock: ['fixture.healing-potion', 'fixture.arrows', 'fixture.fishing-rod'],
     singles: true,
+    // FEAT-18 (CONTRATO v0.88): Porto Cinzento sem Estábulo.
+    mounts: [],
   },
   // FEAT-17 (CONTRATO v0.85): ferreiro com o Fio de Brasa.
   blacksmith: {
@@ -235,20 +238,20 @@ export const stoneBendFixture: Card = {
   effects: [],
 }
 
-/** Cópia exata do backend (coleção `fixture`, CONTRATO v0.25). */
+/** Cópia exata do backend (coleção `fixture`, CONTRATO v0.25); FEAT-18 (v0.88): Rural com Estábulo. */
 export const oldMineFixture: Card = {
-  market: null,
+  market: { stock: [], singles: false, mounts: ['fixture.plow-horse'] },
   blacksmith: null,
   type: 'zone',
   id: 'fixture.old-mine',
   collectionId: 'fixture',
   title: 'Mina Velha',
-  zoneType: 'forest',
+  zoneType: 'rural',
   location: 'Terras Selvagens',
   connectionArrows: 1,
   arrowLayout: null,
   questDeck: [],
-  zoneActions: ['startEvent'],
+  zoneActions: ['startEvent', 'visitMarket'],
   effects: [],
 }
 
@@ -726,7 +729,66 @@ export const executableEventFixture = {
   badOutcome: { text: 'Você precisa voltar.', steps: [] },
 } satisfies Card
 
-/** GET /catalog/collections/fixture/cards — 29 cartas na ordem de `id`. */
+/** FEAT-18 (CONTRATO v0.88): montaria do Estábulo da Mina Velha. */
+export const plowHorseFixture: Card = {
+  type: 'mount',
+  id: 'fixture.plow-horse',
+  collectionId: 'fixture',
+  name: 'Cavalo de Arado',
+  flavorText: null,
+  rarity: 'rare',
+  mountTypes: ['beast'],
+  creature: 'Cavalo',
+  effects: [],
+  abilities: [],
+}
+
+/**
+ * FEAT-18 (CONTRATO v0.90): montaria de teste com 1 efeito ativável e 1
+ * habilidade fora de combate. Textos e valores de exemplo até o aviso
+ * `implementado (BE)` (D-64 item 6).
+ */
+export const warPonyFixture: Card = {
+  type: 'mount',
+  id: 'fixture.war-pony',
+  collectionId: 'fixture',
+  name: 'Pônei de Guerra',
+  flavorText: null,
+  rarity: 'common',
+  mountTypes: ['beast'],
+  creature: 'Pônei',
+  effects: [
+    {
+      text: 'Ganha 2 de ouro.',
+      trigger: null,
+      cost: [],
+      activation: [{ kind: 'gainGold', amount: 2 }],
+      duration: { kind: 'immediate' },
+      mark: null,
+    },
+  ],
+  abilities: [
+    {
+      id: 'pony-trot',
+      name: 'Trote',
+      text: 'Remove os debuffs de quem monta.',
+      form: 'targeted',
+      element: null,
+      cost: [],
+      power: null,
+      effects: [],
+      cooldown: 0,
+      timing: 'outsideCombat',
+      classRestriction: [],
+      usesPerTurn: 1,
+      target: 'self',
+      duration: null,
+      channel: null,
+    },
+  ],
+}
+
+/** GET /catalog/collections/fixture/cards — 31 cartas na ordem de `id`. */
 export const fixtureCardsFixture: Card[] = [
   arcaneWandFixture,
   arrowsFixture,
@@ -748,6 +810,7 @@ export const fixtureCardsFixture: Card[] = [
   oakShieldFixture,
   oldMineFixture,
   pickaxeFixture,
+  plowHorseFixture,
   shortSwordFixture,
   silverFishFixture,
   stoneBendFixture,
@@ -755,6 +818,7 @@ export const fixtureCardsFixture: Card[] = [
   strengthTonicFixture,
   swordBlueprintFixture,
   testDimensionFixture,
+  warPonyFixture,
   whisperingGroveFixture,
   woundedTravelerFixture,
 ]
@@ -798,6 +862,7 @@ export const fixtureCardsByTypeFixture: Record<CardType, Card[]> = {
   combatEvent: [howlingWolvesFixture],
   zoneQuest: [],
   dimension: [testDimensionFixture],
+  mount: [plowHorseFixture, warPonyFixture],
 }
 
 /** ?type=monster → 400 CATALOG_QUERY_INVALID. */

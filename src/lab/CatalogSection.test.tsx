@@ -53,7 +53,7 @@ const status = () => screen.getByRole('status')
 const cardsUrl = '*/catalog/collections/:collectionId/cards'
 const unavailable = 'Servidor indisponível. Tente novamente.'
 
-/** As 29 cartas da `fixture`, incluindo o exemplo executável da FEAT-12. */
+/** As 31 cartas da `fixture`, incluindo o exemplo executável da FEAT-12. */
 const expectedOrder = [
   'Varinha Arcana · Equipamento',
   'Flechas · Item',
@@ -75,6 +75,7 @@ const expectedOrder = [
   'Escudo de Carvalho · Equipamento',
   'Mina Velha · Zona',
   'Picareta · Item',
+  'Cavalo de Arado · Montaria',
   'Espada Curta · Equipamento',
   'Peixe Prateado · Item',
   'Curva de Pedra · Zona',
@@ -82,6 +83,7 @@ const expectedOrder = [
   'Tônico de Força · Item',
   'Projeto: Espada Curta · Item',
   'Dimensão de Teste · Dimensão',
+  'Pônei de Guerra · Montaria',
   'Bosque Sussurrante · Zona',
   'Viajante Ferido · Evento aleatório',
 ]
@@ -109,7 +111,7 @@ describe('CatalogSection', () => {
       .getAllByRole('radio')
       .map((r) => r.closest('label')?.textContent)
     expect(options).toEqual([
-      'Todos (29)',
+      'Todos (31)',
       'Zona (4)',
       'Atributo (3)',
       'Equipamento (7)',
@@ -118,9 +120,10 @@ describe('CatalogSection', () => {
       'Evento de combate (1)',
       'Missão de zona (0)',
       'Dimensão (1)',
+      'Montaria (2)',
     ])
     expect(
-      within(filter).getByRole('radio', { name: 'Todos (29)' }),
+      within(filter).getByRole('radio', { name: 'Todos (31)' }),
     ).toBeChecked()
   })
 
@@ -156,11 +159,11 @@ describe('CatalogSection', () => {
     ).toBeInTheDocument()
   })
 
-  // A Carta de Dimensão ganha componente na T-29 (REQ-28).
+  // A Carta de Dimensão ganha componente na T-29 (REQ-28); a de montaria, na T-81 (REQ-83).
   it.each(
     fixtureCardsFixture
       .map((card, i) => [expectedOrder[i], card] as const)
-      .filter(([, card]) => card.type !== 'dimension'),
+      .filter(([, card]) => card.type !== 'dimension' && card.type !== 'mount'),
   )(
     'REQ-08: escolher "%s" mostra a carta completa no formato do seu tipo',
     async (label) => {

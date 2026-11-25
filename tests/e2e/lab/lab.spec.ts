@@ -69,7 +69,8 @@ test('REQ-08: o Catálogo filtra por tipo e mostra a carta escolhida (MSW)', asy
     section.getByRole('radio', { name: 'Coleção de Teste' }),
   ).toBeChecked()
   const list = section.getByRole('list', { name: 'Cartas' })
-  await expect(list.getByRole('button')).toHaveCount(29)
+  // CONTRATO v0.90: a `fixture` ganhou as 2 montarias (31 cartas).
+  await expect(list.getByRole('button')).toHaveCount(31)
 
   await section.getByRole('radio', { name: 'Zona (4)' }).check()
   await expect(list.getByRole('button')).toHaveCount(4)

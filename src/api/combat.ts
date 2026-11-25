@@ -31,10 +31,20 @@ const optionSchema = z.object({
   vigorCost: count,
   paymentCosts: z.array(paymentCostSchema),
 })
-export const combatAbilityOptionSchema = optionSchema.extend({
-  equipmentSlot: equipmentSlotSchema,
-  abilityId: id,
-})
+/** Exatamente uma origem: slot de equipamento ou a montaria (FEAT-18). */
+export const combatAbilityOptionSchema = z.union([
+  optionSchema.extend({
+    equipmentSlot: equipmentSlotSchema,
+    mountAbility: z.undefined().optional(),
+    abilityId: id,
+  }),
+  optionSchema.extend({
+    equipmentSlot: z.undefined().optional(),
+    mountAbility: z.literal(true),
+    abilityId: id,
+  }),
+])
+export type CombatAbilityOption = z.infer<typeof combatAbilityOptionSchema>
 const originFields = { cardId: id, effectIndex: count }
 const inventoryOrigin = z.object({
   ...originFields,
@@ -45,10 +55,15 @@ const equipmentOrigin = z.object({
   type: z.literal('equipment'),
   equipmentSlot: equipmentSlotSchema,
 })
+const mountOrigin = z.object({ ...originFields, type: z.literal('mount') })
 const effectFields = { effectId: id, text: z.string() }
 const effectOptionSchema = optionSchema.extend({
   ...effectFields,
-  origin: z.discriminatedUnion('type', [inventoryOrigin, equipmentOrigin]),
+  origin: z.discriminatedUnion('type', [
+    inventoryOrigin,
+    equipmentOrigin,
+    mountOrigin,
+  ]),
 })
 const triggeredOptionSchema = z.object({
   ...effectFields,
@@ -59,6 +74,8 @@ const triggeredOptionSchema = z.object({
       type: z.literal('equipmentAbility'),
       abilityId: id,
     }),
+    mountOrigin,
+    mountOrigin.extend({ type: z.literal('mountAbility'), abilityId: id }),
   ]),
 })
 export const triggeredEffectChoiceSchema = z.object({
@@ -114,6 +131,7 @@ export const combatStateSchema = z.object({
     z.object({
       actorId: id,
       equipmentSlot: equipmentSlotSchema.nullable(),
+      mountAbility: z.boolean().default(false),
       abilityId: id,
       cooldownRemaining: count,
       usesRemaining: count,
@@ -174,6 +192,7 @@ export const combatUpdateSchema = z.discriminatedUnion('type', [
     actorId: id,
     abilityId: id,
     equipmentSlot: equipmentSlotSchema.nullable(),
+    mountAbility: z.boolean().default(false),
   }),
   update.extend({
     type: z.literal('combatEffectActivated'),
@@ -212,6 +231,11 @@ export const combatActionTypes = [
   'resolveTriggeredEffect',
 ] as const
 
+/** FEAT-18: habilidade de equipamento em uso ou da montaria, nunca as duas. */
+export type AbilitySource =
+  | { equipmentSlot: z.infer<typeof equipmentSlotSchema>; mountAbility?: never }
+  | { equipmentSlot?: never; mountAbility: true }
+
 type CombatTurnAction = { combatId: string; turnId: string }
 type PaidCombatAction = { targetId?: string; payment?: EventPayment }
 
@@ -223,8 +247,7 @@ export type CombatAction = CombatTurnAction &
     | (PaidCombatAction & {
         type: 'useAbility'
         abilityId: string
-        equipmentSlot: z.infer<typeof equipmentSlotSchema>
-      })
+      } & AbilitySource)
     | (PaidCombatAction & { type: 'activateCombatEffect'; effectId: string })
   )
 

@@ -1,5 +1,5 @@
 import { useId, useState, type ReactNode } from 'react'
-import type { CombatAction } from '../../api/combat'
+import type { AbilitySource, CombatAction } from '../../api/combat'
 import type { Card } from '../../api/catalog'
 import type {
   Party,
@@ -201,12 +201,29 @@ function ProjectedAction({
   )
 }
 
+/** Carta da habilidade: a do slot de equipamento ou a da montaria (FEAT-18). */
+function abilityCardId(
+  option: Combat['abilities'][number],
+  host: PartyMember,
+): string | null | undefined {
+  return option.mountAbility
+    ? host.player.mount?.cardId
+    : host.player.equipment[option.equipmentSlot]
+}
+
+/** Origem enviada com a habilidade: `equipmentSlot` ou `mountAbility`. */
+function abilitySource(option: Combat['abilities'][number]): AbilitySource {
+  return option.mountAbility
+    ? { mountAbility: true }
+    : { equipmentSlot: option.equipmentSlot }
+}
+
 function equippedAbility(
   option: Combat['abilities'][number],
   host: PartyMember,
   cards: Cards,
 ) {
-  const card = cards.get(host.player.equipment[option.equipmentSlot] ?? '')
+  const card = cards.get(abilityCardId(option, host) ?? '')
   if (card && 'abilities' in card) {
     return card.abilities.find(
       (ability) => 'id' in ability && ability.id === option.abilityId,
@@ -306,7 +323,7 @@ export function PrepareAbilities({ host, cards, pending, onAction }: Controls) {
         onAction({
           type: 'prepare',
           operation: 'useAbility',
-          equipmentSlot: option.equipmentSlot,
+          ...abilitySource(option),
           abilityId: option.abilityId,
           ...(payment && { payment }),
         })
@@ -393,7 +410,7 @@ export function CombatPanel({
         offer('useAbility') &&
         combat.abilities.map((option) => {
           const ability = equippedAbility(option, host, cards)
-          const cardId = host.player.equipment[option.equipmentSlot]
+          const cardId = abilityCardId(option, host)
           const loadingAbility =
             catalogPending && !!cardId && !cards.has(cardId)
           const allOpponents =
@@ -413,7 +430,7 @@ export function CombatPanel({
                   type: 'useAbility',
                   ...ids,
                   abilityId: option.abilityId,
-                  equipmentSlot: option.equipmentSlot,
+                  ...abilitySource(option),
                   ...selection,
                 })
               }

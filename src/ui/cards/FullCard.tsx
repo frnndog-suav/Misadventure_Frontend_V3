@@ -26,6 +26,9 @@ export function FullCard({ card }: { card: Card }) {
       return <p>{card.summary}</p>
     case 'dimension':
       return <DimensionCard card={card} />
+    case 'mount':
+      // A carta de montaria completa entra na T-81 (REQ-83).
+      return <p>{card.name}</p>
     default: {
       const _exhaustive: never = card
       return _exhaustive

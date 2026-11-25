@@ -10,6 +10,8 @@ const destinationLabel: Record<
 > = {
   tcgFolder: 'pasta de TCG',
   inventory: 'inventário',
+  mountInventory: 'inventário extra',
+  mountTcgFolder: 'pasta extra',
   vault: 'cofre',
   pending: 'entrega pendente',
 }

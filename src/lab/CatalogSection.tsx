@@ -31,6 +31,7 @@ function cardName(card: Card): string {
     case 'equipment':
     case 'item':
     case 'dimension':
+    case 'mount':
       return card.name
     default: {
       const _exhaustive: never = card

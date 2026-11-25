@@ -70,10 +70,12 @@ export function RewardChoice({
             onResolve({
               ...action,
               choice: 'keep',
-              discard: discardOptions.flatMap(({ cardId, maxCopies }) => {
-                const copies = Math.min(selected[cardId] ?? 0, maxCopies)
-                return copies > 0 ? [{ cardId, copies }] : []
-              }),
+              discard: discardOptions.flatMap(
+                ({ cardId, space, maxCopies }) => {
+                  const copies = Math.min(selected[cardId] ?? 0, maxCopies)
+                  return copies > 0 ? [{ cardId, space, copies }] : []
+                },
+              ),
             })
           }
         >

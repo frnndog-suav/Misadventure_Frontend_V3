@@ -226,6 +226,27 @@ export const blacksmithConfigLimits = {
   artificerD20Bonus: { min: 0, max: 20 },
 }
 
+/** FEAT-18 (CONTRATO v0.90): padrões das 7 chaves da montaria (Apêndice A). */
+export const mountConfigDefaults = {
+  mountPriceCommon: 80,
+  mountPriceUncommon: 150,
+  mountPriceRare: 280,
+  mountPriceEpic: 550,
+  mountPriceLegendary: 1100,
+  mountInventorySlots: 4,
+  mountFolderCapacity: 10,
+}
+
+export const mountConfigLimits = {
+  mountPriceCommon: { min: 0, max: 1000000 },
+  mountPriceUncommon: { min: 0, max: 1000000 },
+  mountPriceRare: { min: 0, max: 1000000 },
+  mountPriceEpic: { min: 0, max: 1000000 },
+  mountPriceLegendary: { min: 0, max: 1000000 },
+  mountInventorySlots: { min: 0, max: 100 },
+  mountFolderCapacity: { min: 0, max: 1000 },
+}
+
 export type KnockoutConfigKey = keyof typeof knockoutConfigDefaults
 
 const positiveInt = gameConfigInt.min(1)
@@ -436,6 +457,21 @@ export const gameConfigValuesSchema = numericGameConfigValuesSchema.extend({
   ),
   artificerD20Bonus: gameConfigInt.default(
     blacksmithConfigDefaults.artificerD20Bonus,
+  ),
+  mountPriceCommon: gameConfigInt.default(mountConfigDefaults.mountPriceCommon),
+  mountPriceUncommon: gameConfigInt.default(
+    mountConfigDefaults.mountPriceUncommon,
+  ),
+  mountPriceRare: gameConfigInt.default(mountConfigDefaults.mountPriceRare),
+  mountPriceEpic: gameConfigInt.default(mountConfigDefaults.mountPriceEpic),
+  mountPriceLegendary: gameConfigInt.default(
+    mountConfigDefaults.mountPriceLegendary,
+  ),
+  mountInventorySlots: gameConfigInt.default(
+    mountConfigDefaults.mountInventorySlots,
+  ),
+  mountFolderCapacity: gameConfigInt.default(
+    mountConfigDefaults.mountFolderCapacity,
   ),
   // A configuração das versões anteriores à FEAT-13 omite os campos de combate.
   maxCombatCycles: gameConfigInt.optional(),
@@ -696,6 +732,21 @@ export const labConfigSchema = z.object({
     ),
     artificerD20Bonus: limitSchema.default(
       blacksmithConfigLimits.artificerD20Bonus,
+    ),
+    mountPriceCommon: limitSchema.default(mountConfigLimits.mountPriceCommon),
+    mountPriceUncommon: limitSchema.default(
+      mountConfigLimits.mountPriceUncommon,
+    ),
+    mountPriceRare: limitSchema.default(mountConfigLimits.mountPriceRare),
+    mountPriceEpic: limitSchema.default(mountConfigLimits.mountPriceEpic),
+    mountPriceLegendary: limitSchema.default(
+      mountConfigLimits.mountPriceLegendary,
+    ),
+    mountInventorySlots: limitSchema.default(
+      mountConfigLimits.mountInventorySlots,
+    ),
+    mountFolderCapacity: limitSchema.default(
+      mountConfigLimits.mountFolderCapacity,
     ),
     maxCombatCycles: limitSchema.optional(),
     combatEscapeThreshold: limitSchema.optional(),

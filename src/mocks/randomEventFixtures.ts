@@ -441,7 +441,7 @@ const reward = {
   origin: { type: 'rewardDeck', zoneType: 'urban' },
   source: { type: 'scavenge' },
   destination: 'inventory',
-  discardOptions: [{ cardId: ore, maxCopies: 1 }],
+  discardOptions: [{ cardId: ore, space: 'inventory', maxCopies: 1 }],
   decisionDeadlineAt: null,
 } satisfies Party['pendingRewards'][number]
 
@@ -494,6 +494,7 @@ export const partyScavengeLeftFixture: Party = {
           cardId: fish,
           origin: reward.origin,
           disposition: 'returnedToDeck',
+          space: null,
         },
       },
     },
@@ -515,6 +516,7 @@ export const partyScavengeKeptFixture: Party = {
           cardId: fish,
           origin: reward.origin,
           disposition: 'kept',
+          space: 'inventory',
         },
       },
     },
@@ -633,7 +635,7 @@ const lowVigorEscape = withPlayer(
 const eventReward = {
   ...reward,
   cardId: ore,
-  discardOptions: [{ cardId: fish, maxCopies: 1 }],
+  discardOptions: [{ cardId: fish, space: 'inventory', maxCopies: 1 }],
   source: { type: 'randomEvent', encounterId: 'e1' },
 } satisfies Party['pendingRewards'][number]
 const rewardDrawReady = {
@@ -671,7 +673,7 @@ const reserveReward = {
   ...eventReward,
   id: 'r2',
   cardId: potion,
-  discardOptions: [{ cardId: ore, maxCopies: 1 }],
+  discardOptions: [{ cardId: ore, space: 'inventory', maxCopies: 1 }],
   origin: { type: 'reserveDeck' },
 } satisfies Party['pendingRewards'][number]
 const reservePending = withPlayer(
@@ -683,6 +685,7 @@ const reservePending = withPlayer(
       cardId: eventReward.cardId,
       origin: eventReward.origin,
       disposition: 'kept',
+      space: 'inventory',
     },
   },
 )
@@ -1035,6 +1038,7 @@ export const eventScenarios: Partial<Record<string, EventScenario>> = {
             cardId: eventReward.cardId,
             origin: eventReward.origin,
             disposition: 'returnedToDeck',
+            space: null,
           },
         },
       ),
@@ -1049,6 +1053,7 @@ export const eventScenarios: Partial<Record<string, EventScenario>> = {
             cardId: reserveReward.cardId,
             origin: reserveReward.origin,
             disposition: 'removed',
+            space: null,
           },
         },
       ),
@@ -1066,6 +1071,7 @@ export const eventScenarios: Partial<Record<string, EventScenario>> = {
             cardId: fixedReward.cardId,
             origin: fixedReward.origin,
             disposition: 'sentToLimbo',
+            space: null,
           },
         },
       ),
@@ -1083,6 +1089,7 @@ export const eventScenarios: Partial<Record<string, EventScenario>> = {
             cardId: reserveReward.cardId,
             origin: reserveReward.origin,
             disposition: 'removed',
+            space: null,
           },
         },
       ),

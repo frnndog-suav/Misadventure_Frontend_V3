@@ -31,6 +31,7 @@ const zeroCardCounts = {
   combatEvent: 0,
   zoneQuest: 0,
   dimension: 0,
+  mount: 0,
 }
 
 const zeroRarityCounts = {
@@ -66,6 +67,7 @@ export const fixtureCollectionFixture: EditorCollection = {
     combatEvent: 1,
     zoneQuest: 0,
     dimension: 1,
+    mount: 0,
   },
   rarityCounts: { ...zeroRarityCounts, common: 4, rare: 1 },
   tags: ['duas mãos', 'espada', 'poção'],

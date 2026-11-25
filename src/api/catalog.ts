@@ -145,6 +145,8 @@ export const collectionSummarySchema = z.object({
     combatEvent: countByCardType,
     zoneQuest: countByCardType.default(0),
     dimension: countByCardType,
+    /** FEAT-18; resumos anteriores omitem. */
+    mount: countByCardType.default(0),
   }) satisfies z.ZodType<Record<CardType, number>>,
 })
 export type CollectionSummary = z.infer<typeof collectionSummarySchema>
@@ -177,9 +179,13 @@ export const zoneCardSchema = z.object({
   zoneActions: z.array(zoneActionSchema),
   questDeck: z.array(z.string()).default([]),
   effects: z.array(zoneEffectSchema),
-  /** FEAT-16 (README 3.4): só em zona com `visitMarket`; senão `null`. */
+  /** FEAT-16 (README 3.4): só em zona com `visitMarket`; senão `null`. FEAT-18: `mounts` = Estábulo (legado: `[]`). */
   market: z
-    .object({ stock: z.array(z.string()), singles: z.boolean() })
+    .object({
+      stock: z.array(z.string()),
+      singles: z.boolean(),
+      mounts: z.array(z.string()).default([]),
+    })
     .nullable()
     .default(null),
   /** FEAT-17 (README 3.4, 25.3): só em zona com `visitBlacksmith`; senão `null`. */
@@ -411,6 +417,19 @@ export const zoneQuestCardSchema = z.object({
   rewards: eventOutcomeSchema.shape.steps,
 })
 
+/** FEAT-18 (README 26): sem categoria; o tipo não tem mecânica própria. */
+export const mountCardSchema = z.object({
+  type: z.literal('mount'),
+  ...cardBase,
+  name: z.string(),
+  flavorText,
+  rarity: raritySchema,
+  mountTypes: z.array(enemyTypeSchema).min(1),
+  creature: z.string(),
+  effects: z.array(effectSchema),
+  abilities: z.array(abilitySchema),
+})
+
 export const cardSchema = z.union([
   zoneCardSchema,
   attributeCardSchema,
@@ -420,6 +439,7 @@ export const cardSchema = z.union([
   combatEventCardSchema,
   dimensionCardSchema,
   zoneQuestCardSchema,
+  mountCardSchema,
 ])
 export type Card = z.infer<typeof cardSchema>
 export type ZoneCard = z.infer<typeof zoneCardSchema>
@@ -429,6 +449,7 @@ export type ItemCard = z.infer<typeof itemCardSchema>
 export type RandomEventCard = z.infer<typeof randomEventCardSchema>
 export type CombatEventCard = z.infer<typeof combatEventCardSchema>
 export type DimensionCard = z.infer<typeof dimensionCardSchema>
+export type MountCard = z.infer<typeof mountCardSchema>
 
 /** GET /catalog/classes — README 8.6, 8.7, 4.4 (FEAT-06). */
 const specializationDefinitionSchema = z.object({

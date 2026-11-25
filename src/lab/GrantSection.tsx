@@ -47,6 +47,8 @@ function noSpaceText(reason: LabGrantNoSpaceDetails['reason']): string {
       return 'Inventário cheio.'
     case 'tcgFolderFull':
       return 'Pasta de TCG cheia.'
+    case 'mountAlreadyOwned':
+      return 'Já tem montaria.'
     default: {
       const _exhaustive: never = reason
       return _exhaustive
