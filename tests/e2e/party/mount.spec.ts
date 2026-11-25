@@ -128,3 +128,24 @@ test('REQ-87: "Comprar" no Estábulo envia buyMount e mostra o resultado', async
     page.getByRole('list', { name: 'Resultado do mercado' }),
   ).toContainText('Comprou a montaria Cavalo de Arado por 322 de ouro')
 })
+
+test('REQ-88: descarte do inventário extra mantém a recompensa e mostra o destino', async ({
+  page,
+}) => {
+  await page.goto('/grupo/party-montaria')
+  const reward = page.getByRole('region', { name: 'Recompensa pendente' })
+  await expect(reward).toContainText(
+    '1× Minério de Ferro para o inventário extra.',
+  )
+  await reward.getByRole('button', { name: 'Manter' }).click()
+  await expect(page.getByRole('status').first()).toContainText(
+    'Esta ação não é permitida agora.',
+  )
+  await reward
+    .getByLabel('Descartar Poção de Cura (Inventário extra)')
+    .selectOption('1')
+  await reward.getByRole('button', { name: 'Manter' }).click()
+  await expect(
+    page.getByText('Minério de Ferro foi para o inventário extra.'),
+  ).toBeVisible()
+})

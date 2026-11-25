@@ -20,6 +20,10 @@ import {
   vi,
 } from 'vitest'
 import App from '../../App'
+import { MarketResult } from './MarketPanel'
+import type { Card } from '../../api/catalog'
+import type { MarketVisitResult } from '../../api/market'
+import { healingPotionFixture } from '../../mocks/catalogFixtures'
 import { handlers } from '../../mocks/handlers'
 import {
   partyMarketGoldLostFixture,
@@ -768,5 +772,57 @@ describe('REQ-87: Estábulo no Ir ao Mercado', () => {
       `Esta ação não é permitida agora. ${text}`,
     )
     expect(within(section()).getByText('Recusada')).toBeInTheDocument()
+  })
+})
+
+describe('REQ-88: Resultado do mercado com montaria', () => {
+  const potion = 'fixture.healing-potion'
+  function lines(results: MarketVisitResult['results']): string[] {
+    render(
+      <MarketResult
+        visit={{ zoneId: 'z', results, goldLost: 0 }}
+        cards={new Map<string, Card>([[potion, healingPotionFixture]])}
+      />,
+    )
+    return within(screen.getByRole('list', { name: 'Resultado do mercado' }))
+      .getAllByRole('listitem')
+      .map((li) => li.textContent ?? '')
+  }
+
+  it('REQ-88: buyStock e buyBooster com mountInventory mostram as quantidades de cada espaço presente; só inventory não muda', () => {
+    expect(
+      lines([
+        {
+          operation: 'buyStock',
+          cardId: potion,
+          quantity: 3,
+          copiesReceived: 3,
+          gold: -21,
+          received: [
+            { space: 'inventory', quantity: 2 },
+            { space: 'mountInventory', quantity: 1 },
+          ],
+        },
+        {
+          operation: 'buyBooster',
+          cardId: potion,
+          quantity: 1,
+          gold: -7,
+          received: [{ space: 'mountInventory', quantity: 1 }],
+        },
+        {
+          operation: 'buyStock',
+          cardId: potion,
+          quantity: 1,
+          copiesReceived: 1,
+          gold: -7,
+          received: [{ space: 'inventory', quantity: 1 }],
+        },
+      ]),
+    ).toEqual([
+      'Comprou 3× Poção de Cura por 21 de ouro (2 no inventário, 1 no inventário extra)',
+      'Comprou 1× Poção de Cura por 7 de ouro (1 no inventário extra)',
+      'Comprou 1× Poção de Cura por 7 de ouro',
+    ])
   })
 })

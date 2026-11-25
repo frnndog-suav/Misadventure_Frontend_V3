@@ -145,3 +145,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 112 | T-82 | [Montaria na tela do grupo e Transferir](112-T-82-montaria-grupo-transferir-feat-18.md) | concluída com MSW |
 | 113 | T-83 | [Movimentar com montaria](113-T-83-movimentar-montaria-feat-18.md) | concluída com MSW |
 | 114 | T-84 | [Estábulo](114-T-84-estabulo-feat-18.md) | concluída com MSW |
+| 115 | T-85 | [Destinos prontos e descarte com montaria](115-T-85-destinos-descarte-montaria-feat-18.md) | concluída com MSW |

@@ -164,6 +164,7 @@ const mountedPlayer = {
     'prepare',
     'adjustDeck',
     'visitMarket',
+    'resolveReward',
     'endTurn',
   ],
 } satisfies Partial<PlayerState>

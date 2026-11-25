@@ -8,6 +8,7 @@ import type {
   MarketVisitResult,
 } from '../../api/market'
 import { nameOf } from './cardNames'
+import { receiveSpaceText } from './receiveSpace'
 import { equipmentStateSuffix } from './equipmentState'
 import { invalidQuantity, isIntFrom } from './fieldRules'
 import { NumberField } from './fields'
@@ -25,12 +26,6 @@ const expansionLabel: Record<MarketExpansion, string> = {
 }
 
 const sourceLabel = { inventory: 'Inventário', tcgFolder: 'Pasta de TCG' }
-const destinationLabel = {
-  inventory: 'o inventário',
-  tcgFolder: 'a pasta de TCG',
-  mountInventory: 'o inventário extra',
-  mountTcgFolder: 'a pasta extra',
-}
 
 /** Oferta de venda de uma operação; equipamento, pela cópia (REQ-79). */
 function sellOffer(
@@ -353,7 +348,7 @@ export function MarketPanel({
                   <span>{`Slot ${slotIndex + 1}: vazio`}</span>
                 ) : (
                   <>
-                    <span>{`Slot ${slotIndex + 1}: ${nameOf(cards, offer.cardId)} — ${offer.price} de ouro (vai para ${destinationLabel[offer.destination]})`}</span>
+                    <span>{`Slot ${slotIndex + 1}: ${nameOf(cards, offer.cardId)} — ${offer.price} de ouro (vai para ${receiveSpaceText[offer.destination]})`}</span>
                     <button
                       type="button"
                       onClick={() =>
@@ -478,16 +473,31 @@ export function MarketPanel({
   )
 }
 
+/** Quanto entrou em cada espaço, só com o inventário extra presente (REQ-88). */
+function receivedText(
+  received: Extract<
+    MarketOperationResult,
+    { operation: 'buyStock' }
+  >['received'],
+): string {
+  if (!received.some(({ space }) => space === 'mountInventory')) return ''
+  const parts = received.map(
+    ({ space, quantity }) =>
+      `${quantity} no ${space === 'inventory' ? 'inventário' : 'inventário extra'}`,
+  )
+  return ` (${parts.join(', ')})`
+}
+
 /** Uma linha do "Resultado do mercado" (REQ-74). */
 function resultText(result: MarketOperationResult, cards: Cards): string {
   const name = (cardId: string) => nameOf(cards, cardId)
   switch (result.operation) {
     case 'buyStock':
-      return `Comprou ${result.copiesReceived}× ${name(result.cardId)} por ${-result.gold} de ouro`
+      return `Comprou ${result.copiesReceived}× ${name(result.cardId)} por ${-result.gold} de ouro${receivedText(result.received)}`
     case 'buyBooster':
-      return `Comprou ${result.quantity}× ${name(result.cardId)} por ${-result.gold} de ouro`
+      return `Comprou ${result.quantity}× ${name(result.cardId)} por ${-result.gold} de ouro${receivedText(result.received)}`
     case 'buySingle':
-      return `Comprou ${name(result.cardId)} (slot ${result.slotIndex + 1}) por ${-result.gold} de ouro; foi para ${destinationLabel[result.destination]}`
+      return `Comprou ${name(result.cardId)} (slot ${result.slotIndex + 1}) por ${-result.gold} de ouro; foi para ${receiveSpaceText[result.destination]}`
     case 'sell':
       return `Vendeu ${result.quantity}× ${name(result.cardId)} por ${result.gold} de ouro`
     case 'buyExpansion':

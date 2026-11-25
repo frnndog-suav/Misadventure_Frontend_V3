@@ -40,6 +40,7 @@ import { EffectsPanel, type ActivateEffect } from './EffectsPanel'
 import { nameOf } from './cardNames'
 import { equipmentStateSuffix } from './equipmentState'
 import { RandomEventPanel } from './RandomEventPanel'
+import { receiveSpaceText } from './receiveSpace'
 import { RewardChoice } from './RewardChoice'
 import { QuestPanel } from './QuestPanel'
 import { BoosterResult } from './BoosterResult'
@@ -2321,14 +2322,14 @@ export function PartySession() {
           {delivery && (
             <p aria-live="polite">
               {nameOf(cards.cards, delivery.cardId)}{' '}
-              {
-                {
-                  kept: 'foi mantido.',
-                  returnedToDeck: 'voltou ao deck de recompensas.',
-                  removed: 'saiu da reserva.',
-                  sentToLimbo: 'foi enviado ao limbo.',
-                }[delivery.disposition]
-              }
+              {delivery.disposition === 'kept' && delivery.space !== null
+                ? `foi para ${receiveSpaceText[delivery.space]}.`
+                : {
+                    kept: 'foi mantido.',
+                    returnedToDeck: 'voltou ao deck de recompensas.',
+                    removed: 'saiu da reserva.',
+                    sentToLimbo: 'foi enviado ao limbo.',
+                  }[delivery.disposition]}
             </p>
           )}
           {reward && (

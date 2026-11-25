@@ -11,9 +11,13 @@ test('REQ-59: reabre a escolha e troca a recompensa após um lote aceito', async
   await expect(page.getByRole('status')).toHaveText(
     'O lote não libera espaço para a recompensa.',
   )
-  await reward.getByLabel('Descartar Peixe Prateado').selectOption('1')
+  await reward
+    .getByLabel('Descartar Peixe Prateado (Inventário)')
+    .selectOption('1')
   await reward.getByRole('button', { name: 'Manter' }).click()
-  await expect(page.getByText('Minério de Ferro foi mantido.')).toBeVisible()
+  await expect(
+    page.getByText('Minério de Ferro foi para o inventário.'),
+  ).toBeVisible()
   await expect(reward).toContainText('Poção de Cura')
   await reward.getByRole('button', { name: 'Deixar' }).click()
   await expect(page.getByText('Poção de Cura saiu da reserva.')).toBeVisible()

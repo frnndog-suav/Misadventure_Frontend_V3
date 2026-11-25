@@ -325,7 +325,9 @@ it('REQ-59: restaura a pendência pelo GET e envia o lote escolhido sem perder a
     }),
   )
   renderParty(id)
-  const discard = await screen.findByLabelText('Descartar Minério de Ferro')
+  const discard = await screen.findByLabelText(
+    'Descartar Minério de Ferro (Inventário)',
+  )
   fireEvent.change(discard, { target: { value: '1' } })
   fireEvent.click(screen.getByRole('button', { name: 'Manter' }))
   expect(
@@ -4535,5 +4537,51 @@ describe('REQ-86: Movimentar com montaria', () => {
         new RegExp(`^${text.replace(/\./g, '\\.')}$`),
       ),
     )
+  })
+})
+
+describe('REQ-88: Destino pronto e descarte com montaria', () => {
+  it('REQ-88: Manter com o descarte do inventário extra envia o espaço e mostra "{nome} foi para o inventário extra."', async () => {
+    const bodies: unknown[] = []
+    server.use(
+      http.post('*/parties/:partyId/actions', async ({ request }) => {
+        bodies.push(await request.json())
+        const { partyMountRewardKeptFixture } =
+          await import('../../mocks/mountFixtures')
+        return HttpResponse.json(partyMountRewardKeptFixture)
+      }),
+    )
+    renderParty('party-montaria')
+    const reward = await screen.findByRole('region', {
+      name: 'Recompensa pendente',
+    })
+    expect(reward).toHaveTextContent(
+      '1× Minério de Ferro para o inventário extra.',
+    )
+    fireEvent.change(
+      within(reward).getByLabelText(
+        'Descartar Poção de Cura (Inventário extra)',
+      ),
+      { target: { value: '1' } },
+    )
+    expect(within(reward).getByRole('button', { name: 'Manter' })).toBeEnabled()
+    fireEvent.click(within(reward).getByRole('button', { name: 'Manter' }))
+    expect(
+      await screen.findByText('Minério de Ferro foi para o inventário extra.'),
+    ).toBeInTheDocument()
+    expect(bodies).toEqual([
+      {
+        type: 'resolveReward',
+        rewardId: 'reward-montaria',
+        choice: 'keep',
+        discard: [
+          {
+            cardId: 'fixture.healing-potion',
+            space: 'mountInventory',
+            copies: 1,
+          },
+        ],
+      },
+    ])
   })
 })
