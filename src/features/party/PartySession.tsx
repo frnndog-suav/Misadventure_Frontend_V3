@@ -160,6 +160,13 @@ function cardIdsOf(party: Party): string[] {
       ...player.build.map(({ cardId }) => cardId),
       ...player.tcgFolder.map(({ cardId }) => cardId),
       ...player.inventory.map(({ cardId }) => cardId),
+      ...(player.mount === null
+        ? []
+        : [
+            player.mount.cardId,
+            ...player.mount.inventory.map(({ cardId }) => cardId),
+            ...player.mount.tcgFolder.map(({ cardId }) => cardId),
+          ]),
       ...player.statuses.map(({ sourceCardId }) => sourceCardId),
       ...player.activatableEffects.map(({ cardId }) => cardId),
       ...Object.values(player.equipment).filter((id) => id !== null),
@@ -180,13 +187,73 @@ function cardIdsOf(party: Party): string[] {
   ]
 }
 
+/** Pedido de "Levar"/"Trazer" (REQ-85), sem o `type` e o `operation` fixos. */
+type MountTransfer = {
+  direction: 'toMount' | 'fromMount'
+  space: 'inventory' | 'tcgFolder'
+  cardId: string
+  quantity: number
+  inventorySlotIndex?: number
+}
+
 /** "Equipar"/"Guardar" do host com `prepare` (REQ-45); `null` nos outros casos. */
 type PrepareControls = {
+  onTransfer: (request: MountTransfer) => void
   onEquip?: (cardId: string) => void
   onUnequip?: (slot: EquipmentSlot, cardId: string) => void
   onOpenBooster?: (cardId: string) => void
   onActivate: ActivateEffect
   pending: boolean
+}
+
+/**
+ * "Levar {nome} para a montaria" / "Trazer {nome} da montaria" (REQ-85), com o
+ * campo "Quantidade de {nome}" quando há mais de uma cópia. Slot de equipamento
+ * (`equipment`): envia 1 e o índice do slot, sem campo.
+ */
+function TransferControl({
+  name,
+  total,
+  equipment,
+  request,
+  onTransfer,
+  pending,
+}: {
+  name: string
+  total: number
+  equipment: boolean
+  request: Omit<MountTransfer, 'quantity'>
+  onTransfer: (request: MountTransfer) => void
+  pending: boolean
+}) {
+  const [value, setValue] = useState(String(total))
+  const [invalid, setInvalid] = useState(false)
+  const withField = !equipment && total > 1
+  function send(): void {
+    if (equipment) return onTransfer({ ...request, quantity: 1 })
+    const quantity = withField ? value : '1'
+    const ok = isIntFrom(quantity, 1)
+    setInvalid(!ok)
+    if (ok) onTransfer({ ...request, quantity: Number(quantity) })
+  }
+  return (
+    <>
+      {withField && (
+        <NumberField
+          label={`Quantidade de ${name}`}
+          value={value}
+          onChange={setValue}
+          min={1}
+          error={invalid ? invalidQuantity : ''}
+        />
+      )}
+      <button type="button" onClick={send} disabled={pending}>
+        {request.direction === 'toMount'
+          ? `Levar ${name} para a montaria`
+          : `Trazer ${name} da montaria`}
+      </button>
+    </>
+  )
 }
 
 /** Seção de um membro com o estado do jogador (REQ-30). */
@@ -212,6 +279,9 @@ function MemberState({
   const equipmentId = `equipment-${member.id}`
   const inventoryId = `inventory-${member.id}`
   const vaultId = `vault-${member.id}`
+  const mountId = `mount-${member.id}`
+  const mountInventoryId = `mount-inventory-${member.id}`
+  const mountFolderId = `mount-folder-${member.id}`
   const decksId = `vault-decks-${member.id}`
   return (
     <section aria-labelledby={titleId}>
@@ -350,9 +420,103 @@ function MemberState({
                   Abrir {nameOf(cards, cardId)}
                 </button>
               )}
+              {prepare && player.mount !== null && (
+                <TransferControl
+                  key={`${cardId}-${quantity}`}
+                  name={nameOf(cards, cardId)}
+                  total={quantity}
+                  equipment={equipmentState !== undefined}
+                  request={{
+                    direction: 'toMount',
+                    space: 'inventory',
+                    cardId,
+                    ...(equipmentState !== undefined && {
+                      inventorySlotIndex: i,
+                    }),
+                  }}
+                  onTransfer={prepare.onTransfer}
+                  pending={prepare.pending}
+                />
+              )}
             </li>
           ))}
         </ul>
+      )}
+      {player.mount === null ? (
+        <p>Sem montaria.</p>
+      ) : (
+        <>
+          <h3 id={mountId}>Montaria: {nameOf(cards, player.mount.cardId)}</h3>
+          <h4 id={mountInventoryId}>
+            Inventário extra ({player.mount.inventory.length} de{' '}
+            {player.mount.inventoryCapacity} slots)
+          </h4>
+          {player.mount.inventory.length === 0 ? (
+            <p>Inventário extra vazio.</p>
+          ) : (
+            <ul aria-labelledby={mountInventoryId}>
+              {player.mount.inventory.map(
+                ({ cardId, quantity, equipmentState }, i) => (
+                  <li key={i}>
+                    <span>
+                      {quantity}× {nameOf(cards, cardId)}
+                      {equipmentStateSuffix(equipmentState)}
+                    </span>
+                    {prepare && (
+                      <TransferControl
+                        key={`${cardId}-${quantity}`}
+                        name={nameOf(cards, cardId)}
+                        total={quantity}
+                        equipment={equipmentState !== undefined}
+                        request={{
+                          direction: 'fromMount',
+                          space: 'inventory',
+                          cardId,
+                          ...(equipmentState !== undefined && {
+                            inventorySlotIndex: i,
+                          }),
+                        }}
+                        onTransfer={prepare.onTransfer}
+                        pending={prepare.pending}
+                      />
+                    )}
+                  </li>
+                ),
+              )}
+            </ul>
+          )}
+          <h4 id={mountFolderId}>
+            Pasta extra (capacidade {player.mount.tcgFolderCapacity})
+          </h4>
+          {player.mount.tcgFolder.length === 0 ? (
+            <p>Pasta extra vazia.</p>
+          ) : (
+            <ul aria-labelledby={mountFolderId}>
+              {player.mount.tcgFolder.map(({ cardId, copies }) => (
+                <li key={cardId}>
+                  <span>
+                    {copies}× {nameOf(cards, cardId)}
+                  </span>
+                  {prepare && (
+                    <TransferControl
+                      key={`${cardId}-${copies}`}
+                      name={nameOf(cards, cardId)}
+                      total={copies}
+                      equipment={false}
+                      request={{
+                        direction: 'fromMount',
+                        space: 'tcgFolder',
+                        cardId,
+                      }}
+                      onTransfer={prepare.onTransfer}
+                      pending={prepare.pending}
+                    />
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
       <h3 id={vaultId}>
         Cofre ({player.vault.slots.length} de {player.vaultCapacity} slots)
@@ -413,6 +577,21 @@ function MemberState({
           {player.tcgFolder.map(({ cardId, copies }) => (
             <li key={cardId}>
               {copies}× {nameOf(cards, cardId)}
+              {prepare && player.mount !== null && (
+                <TransferControl
+                  key={`${cardId}-${copies}`}
+                  name={nameOf(cards, cardId)}
+                  total={copies}
+                  equipment={false}
+                  request={{
+                    direction: 'toMount',
+                    space: 'tcgFolder',
+                    cardId,
+                  }}
+                  onTransfer={prepare.onTransfer}
+                  pending={prepare.pending}
+                />
+              )}
             </li>
           ))}
         </ul>
@@ -565,6 +744,31 @@ function refusalText(error: Error, name: string): string {
   return errorText(error)
 }
 
+/** Recusa do Transferir (REQ-85): `message` + texto do motivo; outro motivo → só a `message`. */
+function transferRefusalText(
+  error: Error,
+  direction: MountTransfer['direction'],
+  name: string,
+): string {
+  if (!(error instanceof ActionNotAllowedError)) return errorText(error)
+  const toMount = direction === 'toMount'
+  const reason =
+    error.reason === 'noMount'
+      ? 'Você não tem montaria.'
+      : error.reason === 'notOwned'
+        ? `Não há essas cópias de ${name} ali.`
+        : error.reason === 'inventoryFull'
+          ? toMount
+            ? 'Não há espaço no inventário extra.'
+            : 'Não há espaço no inventário.'
+          : error.reason === 'tcgFolderFull'
+            ? toMount
+              ? 'Não há espaço na pasta extra.'
+              : 'Não há espaço na pasta de TCG.'
+            : ''
+  return reason === '' ? error.message : `${error.message} ${reason}`
+}
+
 const invalidCopies = 'Use um número inteiro a partir de 0.'
 
 /** Seção "Ajustar deck" (REQ-42): cópias na build por carta da build ∪ pasta (D-57 item 2). */
@@ -589,6 +793,7 @@ function AdjustDeck({
     ...new Set([
       ...player.build.map(({ cardId }) => cardId),
       ...player.tcgFolder.map(({ cardId }) => cardId),
+      ...(player.mount?.tcgFolder.map(({ cardId }) => cardId) ?? []),
     ]),
   ].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))
   const [draft, setDraft] = useState<Record<string, string>>(() =>
@@ -623,6 +828,11 @@ function AdjustDeck({
               <p>{name}</p>
               <p>Na build: {copiesIn(player.build, cardId)}</p>
               <p>Na pasta: {copiesIn(player.tcgFolder, cardId)}</p>
+              {player.mount !== null && (
+                <p>
+                  Na pasta extra: {copiesIn(player.mount.tcgFolder, cardId)}
+                </p>
+              )}
               <label htmlFor={fieldId}>Cópias na build de {name}</label>
               <input
                 id={fieldId}
@@ -1484,6 +1694,7 @@ function PreparedMatch({
   onEquip,
   onUnequip,
   onOpenBooster,
+  onTransfer,
   onActivate,
   onEvent,
   eventError,
@@ -1523,6 +1734,7 @@ function PreparedMatch({
   onEquip: NonNullable<PrepareControls['onEquip']>
   onUnequip: NonNullable<PrepareControls['onUnequip']>
   onOpenBooster: NonNullable<PrepareControls['onOpenBooster']>
+  onTransfer: PrepareControls['onTransfer']
   onActivate: ActivateEffect
   onEvent: (action: RandomEventAction) => void
   eventError: Error | null
@@ -1666,6 +1878,7 @@ function PreparedMatch({
                     onUnequip,
                     onOpenBooster,
                   }),
+                  onTransfer,
                   onActivate,
                   pending: moving,
                 }
@@ -1818,11 +2031,17 @@ export function PartySession() {
     if (action.variables.type === 'prepare') {
       status = ['activate', 'useAbility'].includes(action.variables.operation)
         ? errorText(action.error)
-        : action.variables.operation === 'openBooster' &&
-            action.error instanceof ActionNotAllowedError &&
-            action.error.reason === 'tcgFolderFull'
-          ? `${action.error.message} A pasta de TCG precisa de espaço para todas as cartas do booster.`
-          : refusalText(action.error, preparedName)
+        : action.variables.operation === 'transferMount'
+          ? transferRefusalText(
+              action.error,
+              action.variables.direction,
+              preparedName,
+            )
+          : action.variables.operation === 'openBooster' &&
+              action.error instanceof ActionNotAllowedError &&
+              action.error.reason === 'tcgFolderFull'
+            ? `${action.error.message} A pasta de TCG precisa de espaço para todas as cartas do booster.`
+            : refusalText(action.error, preparedName)
     } else if (
       action.variables.type === 'scavenge' &&
       action.error instanceof ActionNotAllowedError &&
@@ -1877,9 +2096,13 @@ export function PartySession() {
             ? `Guardou ${preparedName}.`
             : action.variables.operation === 'openBooster'
               ? `Abriu ${preparedName}.`
-              : action.variables.operation === 'useAbility'
-                ? 'Habilidade usada.'
-                : 'Efeito ativado.'
+              : action.variables.operation === 'transferMount'
+                ? action.variables.direction === 'toMount'
+                  ? `Levou ${action.variables.quantity}× ${preparedName} para a montaria.`
+                  : `Trouxe ${action.variables.quantity}× ${preparedName} da montaria.`
+                : action.variables.operation === 'useAbility'
+                  ? 'Habilidade usada.'
+                  : 'Efeito ativado.'
     } else if (action.variables.type === 'adjustDeck') {
       status = `Build salva: ${host.player.buildSize} cartas.`
     } else if (action.variables.type === 'endTurn') {
@@ -2032,6 +2255,14 @@ export function PartySession() {
                 type: 'prepare',
                 operation: 'openBooster',
                 cardId,
+              })
+            }}
+            onTransfer={(request) => {
+              setPreparedCardId(request.cardId)
+              action.mutate({
+                type: 'prepare',
+                operation: 'transferMount',
+                ...request,
               })
             }}
             onActivate={(activation, onSuccess) =>

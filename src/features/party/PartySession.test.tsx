@@ -4068,3 +4068,343 @@ describe('REQ-79: estado do equipamento na tela do grupo', () => {
     ])
   })
 })
+
+describe('REQ-84 e REQ-85: Montaria na tela do grupo e Transferir', () => {
+  const mountedId = 'party-montaria'
+  const list = (name: string) => screen.getByRole('list', { name })
+  const button = (name: string) => screen.getByRole('button', { name })
+  const noButton = (name: string) =>
+    expect(screen.queryByRole('button', { name })).not.toBeInTheDocument()
+  const folder = () => list('Pasta de TCG (capacidade 30)')
+  const extraFolder = () => list('Pasta extra (capacidade 10)')
+  const extraInventory = () => list('Inventário extra (1 de 4 slots)')
+  const refusal = (reason: string) =>
+    HttpResponse.json(
+      {
+        error: {
+          code: 'ACTION_NOT_ALLOWED',
+          message: 'Ação não permitida.',
+          details: { reason },
+        },
+      },
+      { status: 409 },
+    )
+
+  async function mountedParty(): Promise<Party> {
+    const { partyMountedFixture } = await import('../../mocks/mountFixtures')
+    return structuredClone(partyMountedFixture)
+  }
+
+  async function openMounted(): Promise<void> {
+    renderParty(mountedId)
+    await screen.findByText('Montaria: Pônei de Guerra')
+  }
+
+  function capture(response: () => Response) {
+    const bodies: unknown[] = []
+    server.use(
+      http.post('*/parties/:partyId/actions', async ({ request }) => {
+        bodies.push(await request.json())
+        return response()
+      }),
+    )
+    return bodies
+  }
+
+  it('REQ-84: depois do "Inventário" e antes do "Cofre", mostra "Montaria: {nome}" com as duas listas e os slots', async () => {
+    await openMounted()
+    const section = await screen.findByRole('region', { name: 'Lia' })
+    const titles = within(section)
+      .getAllByRole('heading')
+      .map((h) => h.textContent ?? '')
+    const at = (start: string) => titles.findIndex((t) => t.startsWith(start))
+    expect(at('Montaria: Pônei de Guerra')).toBeGreaterThan(at('Inventário ('))
+    expect(at('Montaria: Pônei de Guerra')).toBeLessThan(at('Cofre'))
+    expect(
+      within(extraInventory())
+        .getAllByRole('listitem')
+        .map((li) => li.firstChild?.textContent),
+    ).toEqual(['2× Poção de Cura'])
+    expect(
+      within(extraFolder())
+        .getAllByRole('listitem')
+        .map((li) => li.firstChild?.textContent),
+    ).toEqual(['1× Força'])
+    noButton('Equipar Poção de Cura')
+    noButton('Abrir Poção de Cura')
+  })
+
+  it('REQ-84: com a montaria vazia, mostra "Inventário extra vazio." e "Pasta extra vazia."', async () => {
+    const party = await mountedParty()
+    party.members[0]!.player.mount = {
+      ...party.members[0]!.player.mount!,
+      inventory: [],
+      tcgFolder: [],
+    }
+    server.use(
+      http.post('*/parties/:partyId/session', () => HttpResponse.json(party)),
+      http.get('*/parties/:partyId', () => HttpResponse.json(party)),
+    )
+    await openMounted()
+    expect(screen.getByText('Inventário extra vazio.')).toBeInTheDocument()
+    expect(screen.getByText('Pasta extra vazia.')).toBeInTheDocument()
+  })
+
+  it('REQ-84: sem montaria, mostra "Sem montaria." e nenhuma das listas', async () => {
+    renderParty(partyInSessionFixture.id)
+    expect(await screen.findByText('Sem montaria.')).toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', { name: /^Inventário extra/ }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', { name: /^Pasta extra/ }),
+    ).not.toBeInTheDocument()
+    expect(screen.queryByText(/^Montaria:/)).not.toBeInTheDocument()
+  })
+
+  it('REQ-84: o "Ajustar deck" inclui as cartas da pasta extra e "Na pasta extra: {copies}" depois de "Na pasta"', async () => {
+    await openMounted()
+    fireEvent.click(button('Ajustar deck'))
+    const section = await screen.findByRole('region', { name: 'Ajustar deck' })
+    const row = (name: string) =>
+      within(section)
+        .getAllByRole('listitem')
+        .find((li) => li.firstChild?.textContent === name)!
+    expect(
+      Array.from(row('Força').querySelectorAll('p')).map((p) => p.textContent),
+    ).toEqual(['Força', 'Na build: 30', 'Na pasta: 2', 'Na pasta extra: 1'])
+    expect(row('Destreza')).toHaveTextContent('Na pasta extra: 0')
+  })
+
+  it('REQ-84: sem montaria, o "Ajustar deck" não ganha "Na pasta extra"', async () => {
+    renderParty(partyInSessionFixture.id)
+    fireEvent.click(await screen.findByRole('button', { name: 'Ajustar deck' }))
+    const section = await screen.findByRole('region', { name: 'Ajustar deck' })
+    expect(section).not.toHaveTextContent('Na pasta extra')
+  })
+
+  it('REQ-85: com prepare e montaria, o inventário e a pasta ganham "Levar … para a montaria" e a montaria ganha "Trazer … da montaria"', async () => {
+    await openMounted()
+    button('Levar Espada Curta para a montaria')
+    button('Levar Força para a montaria')
+    button('Levar Destreza para a montaria')
+    button('Trazer Poção de Cura da montaria')
+    button('Trazer Força da montaria')
+  })
+
+  it('REQ-85: "Quantidade de {nome}" só aparece com quantidade ou cópias acima de 1 e começa no total', async () => {
+    await openMounted()
+    expect(within(folder()).getByLabelText('Quantidade de Força')).toHaveValue(
+      2,
+    )
+    expect(
+      within(folder()).queryByLabelText('Quantidade de Destreza'),
+    ).not.toBeInTheDocument()
+    expect(
+      within(extraInventory()).getByLabelText('Quantidade de Poção de Cura'),
+    ).toHaveValue(2)
+    expect(
+      screen.queryByLabelText('Quantidade de Espada Curta'),
+    ).not.toBeInTheDocument()
+    expect(
+      within(extraFolder()).queryByLabelText('Quantidade de Força'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('REQ-85: sem montaria, não há os controles', async () => {
+    renderParty(partyInSessionFixture.id)
+    await screen.findByText('Sem montaria.')
+    expect(screen.queryByRole('button', { name: /montaria$/ })).toBeNull()
+  })
+
+  it('REQ-85: sem prepare em availableActions, não há os controles', async () => {
+    const party = await mountedParty()
+    const player = party.members[0]!.player
+    player.availableActions = player.availableActions.filter(
+      (action) => action !== 'prepare',
+    )
+    server.use(
+      http.post('*/parties/:partyId/session', () => HttpResponse.json(party)),
+      http.get('*/parties/:partyId', () => HttpResponse.json(party)),
+    )
+    await openMounted()
+    expect(screen.queryByRole('button', { name: /montaria$/ })).toBeNull()
+    expect(screen.queryByLabelText(/^Quantidade de/)).toBeNull()
+  })
+
+  it('REQ-85: "Levar" da pasta envia o pedido com a quantidade do campo e, com 200, mostra o Party e "Levou {quantity}× {nome} para a montaria."', async () => {
+    const { partyMountTransferredFixture } =
+      await import('../../mocks/mountFixtures')
+    const bodies = capture(() =>
+      HttpResponse.json(partyMountTransferredFixture),
+    )
+    await openMounted()
+    fireEvent.change(within(folder()).getByLabelText('Quantidade de Força'), {
+      target: { value: '2' },
+    })
+    fireEvent.click(button('Levar Força para a montaria'))
+    await waitFor(() =>
+      expect(status()).toHaveTextContent('Levou 2× Força para a montaria.'),
+    )
+    expect(bodies).toEqual([
+      {
+        type: 'prepare',
+        operation: 'transferMount',
+        direction: 'toMount',
+        space: 'tcgFolder',
+        cardId: 'fixture.strength-basic',
+        quantity: 2,
+      },
+    ])
+    expect(within(extraFolder()).getByText('2× Força')).toBeInTheDocument()
+  })
+
+  it('REQ-85: "Trazer" do inventário extra envia direction fromMount e space inventory', async () => {
+    const { partyMountTransferredFixture } =
+      await import('../../mocks/mountFixtures')
+    const bodies = capture(() =>
+      HttpResponse.json(partyMountTransferredFixture),
+    )
+    await openMounted()
+    fireEvent.change(
+      within(extraInventory()).getByLabelText('Quantidade de Poção de Cura'),
+      { target: { value: '1' } },
+    )
+    fireEvent.click(button('Trazer Poção de Cura da montaria'))
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(
+        'Trouxe 1× Poção de Cura da montaria.',
+      ),
+    )
+    expect(bodies).toEqual([
+      {
+        type: 'prepare',
+        operation: 'transferMount',
+        direction: 'fromMount',
+        space: 'inventory',
+        cardId: 'fixture.healing-potion',
+        quantity: 1,
+      },
+    ])
+  })
+
+  it('REQ-85: um slot com equipmentState envia inventorySlotIndex e quantity 1, sem campo', async () => {
+    const { partyMountTransferredFixture } =
+      await import('../../mocks/mountFixtures')
+    const bodies = capture(() =>
+      HttpResponse.json(partyMountTransferredFixture),
+    )
+    await openMounted()
+    fireEvent.click(button('Levar Espada Curta para a montaria'))
+    await waitFor(() => expect(bodies).toHaveLength(1))
+    expect(bodies[0]).toEqual({
+      type: 'prepare',
+      operation: 'transferMount',
+      direction: 'toMount',
+      space: 'inventory',
+      cardId: 'fixture.short-sword',
+      quantity: 1,
+      inventorySlotIndex: 0,
+    })
+  })
+
+  it.each(['', '0', '1.5', '-1'])(
+    'REQ-85: quantidade "%s" não envia nada e o campo mostra "Use um número inteiro a partir de 1."',
+    async (value) => {
+      const bodies = capture(() => HttpResponse.json({}))
+      await openMounted()
+      const field = within(folder()).getByLabelText('Quantidade de Força')
+      fireEvent.change(field, { target: { value } })
+      fireEvent.click(button('Levar Força para a montaria'))
+      expect(
+        await screen.findByText('Use um número inteiro a partir de 1.'),
+      ).toBeInTheDocument()
+      expect(field).toHaveAttribute('aria-invalid', 'true')
+      expect(bodies).toEqual([])
+    },
+  )
+
+  it('REQ-85: durante o pedido os botões de transferir e de ação ficam desabilitados', async () => {
+    const { partyMountTransferredFixture } =
+      await import('../../mocks/mountFixtures')
+    let release: () => void = () => {}
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    server.use(
+      http.post('*/parties/:partyId/actions', async () => {
+        await gate
+        return HttpResponse.json(partyMountTransferredFixture)
+      }),
+    )
+    await openMounted()
+    fireEvent.click(button('Levar Força para a montaria'))
+    await waitFor(() =>
+      expect(button('Levar Força para a montaria')).toBeDisabled(),
+    )
+    expect(button('Trazer Força da montaria')).toBeDisabled()
+    expect(button('Levar Espada Curta para a montaria')).toBeDisabled()
+    expect(button('Comprar cartas')).toBeDisabled()
+    release()
+    await waitFor(() => expect(status()).toHaveTextContent('Levou'))
+  })
+
+  it.each([
+    ['noMount', 'Você não tem montaria.'],
+    ['notOwned', 'Não há essas cópias de Força ali.'],
+    ['inventoryFull', 'Não há espaço no inventário extra.'],
+    ['tcgFolderFull', 'Não há espaço na pasta extra.'],
+  ])(
+    'REQ-85: 409 %s em "Levar" mostra a message seguida do texto do motivo e nada muda',
+    async (reason, text) => {
+      server.use(http.post('*/parties/:partyId/actions', () => refusal(reason)))
+      await openMounted()
+      fireEvent.click(button('Levar Força para a montaria'))
+      await waitFor(() =>
+        expect(status()).toHaveTextContent(`Ação não permitida. ${text}`),
+      )
+      expect(within(extraFolder()).getByText('1× Força')).toBeInTheDocument()
+    },
+  )
+
+  it('REQ-85: 409 em "Trazer" diz "Não há espaço no inventário." (inventoryFull) e "Não há espaço na pasta de TCG." (tcgFolderFull)', async () => {
+    let reason = 'inventoryFull'
+    server.use(http.post('*/parties/:partyId/actions', () => refusal(reason)))
+    await openMounted()
+    fireEvent.click(button('Trazer Poção de Cura da montaria'))
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(
+        'Ação não permitida. Não há espaço no inventário.',
+      ),
+    )
+    reason = 'tcgFolderFull'
+    fireEvent.click(button('Trazer Força da montaria'))
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(
+        'Ação não permitida. Não há espaço na pasta de TCG.',
+      ),
+    )
+  })
+
+  it('REQ-85: outro motivo mostra só a message', async () => {
+    server.use(
+      http.post('*/parties/:partyId/actions', () => refusal('noActionPoints')),
+    )
+    await openMounted()
+    fireEvent.click(button('Levar Força para a montaria'))
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(/^Ação não permitida\.$/),
+    )
+  })
+
+  it('REQ-85: falha de rede mostra "Servidor indisponível. Tente novamente."', async () => {
+    server.use(
+      http.post('*/parties/:partyId/actions', () => HttpResponse.error()),
+    )
+    await openMounted()
+    fireEvent.click(button('Levar Força para a montaria'))
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(
+        'Servidor indisponível. Tente novamente.',
+      ),
+    )
+  })
+})

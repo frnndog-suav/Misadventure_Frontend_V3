@@ -142,3 +142,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 109 | SPEC | [Planejamento da FEAT-18](109-feat-18-planejamento.md) | aprovada pelo autor |
 | 110 | T-80 | [Cliente e fixtures MSW da montaria](110-T-80-cliente-feat-18.md) | concluída com MSW |
 | 111 | T-81 | [Laboratório, catálogo e editor da montaria](111-T-81-laboratorio-catalogo-editor-feat-18.md) | concluída com MSW |
+| 112 | T-82 | [Montaria na tela do grupo e Transferir](112-T-82-montaria-grupo-transferir-feat-18.md) | concluída com MSW |
