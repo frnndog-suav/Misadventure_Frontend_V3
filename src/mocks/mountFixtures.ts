@@ -345,7 +345,8 @@ function formatScenario(body: unknown): Response | undefined {
   if (operation === 'useAbility') {
     const slot = get(body, 'equipmentSlot') !== undefined
     const fromMount = get(body, 'mountAbility') !== undefined
-    if (slot === fromMount) return malformed('mountAbility', 'invalidBody')
+    if (slot && fromMount) return malformed('mountAbility', 'invalidItem')
+    if (!slot && !fromMount) return malformed('equipmentSlot', 'required')
   }
   return undefined
 }

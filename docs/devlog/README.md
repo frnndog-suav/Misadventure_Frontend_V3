@@ -118,9 +118,9 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 085 | T-66 | [Escolha de efeitos disparados](085-T-66-escolha-efeitos-disparados.md) | concluída |
 | 086 | T-67 | [Validação parcial da FEAT-13](086-T-67-validacao-integrada-feat-13.md) | validação parcial |
 | 087 | T-68 | [Cliente e fixtures MSW da FEAT-14](087-T-68-cliente-feat-14.md) | concluída |
-| 088 | FEAT-14 | [Interface de nocaute e respawn](088-feat-14-interface-nocaute-respawn.md) | concluída com MSW |
+| 088 | FEAT-14 | [Interface de nocaute e respawn](088-feat-14-interface-nocaute-respawn.md) | concluída |
 | 089 | FEAT-15 | [Planejamento e proposta de contrato](089-feat-15-planejamento.md) | acordo confirmado na v0.73 |
-| 090 | T-69 | [Cliente e fixtures MSW da FEAT-15](090-T-69-cliente-feat-15.md) | concluída com MSW |
+| 090 | T-69 | [Cliente e fixtures MSW da FEAT-15](090-T-69-cliente-feat-15.md) | concluída |
 | 091 | FEAT-15 | [Interface de missões e progressão de classes](091-feat-15-interface-missoes.md) | concluída |
 | 092 | FEAT-15 | [Pico de conclusão de missão](092-feat-15-pico-conclusao.md) | concluída |
 | 093 | RETORNO | [FEAT-15 validada contra o backend real](093-feat-15-validacao-integrada.md) | aguardando revisão |
@@ -134,17 +134,18 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 101 | T-74 | [Validação integrada da FEAT-16](101-T-74-validacao-integrada-feat-16.md) | concluída |
 | 102 | FEAT-16 | [Fechamento da FEAT-16](102-feat-16-fechamento.md) | concluída |
 | 103 | FEAT-17 | [Planejamento do ferreiro na spec](103-feat-17-planejamento.md) | concluída |
-| 104 | T-75 | [Cliente e fixtures MSW do ferreiro](104-T-75-cliente-feat-17.md) | concluída com MSW |
+| 104 | T-75 | [Cliente e fixtures MSW do ferreiro](104-T-75-cliente-feat-17.md) | concluída |
 | 105 | T-76 | [Laboratório, catálogo e editor do ferreiro](105-T-76-laboratorio-catalogo-editor-feat-17.md) | aguardando revisão |
 | 106 | T-77 | [Estado do equipamento e venda por cópia](106-T-77-estado-equipamento-venda-feat-17.md) | aguardando revisão |
-| 107 | T-78 | [Ir ao Ferreiro e Oficina: seção e lote](107-T-78-ferreiro-oficina-feat-17.md) | concluída com MSW |
+| 107 | T-78 | [Ir ao Ferreiro e Oficina: seção e lote](107-T-78-ferreiro-oficina-feat-17.md) | concluída |
 | 108 | T-79 | [Validação integrada da FEAT-17](108-T-79-validacao-integrada-feat-17.md) | concluída |
 | 109 | SPEC | [Planejamento da FEAT-18](109-feat-18-planejamento.md) | aprovada pelo autor |
-| 110 | T-80 | [Cliente e fixtures MSW da montaria](110-T-80-cliente-feat-18.md) | concluída com MSW |
-| 111 | T-81 | [Laboratório, catálogo e editor da montaria](111-T-81-laboratorio-catalogo-editor-feat-18.md) | concluída com MSW |
-| 112 | T-82 | [Montaria na tela do grupo e Transferir](112-T-82-montaria-grupo-transferir-feat-18.md) | concluída com MSW |
-| 113 | T-83 | [Movimentar com montaria](113-T-83-movimentar-montaria-feat-18.md) | concluída com MSW |
-| 114 | T-84 | [Estábulo](114-T-84-estabulo-feat-18.md) | concluída com MSW |
-| 115 | T-85 | [Destinos prontos e descarte com montaria](115-T-85-destinos-descarte-montaria-feat-18.md) | concluída com MSW |
-| 116 | T-86 | [Efeitos e habilidades da montaria](116-T-86-efeitos-habilidades-montaria-feat-18.md) | concluída com MSW |
-| 117 | T-88 | [Alinhar o cliente ao CONTRATO v0.92](117-T-88-alinhar-contrato-v092-feat-18.md) | concluída com MSW |
+| 110 | T-80 | [Cliente e fixtures MSW da montaria](110-T-80-cliente-feat-18.md) | concluída |
+| 111 | T-81 | [Laboratório, catálogo e editor da montaria](111-T-81-laboratorio-catalogo-editor-feat-18.md) | concluída |
+| 112 | T-82 | [Montaria na tela do grupo e Transferir](112-T-82-montaria-grupo-transferir-feat-18.md) | concluída |
+| 113 | T-83 | [Movimentar com montaria](113-T-83-movimentar-montaria-feat-18.md) | concluída |
+| 114 | T-84 | [Estábulo](114-T-84-estabulo-feat-18.md) | concluída |
+| 115 | T-85 | [Destinos prontos e descarte com montaria](115-T-85-destinos-descarte-montaria-feat-18.md) | concluída |
+| 116 | T-86 | [Efeitos e habilidades da montaria](116-T-86-efeitos-habilidades-montaria-feat-18.md) | concluída |
+| 117 | T-88 | [Alinhar o cliente ao CONTRATO v0.92](117-T-88-alinhar-contrato-v092-feat-18.md) | concluída |
+| 118 | T-87 | [Validação integrada da FEAT-18](118-T-87-validacao-integrada-feat-18.md) | aguardando revisão |
