@@ -73,3 +73,33 @@ test('REQ-85: quantidade inválida não envia nada; recusa do backend mostra a m
     'Não há espaço no inventário.',
   )
 })
+
+test('REQ-86: "passando por" envia viaZoneId e move o grupo para a zona a 2 travessias', async ({
+  page,
+}) => {
+  await page.goto('/grupo/party-montaria')
+  const map = page.getByRole('region', { name: 'Mapa' })
+  await map.getByRole('button', { name: /^Porto Cinzento/ }).click()
+  await expect(
+    page.getByRole('button', {
+      name: 'Movimentar para Porto Cinzento',
+      exact: true,
+    }),
+  ).toHaveCount(0)
+  const request = page.waitForRequest((request) =>
+    request.url().endsWith('/actions'),
+  )
+  await page
+    .getByRole('button', {
+      name: 'Movimentar para Porto Cinzento passando por Curva de Pedra',
+    })
+    .click()
+  expect((await request).postDataJSON()).toEqual({
+    type: 'move',
+    zoneId: 'fixture.gray-harbor',
+    viaZoneId: 'fixture.stone-bend',
+  })
+  await expect(
+    map.getByRole('button', { name: /^Porto Cinzento.*está aqui/ }),
+  ).toBeVisible()
+})

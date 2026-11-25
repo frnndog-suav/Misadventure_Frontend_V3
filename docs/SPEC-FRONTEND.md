@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 1.00 · **Data:** 2026-11-25
+> **Versão da spec:** 1.01 · **Data:** 2026-11-25
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -1063,7 +1063,7 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 - [x] **T-80 — Cliente e fixtures MSW da montaria** (REQ-82 a REQ-89). Schemas e tipos do CONTRATO v0.90 (`MountCard`, `cardCounts.mount`, `market.mounts`, 7 chaves, `mount`, `moveRoutes`, `viaZoneId`, `transferMount`, `stable`, `buyMount`/`sellMount` e resultados, `loseMount`, `mountAlreadyOwned`, os 4 motivos novos, `ReceiveSpace` em todos os destinos, `received`, `lastRewardDelivery.space`, `discardOptions`/`keep` com `space`, origens da montaria e `mountAbility`), `usePartyAction` com as ações novas e as fixtures da D-64 item 6. Campos novos com `.default()` nos valores legados (saves antigos leem `mount: null`). Como na D-62 item 8, o que o tipo exigir na tela entra só com a `message`.
 - [x] **T-81 — Laboratório, catálogo e editor da montaria** (REQ-82, REQ-83). E2E nas áreas `lab` e `editor`.
 - [x] **T-82 — Montaria na tela do grupo e Transferir** (REQ-84, REQ-85). E2E na área `party`.
-- [ ] **T-83 — Movimentar com montaria** (REQ-86). E2E na área `party`.
+- [x] **T-83 — Movimentar com montaria** (REQ-86). E2E na área `party`.
 - [ ] **T-84 — Estábulo** (REQ-87). E2E na área `party`.
 - [ ] **T-85 — Destinos prontos e descarte com montaria** (REQ-88). E2E na área `party`.
 - [ ] **T-86 — Efeitos e habilidades da montaria** (REQ-89). E2E na área `party`.
@@ -1173,3 +1173,4 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 | 0.98 | 2026-11-25 | Autor aprovou a v0.97. T-80 concluída com MSW conforme CONTRATO v0.90 (D-64 item 8). |
 | 0.99 | 2026-11-25 | T-81 concluída com MSW: laboratório, catálogo e editor da montaria (D-64 item 9). |
 | 1.00 | 2026-11-25 | T-82 concluída com MSW: montaria na tela do grupo e Transferir (REQ-84, REQ-85; D-64 item 10). |
+| 1.01 | 2026-11-25 | T-83 concluída com MSW: Movimentar com montaria (REQ-86). |

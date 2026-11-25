@@ -1712,7 +1712,7 @@ function PreparedMatch({
   party: Party
   classes: ClassDefinition[]
   cards: Cards
-  onMove: (zoneId: string) => void
+  onMove: (zoneId: string, viaZoneId?: string) => void
   onEndTurn: () => void
   onSaveRespawnPoint: () => void
   onRecover: (option: RecoverAction['option']) => void
@@ -2049,6 +2049,13 @@ export function PartySession() {
     ) {
       // Texto próprio do Vasculhar (REQ-51); o do `reasonText` é o do Preparar.
       status = `${action.error.message} Não há espaço no inventário.`
+    } else if (
+      action.variables.type === 'move' &&
+      action.error instanceof ActionNotAllowedError &&
+      action.error.reason === 'noMount'
+    ) {
+      // REQ-86: os demais motivos do Movimentar mostram só a `message`.
+      status = `${action.error.message} Você não tem montaria.`
     } else status = errorText(action.error)
   } else if (action.isSuccess && party !== undefined && host !== undefined) {
     if (
@@ -2204,7 +2211,13 @@ export function PartySession() {
             party={party}
             classes={classes.data ?? []}
             cards={cards.cards}
-            onMove={(zoneId) => action.mutate({ type: 'move', zoneId })}
+            onMove={(zoneId, viaZoneId) =>
+              action.mutate(
+                viaZoneId === undefined
+                  ? { type: 'move', zoneId }
+                  : { type: 'move', zoneId, viaZoneId },
+              )
+            }
             onEndTurn={() => action.mutate({ type: 'endTurn' })}
             onSaveRespawnPoint={() =>
               action.mutate({ type: 'saveRespawnPoint' })

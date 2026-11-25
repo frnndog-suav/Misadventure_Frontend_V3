@@ -28,7 +28,7 @@ export function PartyMap({
   party: Party
   cards: ReadonlyMap<string, Card>
   titleOf: (cardId: string) => string
-  onMove: (zoneId: string) => void
+  onMove: (zoneId: string, viaZoneId?: string) => void
   moving: boolean
 }) {
   const host = party.members.find((m) => m.isHost)
@@ -68,6 +68,8 @@ export function PartyMap({
   })
 
   const chosen = chosenId === null ? undefined : cards.get(chosenId)
+  // REQ-86: rotas prontas do backend; sem entrada, só o botão simples.
+  const route = host?.player.moveRoutes.find((r) => r.zoneId === chosenId)
   const crossingTitles =
     chosenId === null
       ? []
@@ -125,13 +127,28 @@ export function PartyMap({
           {chosen !== undefined && <FullCard card={chosen} />}
           {host?.player.moveTargets.includes(chosenId) &&
             (host.player.availableActions.includes('move') ? (
-              <button
-                type="button"
-                onClick={() => onMove(chosenId)}
-                disabled={moving}
-              >
-                Movimentar para {titleOf(chosenId)}
-              </button>
+              <>
+                {(route === undefined || route.direct) && (
+                  <button
+                    type="button"
+                    onClick={() => onMove(chosenId)}
+                    disabled={moving}
+                  >
+                    Movimentar para {titleOf(chosenId)}
+                  </button>
+                )}
+                {route?.via.map((viaZoneId) => (
+                  <button
+                    key={viaZoneId}
+                    type="button"
+                    onClick={() => onMove(chosenId, viaZoneId)}
+                    disabled={moving}
+                  >
+                    Movimentar para {titleOf(chosenId)} passando por{' '}
+                    {titleOf(viaZoneId)}
+                  </button>
+                ))}
+              </>
             ) : (
               party.turn.actionPoints === 0 && (
                 <p>Sem pontos de ação para Movimentar.</p>

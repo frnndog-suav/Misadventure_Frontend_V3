@@ -4408,3 +4408,132 @@ describe('REQ-84 e REQ-85: Montaria na tela do grupo e Transferir', () => {
     )
   })
 })
+
+describe('REQ-86: Movimentar com montaria', () => {
+  const mapRegion = () => screen.getByRole('region', { name: 'Mapa' })
+  const zoneButton = (title: string) =>
+    within(mapRegion()).getByRole('button', { name: new RegExp(`^${title}`) })
+  const button = (name: string) => screen.getByRole('button', { name })
+  const via = 'Movimentar para Porto Cinzento passando por Curva de Pedra'
+
+  async function openMounted(): Promise<void> {
+    renderParty('party-montaria')
+    await screen.findByText('Montaria: Pônei de Guerra')
+  }
+
+  function capture(response: () => Response) {
+    const bodies: unknown[] = []
+    server.use(
+      http.post('*/parties/:partyId/actions', async ({ request }) => {
+        bodies.push(await request.json())
+        return response()
+      }),
+    )
+    return bodies
+  }
+
+  it('REQ-86: direct mostra o botão simples; cada zona de via ganha "passando por", sem o simples quando direct é false', async () => {
+    await openMounted()
+    fireEvent.click(zoneButton('Curva de Pedra'))
+    expect(button('Movimentar para Curva de Pedra')).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /passando por/ }),
+    ).not.toBeInTheDocument()
+    fireEvent.click(zoneButton('Porto Cinzento'))
+    expect(button(via)).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Movimentar para Porto Cinzento' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('REQ-86: "passando por" envia viaZoneId; o simples não envia', async () => {
+    const { partyMountMovedFixture, partyMountMovedToBendFixture } =
+      await import('../../mocks/mountFixtures')
+    let next: Party = partyMountMovedFixture
+    const bodies = capture(() => HttpResponse.json(next))
+    await openMounted()
+    fireEvent.click(zoneButton('Porto Cinzento'))
+    fireEvent.click(button(via))
+    await waitFor(() => expect(bodies).toHaveLength(1))
+    expect(bodies[0]).toEqual({
+      type: 'move',
+      zoneId: 'fixture.gray-harbor',
+      viaZoneId: 'fixture.stone-bend',
+    })
+    await waitFor(() =>
+      expect(
+        within(mapRegion()).getByRole('button', {
+          name: /^Porto Cinzento.*Lia está aqui/,
+        }),
+      ).toBeInTheDocument(),
+    )
+    next = partyMountMovedToBendFixture
+    fireEvent.click(zoneButton('Curva de Pedra'))
+    fireEvent.click(button('Movimentar para Curva de Pedra'))
+    await waitFor(() => expect(bodies).toHaveLength(2))
+    expect(bodies[1]).toEqual({ type: 'move', zoneId: 'fixture.stone-bend' })
+  })
+
+  it('REQ-86: sem entrada em moveRoutes, só o botão simples', async () => {
+    const { partyMountedFixture } = await import('../../mocks/mountFixtures')
+    const party = structuredClone(partyMountedFixture)
+    const host = party.members.find((m) => m.isHost)
+    if (host) host.player.moveRoutes = []
+    server.use(
+      http.post('*/parties/:partyId/session/start', () =>
+        HttpResponse.json(party),
+      ),
+      http.get('*/parties/:partyId', () => HttpResponse.json(party)),
+    )
+    await openMounted()
+    fireEvent.click(zoneButton('Porto Cinzento'))
+    expect(button('Movimentar para Porto Cinzento')).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /passando por/ }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('REQ-86: durante o pedido os botões de Movimentar ficam desabilitados', async () => {
+    let release: () => void = () => {}
+    const gate = new Promise<void>((resolve) => (release = resolve))
+    server.use(
+      http.post('*/parties/:partyId/actions', async () => {
+        await gate
+        return HttpResponse.error()
+      }),
+    )
+    await openMounted()
+    fireEvent.click(zoneButton('Porto Cinzento'))
+    fireEvent.click(button(via))
+    await waitFor(() => expect(button(via)).toBeDisabled())
+    release()
+    await waitFor(() => expect(button(via)).toBeEnabled())
+  })
+
+  it.each([
+    ['noMount', 'Ação não permitida. Você não tem montaria.'],
+    ['notConnected', 'Ação não permitida.'],
+    ['noActionPoints', 'Ação não permitida.'],
+  ])('REQ-86: 409 %s mostra "%s"', async (reason, text) => {
+    capture(() =>
+      HttpResponse.json(
+        {
+          error: {
+            code: 'ACTION_NOT_ALLOWED',
+            message: 'Ação não permitida.',
+            details: { reason },
+          },
+        },
+        { status: 409 },
+      ),
+    )
+    await openMounted()
+    fireEvent.click(zoneButton('Porto Cinzento'))
+    fireEvent.click(button(via))
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(
+        new RegExp(`^${text.replace(/\./g, '\\.')}$`),
+      ),
+    )
+  })
+})

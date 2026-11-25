@@ -143,3 +143,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 110 | T-80 | [Cliente e fixtures MSW da montaria](110-T-80-cliente-feat-18.md) | concluída com MSW |
 | 111 | T-81 | [Laboratório, catálogo e editor da montaria](111-T-81-laboratorio-catalogo-editor-feat-18.md) | concluída com MSW |
 | 112 | T-82 | [Montaria na tela do grupo e Transferir](112-T-82-montaria-grupo-transferir-feat-18.md) | concluída com MSW |
+| 113 | T-83 | [Movimentar com montaria](113-T-83-movimentar-montaria-feat-18.md) | concluída com MSW |
