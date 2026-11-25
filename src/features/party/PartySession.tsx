@@ -724,7 +724,7 @@ function reasonText(error: ActionNotAllowedError, name: string): string {
     case 'replaceIndexInvalid':
     case 'recipeMissing':
     case 'materialsMissing':
-    case 'noMount': // FEAT-18: textos próprios nas T-82 a T-86.
+    case 'noMount': // FEAT-18: texto próprio no ramo de cada ação.
     case 'mountAlreadyOwned':
     case 'mountNotOffered':
     case 'mountNotEmpty':
@@ -976,7 +976,7 @@ function vaultReasonText(error: ActionNotAllowedError, name: string): string {
     case 'replaceIndexInvalid':
     case 'recipeMissing':
     case 'materialsMissing':
-    case 'noMount': // FEAT-18: textos próprios nas T-82 a T-86.
+    case 'noMount': // FEAT-18: texto próprio no ramo de cada ação.
     case 'mountAlreadyOwned':
     case 'mountNotOffered':
     case 'mountNotEmpty':
@@ -2042,19 +2042,23 @@ export function PartySession() {
     !smithFailed
   ) {
     if (action.variables.type === 'prepare') {
-      status = ['activate', 'useAbility'].includes(action.variables.operation)
-        ? errorText(action.error)
-        : action.variables.operation === 'transferMount'
-          ? transferRefusalText(
-              action.error,
-              action.variables.direction,
-              preparedName,
-            )
-          : action.variables.operation === 'openBooster' &&
-              action.error instanceof ActionNotAllowedError &&
-              action.error.reason === 'tcgFolderFull'
-            ? `${action.error.message} A pasta de TCG precisa de espaço para todas as cartas do booster.`
-            : refusalText(action.error, preparedName)
+      status =
+        action.error instanceof ActionNotAllowedError &&
+        action.error.reason === 'noMount'
+          ? `${action.error.message} Você não tem montaria.` // REQ-89
+          : ['activate', 'useAbility'].includes(action.variables.operation)
+            ? errorText(action.error)
+            : action.variables.operation === 'transferMount'
+              ? transferRefusalText(
+                  action.error,
+                  action.variables.direction,
+                  preparedName,
+                )
+              : action.variables.operation === 'openBooster' &&
+                  action.error instanceof ActionNotAllowedError &&
+                  action.error.reason === 'tcgFolderFull'
+                ? `${action.error.message} A pasta de TCG precisa de espaço para todas as cartas do booster.`
+                : refusalText(action.error, preparedName)
     } else if (
       action.variables.type === 'scavenge' &&
       action.error instanceof ActionNotAllowedError &&

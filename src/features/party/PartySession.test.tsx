@@ -4585,3 +4585,75 @@ describe('REQ-88: Destino pronto e descarte com montaria', () => {
     ])
   })
 })
+
+describe('REQ-89: Efeitos e habilidades da montaria', () => {
+  const button = (name: string) => screen.getByRole('button', { name })
+
+  async function openMounted(): Promise<void> {
+    renderParty('party-montaria')
+    await screen.findByText('Montaria: Pônei de Guerra')
+  }
+
+  function capture(response: () => Response) {
+    const bodies: unknown[] = []
+    server.use(
+      http.post('*/parties/:partyId/actions', async ({ request }) => {
+        bodies.push(await request.json())
+        return response()
+      }),
+    )
+    return bodies
+  }
+
+  const noMount = () =>
+    HttpResponse.json(
+      {
+        error: {
+          code: 'ACTION_NOT_ALLOWED',
+          message: 'Ação não permitida.',
+          details: { reason: 'noMount' },
+        },
+      },
+      { status: 409 },
+    )
+
+  it('REQ-89: o efeito da montaria mostra "Montaria · {nome}" e "Ativar" envia o cardId', async () => {
+    const bodies = capture(noMount)
+    await openMounted()
+    const section = screen.getByRole('region', { name: 'Ativar efeitos' })
+    expect(section).toHaveTextContent('Montaria · Pônei de Guerra')
+    fireEvent.click(button('Ativar Pônei de Guerra — efeito 1'))
+    await waitFor(() =>
+      expect(bodies).toEqual([
+        {
+          type: 'prepare',
+          operation: 'activate',
+          cardId: 'fixture.war-pony',
+          effectIndex: 0,
+        },
+      ]),
+    )
+  })
+
+  it('REQ-89: a habilidade da montaria leva o nome da carta e envia mountAbility; 409 noMount mostra a message e o motivo', async () => {
+    const bodies = capture(noMount)
+    await openMounted()
+    expect(
+      screen.getByRole('group', { name: /Preparar habilidade · Trote/ }),
+    ).toBeInTheDocument()
+    fireEvent.click(button('Usar habilidade'))
+    await waitFor(() =>
+      expect(status()).toHaveTextContent(
+        /^Ação não permitida\. Você não tem montaria\.$/,
+      ),
+    )
+    expect(bodies).toEqual([
+      {
+        type: 'prepare',
+        operation: 'useAbility',
+        mountAbility: true,
+        abilityId: 'pony-trot',
+      },
+    ])
+  })
+})

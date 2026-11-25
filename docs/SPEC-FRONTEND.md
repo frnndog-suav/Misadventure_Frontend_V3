@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 1.03 · **Data:** 2026-11-25
+> **Versão da spec:** 1.04 · **Data:** 2026-11-25
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -1066,7 +1066,7 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 - [x] **T-83 — Movimentar com montaria** (REQ-86). E2E na área `party`.
 - [x] **T-84 — Estábulo** (REQ-87). E2E na área `party`.
 - [x] **T-85 — Destinos prontos e descarte com montaria** (REQ-88). E2E na área `party`.
-- [ ] **T-86 — Efeitos e habilidades da montaria** (REQ-89). E2E na área `party`.
+- [x] **T-86 — Efeitos e habilidades da montaria** (REQ-89). E2E na área `party`.
 - [ ] **T-87 — Validação integrada da FEAT-18.** Repetir os cenários do contrato contra o backend real com MSW desligado, com as campanhas preparadas pelo backend (Estábulo, montaria com conteúdo, inventário cheio, mapa com dois caminhos a 2 zonas) e a `fixture.war-pony`.
 
 ## 8. Histórico
@@ -1176,3 +1176,4 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 | 1.01 | 2026-11-25 | T-83 concluída com MSW: Movimentar com montaria (REQ-86). |
 | 1.02 | 2026-11-25 | T-84 concluída com MSW: Estábulo no Ir ao Mercado (REQ-87). |
 | 1.03 | 2026-11-25 | T-85 concluída com MSW: destinos prontos, resultado do mercado por espaço e descarte por carta e espaço (REQ-88). |
+| 1.04 | 2026-11-25 | T-86 concluída com MSW: origem "Montaria" nos efeitos ativáveis e texto do `noMount` no Preparar (REQ-89). |

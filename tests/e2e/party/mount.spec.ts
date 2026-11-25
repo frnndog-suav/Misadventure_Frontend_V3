@@ -149,3 +149,29 @@ test('REQ-88: descarte do inventário extra mantém a recompensa e mostra o dest
     page.getByText('Minério de Ferro foi para o inventário extra.'),
   ).toBeVisible()
 })
+
+test('REQ-89: efeito e habilidade da montaria no Preparar', async ({
+  page,
+}) => {
+  await page.goto('/grupo/party-montaria')
+  const effects = page.getByRole('region', { name: 'Ativar efeitos' })
+  await expect(effects).toContainText('Montaria · Pônei de Guerra')
+  await expect(
+    effects.getByRole('button', {
+      name: 'Ativar Pônei de Guerra — efeito 1',
+    }),
+  ).toBeVisible()
+  const request = page.waitForRequest((request) =>
+    request.url().endsWith('/actions'),
+  )
+  await page
+    .getByRole('group', { name: /Preparar habilidade · Trote/ })
+    .getByRole('button', { name: 'Usar habilidade' })
+    .click()
+  expect((await request).postDataJSON()).toEqual({
+    type: 'prepare',
+    operation: 'useAbility',
+    mountAbility: true,
+    abilityId: 'pony-trot',
+  })
+})

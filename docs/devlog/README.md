@@ -146,3 +146,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 113 | T-83 | [Movimentar com montaria](113-T-83-movimentar-montaria-feat-18.md) | concluída com MSW |
 | 114 | T-84 | [Estábulo](114-T-84-estabulo-feat-18.md) | concluída com MSW |
 | 115 | T-85 | [Destinos prontos e descarte com montaria](115-T-85-destinos-descarte-montaria-feat-18.md) | concluída com MSW |
+| 116 | T-86 | [Efeitos e habilidades da montaria](116-T-86-efeitos-habilidades-montaria-feat-18.md) | concluída com MSW |

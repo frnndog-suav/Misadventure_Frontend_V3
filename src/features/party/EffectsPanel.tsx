@@ -6,6 +6,11 @@ import { nameOf } from './cardNames'
 
 type Cards = ReadonlyMap<string, Card>
 type Activation = PlayerState['activatableEffects'][number]
+const sourceLabels: Record<Activation['source'], string> = {
+  inventory: 'Inventário',
+  equipment: 'Equipamento',
+  mount: 'Montaria',
+}
 export type ActivateEffect = (
   action: Extract<PrepareAction, { operation: 'activate' }>,
   onSuccess: () => void,
@@ -35,7 +40,7 @@ function EffectActivation({
   return (
     <li>
       <p>
-        {source === 'inventory' ? 'Inventário' : 'Equipamento'} · {name}
+        {sourceLabels[source]} · {name}
       </p>
       {effect && <p>{effect.text}</p>}
       {handPayment !== null && (
