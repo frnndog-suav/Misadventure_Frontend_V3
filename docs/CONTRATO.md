@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.92 · **Data:** 2026-11-25
+> **Versão do contrato:** 0.93 · **Data:** 2026-11-25
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -3496,7 +3496,7 @@ Seja `G` criado com `{ "name": "Os Teimosos", "characterName": "Lia", "playerCla
 
 Só nos e2e do backend: rolagens exatas com `fixedRng` (limiares padrão, +2 do Artífice, quebra a partir de +7); encantamento de efeito, substituição com `replaceIndex` e Ferreiro Arcano (`extra`); Oficina com Artífice ativo (1 PA, desconto, teto +6, `enchantNotAvailable`, repetição); estado no cofre; bônus de refino nos `effectiveModifiers` e de elemento no combate; saves v2 a v9. Para a validação integrada (T-73), o backend entrega campanhas preparadas com Artífice ativo e com Ferreiro Arcano, os IDs e os resultados esperados.
 
-### FEAT-18 — Montarias e Estábulo — `acordado`
+### FEAT-18 — Montarias e Estábulo — `implementado (BE)`
 
 Regras: README 3.4 (a carta de zona lista as montarias do Estábulo), 5.1 (equipamento guardado não funciona), 6.2, 6.3, 6.5, 6.6, 12.2 (Movimentar; Ir ao Mercado inclui o Estábulo), 24, 24.5, 26 e Apêndice A (linha "Montaria"); Apêndice B 26, D2, E5, E6, E21, J1, K6, M4, O2, S3, U1 e U2 (B.20, 2026-11-24). Base no backend: SPEC-BACKEND REQ-155 a REQ-163, D-142 a D-147.
 
@@ -3870,3 +3870,4 @@ Só nos e2e do backend: abrir booster e comprar single somando o espaço da mont
 | 0.90 | 2026-11-24 | BE | FEAT-18 `acordado`: os três pedidos da v0.89 aceitos sem mudança de forma. O backend acrescenta à `fixture` a montaria `fixture.war-pony` (1 efeito ativável e 1 habilidade fora de combate) para o cenário "Habilidade da montaria" rodar por HTTP; `cardCounts.mount` da `fixture` = 2. |
 | 0.91 | 2026-11-25 | BE | FEAT-18 (T-77): resultado do `craft` ganha `destination: 'inventory' | 'mountInventory'` (Criar transborda para o inventário extra; `inventorySlotIndex` vale nesse espaço). Esclarecimentos: `PendingReward.destination` é o espaço principal; `discard[].space` opcional (ausente = principal). No `keep`, cópias acima do que há no espaço (ou carta fora dele) → 409 `rewardDoesNotFit` (antes `paymentInvalid`). |
 | 0.92 | 2026-11-25 | FE | FEAT-18: aceite da v0.91 sem mudanças; a seção continua `acordado`. Alinhamento do frontend na T-88. |
+| 0.93 | 2026-11-25 | BE | FEAT-18 `implementado (BE)` (SPEC-BACKEND T-74 a T-80; e2e da montaria, do Estábulo, do espaço e do movimento passando). Sem mudança de forma. Campanhas da validação integrada pelo preparador `test/prepare-feat-18.cjs` (devlog 097). |
