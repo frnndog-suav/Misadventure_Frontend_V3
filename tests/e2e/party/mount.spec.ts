@@ -103,3 +103,28 @@ test('REQ-86: "passando por" envia viaZoneId e move o grupo para a zona a 2 trav
     map.getByRole('button', { name: /^Porto Cinzento.*está aqui/ }),
   ).toBeVisible()
 })
+
+test('REQ-87: "Comprar" no Estábulo envia buyMount e mostra o resultado', async ({
+  page,
+}) => {
+  await page.goto('/grupo/party-estabulo')
+  await page.getByRole('button', { name: 'Ir ao Mercado' }).click()
+  const market = page.getByRole('region', { name: 'Mercado' })
+  await expect(market.getByRole('list', { name: 'Estábulo' })).toContainText(
+    'Cavalo de Arado — 322 de ouro',
+  )
+  await market.getByRole('button', { name: 'Comprar Cavalo de Arado' }).click()
+  const request = page.waitForRequest((request) =>
+    request.url().endsWith('/actions'),
+  )
+  await market
+    .getByRole('button', { name: 'Confirmar (1 ponto de ação)' })
+    .click()
+  expect((await request).postDataJSON()).toEqual({
+    type: 'visitMarket',
+    operations: [{ operation: 'buyMount', cardId: 'fixture.plow-horse' }],
+  })
+  await expect(
+    page.getByRole('list', { name: 'Resultado do mercado' }),
+  ).toContainText('Comprou a montaria Cavalo de Arado por 322 de ouro')
+})

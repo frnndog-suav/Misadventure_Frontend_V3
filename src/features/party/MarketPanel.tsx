@@ -442,6 +442,38 @@ export function MarketPanel({
           ))}
         </ul>
       </div>
+
+      {market.stable !== null && (
+        <div>
+          <h3 id="market-stable-title">Estábulo</h3>
+          <ul aria-labelledby="market-stable-title">
+            {market.stable.offers.map(({ cardId, price }) => (
+              <li key={cardId}>
+                <span>{`${nameOf(cards, cardId)} — ${price} de ouro`}</span>
+                <button
+                  type="button"
+                  onClick={() => append({ operation: 'buyMount', cardId })}
+                  disabled={pending}
+                >
+                  Comprar {nameOf(cards, cardId)}
+                </button>
+              </li>
+            ))}
+            {market.stable.currentMount !== null && (
+              <li>
+                <span>{`Sua montaria: ${nameOf(cards, market.stable.currentMount.cardId)} — vende por ${market.stable.currentMount.price} de ouro${market.stable.currentMount.sellable ? '' : ' (esvazie o inventário extra e a pasta extra antes)'}`}</span>
+                <button
+                  type="button"
+                  onClick={() => append({ operation: 'sellMount' })}
+                  disabled={pending}
+                >
+                  Vender {nameOf(cards, market.stable.currentMount.cardId)}
+                </button>
+              </li>
+            )}
+          </ul>
+        </div>
+      )}
     </section>
   )
 }

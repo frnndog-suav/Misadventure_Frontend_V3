@@ -645,3 +645,128 @@ describe('REQ-79: venda por cópia de equipamento no Mercado', () => {
     })
   })
 })
+
+describe('REQ-87: Estábulo no Ir ao Mercado', () => {
+  const H = 'fixture.plow-horse'
+  const WP = 'fixture.war-pony'
+  const stableMarket = (
+    currentMount: {
+      cardId: string
+      price: number
+      sellable: boolean
+    } | null,
+  ) => ({
+    ...market,
+    stable: { offers: [{ cardId: H, price: 322 }], currentMount },
+  })
+  const stableGroup = () => group('Estábulo')
+
+  it('REQ-87: com stable, o grupo "Estábulo" vem depois de "Serviços" com a oferta e "Comprar"', async () => {
+    sessionWith({ market: stableMarket(null) })
+    await openSection()
+    const services = within(section()).getByRole('list', { name: 'Serviços' })
+    expect(
+      services.compareDocumentPosition(stableGroup()) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy()
+    expect(
+      within(stableGroup()).getByText('Cavalo de Arado — 322 de ouro'),
+    ).toBeInTheDocument()
+    expect(
+      within(stableGroup()).queryByText(/Sua montaria/),
+    ).not.toBeInTheDocument()
+    fireEvent.click(
+      within(stableGroup()).getByRole('button', {
+        name: 'Comprar Cavalo de Arado',
+      }),
+    )
+    expect(opTexts()).toEqual(['1. Comprar a montaria Cavalo de Arado'])
+  })
+
+  it('REQ-87: com currentMount, "Sua montaria" e "Vender"; sellable false ganha o aviso e o botão continua', async () => {
+    sessionWith({
+      market: stableMarket({ cardId: WP, price: 140, sellable: false }),
+    })
+    await openSection()
+    expect(
+      within(stableGroup()).getByText(
+        'Sua montaria: Pônei de Guerra — vende por 140 de ouro (esvazie o inventário extra e a pasta extra antes)',
+      ),
+    ).toBeInTheDocument()
+    const sell = within(stableGroup()).getByRole('button', {
+      name: 'Vender Pônei de Guerra',
+    })
+    expect(sell).toBeEnabled()
+    fireEvent.click(sell)
+    expect(opTexts()).toEqual(['1. Vender a montaria Pônei de Guerra'])
+  })
+
+  it('REQ-87: com stable null, não há o grupo', async () => {
+    sessionWith({ market: { ...market, stable: null } })
+    await openSection()
+    expect(
+      within(section()).queryByRole('list', { name: 'Estábulo' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('REQ-87: o Total previsto soma compra e venda e o lote envia as duas operações', async () => {
+    let sent: unknown
+    server.use(
+      http.post('*/parties/:partyId/actions', async ({ request }) => {
+        sent = await request.json()
+        return HttpResponse.json(
+          marketRefusalFixture({ reason: 'mountNotEmpty', operationIndex: 0 }),
+          { status: 409 },
+        )
+      }),
+    )
+    sessionWith({
+      market: stableMarket({ cardId: WP, price: 140, sellable: true }),
+    })
+    await openSection()
+    fireEvent.click(inSection('Vender Pônei de Guerra'))
+    fireEvent.click(inSection('Comprar Cavalo de Arado'))
+    expect(
+      within(section()).getByText(
+        'Total previsto: 322 de ouro a pagar, 140 de ouro a receber',
+      ),
+    ).toBeInTheDocument()
+    fireEvent.click(inSection('Confirmar (1 ponto de ação)'))
+    await waitFor(() =>
+      expect(sent).toEqual({
+        type: 'visitMarket',
+        operations: [
+          { operation: 'sellMount' },
+          { operation: 'buyMount', cardId: H },
+        ],
+      }),
+    )
+  })
+
+  it.each([
+    ['mountNotOffered', 'Este Estábulo não vende Cavalo de Arado.'],
+    ['mountAlreadyOwned', 'Você já tem uma montaria: venda a atual antes.'],
+    ['noMount', 'Você não tem montaria.'],
+    [
+      'mountNotEmpty',
+      'Esvazie o inventário extra e a pasta extra antes de vender a montaria.',
+    ],
+  ])('REQ-87: 409 %s mostra o texto do motivo', async (reason, text) => {
+    server.use(
+      http.post('*/parties/:partyId/actions', () =>
+        HttpResponse.json(
+          marketRefusalFixture({ reason, operationIndex: 0, cardId: H }),
+          { status: 409 },
+        ),
+      ),
+    )
+    sessionWith({ market: stableMarket(null) })
+    await openSection()
+    fireEvent.click(inSection('Comprar Cavalo de Arado'))
+    fireEvent.click(inSection('Confirmar (1 ponto de ação)'))
+    await within(section()).findByText(
+      `Esta ação não é permitida agora. ${text}`,
+    )
+    expect(within(section()).getByText('Recusada')).toBeInTheDocument()
+  })
+})

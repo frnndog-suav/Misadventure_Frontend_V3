@@ -107,6 +107,10 @@ function marketCardIds(player: PartyMember['player']): string[] {
             offer === null ? [] : [offer.cardId],
           ),
           ...market.sellOffers.map(({ cardId }) => cardId),
+          ...(market.stable?.offers.map(({ cardId }) => cardId) ?? []),
+          ...(market.stable?.currentMount
+            ? [market.stable.currentMount.cardId]
+            : []),
         ]),
     ...(lastMarketVisit === null
       ? []
@@ -1008,6 +1012,14 @@ function marketReasonText(error: ActionNotAllowedError, name: string): string {
       return `${name} só é vendido em lotes inteiros.`
     case 'tcgFolderFull':
       return 'Não há espaço na pasta de TCG.'
+    case 'mountNotOffered': // REQ-87
+      return `Este Estábulo não vende ${name}.`
+    case 'mountAlreadyOwned':
+      return 'Você já tem uma montaria: venda a atual antes.'
+    case 'noMount':
+      return 'Você não tem montaria.'
+    case 'mountNotEmpty':
+      return 'Esvazie o inventário extra e a pasta extra antes de vender a montaria.'
     default:
       return vaultReasonText(error, name)
   }
