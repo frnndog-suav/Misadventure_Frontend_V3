@@ -137,6 +137,8 @@ export const blacksmithOperationResultSchema = z.discriminatedUnion(
       recipeCardId: id,
       equipmentId: id,
       inventorySlotIndex: count,
+      /** Espaço onde o equipamento entrou (v0.91); resultado legado lê o inventário. */
+      destination: z.enum(['inventory', 'mountInventory']).default('inventory'),
       ...resultBase,
     }),
   ],

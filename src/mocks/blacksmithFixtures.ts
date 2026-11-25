@@ -297,6 +297,7 @@ export const partyBlacksmithCraftedFixture: Party = {
           equipmentId: W,
           gold: -15,
           inventorySlotIndex: 1,
+          destination: 'inventory',
           skipped: false,
         },
       ],

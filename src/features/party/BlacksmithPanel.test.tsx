@@ -68,6 +68,18 @@ function renderParty(partyId = partyBlacksmithFixture.id) {
   )
 }
 
+function sessionWithVisit(visit: unknown): Record<string, unknown> {
+  return {
+    ...partyBlacksmithFixture,
+    members: [
+      {
+        ...base,
+        player: { ...base.player, lastBlacksmithVisit: visit },
+      },
+    ],
+  }
+}
+
 function sessionWith(player: Partial<Player>): void {
   const party: Party = {
     ...partyBlacksmithFixture,
@@ -443,7 +455,43 @@ describe('REQ-81: lote, confirmação e resultado', () => {
     fireEvent.click(inSection('Confirmar (todos os pontos de ação)'))
     expect(
       await screen.findByRole('list', { name: 'Resultado do ferreiro' }),
-    ).toHaveTextContent('Criou Espada Curta por 15 de ouro.')
+    ).toHaveTextContent(
+      'Criou Espada Curta por 15 de ouro; foi para o inventário.',
+    )
+  })
+
+  it('REQ-88: criar com destination mountInventory diz que foi para o inventário extra', async () => {
+    server.use(
+      http.post('*/parties/:partyId/actions', () =>
+        HttpResponse.json(
+          sessionWithVisit({
+            source: 'blacksmith',
+            zoneId: base.player.zoneId,
+            actionPointsSpent: 3,
+            results: [
+              {
+                operation: 'craft',
+                recipeCardId: 'fixture.sword-blueprint',
+                equipmentId: 'fixture.short-sword',
+                gold: -15,
+                inventorySlotIndex: 0,
+                destination: 'mountInventory',
+                skipped: false,
+              },
+            ],
+          }),
+        ),
+      ),
+    )
+    renderParty()
+    await openSection()
+    fireEvent.click(inSection('Criar Espada Curta'))
+    fireEvent.click(inSection('Confirmar (todos os pontos de ação)'))
+    expect(
+      await screen.findByRole('list', { name: 'Resultado do ferreiro' }),
+    ).toHaveTextContent(
+      'Criou Espada Curta por 15 de ouro; foi para o inventário extra.',
+    )
   })
 
   it('REQ-81: a Oficina envia artificerWorkshop e mostra o status no singular', async () => {

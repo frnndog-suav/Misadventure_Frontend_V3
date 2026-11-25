@@ -471,10 +471,24 @@ function mountedAction(body: unknown): Response | undefined {
     if (get(body, 'choice') === 'leave')
       return HttpResponse.json(partyMountRewardLeftFixture)
     const discard = get(body, 'discard')
-    const freesMount =
+    const options = mountReward.discardOptions
+    const fits =
       Array.isArray(discard) &&
-      discard.some((entry) => get(entry, 'space') === 'mountInventory')
-    return freesMount
+      discard.some((entry) => get(entry, 'space') === 'mountInventory') &&
+      discard.every((entry) => {
+        const copies = get(entry, 'copies')
+        const option = options.find(
+          (o) =>
+            o.cardId === get(entry, 'cardId') &&
+            o.space === get(entry, 'space'),
+        )
+        return (
+          option !== undefined &&
+          typeof copies === 'number' &&
+          copies <= option.maxCopies
+        )
+      })
+    return fits
       ? HttpResponse.json(partyMountRewardKeptFixture)
       : refuse({ reason: 'rewardDoesNotFit' })
   }

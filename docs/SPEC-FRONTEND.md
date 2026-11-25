@@ -747,7 +747,7 @@ Alinha os REQ-44, REQ-50 e REQ-73.
   - `repair` → "Consertou {nome} por {−gold} de ouro (Reparado ×{repairMarks}).";
   - `refine` → "Refinou {nome} para +{targetLevel} por {−gold} de ouro{rolagem}." ou "Falhou ao refinar {nome} para +{targetLevel}: {−gold} de ouro perdidos{rolagem}." e, com `broke`, " {nome} quebrou.";
   - `enchant` → "Encantou {nome} com {encantamento} por {−gold} de ouro{rolagem}." (com `replaced`, " Substituiu {nome do substituído}.") ou "Falhou ao encantar {nome} com {encantamento}: {−gold} de ouro perdidos{rolagem}.";
-  - `craft` → "Criou {equipamento} por {−gold} de ouro.".
+  - `craft` → "Criou {equipamento} por {−gold} de ouro; foi para {destino}." ({destino} do `destination`: `inventory` "o inventário", `mountInventory` "o inventário extra"; resultado sem `destination` lê `inventory`; REQ-88).
   - `lastBlacksmithVisit` `null` num `200` (fora do contrato) deixa a lista ausente.
 - **Dado** `409` `ACTION_NOT_ALLOWED` com `operationIndex`, **então** vale o REQ-52 (lista mantida, item `operationIndex + 1` marcado "Recusada", `message` + texto do motivo; {nome} = carta de `details.cardId`, senão a da operação): `equipmentNotFound` → "Esse equipamento não está mais lá."; `notBroken` → "{nome} não está quebrado."; `equipmentBroken` → "{nome} está quebrado: conserte antes."; `notRefinable` → "{nome} não pode ser refinado."; `refinementMaterialsMissing` → "{nome} não tem materiais de refino definidos."; `refineLevelMax` → "{nome} já está no refino máximo."; `refineLevelTooHigh` → "A Oficina não refina acima desse nível."; `enchantNotAvailable` → "A Oficina não encanta."; `enchantmentNotOffered` → "Este ferreiro não oferece esse encantamento."; `notEnchantable` → "{nome} não pode ser encantado."; `enchantSlotUnavailable` → "{nome} não tem slot para esse encantamento."; `replaceIndexRequired` → "Escolha o encantamento a substituir."; `replaceIndexInvalid` → "O encantamento a substituir não existe."; `recipeMissing` → "{nome} não é uma receita."; `materialsMissing` → "Faltam materiais."; `notEnoughGold` → "Não há ouro suficiente na bolsa."; `inventoryFull` → "Não há espaço no inventário."; `notInInventory` → texto do REQ-52; outro motivo → só a `message`. Sem `operationIndex` (`artificerInactive`, `zoneActionUnavailable`, `noActionPoints`, `choicePending`, `combatInProgress`), a `message` aparece na área de status, sem marcar item. Outro erro §1.4 ou falha de rede/validação: como no REQ-52.
 
@@ -1067,7 +1067,7 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 - [x] **T-84 — Estábulo** (REQ-87). E2E na área `party`.
 - [x] **T-85 — Destinos prontos e descarte com montaria** (REQ-88). E2E na área `party`.
 - [x] **T-86 — Efeitos e habilidades da montaria** (REQ-89). E2E na área `party`.
-- [ ] **T-88 — Alinhar o cliente ao CONTRATO v0.92** (REQ-88). Resultado `craft` com `destination` (padrão `'inventory'`) e texto do resultado do ferreiro dizendo onde o equipamento criado entrou; `PendingReward.destination` lido como espaço principal (D-64 item 4); fixtures do MSW com `rewardDoesNotFit` para cópias acima do espaço. E2E na área `party`. Vem antes da T-87.
+- [x] **T-88 — Alinhar o cliente ao CONTRATO v0.92** (REQ-88). Resultado `craft` com `destination` (padrão `'inventory'`) e texto do resultado do ferreiro dizendo onde o equipamento criado entrou; `PendingReward.destination` lido como espaço principal (D-64 item 4); fixtures do MSW com `rewardDoesNotFit` para cópias acima do espaço. E2E na área `party`. Vem antes da T-87.
 - [ ] **T-87 — Validação integrada da FEAT-18.** Repetir os cenários do contrato contra o backend real com MSW desligado, com as campanhas preparadas pelo backend (Estábulo, montaria com conteúdo, inventário cheio, mapa com dois caminhos a 2 zonas) e a `fixture.war-pony`.
 
 ## 8. Histórico
@@ -1179,3 +1179,4 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 | 1.03 | 2026-11-25 | T-85 concluída com MSW: destinos prontos, resultado do mercado por espaço e descarte por carta e espaço (REQ-88). |
 | 1.04 | 2026-11-25 | T-86 concluída com MSW: origem "Montaria" nos efeitos ativáveis e texto do `noMount` no Preparar (REQ-89). |
 | 1.05 | 2026-11-25 | CONTRATO v0.92 (aceite da v0.91): nova T-88 de alinhamento antes da T-87; D-64 item 4 atualizado. |
+| 1.06 | 2026-11-25 | T-88 concluída com MSW: `craft` com `destination` (REQ-81, REQ-88) e `rewardDoesNotFit` para cópias acima do espaço no MSW. |

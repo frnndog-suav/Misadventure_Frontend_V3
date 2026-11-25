@@ -637,6 +637,24 @@ test.describe('REQ-80, REQ-81: Ir ao Ferreiro e Oficina (MSW)', () => {
     )
   })
 
+  test('REQ-81/REQ-88: criar mostra onde o equipamento entrou', async ({
+    page,
+  }) => {
+    await page.goto('/grupo/party-ferreiro')
+    await page
+      .getByRole('region', { name: 'A vez' })
+      .getByRole('button', { name: 'Ir ao Ferreiro' })
+      .click()
+    const smithy = page.getByRole('region', { name: 'Ferreiro' })
+    await smithy.getByRole('button', { name: 'Criar Espada Curta' }).click()
+    await smithy
+      .getByRole('button', { name: 'Confirmar (todos os pontos de ação)' })
+      .click()
+    await expect(
+      page.getByRole('list', { name: 'Resultado do ferreiro' }),
+    ).toContainText('Criou Espada Curta por 15 de ouro; foi para o inventário.')
+  })
+
   test('REQ-80: com Artífice ativo, a Oficina gasta 1 ponto de ação', async ({
     page,
   }) => {

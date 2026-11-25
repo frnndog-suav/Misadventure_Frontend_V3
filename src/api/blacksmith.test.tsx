@@ -5,6 +5,7 @@ import { createElement, type ReactNode } from 'react'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { handlers } from '../mocks/handlers'
 import { partyInSessionFixture } from '../mocks/partyFixtures'
+import { blacksmithOperationResultSchema } from './blacksmith'
 import { cardSchema } from './catalog'
 import { ApiError, requestJson } from './http'
 import { labConfigSchema } from './labConfig'
@@ -287,7 +288,31 @@ describe('REQ-81: Ir ao Ferreiro e Oficina (lote)', () => {
       operation: 'craft',
       recipeCardId: B,
       equipmentId: W,
+      destination: 'inventory',
     })
+  })
+
+  it('REQ-88: craft sem destination lê inventory e aceita mountInventory', () => {
+    const base = {
+      operation: 'craft',
+      recipeCardId: B,
+      equipmentId: W,
+      gold: -15,
+      inventorySlotIndex: 0,
+      skipped: false,
+    }
+    expect(blacksmithOperationResultSchema.parse(base)).toMatchObject({
+      destination: 'inventory',
+    })
+    expect(
+      blacksmithOperationResultSchema.parse({
+        ...base,
+        destination: 'mountInventory',
+      }),
+    ).toMatchObject({ destination: 'mountInventory' })
+    expect(() =>
+      blacksmithOperationResultSchema.parse({ ...base, destination: 'vault' }),
+    ).toThrow()
   })
 
   it('REQ-81: craft apontando para o que não é receita → recipeMissing', async () => {

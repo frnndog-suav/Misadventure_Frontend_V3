@@ -579,6 +579,22 @@ describe('REQ-88: destinos prontos e descarte com montaria', () => {
     })
   })
 
+  it('REQ-88: manter com cópias acima do espaço → 409 rewardDoesNotFit', async () => {
+    const party = partySchema.parse(
+      await requestJson('GET', `/parties/${mounted}`),
+    )
+    const error = await refusal(
+      {
+        type: 'resolveReward',
+        rewardId: party.pendingRewards[0]!.id,
+        choice: 'keep',
+        discard: [{ cardId: P, space: 'mountInventory', copies: 3 }],
+      },
+      mounted,
+    )
+    expect(error.reason).toBe('rewardDoesNotFit')
+  })
+
   it('REQ-88: descarte legado sem space lê inventory/tcgFolder pelo destino', () => {
     const reward = pendingRewardSchema.parse({
       id: 'r',

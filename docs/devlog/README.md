@@ -147,3 +147,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 114 | T-84 | [Estábulo](114-T-84-estabulo-feat-18.md) | concluída com MSW |
 | 115 | T-85 | [Destinos prontos e descarte com montaria](115-T-85-destinos-descarte-montaria-feat-18.md) | concluída com MSW |
 | 116 | T-86 | [Efeitos e habilidades da montaria](116-T-86-efeitos-habilidades-montaria-feat-18.md) | concluída com MSW |
+| 117 | T-88 | [Alinhar o cliente ao CONTRATO v0.92](117-T-88-alinhar-contrato-v092-feat-18.md) | concluída com MSW |

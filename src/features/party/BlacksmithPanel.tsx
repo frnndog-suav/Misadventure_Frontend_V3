@@ -12,6 +12,7 @@ import { ActionNotAllowedError, type PartyMember } from '../../api/parties'
 import { categoryCatalog } from '../../ui/categories'
 import { nameOf } from './cardNames'
 import { equipmentStateSuffix } from './equipmentState'
+import { receiveSpaceText } from './receiveSpace'
 
 type Cards = ReadonlyMap<string, Card>
 type Player = PartyMember['player']
@@ -513,7 +514,7 @@ function resultText(
         : `Falhou ao encantar ${name} com ${enchantment}: ${gold} de ouro perdidos${roll}.`
     }
     case 'craft':
-      return `Criou ${nameOf(cards, result.equipmentId)} por ${gold} de ouro.`
+      return `Criou ${nameOf(cards, result.equipmentId)} por ${gold} de ouro; foi para ${receiveSpaceText[result.destination]}.`
     default: {
       const _exhaustive: never = result
       return _exhaustive
