@@ -24,9 +24,9 @@ test('REQ-20: lista, filtra, busca e escolhe cartas (MSW)', async ({
 
   await cards.getByRole('button', { name: 'Nova carta' }).click()
   const picker = cards.getByRole('group', { name: 'Tipo da nova carta' })
-  await expect(picker.getByRole('button')).toHaveCount(7)
-  await expect(picker.getByRole('button').last()).toHaveText('Dimensão')
-  await picker.getByRole('button', { name: 'Zona' }).click()
+  await expect(picker.getByRole('button')).toHaveCount(9)
+  await expect(picker.getByRole('button').last()).toHaveText('Montaria')
+  await picker.getByRole('button', { name: 'Zona', exact: true }).click()
   await expect(picker).toBeHidden()
   await expect(forca).toHaveAttribute('aria-pressed', 'false')
 })

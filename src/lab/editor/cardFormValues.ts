@@ -125,7 +125,7 @@ export interface ZoneForm {
   marketEnabled: boolean
   marketStock: string[]
   marketSingles: boolean
-  /** FEAT-18: Estábulo, só transportado até a T-81 (salvar não apaga). */
+  /** FEAT-18 (REQ-83): Estábulo, ids das montarias na ordem da lista. */
   marketMounts: string[]
   /** FEAT-17 (REQ-78): desmarcado = `blacksmith: null`; o que foi digitado fica guardado. */
   blacksmithEnabled: boolean
@@ -472,7 +472,7 @@ export type QuestForm = {
   rewards: string
 }
 
-/** FEAT-18 (README 26): campos transportados; os controles são da T-81. */
+/** FEAT-18 (REQ-83, README 26): montaria, sem categoria. */
 export interface MountForm {
   type: 'mount'
   slug: string

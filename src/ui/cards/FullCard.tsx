@@ -4,6 +4,7 @@ import { CombatEventCard } from './CombatEventCard'
 import { DimensionCard } from './DimensionCard'
 import { EquipmentCard } from './EquipmentCard'
 import { ItemCard } from './ItemCard'
+import { MountCard } from './MountCard'
 import { RandomEventCard } from './RandomEventCard'
 import { ZoneCard } from './ZoneCard'
 
@@ -27,8 +28,7 @@ export function FullCard({ card }: { card: Card }) {
     case 'dimension':
       return <DimensionCard card={card} />
     case 'mount':
-      // A carta de montaria completa entra na T-81 (REQ-83).
-      return <p>{card.name}</p>
+      return <MountCard card={card} />
     default: {
       const _exhaustive: never = card
       return _exhaustive

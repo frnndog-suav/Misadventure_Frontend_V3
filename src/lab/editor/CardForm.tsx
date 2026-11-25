@@ -80,6 +80,7 @@ import {
   type EnchantmentForm,
   type EnemyForm,
   type MaterialForm,
+  type MountForm,
   type EquipmentForm,
   type RandomEventForm,
   type ItemForm,
@@ -658,6 +659,23 @@ function ZoneFields({
               label="Vende singles"
               checked={values.marketSingles}
               onChange={(marketSingles) => set({ ...values, marketSingles })}
+            />
+            <ListField
+              label="Estábulo"
+              path="market.mounts"
+              items={values.marketMounts}
+              onChange={(marketMounts) => set({ ...values, marketMounts })}
+              newItem={() => ''}
+              errors={errors}
+              renderItem={(item, index, update) => (
+                <TextField
+                  label={`Montaria ${index + 1}`}
+                  path={`market.mounts.${index}`}
+                  value={item}
+                  onChange={update}
+                  errors={errors}
+                />
+              )}
             />
           </>
         )}
@@ -1706,6 +1724,81 @@ function DimensionFields({
   )
 }
 
+/** Montaria (REQ-83, README 26): sem categoria; o backend confere as combinações (D-38). */
+function MountFields({
+  values,
+  set,
+  errors,
+}: {
+  values: MountForm
+  set: (values: MountForm) => void
+  errors: Errors
+}) {
+  return (
+    <>
+      <TextField
+        label="Nome"
+        path="name"
+        value={values.name}
+        onChange={(name) => set({ ...values, name })}
+        errors={errors}
+      />
+      <TextField
+        label="Texto de ambientação"
+        path="flavorText"
+        value={values.flavorText}
+        onChange={(flavorText) => set({ ...values, flavorText })}
+        errors={errors}
+        multiline
+      />
+      <SelectField
+        label="Raridade"
+        path="rarity"
+        value={values.rarity}
+        options={rarityOptions}
+        onChange={(rarity) => set({ ...values, rarity })}
+        errors={errors}
+      />
+      <fieldset aria-describedby={errors.describedBy('mountTypes')}>
+        <legend>Tipos</legend>
+        {errors.errorText('mountTypes')}
+        {enemyTypeOrder.map((enemyType) => (
+          <CheckboxField
+            key={enemyType}
+            label={enemyTypeLabels[enemyType]}
+            checked={values.mountTypes.includes(enemyType)}
+            onChange={(checked) =>
+              set({
+                ...values,
+                mountTypes: enemyTypeOrder.filter((t) =>
+                  t === enemyType ? checked : values.mountTypes.includes(t),
+                ),
+              })
+            }
+          />
+        ))}
+      </fieldset>
+      <TextField
+        label="Criatura"
+        path="creature"
+        value={values.creature}
+        onChange={(creature) => set({ ...values, creature })}
+        errors={errors}
+      />
+      <EffectFields
+        items={values.effects}
+        onChange={(effects) => set({ ...values, effects })}
+        errors={errors}
+      />
+      <AbilityFields
+        items={values.abilities}
+        onChange={(abilities) => set({ ...values, abilities })}
+        errors={errors}
+      />
+    </>
+  )
+}
+
 function ZoneDeckFields({
   path,
   label,
@@ -1965,8 +2058,7 @@ function TypeFields({
     case 'dimension':
       return <DimensionFields values={values} set={set} errors={errors} />
     case 'mount':
-      // Os campos da montaria entram na T-81 (REQ-83); até lá, só transportados.
-      return null
+      return <MountFields values={values} set={set} errors={errors} />
     default: {
       const _exhaustive: never = values
       return _exhaustive

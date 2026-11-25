@@ -159,11 +159,11 @@ describe('CatalogSection', () => {
     ).toBeInTheDocument()
   })
 
-  // A Carta de Dimensão ganha componente na T-29 (REQ-28); a de montaria, na T-81 (REQ-83).
+  // A Carta de Dimensão ganha componente na T-29 (REQ-28).
   it.each(
     fixtureCardsFixture
       .map((card, i) => [expectedOrder[i], card] as const)
-      .filter(([, card]) => card.type !== 'dimension' && card.type !== 'mount'),
+      .filter(([, card]) => card.type !== 'dimension'),
   )(
     'REQ-08: escolher "%s" mostra a carta completa no formato do seu tipo',
     async (label) => {

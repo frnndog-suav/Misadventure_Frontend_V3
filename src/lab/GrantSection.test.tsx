@@ -110,6 +110,24 @@ describe('REQ-46: seção "Doação" do laboratório', () => {
     expect(screen.getByRole('button', { name: 'Doar' })).toBeDisabled()
   })
 
+  it('REQ-82: a seleção "Carta" também lista as cartas de montaria ("{nome} · Montaria")', async () => {
+    const captured = captureBody()
+    renderGrant()
+    await choosePartyAndMember()
+    await chooseCard('Pônei de Guerra · Montaria')
+    expect(
+      screen.getByRole('option', { name: 'Cavalo de Arado · Montaria' }),
+    ).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Doar' }))
+    await waitFor(() =>
+      expect(captured.body).toEqual({
+        type: 'card',
+        cardId: 'fixture.war-pony',
+        quantity: 1,
+      }),
+    )
+  })
+
   it('REQ-46: sem grupos, mostra "Nenhum jogo salvo."', async () => {
     server.use(http.get('*/parties', () => HttpResponse.json([])))
     renderGrant()
@@ -290,6 +308,7 @@ describe('REQ-46: seção "Doação" do laboratório', () => {
   it.each([
     ['inventoryFull', 'Inventário cheio.'],
     ['tcgFolderFull', 'Pasta de TCG cheia.'],
+    ['mountAlreadyOwned', 'Já tem montaria.'],
   ])(
     'REQ-46: LAB_GRANT_NO_SPACE %s mostra a message e o motivo',
     async (reason, text) => {

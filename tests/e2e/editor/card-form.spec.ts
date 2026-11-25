@@ -450,3 +450,40 @@ test('REQ-78: equipamento, item e zona têm os campos do ferreiro (MSW)', async 
     0,
   )
 })
+
+test('REQ-83: cria uma montaria e edita o Estábulo da zona (MSW)', async ({
+  page,
+}) => {
+  await page.goto('/lab/editor')
+  await page.getByRole('button', { name: /Coleção de Teste/ }).click()
+  const cards = page.getByRole('region', { name: 'Cartas' })
+  const form = page.getByRole('region', { name: 'Carta', exact: true })
+  const preview = page.getByRole('region', { name: 'Pré-visualização' })
+
+  await cards
+    .getByRole('button', { name: 'Mina Velha · Zona · Publicada' })
+    .click()
+  const stable = form
+    .getByRole('group', { name: 'Mercado' })
+    .getByRole('group', { name: 'Estábulo' })
+  await expect(stable.getByLabel('Montaria 1')).toHaveValue(
+    'fixture.plow-horse',
+  )
+
+  await cards.getByRole('button', { name: 'Nova carta' }).click()
+  await cards
+    .getByRole('group', { name: 'Tipo da nova carta' })
+    .getByRole('button', { name: 'Montaria' })
+    .click()
+  await form.getByLabel('Identificador').fill('ponei')
+  await form.getByLabel('Nome', { exact: true }).fill('Pônei')
+  await form.getByLabel('Raridade').selectOption({ label: 'Comum' })
+  await form.getByRole('group', { name: 'Tipos' }).getByLabel('Fera').check()
+  await form.getByLabel('Criatura').fill('Pônei')
+  const card = preview.getByRole('article', { name: 'Pônei' })
+  await expect(card.getByText('Tipos: Fera')).toBeVisible()
+  await expect(card.getByText('Criatura: Pônei')).toBeVisible()
+
+  await form.getByRole('button', { name: 'Salvar rascunho' }).click()
+  await expect(form.getByRole('status')).toHaveText('Rascunho salvo.')
+})

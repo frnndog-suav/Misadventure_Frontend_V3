@@ -224,6 +224,17 @@ const blacksmithLabels = [
   ['artificerD20Bonus', 'Bônus do Artífice no D20'],
 ] as const
 
+/** FEAT-18 (REQ-82): as 7 chaves, na ordem da tela, depois das da FEAT-17. */
+const mountLabels = [
+  ['mountPriceCommon', 'Montaria comum: preço base'],
+  ['mountPriceUncommon', 'Montaria incomum: preço base'],
+  ['mountPriceRare', 'Montaria rara: preço base'],
+  ['mountPriceEpic', 'Montaria épica: preço base'],
+  ['mountPriceLegendary', 'Montaria lendária: preço base'],
+  ['mountInventorySlots', 'Slots do inventário extra da montaria'],
+  ['mountFolderCapacity', 'Capacidade da pasta extra da montaria'],
+] as const
+
 async function loaded(): Promise<void> {
   await screen.findByRole('spinbutton', { name: 'Pontos de ação por vez' })
 }
@@ -539,6 +550,80 @@ describe('REQ-06: configuração ajustável do jogo', () => {
       ),
     )
     expect(field('Bônus do Artífice no D20')).toHaveAccessibleDescription(
+      expect.stringContaining('Use um número inteiro.'),
+    )
+  })
+
+  it('REQ-82: as 7 chaves da montaria têm rótulo pt-BR, na ordem da tela, depois das da FEAT-17', async () => {
+    renderLab()
+    await loaded()
+    const wanted = [
+      'Bônus do Artífice no D20',
+      ...mountLabels.map(([, label]) => label as string),
+    ]
+    const names = screen
+      .getAllByRole('spinbutton')
+      .map(
+        (input) => (input as HTMLInputElement).labels?.[0]?.textContent ?? '',
+      )
+    const start = names.indexOf('Bônus do Artífice no D20')
+    expect(names.slice(start, start + wanted.length)).toEqual(wanted)
+    expect(mountLabels).toHaveLength(7)
+  })
+
+  it('REQ-82: cada chave da montaria mostra "Padrão: … · Mín. … · Máx. …" e leva os limites ao campo', async () => {
+    renderLab()
+    await loaded()
+    const expected = [
+      ['Montaria comum: preço base', '80', '0', '1000000'],
+      ['Montaria lendária: preço base', '1100', '0', '1000000'],
+      ['Slots do inventário extra da montaria', '4', '0', '100'],
+      ['Capacidade da pasta extra da montaria', '10', '0', '1000'],
+    ] as const
+    for (const [name, value, min, max] of expected) {
+      expect(field(name)).toHaveValue(Number(value))
+      expect(field(name)).toHaveAttribute('min', min)
+      expect(field(name)).toHaveAttribute('max', max)
+      expect(field(name)).toHaveAccessibleDescription(
+        `Padrão: ${value} · Mín. ${min} · Máx. ${max}`,
+      )
+    }
+  })
+
+  it('REQ-82: outOfRange e notInteger de uma chave da montaria usam os textos do REQ-06', async () => {
+    server.use(
+      http.patch('*/lab/config', () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: 'LAB_CONFIG_INVALID',
+              message: 'Configuração do laboratório inválida.',
+              details: {
+                fields: [
+                  { field: 'mountInventorySlots', reason: 'outOfRange' },
+                  { field: 'mountPriceRare', reason: 'notInteger' },
+                ],
+              },
+            },
+          },
+          { status: 400 },
+        ),
+      ),
+    )
+    renderLab()
+    await loaded()
+    setField('Slots do inventário extra da montaria', '200')
+    setField('Montaria rara: preço base', '1.5')
+    fireEvent.click(saveButton())
+
+    await waitFor(() =>
+      expect(
+        field('Slots do inventário extra da montaria'),
+      ).toHaveAccessibleDescription(
+        expect.stringContaining('Use um valor entre 0 e 100.'),
+      ),
+    )
+    expect(field('Montaria rara: preço base')).toHaveAccessibleDescription(
       expect.stringContaining('Use um número inteiro.'),
     )
   })

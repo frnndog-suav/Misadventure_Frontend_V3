@@ -31,7 +31,7 @@ export function ZoneCard({ card }: { card: ZoneCardData }) {
   )
 }
 
-/** Bloco "Mercado" (REQ-72): estoque na ordem recebida e se vende singles. */
+/** Bloco "Mercado" (REQ-72): estoque na ordem recebida e se vende singles; o Estábulo (REQ-83). */
 function Market({ market }: { market: NonNullable<ZoneCardData['market']> }) {
   return (
     <section aria-label="Mercado">
@@ -43,6 +43,11 @@ function Market({ market }: { market: NonNullable<ZoneCardData['market']> }) {
         render={(id) => <CardName cardId={id} />}
       />
       <p>{market.singles ? 'Vende singles' : 'Sem singles'}</p>
+      <LabeledList
+        label="Estábulo"
+        items={market.mounts}
+        render={(id) => <CardName cardId={id} />}
+      />
     </section>
   )
 }

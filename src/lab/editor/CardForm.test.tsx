@@ -2656,3 +2656,222 @@ describe('REQ-78: campos do ferreiro no editor', () => {
     })
   })
 })
+
+describe('REQ-83: montaria no editor', () => {
+  const group = (name: string) => within(form()).getByRole('group', { name })
+
+  function rejectWith(
+    method: 'post' | 'put',
+    fields: { path: string; message: string }[],
+  ): void {
+    server.use(
+      http[method](method === 'post' ? cardsUrl : cardUrl, () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: 'CONTENT_INVALID',
+              message: 'Conteúdo inválido.',
+              details: { fields },
+            },
+          },
+          { status: 400 },
+        ),
+      ),
+    )
+  }
+
+  it('REQ-83: "Nova carta" oferece "Montaria", com Raridade, Tipos, Criatura, Efeitos e Habilidades; salvar envia o corpo', async () => {
+    const bodies = recordBodies()
+    renderEditor()
+    await newCard('Montaria')
+    expect(field('Raridade')).toHaveValue('')
+    const types = group('Tipos')
+    expect(
+      within(types)
+        .getAllByRole('checkbox')
+        .map((c) => c.closest('label')?.textContent),
+    ).toEqual([
+      'Fera',
+      'Humanoide',
+      'Morto-vivo',
+      'Espírito',
+      'Demônio',
+      'Celestial',
+      'Elemental',
+      'Constructo',
+      'Dracônico',
+      'Aberração',
+      'Planta',
+    ])
+    expect(field('Criatura')).toHaveValue('')
+    expect(group('Efeitos')).toBeInTheDocument()
+    expect(group('Habilidades')).toBeInTheDocument()
+
+    type('Identificador', 'ponei')
+    type('Nome', 'Pônei')
+    fireEvent.change(field('Raridade'), { target: { value: 'common' } })
+    fireEvent.click(within(types).getByLabelText('Morto-vivo'))
+    fireEvent.click(within(types).getByLabelText('Fera'))
+    type('Criatura', 'Pônei')
+    fireEvent.click(saveButton())
+    await waitFor(() =>
+      expect(formStatus()).toHaveTextContent('Rascunho salvo.'),
+    )
+    expect(bodies[0].body).toEqual({
+      slug: 'ponei',
+      type: 'mount',
+      name: 'Pônei',
+      flavorText: null,
+      rarity: 'common',
+      mountTypes: ['beast', 'undead'],
+      creature: 'Pônei',
+      effects: [],
+      abilities: [],
+    })
+  })
+
+  it('REQ-83: montaria existente abre com os valores, a pré-visualização usa a carta do catálogo e salvar não os apaga', async () => {
+    const bodies = recordBodies()
+    renderEditor()
+    await openCard('Pônei de Guerra · Montaria · Publicada')
+    expect(field('Nome')).toHaveValue('Pônei de Guerra')
+    expect(field('Raridade')).toHaveValue('common')
+    expect(within(group('Tipos')).getByLabelText('Fera')).toBeChecked()
+    expect(field('Criatura')).toHaveValue('Pônei')
+    expect(field('Texto do efeito 1')).toHaveValue('Ganha 2 de ouro.')
+    expect(field('Nome da habilidade 1')).toHaveValue('Trote')
+    const card = within(preview()).getByRole('article', {
+      name: 'Pônei de Guerra',
+    })
+    expect(within(card).getByText('Montaria')).toBeVisible()
+    expect(within(card).getByText('Tipos: Fera')).toBeVisible()
+    expect(within(card).getByText('Criatura: Pônei')).toBeVisible()
+
+    type('Criatura', 'Pônei velho')
+    fireEvent.click(saveButton())
+    await waitFor(() => expect(bodies).toHaveLength(1))
+    expect(bodies[0].body).toMatchObject({
+      type: 'mount',
+      mountTypes: ['beast'],
+      creature: 'Pônei velho',
+      effects: [{ text: 'Ganha 2 de ouro.' }],
+      abilities: [{ id: 'pony-trot', name: 'Trote' }],
+    })
+  })
+
+  it('REQ-83: erros CONTENT_INVALID em mountTypes e creature aparecem nos campos', async () => {
+    rejectWith('put', [
+      { path: 'mountTypes', message: 'Escolha ao menos um tipo.' },
+      { path: 'creature', message: 'Informe a criatura.' },
+    ])
+    renderEditor()
+    await openCard('Pônei de Guerra · Montaria · Publicada')
+    fireEvent.click(saveButton())
+    await waitFor(() =>
+      expect(group('Tipos')).toHaveAccessibleDescription(
+        'Escolha ao menos um tipo.',
+      ),
+    )
+    expect(field('Criatura')).toHaveAccessibleDescription('Informe a criatura.')
+  })
+
+  it('REQ-83: CONTENT_REFERENCED ao excluir mostra a message recebida', async () => {
+    server.use(
+      http.delete(cardUrl, () =>
+        HttpResponse.json(
+          {
+            error: {
+              code: 'CONTENT_REFERENCED',
+              message: 'Esta montaria está no Estábulo de uma zona.',
+            },
+          },
+          { status: 409 },
+        ),
+      ),
+    )
+    renderEditor()
+    await openCard('Cavalo de Arado · Montaria · Publicada')
+    fireEvent.click(
+      within(form()).getByRole('button', { name: 'Excluir carta' }),
+    )
+    fireEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: 'Excluir',
+      }),
+    )
+    await waitFor(() =>
+      expect(formStatus()).toHaveTextContent(
+        'Esta montaria está no Estábulo de uma zona.',
+      ),
+    )
+    expect(field('Nome')).toHaveValue('Cavalo de Arado')
+  })
+
+  it('REQ-83: o "Mercado" da zona tem a lista "Estábulo" ("Montaria {n}"); salvar envia market.mounts', async () => {
+    const bodies = recordBodies()
+    renderEditor()
+    await openCard('Mina Velha · Zona · Publicada')
+    const stable = within(group('Mercado')).getByRole('group', {
+      name: 'Estábulo',
+    })
+    expect(within(stable).getByLabelText('Montaria 1')).toHaveValue(
+      'fixture.plow-horse',
+    )
+    fireEvent.click(within(stable).getByRole('button', { name: 'Adicionar' }))
+    fireEvent.change(within(stable).getByLabelText('Montaria 2'), {
+      target: { value: 'fixture.war-pony' },
+    })
+    fireEvent.click(saveButton())
+    await waitFor(() => expect(bodies).toHaveLength(1))
+    expect(bodies[0].body).toMatchObject({
+      market: {
+        stock: [],
+        singles: false,
+        mounts: ['fixture.plow-horse', 'fixture.war-pony'],
+      },
+    })
+  })
+
+  it('REQ-83: zona nova com "Tem mercado" começa com o "Estábulo" vazio e envia mounts []', async () => {
+    const bodies = recordBodies()
+    renderEditor()
+    await newCard('Zona')
+    type('Identificador', 'praca')
+    type('Título', 'Praça')
+    fireEvent.change(field('Tipo de zona'), { target: { value: 'urban' } })
+    type('Local', 'Cidade')
+    type('Setas de conexão', '4')
+    expect(
+      within(group('Mercado')).queryByRole('group', { name: 'Estábulo' }),
+    ).toBeNull()
+    fireEvent.click(field('Tem mercado'))
+    const stable = within(group('Mercado')).getByRole('group', {
+      name: 'Estábulo',
+    })
+    expect(within(stable).queryByRole('listitem')).toBeNull()
+    fireEvent.click(saveButton())
+    await waitFor(() => expect(bodies).toHaveLength(1))
+    expect(bodies[0].body).toMatchObject({
+      market: { stock: [], singles: false, mounts: [] },
+    })
+  })
+
+  it('REQ-83: erros CONTENT_INVALID em market.mounts e market.mounts.0 aparecem na lista e no item', async () => {
+    rejectWith('put', [
+      { path: 'market.mounts', message: 'Só zona Rural ou Habitada.' },
+      { path: 'market.mounts.0', message: 'Não é uma montaria.' },
+    ])
+    renderEditor()
+    await openCard('Mina Velha · Zona · Publicada')
+    fireEvent.click(saveButton())
+    const stable = within(group('Mercado')).getByRole('group', {
+      name: 'Estábulo',
+    })
+    await waitFor(() =>
+      expect(stable).toHaveAccessibleDescription('Só zona Rural ou Habitada.'),
+    )
+    expect(
+      within(stable).getByLabelText('Montaria 1'),
+    ).toHaveAccessibleDescription('Não é uma montaria.')
+  })
+})

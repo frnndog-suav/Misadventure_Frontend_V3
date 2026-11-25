@@ -318,3 +318,54 @@ test('REQ-78: o Catálogo mostra Refino, Encantamento, Receita e Ferreiro (MSW)'
       .getByText('Fio de Brasa — elemento Fogo (+10%)'),
   ).toBeVisible()
 })
+
+test('REQ-82: a configuração mostra as chaves da montaria e a doação lista a montaria (MSW)', async ({
+  page,
+}) => {
+  await page.goto('/lab')
+  const region = page.getByRole('region', { name: 'Configuração' })
+  const slots = region.getByRole('spinbutton', {
+    name: 'Slots do inventário extra da montaria',
+  })
+  await expect(slots).toBeVisible()
+  await expect(slots).toHaveAccessibleDescription(
+    'Padrão: 4 · Mín. 0 · Máx. 100',
+  )
+  await expect(
+    region.getByRole('spinbutton', { name: 'Montaria lendária: preço base' }),
+  ).toHaveAccessibleDescription('Padrão: 1100 · Mín. 0 · Máx. 1000000')
+
+  const section = page.getByRole('region', { name: 'Doação' })
+  await section.getByRole('radio', { name: 'Os Teimosos (Lia)' }).check()
+  const card = section.getByRole('combobox', { name: 'Carta' })
+  await expect(
+    card.getByRole('option', { name: 'Pônei de Guerra · Montaria' }),
+  ).toBeAttached()
+  await card.selectOption({ label: 'Pônei de Guerra · Montaria' })
+  await section.getByRole('button', { name: 'Doar' }).click()
+  await expect(section.getByRole('status')).toContainText('Doação feita.')
+})
+
+test('REQ-83: o Catálogo mostra a carta de montaria e o Estábulo da zona (MSW)', async ({
+  page,
+}) => {
+  await page.goto('/lab')
+  const section = page.getByRole('region', { name: 'Catálogo' })
+  await section.getByRole('radio', { name: 'Montaria (2)' }).check()
+  const list = section.getByRole('list', { name: 'Cartas' })
+  await list.getByRole('button', { name: 'Pônei de Guerra · Montaria' }).click()
+  const pony = section.getByRole('article', { name: 'Pônei de Guerra' })
+  await expect(pony.getByText('Montaria', { exact: true })).toBeVisible()
+  await expect(pony.getByText('Tipos: Fera')).toBeVisible()
+  await expect(pony.getByText('Criatura: Pônei')).toBeVisible()
+  await expect(pony.getByRole('list', { name: 'Habilidades' })).toContainText(
+    'Trote',
+  )
+
+  await section.getByRole('radio', { name: /^Todos/ }).check()
+  await list.getByRole('button', { name: 'Mina Velha · Zona' }).click()
+  const mine = section.getByRole('article', { name: 'Mina Velha' })
+  await expect(mine.getByRole('list', { name: 'Estábulo' })).toHaveText(
+    'Cavalo de Arado',
+  )
+})

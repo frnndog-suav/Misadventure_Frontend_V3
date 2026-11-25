@@ -76,14 +76,18 @@ function successText(party: Party, memberId: string): string {
   return `Doação feita. ${member.characterName}: ouro ${gold}, ${inventory.length} slots no inventário, ${tcgFolder.length} cartas diferentes na pasta.`
 }
 
-type GrantableCard = Extract<Card, { type: 'equipment' | 'item' | 'attribute' }>
+type GrantableCard = Extract<
+  Card,
+  { type: 'equipment' | 'item' | 'attribute' | 'mount' }
+>
 
-/** Só as cartas que se doam (REQ-46), na ordem recebida. */
+/** Só as cartas que se doam (REQ-46; montaria no REQ-82), na ordem recebida. */
 function isGrantable(card: Card): card is GrantableCard {
   return (
     card.type === 'equipment' ||
     card.type === 'item' ||
-    card.type === 'attribute'
+    card.type === 'attribute' ||
+    card.type === 'mount'
   )
 }
 
