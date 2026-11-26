@@ -397,7 +397,7 @@ export interface DimensionForm {
   slug: string
   name: string
   flavorText: string
-  completion: DimensionCompletion | null
+  completion: CompletionForm | null
   releaseOrder: string
   /** Vazio = `null` (sorteada pelo backend, REQ-31). */
   arrivalZoneTitle: string
@@ -420,6 +420,89 @@ function deckForm(
       copies: String(copies),
     })),
   }))
+}
+
+interface CompletionForm {
+  zoneTitle: string
+  requirement: { cardId: string; count: string }[]
+  grandPrize: { cards: { cardId: string; copies: string }[]; gold: string }
+  finalBoss: {
+    title: string
+    flavorText: string
+    enemies: EnemyForm[]
+    noEscape: boolean
+    escapeThreshold?: string
+  } | null
+}
+
+function completionFromCard(completion: DimensionCompletion): CompletionForm {
+  const { zoneTitle, requirement, grandPrize, finalBoss } = completion
+  return {
+    zoneTitle,
+    requirement: requirement.map(({ cardId, count }) => ({
+      cardId,
+      count: String(count),
+    })),
+    grandPrize: {
+      cards: grandPrize.cards.map(({ cardId, copies }) => ({
+        cardId,
+        copies: String(copies),
+      })),
+      gold: String(grandPrize.gold),
+    },
+    finalBoss: finalBoss && {
+      title: finalBoss.title,
+      flavorText: finalBoss.flavorText ?? '',
+      enemies: finalBoss.enemies.map(enemyFromCard),
+      noEscape: finalBoss.noEscape,
+      escapeThreshold:
+        finalBoss.escapeThreshold === undefined
+          ? undefined
+          : numberText(finalBoss.escapeThreshold),
+    },
+  }
+}
+
+function completionInput(
+  form: CompletionForm,
+): DimensionCompletion | undefined {
+  const { zoneTitle, grandPrize, finalBoss } = form
+  const gold = parseNumber(grandPrize.gold)
+  if (gold === null) return undefined
+  const requirement = []
+  for (const row of form.requirement) {
+    const count = parseNumber(row.count)
+    if (count === null) return undefined
+    requirement.push({ cardId: row.cardId, count })
+  }
+  const cards = []
+  for (const row of grandPrize.cards) {
+    const copies = parseNumber(row.copies)
+    if (copies === null) return undefined
+    cards.push({ cardId: row.cardId, copies })
+  }
+
+  let boss: DimensionCompletion['finalBoss'] = null
+  if (finalBoss) {
+    const enemies = finalBoss.enemies.map(toEnemy)
+    if (enemies.some((enemy) => enemy === null)) return undefined
+    const escapeThreshold = parseNumber(finalBoss.escapeThreshold ?? '')
+    if (finalBoss.escapeThreshold?.trim() && escapeThreshold === null)
+      return undefined
+    boss = {
+      title: finalBoss.title,
+      flavorText: finalBoss.flavorText.trim() ? finalBoss.flavorText : null,
+      enemies: enemies.filter((enemy) => enemy !== null),
+      noEscape: finalBoss.noEscape,
+      ...(finalBoss.escapeThreshold === undefined ? {} : { escapeThreshold }),
+    }
+  }
+  return {
+    zoneTitle,
+    requirement,
+    grandPrize: { cards, gold },
+    finalBoss: boss,
+  }
 }
 
 function deckInput(decks: DimensionForm['rewardDecks']) {
@@ -844,25 +927,7 @@ export function formFromCard(card: Card): CardForm {
         slug: slugOf(card),
         title: card.title,
         flavorText: card.flavorText ?? '',
-        enemies: card.enemies.map((enemy) => ({
-          name: enemy.name,
-          flavorText: enemy.flavorText ?? '',
-          count: String(enemy.count),
-          enemyTypes: enemyTypeOrder.filter((t) =>
-            enemy.enemyTypes.includes(t),
-          ),
-          creature: enemy.creature,
-          enemyCategory: enemy.enemyCategory,
-          element: enemy.element ?? '',
-          health: String(enemy.health),
-          modifiers: Object.fromEntries(
-            modifierOrder.map((m) => [m, String(enemy.modifiers[m])]),
-          ) as Record<Modifier, string>,
-          vigor: numberText(enemy.vigor),
-          abilities: enemy.abilities.map(abilityFromCard),
-          behavior: enemy.behavior,
-          combatRules: JSON.stringify(enemy.combatRules, null, 2),
-        })),
+        enemies: card.enemies.map(enemyFromCard),
         goodOutcome: card.goodOutcome.text,
         badOutcome: card.badOutcome.text,
         noEscape: card.noEscape,
@@ -885,7 +950,7 @@ export function formFromCard(card: Card): CardForm {
         slug: slugOf(card),
         name: card.name,
         flavorText: card.flavorText ?? '',
-        completion: card.completion,
+        completion: card.completion && completionFromCard(card.completion),
         releaseOrder: String(card.releaseOrder),
         arrivalZoneTitle: card.arrivalZoneTitle ?? '',
         effects: card.effects.map(effectToForm),
@@ -935,6 +1000,26 @@ function chosen<T extends string>(values: readonly (T | '')[]): T[] | null {
 }
 
 /** Um inimigo no formato do contrato, ou `null` se falta formato. */
+function enemyFromCard(enemy: Enemy): EnemyForm {
+  return {
+    name: enemy.name,
+    flavorText: enemy.flavorText ?? '',
+    count: String(enemy.count),
+    enemyTypes: enemyTypeOrder.filter((t) => enemy.enemyTypes.includes(t)),
+    creature: enemy.creature,
+    enemyCategory: enemy.enemyCategory,
+    element: enemy.element ?? '',
+    health: String(enemy.health),
+    modifiers: Object.fromEntries(
+      modifierOrder.map((m) => [m, String(enemy.modifiers[m])]),
+    ) as Record<Modifier, string>,
+    vigor: numberText(enemy.vigor),
+    abilities: enemy.abilities.map(abilityFromCard),
+    behavior: enemy.behavior,
+    combatRules: JSON.stringify(enemy.combatRules, null, 2),
+  }
+}
+
 function toEnemy(form: EnemyForm): Enemy | null {
   const abilities = toAbilities(form.abilities)
   const combatRules = parseOptionalJson(form.combatRules, jsonObject)
@@ -1302,6 +1387,8 @@ export function toInput(form: CardForm): CardInput | null {
       const effects = toEffects(form.effects, zoneEffectSchema)
       if (effects === undefined) return null
       const releaseOrder = parseNumber(form.releaseOrder)
+      const completion = form.completion && completionInput(form.completion)
+      if (completion === undefined) return null
       const rewardDecks = deckInput(form.rewardDecks)
       const eventDecks = form.eventDecks && deckInput(form.eventDecks)
       if (rewardDecks === null || eventDecks === null) return null
@@ -1312,7 +1399,7 @@ export function toInput(form: CardForm): CardInput | null {
         type: 'dimension',
         name: form.name,
         flavorText: filled(form.flavorText) ? form.flavorText : null,
-        completion: form.completion,
+        completion,
         releaseOrder,
         arrivalZoneTitle: filled(form.arrivalZoneTitle)
           ? form.arrivalZoneTitle

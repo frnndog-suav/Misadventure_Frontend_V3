@@ -22,6 +22,7 @@ export function ItemCard({ card }: { card: ItemCardData }) {
       rarity={card.rarity}
       flavorText={card.flavorText}
     >
+      {card.completionItem && <p>Item de conclusão</p>}
       <CardCategory entry={categoryCatalog[card.itemCategory]} />
       <Tags tags={card.tags} />
       <Effects effects={card.effects} />

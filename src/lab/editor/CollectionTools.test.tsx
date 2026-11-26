@@ -97,13 +97,16 @@ describe('REQ-25: validar coleção como dimensão', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('REQ-25: mostra "Validando…" e, com problemas, o título e a lista na ordem recebida', async () => {
+  it('REQ-25 e REQ-91: mostra a lista de problemas da dimensão e da conclusão na ordem recebida', async () => {
     server.use(
       http.post(validateUrl, async () => {
         await new Promise((resolve) => setTimeout(resolve, 20))
         return HttpResponse.json({
           valid: false,
-          problems: ['Falta a Carta de Dimensão.', 'Falta zona Urbana.'],
+          problems: [
+            'Falta zona Urbana.',
+            'A zona de conclusão não existe na coleção.',
+          ],
         })
       }),
     )
@@ -122,7 +125,10 @@ describe('REQ-25: validar coleção como dimensão', () => {
       within(list)
         .getAllByRole('listitem')
         .map((li) => li.textContent),
-    ).toEqual(['Falta a Carta de Dimensão.', 'Falta zona Urbana.'])
+    ).toEqual([
+      'Falta zona Urbana.',
+      'A zona de conclusão não existe na coleção.',
+    ])
   })
 
   it('REQ-25: resultado válido mostra "A coleção forma uma dimensão válida." e nenhuma lista', async () => {

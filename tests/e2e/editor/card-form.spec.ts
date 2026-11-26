@@ -157,8 +157,8 @@ test('REQ-21: cria um evento de combate com um inimigo (MSW)', async ({
   const save = form.getByRole('button', { name: 'Salvar rascunho' })
   await form.getByLabel('Identificador').fill('emboscada')
   await form.getByLabel('Título').fill('Emboscada')
-  await form.getByLabel('Coisa boa').fill('Vitória.')
-  await form.getByLabel('Coisa ruim').fill('Derrota.')
+  await form.getByLabel('Coisa boa', { exact: true }).fill('Vitória.')
+  await form.getByLabel('Coisa ruim', { exact: true }).fill('Derrota.')
   await form
     .getByRole('group', { name: 'Inimigos' })
     .getByRole('button', { name: 'Adicionar' })
@@ -486,4 +486,46 @@ test('REQ-83: cria uma montaria e edita o Estábulo da zona (MSW)', async ({
 
   await form.getByRole('button', { name: 'Salvar rascunho' }).click()
   await expect(form.getByRole('status')).toHaveText('Rascunho salvo.')
+})
+
+test('REQ-91: edita a conclusão e o chefe final', async ({ page }) => {
+  await page.goto('/lab/editor')
+  await page.getByRole('button', { name: /Coleção de Teste/ }).click()
+  await page
+    .getByRole('button', { name: 'Dimensão de Teste · Dimensão · Publicada' })
+    .click()
+  const form = page.getByRole('region', { name: 'Carta', exact: true })
+  await expect(form.getByLabel('Zona de conclusão')).toHaveValue('Mina Velha')
+  await expect(form.getByLabel('Item de conclusão 1')).toHaveValue(
+    'fixture.shard',
+  )
+  await form.getByLabel('Tem chefe final').check()
+  await expect(form.getByLabel('Título do chefe final')).toBeVisible()
+  const enemies = form.getByRole('group', { name: 'Inimigos do chefe final' })
+  await enemies.getByRole('button', { name: 'Adicionar', exact: true }).click()
+  await expect(
+    form.getByLabel('Vida do inimigo 1 do chefe final'),
+  ).toBeVisible()
+  await form.getByLabel('Tem chefe final').uncheck()
+  const zone = form.getByLabel('Zona de conclusão')
+  await zone.fill('Nenhuma')
+  await form.getByRole('button', { name: 'Salvar rascunho' }).click()
+  await expect(zone).toHaveAccessibleDescription(
+    'O título da zona de conclusão não existe na coleção.',
+  )
+  await zone.fill('Mina Velha')
+  await form.getByLabel('Ouro do prêmio máximo').fill('125')
+  const request = page.waitForRequest(
+    (req) =>
+      req.method() === 'PUT' && req.url().endsWith('/fixture.test-dimension'),
+  )
+  await form.getByRole('button', { name: 'Salvar rascunho' }).click()
+  expect((await request).postDataJSON().completion.grandPrize.gold).toBe(125)
+  await expect(form.getByRole('status')).toHaveText('Carta salva.')
+  await page
+    .getByRole('button', { name: 'Fragmento · Item · Publicada' })
+    .click()
+  await expect(
+    form.getByLabel('Item de conclusão', { exact: true }),
+  ).toBeChecked()
 })

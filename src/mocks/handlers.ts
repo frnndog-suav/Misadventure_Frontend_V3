@@ -69,7 +69,7 @@ import {
   partyPotionActivatedFixture,
   partyTonicActivatedFixture,
 } from './effectFixtures'
-import { cardTypeSchema } from '../api/catalog'
+import { cardSchema, cardTypeSchema } from '../api/catalog'
 import {
   catalogCardNotFoundFixture,
   catalogQueryInvalidFixture,
@@ -1249,6 +1249,39 @@ async function saveCardScenario(
   const current = editorCards[cardId]
   if (current === undefined) return notFound.card()
   const body = await jsonBody(request)
+  const completion = field(body, 'completion')
+  if (
+    current.card.type === 'dimension' &&
+    field(completion, 'zoneTitle') === 'Nenhuma'
+  ) {
+    return HttpResponse.json(
+      {
+        error: {
+          code: 'CONTENT_INVALID',
+          message: 'Conteúdo inválido.',
+          details: {
+            fields: [
+              {
+                path: 'completion.zoneTitle',
+                message: 'O título da zona de conclusão não existe na coleção.',
+              },
+            ],
+          },
+        },
+      },
+      { status: 400 },
+    )
+  }
+  if (current.card.type === 'dimension' || current.card.type === 'item') {
+    const updated = cardSchema.safeParse({
+      ...current.card,
+      ...(typeof body === 'object' && body !== null ? body : {}),
+      id: current.card.id,
+      collectionId: current.card.collectionId,
+    })
+    if (updated.success)
+      return HttpResponse.json({ ...current, card: updated.data })
+  }
   if (cardId === 'bosque.forca')
     return HttpResponse.json(forcaBrutaDraftFixture)
   if (cardId === 'bosque.forca-bruta') {

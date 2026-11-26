@@ -61,7 +61,7 @@ export function CombatEventCard({ card }: { card: CombatEventCardData }) {
 }
 
 /** Bloco de um inimigo impresso na carta; valores como vieram do backend. */
-function EnemyBlock({ enemy }: { enemy: Enemy }) {
+export function EnemyBlock({ enemy }: { enemy: Enemy }) {
   const titleId = useId()
   const title = enemy.count === 1 ? enemy.name : `${enemy.count}× ${enemy.name}`
   return (

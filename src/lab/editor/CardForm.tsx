@@ -1153,6 +1153,13 @@ function ItemFields({
         onChange={(rarity) => set({ ...values, rarity })}
         errors={errors}
       />
+      <CheckboxField
+        label="Item de conclusão"
+        checked={values.completionItem}
+        onChange={(completionItem) => set({ ...values, completionItem })}
+        describedBy={errors.describedBy('completionItem')}
+      />
+      {errors.errorText('completionItem')}
       <SelectField
         label="Categoria"
         path="itemCategory"
@@ -1426,15 +1433,18 @@ function EnemyFields({
   index,
   set,
   errors,
+  finalBoss = false,
 }: {
   enemy: EnemyForm
   index: number
   set: (enemy: EnemyForm) => void
   errors: Errors
+  finalBoss?: boolean
 }) {
   const n = index + 1
-  const suffix = ` do inimigo ${n}`
-  const path = (field: string) => `enemies.${index}.${field}`
+  const suffix = ` do inimigo ${n}${finalBoss ? ' do chefe final' : ''}`
+  const path = (field: string) =>
+    `${finalBoss ? 'completion.finalBoss.' : ''}enemies.${index}.${field}`
   return (
     <>
       <TextField
@@ -1555,8 +1565,8 @@ function EnemyFields({
               errors={errors}
             />
             <TextField
-              label={`Dados executáveis da habilidade ${j + 1} do inimigo ${index + 1} (JSON)`}
-              path={`enemies.${index}.abilities.${j}.executable`}
+              label={`Dados executáveis da habilidade ${j + 1}${suffix} (JSON)`}
+              path={path(`abilities.${j}.executable`)}
               value={ability.executable ?? ''}
               onChange={(executable) => setAbility({ ...ability, executable })}
               errors={errors}
@@ -1567,7 +1577,7 @@ function EnemyFields({
         )}
       />
       <TextField
-        label={`Regras de combate do inimigo ${index + 1} (JSON)`}
+        label={`Regras de combate${suffix} (JSON)`}
         path={path('combatRules')}
         value={enemy.combatRules ?? ''}
         onChange={(combatRules) => set({ ...enemy, combatRules })}
@@ -1659,6 +1669,210 @@ function CombatEventFields({
   )
 }
 
+function CompletionFields({
+  completion,
+  set,
+  errors,
+}: {
+  completion: DimensionForm['completion']
+  set: (completion: DimensionForm['completion']) => void
+  errors: Errors
+}) {
+  return (
+    <fieldset aria-describedby={errors.describedBy('completion')}>
+      <legend>Conclusão</legend>
+      {errors.errorText('completion')}
+      <CheckboxField
+        label="Tem conclusão"
+        checked={completion !== null}
+        onChange={(checked) =>
+          set(
+            checked
+              ? {
+                  zoneTitle: '',
+                  requirement: [],
+                  grandPrize: { cards: [], gold: '0' },
+                  finalBoss: null,
+                }
+              : null,
+          )
+        }
+      />
+      {completion && (
+        <>
+          <TextField
+            label="Zona de conclusão"
+            path="completion.zoneTitle"
+            value={completion.zoneTitle}
+            onChange={(zoneTitle) => set({ ...completion, zoneTitle })}
+            errors={errors}
+          />
+          <ListField
+            label="Requisito"
+            path="completion.requirement"
+            items={completion.requirement}
+            onChange={(requirement) => set({ ...completion, requirement })}
+            newItem={() => ({ cardId: '', count: '1' })}
+            errors={errors}
+            renderItem={(item, index, update) => (
+              <>
+                <TextField
+                  label={`Item de conclusão ${index + 1}`}
+                  path={`completion.requirement.${index}.cardId`}
+                  value={item.cardId}
+                  onChange={(cardId) => update({ ...item, cardId })}
+                  errors={errors}
+                />
+                <TextField
+                  label={`Quantidade ${index + 1}`}
+                  path={`completion.requirement.${index}.count`}
+                  value={item.count}
+                  onChange={(count) => update({ ...item, count })}
+                  errors={errors}
+                />
+              </>
+            )}
+          />
+          <fieldset
+            aria-describedby={errors.describedBy('completion.grandPrize')}
+          >
+            <legend>Prêmio máximo</legend>
+            {errors.errorText('completion.grandPrize')}
+            <ListField
+              label="Cartas do prêmio máximo"
+              path="completion.grandPrize.cards"
+              items={completion.grandPrize.cards}
+              onChange={(cards) =>
+                set({
+                  ...completion,
+                  grandPrize: { ...completion.grandPrize, cards },
+                })
+              }
+              newItem={() => ({ cardId: '', copies: '1' })}
+              errors={errors}
+              renderItem={(item, index, update) => (
+                <>
+                  <TextField
+                    label={`Carta ${index + 1} do prêmio máximo`}
+                    path={`completion.grandPrize.cards.${index}.cardId`}
+                    value={item.cardId}
+                    onChange={(cardId) => update({ ...item, cardId })}
+                    errors={errors}
+                  />
+                  <TextField
+                    label={`Quantidade ${index + 1} do prêmio máximo`}
+                    path={`completion.grandPrize.cards.${index}.copies`}
+                    value={item.copies}
+                    onChange={(copies) => update({ ...item, copies })}
+                    errors={errors}
+                  />
+                </>
+              )}
+            />
+            <TextField
+              label="Ouro do prêmio máximo"
+              path="completion.grandPrize.gold"
+              value={completion.grandPrize.gold}
+              onChange={(gold) =>
+                set({
+                  ...completion,
+                  grandPrize: { ...completion.grandPrize, gold },
+                })
+              }
+              errors={errors}
+            />
+          </fieldset>
+          <FinalBossFields
+            boss={completion.finalBoss}
+            set={(finalBoss) => set({ ...completion, finalBoss })}
+            errors={errors}
+          />
+        </>
+      )}
+    </fieldset>
+  )
+}
+
+type FinalBossForm = NonNullable<DimensionForm['completion']>['finalBoss']
+
+function FinalBossFields({
+  boss,
+  set,
+  errors,
+}: {
+  boss: FinalBossForm
+  set: (boss: FinalBossForm) => void
+  errors: Errors
+}) {
+  return (
+    <fieldset aria-describedby={errors.describedBy('completion.finalBoss')}>
+      <legend>Chefe final</legend>
+      {errors.errorText('completion.finalBoss')}
+      <CheckboxField
+        label="Tem chefe final"
+        checked={boss !== null}
+        onChange={(checked) =>
+          set(
+            checked
+              ? { title: '', flavorText: '', enemies: [], noEscape: false }
+              : null,
+          )
+        }
+      />
+      {boss && (
+        <>
+          <TextField
+            label="Título do chefe final"
+            path="completion.finalBoss.title"
+            value={boss.title}
+            onChange={(title) => set({ ...boss, title })}
+            errors={errors}
+          />
+          <TextField
+            label="Texto de ambientação do chefe final"
+            path="completion.finalBoss.flavorText"
+            value={boss.flavorText}
+            onChange={(flavorText) => set({ ...boss, flavorText })}
+            errors={errors}
+            multiline
+          />
+          <ListField
+            label="Inimigos do chefe final"
+            path="completion.finalBoss.enemies"
+            items={boss.enemies}
+            onChange={(enemies) => set({ ...boss, enemies })}
+            newItem={emptyEnemy}
+            errors={errors}
+            renderItem={(enemy, index, update) => (
+              <EnemyFields
+                enemy={enemy}
+                index={index}
+                set={update}
+                errors={errors}
+                finalBoss
+              />
+            )}
+          />
+          <CheckboxField
+            label="Sem fuga"
+            checked={boss.noEscape}
+            onChange={(noEscape) => set({ ...boss, noEscape })}
+            describedBy={errors.describedBy('completion.finalBoss.noEscape')}
+          />
+          {errors.errorText('completion.finalBoss.noEscape')}
+          <TextField
+            label="Limiar de fuga do chefe final (vazio usa o padrão)"
+            path="completion.finalBoss.escapeThreshold"
+            value={boss.escapeThreshold ?? ''}
+            onChange={(escapeThreshold) => set({ ...boss, escapeThreshold })}
+            errors={errors}
+          />
+        </>
+      )}
+    </fieldset>
+  )
+}
+
 /** Carta de Dimensão (REQ-31); "Zona de chegada" vazia = `null` (sorteada). */
 function DimensionFields({
   values,
@@ -1711,6 +1925,11 @@ function DimensionFields({
         label="Decks de recompensas"
         items={values.rewardDecks}
         onChange={(rewardDecks) => set({ ...values, rewardDecks })}
+        errors={errors}
+      />
+      <CompletionFields
+        completion={values.completion}
+        set={(completion) => set({ ...values, completion })}
         errors={errors}
       />
       <ZoneDeckFields

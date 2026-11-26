@@ -15,6 +15,7 @@ import {
 } from 'vitest'
 import type { DimensionCard as DimensionCardData } from '../../api/catalog'
 import { testDimensionFixture } from '../../mocks/catalogFixtures'
+import { bossDimensionFixture } from '../../mocks/dimensionCompletionFixtures'
 import { internalErrorFixture } from '../../mocks/fixtures'
 import { handlers } from '../../mocks/handlers'
 import { DimensionCard } from './DimensionCard'
@@ -52,6 +53,39 @@ const deckItems = () =>
   within(screen.getByRole('list', { name: 'Decks de recompensas' }))
 
 describe('DimensionCard', () => {
+  it('REQ-91: apresenta os requisitos, o prêmio e o bloco de inimigo do chefe final', async () => {
+    renderWithClient(<DimensionCard card={bossDimensionFixture} />)
+    const boss = within(screen.getByRole('region', { name: 'Chefe final' }))
+    expect(boss.getByText('Guardião da Mina')).toBeVisible()
+    expect(boss.getByText('Sem fuga')).toBeVisible()
+    expect(
+      boss.getByRole('heading', {
+        name: bossDimensionFixture.completion!.finalBoss!.enemies[0].name,
+      }),
+    ).toBeVisible()
+    expect(await screen.findByText('3× Fragmento')).toBeVisible()
+    expect(await screen.findByText('1× Lâmina do Crepúsculo')).toBeVisible()
+  })
+
+  it('REQ-91: omite a conclusão legada e o chefe ausente', () => {
+    const view = render(
+      <QueryClientProvider client={queryClient}>
+        <DimensionCard card={dimension} />
+      </QueryClientProvider>,
+    )
+    expect(
+      screen.queryByRole('region', { name: 'Chefe final' }),
+    ).not.toBeInTheDocument()
+    view.rerender(
+      <QueryClientProvider client={queryClient}>
+        <DimensionCard card={{ ...dimension, completion: null }} />
+      </QueryClientProvider>,
+    )
+    expect(
+      screen.queryByRole('region', { name: 'Conclusão' }),
+    ).not.toBeInTheDocument()
+  })
+
   it('REQ-28: mostra nome, ordem de lançamento e zona de chegada (fixture)', () => {
     renderWithClient(<DimensionCard card={dimension} />)
     const card = screen.getByRole('article', { name: 'Dimensão de Teste' })

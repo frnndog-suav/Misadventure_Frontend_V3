@@ -150,3 +150,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 117 | T-88 | [Alinhar o cliente ao CONTRATO v0.92](117-T-88-alinhar-contrato-v092-feat-18.md) | concluída |
 | 118 | T-87 | [Validação integrada da FEAT-18](118-T-87-validacao-integrada-feat-18.md) | aguardando revisão |
 | 119 | T-89 | [Cliente e fixtures MSW da conclusão da dimensão](119-T-89-cliente-feat-19.md) | concluída |
+| 120 | T-90 | [Laboratório, catálogo e editor da conclusão](120-T-90-laboratorio-catalogo-editor-feat-19.md) | concluída |

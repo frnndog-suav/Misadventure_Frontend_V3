@@ -10,6 +10,7 @@ import {
   type LabGrantRequest,
 } from '../api/labGrant'
 import { useParties, useParty, type Party } from '../api/parties'
+import { CardName, LabeledList } from '../ui/cards/parts'
 import { cardTypeLabels } from '../ui/labels'
 
 const unavailable = 'Servidor indisponível. Tente novamente.'
@@ -117,6 +118,11 @@ function GrantForm({ party }: { party: Party }) {
     collections.isPending || (collectionId !== null && cards.isPending)
   const grantable = (cards.data ?? []).filter(isGrantable)
 
+  const grantedMember = grant.data?.members.find(
+    (member) => member.id === grantedTo,
+  )
+  const completionItems = grantedMember?.player.completionItems ?? []
+
   let status = ''
   if (grant.isSuccess && grantedTo !== null) {
     status = successText(grant.data, grantedTo)
@@ -193,7 +199,10 @@ function GrantForm({ party }: { party: Party }) {
                   <option value="">Escolha…</option>
                   {grantable.map((card) => (
                     <option key={card.id} value={card.id}>
-                      {`${card.name} · ${cardTypeLabels[card.type]}`}
+                      {card.name} ·{' '}
+                      {card.type === 'item' && card.completionItem
+                        ? 'item de conclusão'
+                        : cardTypeLabels[card.type]}
                     </option>
                   ))}
                 </>
@@ -231,6 +240,15 @@ function GrantForm({ party }: { party: Party }) {
         Doar
       </button>
       <p role="status">{status}</p>
+      <LabeledList
+        label="Itens de conclusão"
+        items={completionItems}
+        render={({ cardId, quantity }) => (
+          <>
+            {quantity}× <CardName cardId={cardId} />
+          </>
+        )}
+      />
     </>
   )
 }

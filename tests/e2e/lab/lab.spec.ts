@@ -371,3 +371,41 @@ test('REQ-83: o Catálogo mostra a carta de montaria e o Estábulo da zona (MSW)
     'Cavalo de Arado',
   )
 })
+
+test('REQ-90 e REQ-91: valores, doação e catálogo da conclusão', async ({
+  page,
+}) => {
+  await page.goto('/lab')
+  await expect(
+    page.getByLabel('Pico de derrotar um Chefe', { exact: true }),
+  ).toHaveValue('15')
+  await expect(
+    page.getByLabel('Pico de concluir a dimensão', { exact: true }),
+  ).toHaveValue('25')
+  const catalog = page.getByRole('region', { name: 'Catálogo' })
+  await catalog
+    .getByRole('button', { name: 'Dimensão de Teste · Dimensão', exact: true })
+    .click()
+  await expect(catalog.getByText('Zona de conclusão: Mina Velha')).toBeVisible()
+  await expect(catalog.getByText('100 de ouro', { exact: true })).toBeVisible()
+  await expect(catalog.getByRole('list', { name: 'Requisito' })).toHaveText(
+    '3× Fragmento',
+  )
+  await catalog
+    .getByRole('button', { name: 'Fragmento · Item', exact: true })
+    .click()
+  await expect(
+    catalog.getByText('Item de conclusão', { exact: true }),
+  ).toBeVisible()
+  const grant = page.getByRole('region', { name: 'Doação' })
+  await grant.getByRole('radio', { name: 'Os Teimosos (Lia)' }).check()
+  await grant
+    .getByRole('combobox', { name: 'Carta' })
+    .selectOption({ label: 'Fragmento · item de conclusão' })
+  await grant.getByLabel('Quantidade', { exact: true }).fill('3')
+  await grant.getByRole('button', { name: 'Doar' }).click()
+  await expect(grant.getByRole('status')).toContainText('Doação feita.')
+  await expect(
+    grant.getByRole('list', { name: 'Itens de conclusão' }),
+  ).toHaveText('3× Fragmento')
+})
