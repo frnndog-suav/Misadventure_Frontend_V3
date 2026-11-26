@@ -1137,7 +1137,7 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 - [x] **T-91 — Itens de conclusão e requisito na tela do grupo** (REQ-92). E2E na área `party`.
 - [x] **T-92 — Concluir dimensão e painel de conclusão** (REQ-93, REQ-95). E2E na área `party`.
 - [x] **T-93 — Chefe final** (REQ-93, REQ-94). E2E na área `party`.
-- [ ] **T-94 — Save congelado** (REQ-95, REQ-96). E2E nas áreas `app` e `party`.
+- [x] **T-94 — Save congelado** (REQ-95, REQ-96). E2E nas áreas `app` e `party`.
 - [ ] **T-95 — Validação integrada da FEAT-19.** Repetir os cenários do contrato contra o backend real com MSW desligado, com as campanhas preparadas pelo backend (no limiar da conclusão, sem e com chefe final, última dimensão lançada).
 
 ## 8. Histórico

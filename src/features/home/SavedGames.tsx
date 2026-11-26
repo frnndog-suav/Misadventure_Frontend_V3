@@ -114,14 +114,16 @@ export function SavedGames() {
                 <span>{party.characterNames.join(', ')}</span>
                 <span>{statusLabel[party.status]}</span>
                 <span>Salvo em {formatSavedAt(party.savedAt)}</span>
-                <button
-                  type="button"
-                  onClick={() =>
-                    navigate(`/grupo/${encodeURIComponent(party.id)}`)
-                  }
-                >
-                  Continuar
-                </button>
+                {party.status !== 'frozen' && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      navigate(`/grupo/${encodeURIComponent(party.id)}`)
+                    }
+                  >
+                    Continuar
+                  </button>
+                )}
                 <button
                   type="button"
                   ref={(el) => {

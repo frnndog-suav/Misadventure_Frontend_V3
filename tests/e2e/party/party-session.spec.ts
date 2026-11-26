@@ -242,6 +242,17 @@ test('REQ-95: reabre o resumo persistido e volta ao início quando congela', asy
   ).toHaveText('Save congelado.')
 })
 
+test('REQ-96: acesso direto a save congelado mostra a recusa e o link de volta', async ({
+  page,
+}) => {
+  await page.goto('/grupo/party-congelado')
+  await expect(page.getByRole('status')).toHaveText(
+    'Este save está congelado até o lançamento da próxima dimensão.',
+  )
+  await page.getByRole('link', { name: 'Voltar ao início' }).click()
+  await expect(page).toHaveURL(/\/$/)
+})
+
 test.describe('REQ-16: grupo em sessão (MSW)', () => {
   test.use({ timezoneId: 'America/Sao_Paulo' })
 

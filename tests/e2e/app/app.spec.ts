@@ -33,6 +33,35 @@ test('T-03: com VITE_USE_MOCKS=true o console mostra o MSW ativo', async ({
     .toBe(true)
 })
 
+test('REQ-96: save congelado oferece Abandonar e oculta Continuar', async ({
+  page,
+}) => {
+  await page.goto('/')
+  const save = page.getByRole('listitem').filter({ hasText: 'Save congelado' })
+  await expect(save).toContainText('Congelado · aguardando a próxima dimensão')
+  await expect(save.getByRole('button', { name: 'Continuar' })).toHaveCount(0)
+  await save.getByRole('button', { name: 'Abandonar' }).click()
+  await expect(
+    page.getByRole('dialog', { name: 'Abandonar “Save congelado”?' }),
+  ).toBeVisible()
+})
+
+test('REQ-96: save descongelado aparece pausado e abre a nova dimensão', async ({
+  page,
+}) => {
+  await page.goto('/')
+  const save = page
+    .getByRole('listitem')
+    .filter({ hasText: 'Save descongelado' })
+  await expect(save).toContainText('Pausado')
+  await save.getByRole('button', { name: 'Continuar' }).click()
+  const dialog = page.getByRole('dialog', { name: /^Dimensão concluída:/ })
+  await expect(dialog).toContainText('Próxima dimensão: Segunda Dimensão')
+  await dialog.getByRole('button', { name: 'Continuar' }).click()
+  await expect(dialog).toHaveCount(0)
+  await expect(page.getByText('Dimensão: Segunda Dimensão')).toBeVisible()
+})
+
 test.describe('REQ-14 e REQ-17: menu inicial e abandono (MSW)', () => {
   test.use({ timezoneId: 'America/Sao_Paulo' })
 

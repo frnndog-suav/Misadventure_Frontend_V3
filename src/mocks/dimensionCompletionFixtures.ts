@@ -135,6 +135,13 @@ const frozen: Party = {
     player: { ...entry.player, zoneId: mine, availableActions: [] },
   })),
 }
+const thawed: Party = {
+  ...frozen,
+  id: 'party-descongelado',
+  name: 'Save descongelado',
+  status: 'idle',
+}
+
 const bossReady: Party = {
   ...ready,
   id: 'party-chefe-final',
@@ -312,6 +319,7 @@ const scenarios = [
   ready,
   completed,
   frozen,
+  thawed,
   ...bossScenarios,
   bossCompleted,
   lastDimension,
@@ -333,6 +341,9 @@ export function completionParty(id: unknown) {
 }
 
 export function startCompletionSession(party: Party) {
+  if (party.id === thawed.id) {
+    return HttpResponse.json({ ...completed, id: party.id, name: party.name })
+  }
   return party.status === 'frozen'
     ? HttpResponse.json(
         {

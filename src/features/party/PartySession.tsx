@@ -2312,7 +2312,8 @@ export function PartySession() {
     status = 'Carregando a partida…'
   }
 
-  const notFound =
+  const canReturnHome =
+    (start.error instanceof ApiError && start.error.code === 'PARTY_FROZEN') ||
     isNotFound(start.error) ||
     isNotFound(end.error) ||
     isNotFound(restoredParty.error)
@@ -2577,7 +2578,7 @@ export function PartySession() {
             cards={cards.cards}
           />
         )}
-      {notFound && <Link to="/">Voltar ao início</Link>}
+      {canReturnHome && <Link to="/">Voltar ao início</Link>}
       {party && completionPending && !bossReportPending && (
         <DimensionCompletionDialog
           summary={completionPending}

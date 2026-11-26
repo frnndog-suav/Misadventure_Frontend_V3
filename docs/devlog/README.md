@@ -154,3 +154,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 121 | T-91 | [Itens de conclusão e requisito na tela do grupo](121-T-91-conclusao-tela-do-grupo-feat-19.md) | concluída |
 | 122 | T-92 | [Ação e painel de conclusão da dimensão](122-T-92-acao-painel-conclusao-feat-19.md) | concluída |
 | 123 | T-93 | [Resultado do combate do chefe final](123-T-93-resultado-chefe-final-feat-19.md) | concluída |
+| 124 | T-94 | [Save congelado](124-T-94-save-congelado-feat-19.md) | concluída |
