@@ -1,3 +1,4 @@
+import { completionPartySummaries } from '../mocks/dimensionCompletionFixtures'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
@@ -94,7 +95,10 @@ describe('REQ-14: useParties (GET /parties)', () => {
   it('REQ-14: entrega PartySummary[] validado na ordem recebida', async () => {
     const { result } = renderHook(() => useParties(), { wrapper })
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
-    expect(result.current.data).toEqual(partiesFixture)
+    expect(result.current.data).toEqual([
+      ...partiesFixture,
+      ...completionPartySummaries,
+    ])
   })
 
   it('REQ-14: lista vazia é válida', async () => {

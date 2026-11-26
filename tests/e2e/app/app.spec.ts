@@ -45,7 +45,7 @@ test.describe('REQ-14 e REQ-17: menu inicial e abandono (MSW)', () => {
       '/novo',
     )
     const games = page.getByRole('region', { name: 'Seus jogos' })
-    const save = games.getByRole('listitem')
+    const save = games.getByRole('listitem').filter({ hasText: 'Os Teimosos' })
     await expect(save).toHaveCount(1)
     await expect(save).toContainText('Os Teimosos')
     await expect(save).toContainText('Lia')
@@ -63,6 +63,7 @@ test.describe('REQ-14 e REQ-17: menu inicial e abandono (MSW)', () => {
     const games = page.getByRole('region', { name: 'Seus jogos' })
     const abandon = games
       .getByRole('listitem')
+      .filter({ hasText: 'Os Teimosos' })
       .getByRole('button', { name: 'Abandonar' })
 
     await abandon.click()

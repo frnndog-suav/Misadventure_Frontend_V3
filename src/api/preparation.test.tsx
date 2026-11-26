@@ -129,6 +129,7 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
       name: 'Dimensão de Teste',
       flavorText: null,
       releaseOrder: 1,
+      completion: testDimensionFixture.completion,
       arrivalZoneTitle: 'Porto Cinzento',
       effects: [],
       eventDecks: [
@@ -181,7 +182,7 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
       zone: 4,
       attribute: 3,
       equipment: 7,
-      item: 11,
+      item: 12,
       randomEvent: 2,
       combatEvent: 1,
       zoneQuest: 0,
@@ -229,6 +230,7 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
       'fixture.old-mine',
       'fixture.pickaxe',
       'fixture.plow-horse',
+      'fixture.shard',
       'fixture.short-sword',
       'fixture.silver-fish',
       'fixture.stone-bend',
@@ -240,7 +242,7 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
       'fixture.whispering-grove',
       'fixture.wounded-traveler',
     ])
-    expect(fixtureCardsFixture).toHaveLength(31)
+    expect(fixtureCardsFixture).toHaveLength(32)
   })
 })
 
@@ -463,6 +465,7 @@ describe('REQ-30: Party preparado (dimension, turnOrder, player)', () => {
     const { hand, handCopies, ...player } = party.members[0].player
     expect(handCopies.map(({ cardId }) => cardId)).toEqual(hand)
     expect(player).toEqual({
+      completionItems: [],
       questBoard: [],
       openQuests: [],
       questChoices: [],

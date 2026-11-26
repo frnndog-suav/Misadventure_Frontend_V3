@@ -240,6 +240,7 @@ export const legacyEventDeckDraftFixture = {
     name: 'Dimensão com evento legado',
     flavorText: null,
     releaseOrder: 2,
+    completion: null,
     arrivalZoneTitle: null,
     effects: [],
     rewardDecks: [],

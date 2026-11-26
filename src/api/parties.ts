@@ -36,6 +36,7 @@ import {
 } from './combat'
 import type { EquipmentSlot, PlayerClass } from './catalog'
 import { ApiError, requestJson } from './http'
+import { receiveSpaceSchema } from './vocabulary'
 import { activatableEffectSchema, playerStatusSchema } from './effects'
 import {
   encounterSchema,
@@ -54,7 +55,7 @@ import {
  * devolvido, com os valores já calculados (D-32, D-48); sem retry (D-16).
  */
 
-export const partyStatusSchema = z.enum(['idle', 'inSession'])
+export const partyStatusSchema = z.enum(['idle', 'inSession', 'frozen'])
 export type PartyStatus = z.infer<typeof partyStatusSchema>
 
 /**
@@ -115,6 +116,7 @@ export const partyActionTypeSchema = z.enum([
   'saveRespawnPoint',
   ...randomEventActionTypes,
   ...combatActionTypes,
+  'completeDimension',
   'endTurn',
 ])
 export type PartyActionType = z.infer<typeof partyActionTypeSchema>
@@ -196,6 +198,9 @@ export type KnockoutResult = z.infer<typeof knockoutResultSchema>
 
 /** Estado do jogador na partida; tudo calculado pelo backend (§1.3). */
 export const playerStateSchema = z.object({
+  completionItems: z
+    .array(z.object({ cardId: z.string(), quantity: z.number().int().min(1) }))
+    .default([]),
   ...playerQuestFields,
   playerClasses: z.array(
     z.object({ playerClass: playerClassSchema, deckLockMet: z.boolean() }),
@@ -274,7 +279,43 @@ export const partyMemberSchema = z.object({
 })
 export type PartyMember = z.infer<typeof partyMemberSchema>
 
+export const dimensionCompletionResultSchema = z.object({
+  completedDimensionCardId: z.string(),
+  completedDimensionName: z.string(),
+  completedByMemberId: z.string(),
+  finalBossDefeated: z.boolean(),
+  members: z.array(
+    z.object({
+      memberId: z.string(),
+      peakDelta: nonNegativeInt,
+      gold: nonNegativeInt,
+      cards: z.array(
+        z.object({
+          cardId: z.string(),
+          copies: z.number().int().min(1),
+          destination: receiveSpaceSchema,
+        }),
+      ),
+    }),
+  ),
+  next: z.discriminatedUnion('type', [
+    z.object({
+      type: z.literal('nextDimension'),
+      dimensionCardId: z.string(),
+      name: z.string(),
+    }),
+    z.object({ type: z.literal('frozen') }),
+  ]),
+  completedAt: z.iso.datetime(),
+})
+export type DimensionCompletionResult = z.infer<
+  typeof dimensionCompletionResultSchema
+>
+
 export const partySchema = z.object({
+  lastDimensionCompletion: dimensionCompletionResultSchema
+    .nullable()
+    .default(null),
   id: z.string(),
   name: z.string(),
   status: partyStatusSchema,
@@ -455,6 +496,7 @@ export type PartyAction =
   | QuestAction
   | MoveAction
   | { type: 'saveRespawnPoint' }
+  | CompleteDimensionAction
   | EndTurnAction
   | RecoverAction
   | AdjustDeckAction
@@ -475,6 +517,10 @@ export interface MoveAction {
   zoneId: string
   /** FEAT-18: zona do meio; só com montaria. */
   viaZoneId?: string
+}
+
+export interface CompleteDimensionAction {
+  type: 'completeDimension'
 }
 
 /** Encerrar a vez (README 11.1); sem campos. */
@@ -648,6 +694,9 @@ export const actionNotAllowedDetailsSchema = z.object({
     'recipeMissing',
     'materialsMissing',
     // FEAT-18
+    'noCompletion',
+    'notCompletionZone',
+    'completionRequirementNotMet',
     'noMount',
     'mountAlreadyOwned',
     'mountNotOffered',

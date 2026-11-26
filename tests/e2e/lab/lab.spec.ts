@@ -69,8 +69,8 @@ test('REQ-08: o Catálogo filtra por tipo e mostra a carta escolhida (MSW)', asy
     section.getByRole('radio', { name: 'Coleção de Teste' }),
   ).toBeChecked()
   const list = section.getByRole('list', { name: 'Cartas' })
-  // CONTRATO v0.90: a `fixture` ganhou as 2 montarias (31 cartas).
-  await expect(list.getByRole('button')).toHaveCount(31)
+  // A fixture inclui o Fragmento da FEAT-19.
+  await expect(list.getByRole('button')).toHaveCount(32)
 
   await section.getByRole('radio', { name: 'Zona (4)' }).check()
   await expect(list.getByRole('button')).toHaveCount(4)
@@ -146,7 +146,7 @@ test('REQ-48: ferramenta, "Coletada com" e "Decks de recompensas" no catálogo (
   const section = page.getByRole('region', { name: 'Catálogo' })
   const list = section.getByRole('list', { name: 'Cartas' })
 
-  await section.getByRole('radio', { name: 'Item (11)' }).check()
+  await section.getByRole('radio', { name: 'Item (12)' }).check()
   await list.getByRole('button', { name: 'Vara de Pesca · Item' }).click()
   const rod = section.getByRole('article', { name: 'Vara de Pesca' })
   await expect(rod.getByText('Ferramenta: fishing-rod')).toBeVisible()
@@ -180,7 +180,7 @@ test('REQ-53: mostra a marca e o texto recebido no catálogo (MSW)', async ({
 }) => {
   await page.goto('/lab')
   const catalog = page.getByRole('region', { name: 'Catálogo' })
-  await catalog.getByRole('radio', { name: 'Item (11)' }).check()
+  await catalog.getByRole('radio', { name: 'Item (12)' }).check()
   await catalog.getByRole('button', { name: 'Tônico de Força · Item' }).click()
   const effects = catalog
     .getByRole('article', { name: 'Tônico de Força' })
@@ -197,7 +197,9 @@ test('REQ-46: doa carta e ouro na seção "Doação" (MSW)', async ({ page }) =>
   const grant = section.getByRole('button', { name: 'Doar' })
 
   await section.getByRole('radio', { name: 'Os Teimosos (Lia)' }).check()
-  await expect(section.getByRole('radio', { name: 'Lia' })).toBeChecked()
+  await expect(
+    section.getByRole('radio', { name: 'Lia', exact: true }),
+  ).toBeChecked()
   await expect(grant).toBeDisabled()
 
   const card = section.getByRole('combobox', { name: 'Carta' })

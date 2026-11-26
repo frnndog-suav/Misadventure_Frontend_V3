@@ -1,6 +1,6 @@
 # Misadventures — Roadmap de desenvolvimento
 
-> **Versão:** 0.86 · **Data:** 2026-11-25
+> **Versão:** 0.87 · **Data:** 2026-11-25
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend; o autor copia o arquivo inteiro quando ele muda. Base: README Parte III (III.2 e III.4). As regras estão em [`README.md`](README.md); o que trafega entre os lados, em [`CONTRATO.md`](CONTRATO.md).
 
@@ -71,7 +71,7 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | FEAT-16 | Mercado: estoque, venda, boosters, singles, serviços | 24 | validado | validado |
 | FEAT-17 | Ferreiro e Oficina do Artífice | 25 | validado | validado |
 | FEAT-18 | Montarias e Estábulo | 26 | validado | validado |
-| FEAT-19 | Conclusão da dimensão, chefe final, passagem para a próxima, save congelado | 3.2, 28.1 | aguardando outro lado | a fazer |
+| FEAT-19 | Conclusão da dimensão, chefe final, passagem para a próxima, save congelado | 3.2, 28.1 | a fazer | a fazer |
 | FEAT-33 | Coleções estendidas e reprint: várias coleções vigentes para compra no mercado (README 27) | 27, 24 | a fazer | a fazer |
 
 ### Momento 2 — Ajudantes de IA
@@ -195,8 +195,9 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | 0.79 | 2026-11-24 | FEAT-17: BE `pronto` (`implementado (BE)` no CONTRATO v0.86, T-67 a T-73); falta a validação integrada do FE (T-79). |
 | 0.80 | 2026-11-24 | FEAT-17 `validado` nos dois lados (T-79, CONTRATO v0.87). |
 | 0.81 | 2026-11-24 | FEAT-18: planejada no BE (SPEC-BACKEND v0.92, T-74 a T-80; README Apêndice B.20, U1 e U2); contrato proposto pelo BE (CONTRATO v0.88); BE `aguardando outro lado`. |
-| 0.82 | 2026-11-24 | FEAT-18: FE pede mudanças na seção (CONTRATO v0.89, `proposto (FE)`: montaria como origem de efeitos e habilidades, destinos da montaria, espaço no descarte da recompensa); FE e BE `aguardando outro lado`. |
+| 0.82 | 2026-11-24 | FEAT-18: FE pede mudanças na seção (CONTRATO v0.89, `proposto (FE)`: montaria como origem de efeitos e habilidades, destinos da montaria, espaço no descarte da recompensa). |
 | 0.83 | 2026-11-24 | FEAT-18: contrato `acordado` pelo BE (CONTRATO v0.90); FE `a fazer` (planejar REQs e tarefas); BE `a fazer` (a spec absorve os pedidos da v0.89 antes da T-74). |
-| 0.84 | 2026-11-25 | FEAT-18: BE `pronto` (`implementado (BE)` no CONTRATO v0.93, T-74 a T-80); falta a validação integrada do FE. FE `em andamento` (T-80 a T-86 prontas com MSW; faltam T-88 e T-87). |
+| 0.84 | 2026-11-25 | FEAT-18: BE `pronto` (`implementado (BE)` no CONTRATO v0.93, T-74 a T-80); falta a validação integrada do FE. |
 | 0.85 | 2026-11-25 | FEAT-18 `validado` nos dois lados (T-87, CONTRATO v0.94). |
 | 0.86 | 2026-11-25 | FEAT-19: planejada no FE (SPEC-FRONTEND v1.08, REQ-90 a REQ-96, T-89 a T-95); contrato proposto pelo FE (CONTRATO v0.95); FE `aguardando outro lado`. FEAT-33 nova (coleções estendidas e reprint, decisão do autor), tirada da FEAT-19. |
+| 0.87 | 2026-11-25 | FEAT-19: contrato `acordado` pelo BE (CONTRATO v0.96; README B.21 aplicada); FE `a fazer` (T-89 liberada); BE `a fazer` (falta planejar REQs e tarefas na SPEC-BACKEND). |

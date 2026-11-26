@@ -256,6 +256,7 @@ export const itemCardSchema = z.object({
   name: z.string(),
   flavorText,
   rarity: raritySchema,
+  completionItem: z.boolean().default(false),
   itemCategory: itemCategorySchema,
   tags: z.array(z.string()),
   effects: z.array(effectSchema),
@@ -338,13 +339,34 @@ export const combatEventCardSchema = z.object({
   noEscape: z.boolean(),
 })
 
-/** README 3.2 (FEAT-06). Conclusão e chefe final entram na FEAT-19. */
+export const finalBossSchema = combatEventCardSchema
+  .pick({ enemies: true, escapeThreshold: true })
+  .extend({ title: z.string(), flavorText, noEscape: z.boolean() })
+export type FinalBoss = z.infer<typeof finalBossSchema>
+
+export const dimensionCompletionSchema = z.object({
+  zoneTitle: z.string(),
+  requirement: z
+    .array(z.object({ cardId: z.string(), count: z.number().int().min(1) }))
+    .min(1),
+  grandPrize: z.object({
+    cards: z.array(
+      z.object({ cardId: z.string(), copies: z.number().int().min(1) }),
+    ),
+    gold: nonNegative,
+  }),
+  finalBoss: finalBossSchema.nullable(),
+})
+export type DimensionCompletion = z.infer<typeof dimensionCompletionSchema>
+
+/** README 3.2 (FEAT-06 e FEAT-19). */
 export const dimensionCardSchema = z.object({
   type: z.literal('dimension'),
   ...cardBase,
   name: z.string(),
   flavorText,
   releaseOrder: z.number().int().min(1),
+  completion: dimensionCompletionSchema.nullable().default(null),
   /** `null` = sorteada pelo backend entre as `urban` sem efeito negativo. */
   arrivalZoneTitle: z.string().nullable(),
   effects: z.array(zoneEffectSchema),

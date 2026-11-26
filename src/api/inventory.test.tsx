@@ -275,6 +275,7 @@ describe('REQ-44: PlayerState com inventário, equipamentos, bolsa e modificador
       'combatAttack',
       'endCombatTurn',
       'resolveTriggeredEffect',
+      'completeDimension',
       'endTurn',
     ])
     expect(partyActionTypeSchema.safeParse('wear').success).toBe(false)
@@ -299,8 +300,8 @@ describe('REQ-44: cartas novas da fixture', () => {
       (card) => card.id,
     )
     expect(ids).toEqual([...ids].sort())
-    expect(ids).toHaveLength(31)
-    expect(fixtureCardsFixture).toHaveLength(31)
+    expect(ids).toHaveLength(32)
+    expect(fixtureCardsFixture).toHaveLength(32)
     expect(ids).toEqual(expect.arrayContaining([W, D, H, R, K]))
   })
 
@@ -338,7 +339,7 @@ describe('REQ-44: cartas novas da fixture', () => {
       zone: 4,
       attribute: 3,
       equipment: 7,
-      item: 11,
+      item: 12,
       randomEvent: 2,
       combatEvent: 1,
       zoneQuest: 0,
@@ -366,6 +367,7 @@ describe('REQ-44: cartas novas da fixture', () => {
       'fixture.iron-ore',
       'fixture.lucky-coin',
       K,
+      'fixture.shard',
       'fixture.silver-fish',
       'fixture.strength-tonic',
       'fixture.sword-blueprint',

@@ -44,6 +44,7 @@ export const executableCombatCardFixture: CombatEventCard = {
 }
 
 const combat: NonNullable<Party['combat']> = {
+  finalBoss: false,
   id: combatId,
   card: executableCombatCardFixture,
   memberId: member.id,
@@ -305,7 +306,10 @@ const unavailablePayment = snapshot(
 )
 
 const resumedCombat = resume(pausedAfterReveal, false)
+export { combat as combatFixture }
+
 const victory: NonNullable<Party['lastCombatResult']> = {
+  finalBoss: false,
   combatId,
   cardId: executableCombatCardFixture.id,
   memberId: member.id,

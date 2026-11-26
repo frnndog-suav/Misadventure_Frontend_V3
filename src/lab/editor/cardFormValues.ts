@@ -10,6 +10,7 @@ import {
   zoneQuestCardSchema,
   type Ability,
   type CombatEventCard,
+  type DimensionCompletion,
   type Attribute,
   type AttributeCard,
   type Card,
@@ -283,6 +284,7 @@ export interface ItemForm {
   name: string
   flavorText: string
   rarity: Rarity | ''
+  completionItem: boolean
   itemCategory: ItemCategory | ''
   tags: string[]
   effects: EffectForm[]
@@ -395,6 +397,7 @@ export interface DimensionForm {
   slug: string
   name: string
   flavorText: string
+  completion: DimensionCompletion | null
   releaseOrder: string
   /** Vazio = `null` (sorteada pelo backend, REQ-31). */
   arrivalZoneTitle: string
@@ -605,6 +608,7 @@ export function emptyForm(type: FormCardType): CardForm {
         name: '',
         flavorText: '',
         rarity: '',
+        completionItem: false,
         itemCategory: '',
         tags: [],
         effects: [],
@@ -649,6 +653,7 @@ export function emptyForm(type: FormCardType): CardForm {
         slug: '',
         name: '',
         flavorText: '',
+        completion: null,
         releaseOrder: '',
         arrivalZoneTitle: '',
         effects: [],
@@ -793,6 +798,7 @@ export function formFromCard(card: Card): CardForm {
         name: card.name,
         flavorText: card.flavorText ?? '',
         rarity: card.rarity,
+        completionItem: card.completionItem,
         itemCategory: card.itemCategory,
         tags: [...card.tags],
         effects: card.effects.map(effectToForm),
@@ -879,6 +885,7 @@ export function formFromCard(card: Card): CardForm {
         slug: slugOf(card),
         name: card.name,
         flavorText: card.flavorText ?? '',
+        completion: card.completion,
         releaseOrder: String(card.releaseOrder),
         arrivalZoneTitle: card.arrivalZoneTitle ?? '',
         effects: card.effects.map(effectToForm),
@@ -1182,6 +1189,7 @@ export function toInput(form: CardForm): CardInput | null {
         name: form.name,
         flavorText: filled(form.flavorText) ? form.flavorText : null,
         rarity: form.rarity,
+        completionItem: form.completionItem,
         itemCategory: form.itemCategory,
         tags: form.tags,
         effects,
@@ -1304,6 +1312,7 @@ export function toInput(form: CardForm): CardInput | null {
         type: 'dimension',
         name: form.name,
         flavorText: filled(form.flavorText) ? form.flavorText : null,
+        completion: form.completion,
         releaseOrder,
         arrivalZoneTitle: filled(form.arrivalZoneTitle)
           ? form.arrivalZoneTitle

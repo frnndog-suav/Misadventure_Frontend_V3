@@ -155,6 +155,8 @@ const fieldLabels: Record<NumericKey, string> = {
   mountPriceLegendary: 'Montaria lendária: preço base',
   mountInventorySlots: 'Slots do inventário extra da montaria',
   mountFolderCapacity: 'Capacidade da pasta extra da montaria',
+  bossPeakGain: 'Pico de derrotar um Chefe',
+  dimensionCompletionPeakGain: 'Pico de concluir a dimensão',
 }
 
 const fieldKeys = Object.keys(fieldLabels) as NumericKey[]

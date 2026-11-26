@@ -19,6 +19,7 @@ function errorText(error: Error | null): string {
 const statusLabel: Record<PartyStatus, string> = {
   idle: 'Pausado',
   inSession: 'Em sessão',
+  frozen: 'Congelado · aguardando a próxima dimensão',
 }
 
 /** Mensagem deixada por outra tela ao voltar a `/` (D-37). */

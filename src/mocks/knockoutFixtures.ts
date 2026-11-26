@@ -1,4 +1,4 @@
-﻿import { HttpResponse } from 'msw'
+import { HttpResponse } from 'msw'
 import type { Effect } from '../api/effects'
 import type { Party, PartyActionResponse, PlayerState } from '../api/parties'
 import {
@@ -250,6 +250,7 @@ export function knockoutParty(id: unknown, status?: Party['status']) {
 const setback = partyEventSetbackFixture.members[0]!.player.lastRandomEvent!
 const rewardCard = 'fixture.pickaxe'
 const victory = {
+  finalBoss: false,
   combatId: combat.id,
   cardId: combat.card.id,
   memberId: member.id,

@@ -727,6 +727,9 @@ function reasonText(error: ActionNotAllowedError, name: string): string {
     case 'noMount': // FEAT-18: texto próprio no ramo de cada ação.
     case 'mountAlreadyOwned':
     case 'mountNotOffered':
+    case 'noCompletion':
+    case 'notCompletionZone':
+    case 'completionRequirementNotMet':
     case 'mountNotEmpty':
       return error.message
     case 'notBooster':
@@ -979,6 +982,9 @@ function vaultReasonText(error: ActionNotAllowedError, name: string): string {
     case 'noMount': // FEAT-18: texto próprio no ramo de cada ação.
     case 'mountAlreadyOwned':
     case 'mountNotOffered':
+    case 'noCompletion':
+    case 'notCompletionZone':
+    case 'completionRequirementNotMet':
     case 'mountNotEmpty':
       return error.message
     case 'notBooster':
@@ -1906,6 +1912,7 @@ function PreparedMatch({
 const statusLabel: Record<PartyStatus, string> = {
   idle: 'Pausado',
   inSession: 'Em sessão',
+  frozen: 'Congelado',
 }
 
 /** Erro → texto da área de status (D-01): `message` do §1.4 ou genérico. */

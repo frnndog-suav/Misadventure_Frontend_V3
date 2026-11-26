@@ -98,6 +98,7 @@ export const triggeredEffectChoiceSchema = z.object({
 })
 
 export const combatStateSchema = z.object({
+  finalBoss: z.boolean().default(false),
   id,
   cardId: id.optional(),
   card: combatEventCardSchema,
@@ -148,6 +149,7 @@ export const combatStateSchema = z.object({
 })
 
 export const combatResultSchema = z.object({
+  finalBoss: z.boolean().default(false),
   combatId: id,
   cardId: id,
   memberId: id,

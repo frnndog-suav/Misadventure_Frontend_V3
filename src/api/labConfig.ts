@@ -458,6 +458,8 @@ export const gameConfigValuesSchema = numericGameConfigValuesSchema.extend({
   artificerD20Bonus: gameConfigInt.default(
     blacksmithConfigDefaults.artificerD20Bonus,
   ),
+  dimensionCompletionPeakGain: gameConfigInt.default(25),
+  bossPeakGain: gameConfigInt.default(15),
   mountPriceCommon: gameConfigInt.default(mountConfigDefaults.mountPriceCommon),
   mountPriceUncommon: gameConfigInt.default(
     mountConfigDefaults.mountPriceUncommon,
@@ -733,6 +735,8 @@ export const labConfigSchema = z.object({
     artificerD20Bonus: limitSchema.default(
       blacksmithConfigLimits.artificerD20Bonus,
     ),
+    dimensionCompletionPeakGain: limitSchema.default({ min: 0, max: 1000 }),
+    bossPeakGain: limitSchema.default({ min: 0, max: 1000 }),
     mountPriceCommon: limitSchema.default(mountConfigLimits.mountPriceCommon),
     mountPriceUncommon: limitSchema.default(
       mountConfigLimits.mountPriceUncommon,

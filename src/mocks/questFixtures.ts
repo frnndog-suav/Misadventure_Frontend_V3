@@ -1,4 +1,4 @@
-﻿import { HttpResponse } from 'msw'
+import { HttpResponse } from 'msw'
 import { questConfigDefaults, type GameConfigValues } from '../api/labConfig'
 import {
   partyActionTypeSchema,
@@ -521,6 +521,7 @@ export function questPartyAction(party: Party, body: unknown) {
     const playerDown =
       raw.type === 'combatAttack' && party.id === prefix + 'combat'
     const result = {
+      finalBoss: false,
       combatId: party.combat.id,
       cardId: party.combat.cardId ?? party.combat.card.id,
       memberId: party.combat.memberId,

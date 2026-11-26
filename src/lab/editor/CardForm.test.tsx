@@ -937,6 +937,7 @@ describe('REQ-21: item', () => {
     expect(bodies[0].body).toEqual({
       slug: 'pocao',
       type: 'item',
+      completionItem: false,
       name: 'Poção',
       flavorText: null,
       rarity: 'common',
@@ -1525,6 +1526,7 @@ describe('REQ-31: Carta de Dimensão e forma das setas', () => {
     expect(bodies[0].body).toEqual({
       slug: 'nova',
       type: 'dimension',
+      completion: null,
       name: 'Nova Dimensão',
       flavorText: null,
       releaseOrder: 2,

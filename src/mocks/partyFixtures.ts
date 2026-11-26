@@ -45,6 +45,7 @@ const member: Party['members'][number] = {
   kind: 'human',
   isHost: true,
   player: {
+    completionItems: [],
     questBoard: [],
     openQuests: [],
     questChoices: [],
@@ -271,6 +272,7 @@ const dimension: Party['dimension'] = {
 
 /** 201 de POST /parties com "Os Teimosos" / "Lia" / `warrior`. */
 export const partyCreatedFixture: Party = {
+  lastDimensionCompletion: null,
   id: partyId,
   name: 'Os Teimosos',
   status: 'idle',

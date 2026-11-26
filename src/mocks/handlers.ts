@@ -6,6 +6,15 @@ import {
 } from './questEditorFixtures'
 import { getQuestScenario, questPartyAction } from './questFixtures'
 import { knockoutAction, knockoutParty } from './knockoutFixtures'
+import {
+  bossDimensionFixture,
+  nextDimensionFixture,
+  completionParty,
+  completionPartySummaries,
+  completeDimension,
+  grantCompletionShard,
+  startCompletionSession,
+} from './dimensionCompletionFixtures'
 import { mountAction, mountGrant, mountParty } from './mountFixtures'
 import { knockoutConfigLimits, questConfigLimits } from '../api/labConfig'
 import type { GameConfigValues } from '../api/labConfig'
@@ -241,6 +250,7 @@ async function partyActionScenario(
 ): Promise<Response> {
   const body: unknown = await request.json().catch(() => undefined)
   const type = field(body, 'type')
+  if (type === 'completeDimension') return completeDimension(partyId)
   // FEAT-18 (D-64 item 6): montaria, Estábulo, Transferir e rotas.
   const mount = mountAction(partyId, body)
   if (mount) return mount
@@ -863,6 +873,24 @@ async function labGrantScenario(
     return HttpResponse.json(memberNotFoundFixture, { status: 404 })
   }
   const body = await jsonBody(request)
+  if (
+    field(body, 'type') === 'card' &&
+    field(body, 'cardId') === 'fixture.shard'
+  ) {
+    const quantity = field(body, 'quantity')
+    if (
+      typeof quantity === 'number' &&
+      Number.isInteger(quantity) &&
+      quantity > 0
+    ) {
+      return HttpResponse.json(
+        grantCompletionShard(
+          completionParty(partyId) ?? partyInSessionFixture,
+          quantity,
+        ),
+      )
+    }
+  }
   const mount = mountGrant(partyId, body)
   if (mount) return mount
   if (field(body, 'type') === 'gold') {
@@ -950,7 +978,11 @@ function catalogCardScenario(cardId: string): Response {
       ? executableCombatCardFixture
       : cardId === respawnTownFixture.id
         ? respawnTownFixture
-        : fixtureCardsFixture.find((entry) => entry.id === cardId)
+        : [
+            ...fixtureCardsFixture,
+            bossDimensionFixture,
+            nextDimensionFixture,
+          ].find((entry) => entry.id === cardId)
   return card === undefined
     ? HttpResponse.json(catalogCardNotFoundFixture, { status: 404 })
     : HttpResponse.json(card)
@@ -961,7 +993,8 @@ function knownParty(
   partyId: unknown,
   ok: () => Response | Promise<Response>,
 ): Response | Promise<Response> {
-  return questParty(partyId) !== undefined ||
+  return completionParty(partyId) !== undefined ||
+    questParty(partyId) !== undefined ||
     mountParty(partyId) !== undefined ||
     knockoutParty(partyId) !== undefined ||
     combatScenario(partyId) !== undefined ||
@@ -1008,6 +1041,9 @@ function field(body: unknown, key: string): unknown {
 const progressionConfigLimits = {
   ...knockoutConfigLimits,
   ...questConfigLimits,
+  bossPeakGain: labConfigDefaultsFixture.limits.bossPeakGain,
+  dimensionCompletionPeakGain:
+    labConfigDefaultsFixture.limits.dimensionCompletionPeakGain,
 }
 
 let progressionLabValues: Partial<GameConfigValues> = {}
@@ -1465,12 +1501,15 @@ export const handlers: RequestHandler[] = [
     catalogCardScenario(String(params.cardId)),
   ),
   http.get('*/catalog/classes', () => HttpResponse.json(classesFixture)),
-  http.get('*/parties', () => HttpResponse.json(partiesFixture)),
+  http.get('*/parties', () =>
+    HttpResponse.json([...partiesFixture, ...completionPartySummaries]),
+  ),
   http.post('*/parties', ({ request }) => createPartyScenario(request)),
   http.get('*/parties/:partyId', ({ params }) =>
     knownParty(params.partyId, () =>
       HttpResponse.json(
-        questParty(params.partyId) ??
+        completionParty(params.partyId) ??
+          questParty(params.partyId) ??
           mountParty(params.partyId) ??
           knockoutParty(params.partyId) ??
           combatScenario(params.partyId)?.party ??
@@ -1493,8 +1532,10 @@ export const handlers: RequestHandler[] = [
       ),
     ),
   ),
-  http.post('*/parties/:partyId/session', ({ params }) =>
-    knownParty(params.partyId, () =>
+  http.post('*/parties/:partyId/session', ({ params }) => {
+    const completion = completionParty(params.partyId)
+    if (completion) return startCompletionSession(completion)
+    return knownParty(params.partyId, () =>
       HttpResponse.json(
         questParty(params.partyId, 'inSession') ??
           mountParty(params.partyId) ??
@@ -1517,12 +1558,13 @@ export const handlers: RequestHandler[] = [
           ].find((party) => party.id === params.partyId) ??
           partyInSessionFixture,
       ),
-    ),
-  ),
+    )
+  }),
   http.post('*/parties/:partyId/session/end', ({ params }) =>
     knownParty(params.partyId, () =>
       HttpResponse.json(
-        questParty(params.partyId, 'idle') ??
+        completionParty(params.partyId) ??
+          questParty(params.partyId, 'idle') ??
           knockoutParty(params.partyId, 'idle') ??
           partyIdleFixture,
       ),

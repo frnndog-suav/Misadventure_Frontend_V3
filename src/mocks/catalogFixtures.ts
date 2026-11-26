@@ -22,7 +22,7 @@ export const collectionsFixture: CollectionSummary[] = [
       zone: 4,
       attribute: 3,
       equipment: 7,
-      item: 11,
+      item: 12,
       randomEvent: 2,
       combatEvent: 1,
       zoneQuest: 0,
@@ -73,6 +73,7 @@ export const healingPotionFixture: Extract<Card, { type: 'item' }> = {
   name: 'Poção de Cura',
   flavorText: null,
   rarity: 'common',
+  completionItem: false,
   itemCategory: 'consumable',
   tags: ['poção'],
   effects: [
@@ -284,13 +285,22 @@ export const dexterityBasicFixture: Card = {
 }
 
 /** Cópia exata do cenário `GET /catalog/cards/fixture.test-dimension`. */
-export const testDimensionFixture: Card = {
+export const testDimensionFixture: Extract<Card, { type: 'dimension' }> = {
   type: 'dimension',
   id: 'fixture.test-dimension',
   collectionId: 'fixture',
   name: 'Dimensão de Teste',
   flavorText: null,
   releaseOrder: 1,
+  completion: {
+    zoneTitle: 'Mina Velha',
+    requirement: [{ cardId: 'fixture.shard', count: 3 }],
+    grandPrize: {
+      cards: [{ cardId: 'fixture.blade-of-dusk', copies: 1 }],
+      gold: 100,
+    },
+    finalBoss: null,
+  },
   arrivalZoneTitle: 'Porto Cinzento',
   effects: [],
   eventDecks: [
@@ -441,6 +451,7 @@ export const pickaxeFixture: Card = {
   name: 'Picareta',
   flavorText: null,
   rarity: 'common',
+  completionItem: false,
   itemCategory: 'tool',
   tags: ['ferramenta'],
   effects: [],
@@ -462,6 +473,7 @@ export const fishingRodFixture: Card = {
   name: 'Vara de Pesca',
   flavorText: null,
   rarity: 'common',
+  completionItem: false,
   itemCategory: 'tool',
   tags: ['ferramenta'],
   effects: [],
@@ -486,6 +498,7 @@ export const arrowsFixture: Card = {
   name: 'Flechas',
   flavorText: null,
   rarity: 'common',
+  completionItem: false,
   itemCategory: 'consumable',
   tags: [],
   effects: [],
@@ -506,6 +519,7 @@ export const boosterFixture: Card = {
   name: 'Booster de Teste',
   flavorText: null,
   rarity: 'common',
+  completionItem: false,
   itemCategory: 'booster',
   tags: [],
   effects: [],
@@ -531,6 +545,7 @@ export const silverFishFixture: Card = {
   name: 'Peixe Prateado',
   flavorText: null,
   rarity: 'common',
+  completionItem: false,
   itemCategory: 'material',
   tags: ['peixe'],
   effects: [],
@@ -551,6 +566,7 @@ export const ironOreFixture: Card = {
   name: 'Minério de Ferro',
   flavorText: null,
   rarity: 'common',
+  completionItem: false,
   itemCategory: 'material',
   tags: ['minério'],
   effects: [],
@@ -586,6 +602,7 @@ export const emberShardFixture: Card = {
   id: 'fixture.ember-shard',
   name: 'Fragmento de Brasa',
   rarity: 'rare',
+  completionItem: false,
   itemCategory: 'material',
   recipe: null,
 }
@@ -595,6 +612,7 @@ export const swordBlueprintFixture: Card = {
   id: 'fixture.sword-blueprint',
   name: 'Projeto: Espada Curta',
   rarity: 'uncommon',
+  completionItem: false,
   itemCategory: 'document',
   recipe: {
     equipmentId: 'fixture.short-sword',
@@ -694,6 +712,7 @@ export const luckyCoinFixture: Card = {
   ...healingPotionFixture,
   id: 'fixture.lucky-coin',
   name: 'Moeda da Sorte',
+  completionItem: false,
   itemCategory: 'treasure',
   tags: [],
   effects: [
@@ -789,6 +808,16 @@ export const warPonyFixture: Card = {
 }
 
 /** GET /catalog/collections/fixture/cards — 31 cartas na ordem de `id`. */
+export const completionShardFixture: Card = {
+  ...healingPotionFixture,
+  id: 'fixture.shard',
+  name: 'Fragmento',
+  itemCategory: 'special',
+  tags: [],
+  effects: [],
+  completionItem: true,
+}
+
 export const fixtureCardsFixture: Card[] = [
   arcaneWandFixture,
   arrowsFixture,
@@ -811,6 +840,7 @@ export const fixtureCardsFixture: Card[] = [
   oldMineFixture,
   pickaxeFixture,
   plowHorseFixture,
+  completionShardFixture,
   shortSwordFixture,
   silverFishFixture,
   stoneBendFixture,
@@ -854,6 +884,7 @@ export const fixtureCardsByTypeFixture: Record<CardType, Card[]> = {
     ironOreFixture,
     luckyCoinFixture,
     pickaxeFixture,
+    completionShardFixture,
     silverFishFixture,
     strengthTonicFixture,
     swordBlueprintFixture,

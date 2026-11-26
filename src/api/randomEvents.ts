@@ -161,6 +161,7 @@ export const pendingRewardSchema = z
     origin: rewardOrigin,
     source: z.discriminatedUnion('type', [
       z.object({ type: z.literal('randomEvent'), encounterId: z.string() }),
+      z.object({ type: z.literal('grandPrize'), dimensionCardId: z.string() }),
       z.object({ type: z.literal('scavenge') }),
       z.object({
         type: z.literal('quest'),

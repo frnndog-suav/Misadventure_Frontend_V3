@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.95 · **Data:** 2026-11-25
+> **Versão do contrato:** 0.96 · **Data:** 2026-11-25
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -3523,9 +3523,9 @@ Regras: README 3.4 (a carta de zona lista as montarias do Estábulo), 5.1 (equip
 - **Movimentar com montaria:** até 2 zonas por 1 PA. `moveTargets` passa a incluir as zonas a 2 travessias; `moveRoutes` diz, para cada destino, se há travessia direta e as zonas do meio possíveis. `viaZoneId` é opcional; sem ele, a 1 travessia é movimento simples e, só a 2, o backend usa a primeira zona do meio em ordem de id.
 - **Montaria ganha com montaria em uso** não é recebida e não abre escolha: volta ao deck de recompensas ou vai ao limbo (`lastRewardDelivery.disposition`).
 - **Perder a montaria** (ativação `loseMount`): montaria, inventário extra e pasta extra vão ao limbo, sem escolha.
-- **v0.89 (pedido do FE) — a montaria como origem:** efeitos e habilidades da montaria chegam com origem própria (`source: 'mount'`, `{ type: 'mount' }`, `{ type: 'mountAbility' }`) e a habilidade da montaria é usada sem `equipmentSlot` (`mountAbility: true`). Sem isso o frontend não consegue mostrar nem enviar a ativação, porque todas as origens atuais exigem inventário ou slot de equipamento.
-- **v0.89 (pedido do FE) — destino pronto:** todo campo de destino que hoje diz `inventory`/`tcgFolder` ganha `mountInventory`/`mountTcgFolder`, para a tela dizer onde a carta foi parar sem recalcular espaço (princípio "o backend decide").
-- **v0.89 (pedido do FE) — descarte da recompensa pendente:** como o espaço é somado, `discardOptions` e o `keep` indicam de qual espaço sai cada cópia (`space`), para o jogador poder liberar espaço descartando da montaria.
+- **v0.89 (pedido do FE) — a montaria como origem:** efeitos e habilidades da montaria chegam com origem própria (`source: 'mount'`, `{ type: 'mount' }`, `{ type: 'mountAbility' }`) e a habilidade da montaria é usada sem `equipmentSlot` (`mountAbility: true`).
+- **v0.89 (pedido do FE) — destino pronto:** todo campo de destino que hoje diz `inventory`/`tcgFolder` ganha `mountInventory`/`mountTcgFolder`, para a tela dizer onde a carta foi parar sem recalcular espaço.
+- **v0.89 (pedido do FE) — descarte da recompensa pendente:** como o espaço é somado, `discardOptions` e o `keep` indicam de qual espaço sai cada cópia (`space`).
 
 **Mudanças em outras seções:**
 - **FEAT-03 (`validado`):** `GameConfigValues` ganha as 7 chaves abaixo.
@@ -3549,8 +3549,8 @@ Ordem das conferências novas:
 - `buyMount` (dentro do lote do `visitMarket`): `mountNotOffered` (zona sem Estábulo ou `cardId` fora de `market.mounts`) → `mountAlreadyOwned` (inclusive comprada antes no mesmo lote) → `notEnoughGold`.
 - `sellMount`: `noMount` → `mountNotEmpty`.
 - `transferMount`: as da Preparar (vez, combate, escolha pendente) → `noMount` → `notOwned` (cópias insuficientes na origem; `inventorySlotIndex` vazio, de outra carta ou com `quantity` ≠ 1) → `inventoryFull` / `tcgFolderFull` (destino sem espaço).
-- v0.89, `useAbility` com `mountAbility: true` (combate e Preparar): forma — enviar `equipmentSlot` e `mountAbility` juntos, ou nenhum dos dois → 400 `ACTION_INVALID`; regra — sem montaria → `noMount`; depois as conferências da FEAT-13 (`combatAbilityUnavailable` etc.).
-- v0.89, `resolveReward` `keep`: `discard[].space` fora dos espaços do destino da recompensa → 400 `unknownOption`; cópias acima do que há naquele espaço (ou carta fora dele) → 409 `rewardDoesNotFit`.
+- v0.89, `useAbility` com `mountAbility: true` (combate e Preparar): forma — enviar `equipmentSlot` e `mountAbility` juntos, ou nenhum dos dois → 400 `ACTION_INVALID`; regra — sem montaria → `noMount`; depois as conferências da FEAT-13.
+- v0.89, `resolveReward` `keep`: `discard[].space` fora dos espaços do destino da recompensa → 400 `unknownOption`; cópias acima do que há naquele espaço → 409 `rewardDoesNotFit`.
 
 #### Tipos
 
@@ -3705,7 +3705,7 @@ type ResolveRewardAction = { type: 'resolveReward'; rewardId: string } & (
 
 interface ActionNotAllowedDetails {
   reason: /* … motivos existentes … */
-    | 'noMount'           // FEAT-18: sellMount, transferMount, viaZoneId ou mountAbility sem montaria
+    | 'noMount'           // FEAT-18: sellMount, transferMount ou viaZoneId sem montaria
     | 'mountAlreadyOwned' // FEAT-18: buyMount com montaria
     | 'mountNotOffered'   // FEAT-18: zona sem Estábulo ou montaria fora da lista
     | 'mountNotEmpty'     // FEAT-18: sellMount com algo no inventário extra ou na pasta extra
@@ -3751,7 +3751,7 @@ Seja `G` criado com `{ "name": "Os Teimosos", "characterName": "Lia", "playerCla
 | Formato | `transferMount` com `direction: "up"` → 400 `[{ "field": "direction", "reason": "unknownOption" }]`; `quantity: 0` → `notPositiveInteger`. |
 | Laboratório | GET inclui `values.mountPriceRare: 280`, `defaults.mountFolderCapacity: 10`. PATCH `{ "mountInventorySlots": 101 }` → 400 `outOfRange`. |
 | Editor | PUT `fixture.plow-horse` com `mountTypes: []` → 400 `CONTENT_INVALID` `{ "path": "mountTypes", "message": "A montaria precisa de ao menos um tipo, sem repetição." }`. PUT `fixture.gray-harbor` com `market.mounts: [H]` → `{ "path": "market.mounts", "message": "Só zonas Rurais e Habitadas têm Estábulo." }`. `DELETE /lab/content/cards/fixture.plow-horse` → 409 `CONTENT_REFERENCED`. |
-| Destino pronto (v0.89) | No cenário "Transbordo", a doação de `P` com o inventário ocupado: um `buyStock` de `P` num mercado com estoque traz `lastMarketVisit.results[0].received = [{ "space": "mountInventory", "quantity": 1 }]`; um booster aberto com o inventário cheio traz em `lastBoosterOpening.cards` o destino `mountInventory` ou `mountTcgFolder` das cartas que foram à montaria. |
+| Destino pronto (v0.89) | Com o inventário ocupado: um `buyStock` de `P` num mercado com estoque traz `lastMarketVisit.results[0].received = [{ "space": "mountInventory", "quantity": 1 }]`; um booster aberto com o inventário cheio traz em `lastBoosterOpening.cards` o destino `mountInventory` ou `mountTcgFolder` das cartas que foram à montaria. |
 | Descarte com montaria (v0.89) | Com `W` no inventário, `P` em `mount.inventory`, inventário e inventário extra cheios e uma recompensa fixa de recurso pendente: `discardOptions` traz `{ "cardId": W, "space": "inventory", "maxCopies": 1 }` e `{ "cardId": P, "space": "mountInventory", "maxCopies": <cópias de P> }`. `{ "type": "resolveReward", "rewardId": <id>, "choice": "keep", "discard": [{ "cardId": P, "space": "mountInventory", "copies": <todas> }] }` → 200, `P` no limbo e a recompensa em `mount.inventory` (`lastRewardDelivery.space: "mountInventory"`). |
 | Habilidade da montaria (v0.89) | Por HTTP com a montaria de teste `fixture.war-pony` (abaixo), doada: `activatableEffects` com `source: "mount"`, `usableAbilities` com `mountAbility: true`; `useAbility` com `equipmentSlot` e `mountAbility` juntos → 400; sem montaria → 409 `noMount`. |
 
@@ -3759,11 +3759,11 @@ Montaria de teste (v0.90, aceita a oferta do FE): o backend acrescenta à `fixtu
 
 Só nos e2e do backend: abrir booster e comprar single somando o espaço da montaria; arma que bloqueia escudo com o escudo indo ao inventário extra; Ajustar deck com a pasta extra; equipamento com estado no inventário extra; montaria como recompensa (sem montaria; com montaria → volta ao deck ou limbo); `loseMount` com conteúdo; efeitos passivos da montaria nos `effectiveModifiers`; saves v2 a v10. Para a validação integrada (T-80), o backend entrega campanhas preparadas (Estábulo, montaria com conteúdo, inventário cheio, mapa com dois caminhos a 2 zonas), os IDs e os resultados esperados.
 
-### FEAT-19 — Conclusão da dimensão, chefe final, passagem e save congelado — `proposto (FE)`
+### FEAT-19 — Conclusão da dimensão, chefe final, passagem e save congelado — `acordado`
 
-Regras: README 3.2, 12.1, 12.2, 18.3, 19.1 (item 10), 21.1, 23, 24.5, 28.1 ("Ir para nova dimensão", "Mantém / Reinicia") e Apêndice A ("Pico por fonte"); Apêndice B I3. Base no frontend: SPEC-FRONTEND REQ-90 a REQ-96, D-65.
+Regras: README 3.2, 12.1, 12.2, 18.3, 19.1 (item 10), 21.1, 23, 24.5, 28.1 ("Ir para nova dimensão", "Mantém / Reinicia") e Apêndice A ("Pico por fonte"); Apêndice B I3 e V1 (B.21). Base no frontend: SPEC-FRONTEND REQ-90 a REQ-96, D-65.
 
-**Fora desta FEAT:** coleções estendidas e reprint (README 27; FEAT própria, decisão do autor em 2026-11-25; corrige a nota "Fora desta FEAT" da FEAT-16); recrutar ajudantes no combate do chefe e negociar itens de conclusão (FEATs de grupo); ajudantes de IA.
+**Fora desta FEAT:** coleções estendidas e reprint (README 27; FEAT-33, decisão do autor em 2026-11-25); recrutar ajudantes no combate do chefe e negociar itens de conclusão (FEATs de grupo); ajudantes de IA.
 
 **Decisões que o frontend precisa saber:**
 - **Item de conclusão** é um `ItemCard` com `completionItem: true`. Vai sempre para `PlayerState.completionItems` (sem slot, nunca falta espaço) e nunca aparece em inventário, montaria, cofre, venda, descarte, booster, singles ou recompensa pendente. Nenhum efeito o manda ao limbo.
@@ -3771,11 +3771,12 @@ Regras: README 3.2, 12.1, 12.2, 18.3, 19.1 (item 10), 21.1, 23, 24.5, 28.1 ("Ir 
 - **Sem chefe:** o POST já conclui. **Com chefe:** o POST abre o combate (FEAT-13) com `CombatState.finalBoss: true`; `escape` segue `noEscape`. A vitória conclui no mesmo POST que encerra o combate; outro resultado não conclui nada.
 - **Conclusão** (README 28.1, "Ir para nova dimensão"): todos os membros recebem o prêmio e o Pico de conclusão; o Pico de Chefe vai para quem venceu (as fontes somam). A vez termina, os itens de conclusão saem do jogo e, havendo próxima dimensão lançada, o backend faz a nova preparação completa (menos classe e deck) no mesmo POST. Sem próxima, a sessão termina e o save fica `frozen`.
 - **Próxima dimensão** = a Carta de Dimensão publicada com o menor `releaseOrder` maior que o da atual. "Lançar", no dev, é publicar no editor.
-- **Prêmio sem espaço (decisão do autor, 2026-11-25; README B.21 a aplicar):** as cartas do prêmio seguem o destino automático (U2); a cópia que não couber vira `PendingReward` com `source: { type: 'grandPrize'; dimensionCardId }`, resolvida pelo dono já na nova dimensão (ou ao descongelar). `leave` manda a cópia ao limbo. Ouro: o excesso é perdido, como nas outras recompensas.
+- **Prêmio sem espaço (README Apêndice B.21, V1):** as cartas do prêmio seguem o destino automático (U2); a cópia que não couber vira `PendingReward` com `source: { type: 'grandPrize'; dimensionCardId }`, resolvida pelo dono já na nova dimensão (ou ao descongelar). `leave` manda a cópia ao limbo. Ouro: o excesso é perdido, como nas outras recompensas.
 - **Resumo persistido:** `lastDimensionCompletion` fica gravado até a próxima conclusão, para o painel sobreviver a GET e reabertura.
+- **Pico de Chefe (v0.96, BE):** `bossPeakGain` fica. Até a v0.95 o backend aplicava o +15 de Chefe sem chave de laboratório (valor fixo); na FEAT-19 esse valor passa a vir de `bossPeakGain`, também nos combates de evento. O chefe final ganha esse Pico pelo cálculo normal da vitória (por inimigo `boss` derrotado), sem contagem dupla: 1 chefe → 15 + 25 = 40.
 
 **Mudanças em outras seções:**
-- **FEAT-03 (`validado`):** `GameConfigValues` ganha `dimensionCompletionPeakGain` (0–1000, padrão 25) e `bossPeakGain` (0–1000, padrão 15). Se a FEAT-13 já aplica o Pico de Chefe por outra chave, o backend indica e `bossPeakGain` sai.
+- **FEAT-03 (`validado`):** `GameConfigValues` ganha `dimensionCompletionPeakGain` (0–1000, padrão 25) e `bossPeakGain` (0–1000, padrão 15).
 - **FEAT-04 (`validado`):** `ItemCard` ganha `completionItem`; `DimensionCard` ganha `completion`.
 - **FEAT-05 (`validado`):** `PartyStatus` ganha `frozen` (também em `PartySummary`); `POST …/session` num save congelado → `409 PARTY_FROZEN`.
 - **FEAT-08 (`validado`):** `PartyAction` ganha `CompleteDimensionAction`; `availableActions` ganha `completeDimension`, logo antes de `endTurn`.
@@ -3878,7 +3879,7 @@ interface DimensionCompletionResult {
 
 **Ao descongelar:** um save `frozen` cuja próxima dimensão foi publicada aparece `idle` em `GET /parties` e `GET /parties/:id`. O `POST …/session` seguinte faz a nova preparação, troca `lastDimensionCompletion.next` para `nextDimension` e devolve `200` na nova dimensão.
 
-**Editor (`CONTENT_INVALID`):** caminhos `completion.zoneTitle` (`unknownZoneTitle`), `completion.requirement` (`required`), `completion.requirement.{n}.cardId` (`notCompletionItem`, `duplicate`), `completion.requirement.{n}.count`, `completion.grandPrize.cards.{n}.cardId` (`notPrizeCard`), `completion.grandPrize.gold`, `completion.finalBoss.title` e `completion.finalBoss.enemies.{n}.<campo>` (como na FEAT-13).
+**Editor (`CONTENT_INVALID`):** caminhos `completion.zoneTitle`, `completion.requirement`, `completion.requirement.{n}.cardId`, `completion.requirement.{n}.count`, `completion.grandPrize.cards.{n}.cardId`, `completion.grandPrize.gold`, `completion.finalBoss.title` e `completion.finalBoss.enemies.{n}.<campo>` (como na FEAT-13). *(v0.96, BE: como em toda a FEAT-31, cada problema vem como `{ path, message }` com o texto pt-BR pronto; não há código de motivo. Os casos da v0.95 — título de zona inexistente, requisito vazio, carta que não é item de conclusão, carta repetida, carta de prêmio de tipo inválido — ganham mensagens próprias, cujos textos exatos vão na `implementado (BE)`.)*
 
 Mensagem: `PARTY_FROZEN` "Este save está congelado até o lançamento da próxima dimensão.".
 
@@ -3897,7 +3898,7 @@ Contra a `fixture`, com o que o backend acrescenta nesta FEAT: `F` = `fixture.sh
 | Descongelar | Publicar `fixture-next` | `GET /parties` → G `idle`; `POST …/session` → `200` na Segunda Dimensão, com `next.type: "nextDimension"`. |
 | Prêmio sem espaço | Inventário, pasta e montaria cheios; concluir | `members[0].cards: []`, `pendingRewards[0].source = { type: "grandPrize", dimensionCardId: "fixture.test-dimension" }` e `availableActions: ["resolveReward"]` na nova dimensão. `leave` → a cópia vai ao limbo. |
 | Chefe final | Dimensão editada com `finalBoss` (1 inimigo `boss`, `noEscape: true`); POST | `200`, `combat.finalBoss: true`, `combatStarted.cardTitle` = título do chefe, `escape.unavailableReason` não nulo. Vitória → `lastCombatResult.finalBoss: true`, `lastDimensionCompletion.finalBossDefeated: true`, `peakDelta: 40`. Derrota ou limite de ciclos → nenhum `lastDimensionCompletion` novo, F mantidos, e a ação volta quando M estiver apto de novo. |
-| Editor | Salvar a Carta de Dimensão com `requirement[0].cardId: "fixture.healing-potion"` | `400 CONTENT_INVALID` em `completion.requirement.0.cardId` / `notCompletionItem`. Com `zoneTitle: "Nenhuma"` → `unknownZoneTitle`. |
+| Editor | Salvar a Carta de Dimensão com `requirement[0].cardId: "fixture.healing-potion"` | `400 CONTENT_INVALID` com um item em `completion.requirement.0.cardId` (carta que não é item de conclusão). Com `zoneTitle: "Nenhuma"` → item em `completion.zoneTitle`. |
 
 ## 4. Códigos de erro
 
@@ -4018,10 +4019,11 @@ Contra a `fixture`, com o que o backend acrescenta nesta FEAT: `F` = `fixture.sh
 | 0.86 | 2026-11-24 | BE | FEAT-17 `implementado (BE)` (SPEC-BACKEND T-67 a T-73; e2e do ferreiro, da Oficina, do mercado e do laboratório passando). Sem mudança de forma. Campanhas da validação integrada pelo preparador `test/prepare-feat-17.cjs` (devlog 089). |
 | 0.87 | 2026-11-24 | FE | FEAT-17 `validado` (T-79): campanhas do backend conferidas na tela com MSW desligado (ferreiro, quebra +7, substituir, conserto e receita, Oficina, Ferreiro Arcano com extra, venda por cópia) e cenários Formato, Oficina sem Artífice e Laboratório por HTTP. Cenário "Lote com falha e quebra" corrigido: 5 operações, nenhuma `skipped` (resposta do BE). Sem mudança de forma. |
 | 0.88 | 2026-11-24 | BE | FEAT-18 `proposto (BE)`: carta `mount`, `market.mounts` (Estábulo só em Rural/Habitada), `PlayerState.mount` e `moveRoutes`, `MoveAction.viaZoneId`, `buyMount`/`sellMount` em `visitMarket` com `market.stable`, `prepare` `transferMount`, ativação `loseMount`, doação de montaria, 7 chaves do laboratório e motivos novos; destino automático e transferência na Preparar (README Apêndice B U1/U2). `fixture.old-mine` vira Rural com Estábulo. |
-| 0.89 | 2026-11-24 | FE | FEAT-18 → `proposto (FE)`, três pedidos de mudança (princípio "o backend decide"): (1) a montaria como origem de efeitos e habilidades: `ActivatableEffect.source: 'mount'`, variantes `mount`/`mountAbility` em `CombatEffectOption.origin` e `TriggeredEffectOrigin`, `mountAbility: true` no lugar de `equipmentSlot` em `abilities`, `usableAbilities`, `abilityStates`, `combatAbilityUsed` e `useAbility`; (2) destinos `mountInventory` e `mountTcgFolder` (`ReceiveSpace`) na vitrine, no resultado do mercado (`received` no estoque e no booster), na abertura de booster, em `PendingReward.destination`, `lastRewardDelivery.space` e `lastScavenge.delivery`; (3) `space` em `discardOptions` e no `keep` do `resolveReward`, para descartar da montaria. Cenários "Destino pronto", "Descarte com montaria" e "Habilidade da montaria" acrescentados. O resto da v0.88 aceito sem mudanças. Esta é a primeira gravação de fato da v0.89 (o aviso anterior citava uma v0.89 que não foi salva). |
+| 0.89 | 2026-11-24 | FE | FEAT-18 → `proposto (FE)`, três pedidos (princípio "o backend decide"): (1) montaria como origem de efeitos e habilidades (`source: 'mount'`, origens `mount`/`mountAbility`, `mountAbility: true` no lugar de `equipmentSlot`); (2) destinos `mountInventory`/`mountTcgFolder` (`ReceiveSpace`) na vitrine, no mercado (`received`), no booster, em `PendingReward.destination`, `lastRewardDelivery.space` e `lastScavenge.delivery`; (3) `space` em `discardOptions` e no `keep`. Cenários novos. |
 | 0.90 | 2026-11-24 | BE | FEAT-18 `acordado`: os três pedidos da v0.89 aceitos sem mudança de forma. O backend acrescenta à `fixture` a montaria `fixture.war-pony` (1 efeito ativável e 1 habilidade fora de combate) para o cenário "Habilidade da montaria" rodar por HTTP; `cardCounts.mount` da `fixture` = 2. |
-| 0.91 | 2026-11-25 | BE | FEAT-18 (T-77): resultado do `craft` ganha `destination: 'inventory' | 'mountInventory'` (Criar transborda para o inventário extra; `inventorySlotIndex` vale nesse espaço). Esclarecimentos: `PendingReward.destination` é o espaço principal; `discard[].space` opcional (ausente = principal). No `keep`, cópias acima do que há no espaço (ou carta fora dele) → 409 `rewardDoesNotFit` (antes `paymentInvalid`). |
+| 0.91 | 2026-11-25 | BE | FEAT-18 (T-77): resultado do `craft` ganha `destination: 'inventory' \| 'mountInventory'` (Criar transborda para o inventário extra; `inventorySlotIndex` vale nesse espaço). Esclarecimentos: `PendingReward.destination` é o espaço principal; `discard[].space` opcional (ausente = principal). No `keep`, cópias acima do que há no espaço (ou carta fora dele) → 409 `rewardDoesNotFit` (antes `paymentInvalid`). `PendingReward.destination` muda o texto acordado na v0.90 (era "o primeiro espaço em que a cópia caberia depois do descarte"): aguarda aceite do FE. Cenários sem mudança. |
 | 0.92 | 2026-11-25 | FE | FEAT-18: aceite da v0.91 sem mudanças; a seção continua `acordado`. Alinhamento do frontend na T-88. |
 | 0.93 | 2026-11-25 | BE | FEAT-18 `implementado (BE)` (SPEC-BACKEND T-74 a T-80; e2e da montaria, do Estábulo, do espaço e do movimento passando). Sem mudança de forma. Campanhas da validação integrada pelo preparador `test/prepare-feat-18.cjs` (devlog 097). |
 | 0.94 | 2026-11-25 | FE | FEAT-18 `validado` (T-87): os cenários das 5 campanhas do preparador `test/prepare-feat-18.cjs` passaram com chamadas HTTP contra o backend real (health 0.93), os saves reais passam nos schemas do frontend e as telas foram conferidas pelo autor com o MSW desligado. Sem mudança de forma. |
 | 0.95 | 2026-11-25 | FE | FEAT-19 proposta (`proposto (FE)`): `ItemCard.completionItem`, `DimensionCard.completion` (zona, requisito, prêmio máximo, chefe final), `PlayerState.completionItems`, ação `completeDimension` e 3 motivos, `Party.lastDimensionCompletion`, `PartyStatus` `frozen` e o código `PARTY_FROZEN`, `finalBoss` em `CombatState`/`CombatResult`, `PendingReward.source` `grandPrize`, 2 chaves de Pico, caminhos do editor; glossário §2.18. Prêmio sem espaço vira recompensa pendente (decisão do autor; README B.21 a aplicar no backend, que tem a B.20). Nota da FEAT-16: reprint sai da FEAT-19. |
+| 0.96 | 2026-11-25 | BE | FEAT-19 `acordado`, sem mudança de forma. Esclarecimentos: (1) `bossPeakGain` fica; o backend tinha o +15 de Chefe como valor fixo e passa a lê-lo dessa chave, também nos combates de evento; o chefe final ganha pelo cálculo normal da vitória, sem contagem dupla; (2) o editor segue `ContentInvalidDetails` da FEAT-31 (`path` + `message` pt-BR), sem códigos de motivo; os textos exatos vão na `implementado (BE)`. README com a B.21 (V1) aplicada no backend. |
