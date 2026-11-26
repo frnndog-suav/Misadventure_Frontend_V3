@@ -1907,6 +1907,26 @@ function DimensionFields({
         onChange={(releaseOrder) => set({ ...values, releaseOrder })}
         errors={errors}
       />
+      <TextListField
+        label="Coleções estendidas"
+        itemLabel="ID da coleção"
+        path="extendedCollectionIds"
+        items={values.extendedCollectionIds}
+        onChange={(extendedCollectionIds) =>
+          set({ ...values, extendedCollectionIds })
+        }
+        errors={errors}
+      />
+      <TextListField
+        label="Reprints"
+        itemLabel="ID da coleção"
+        path="reprintCollectionIds"
+        items={values.reprintCollectionIds}
+        onChange={(reprintCollectionIds) =>
+          set({ ...values, reprintCollectionIds })
+        }
+        errors={errors}
+      />
       <TextField
         label="Zona de chegada"
         path="arrivalZoneTitle"

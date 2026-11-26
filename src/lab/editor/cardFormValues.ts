@@ -399,6 +399,8 @@ export interface DimensionForm {
   flavorText: string
   completion: CompletionForm | null
   releaseOrder: string
+  extendedCollectionIds: string[]
+  reprintCollectionIds: string[]
   /** Vazio = `null` (sorteada pelo backend, REQ-31). */
   arrivalZoneTitle: string
   effects: EffectForm[]
@@ -738,6 +740,8 @@ export function emptyForm(type: FormCardType): CardForm {
         flavorText: '',
         completion: null,
         releaseOrder: '',
+        extendedCollectionIds: [],
+        reprintCollectionIds: [],
         arrivalZoneTitle: '',
         effects: [],
         rewardDecks: [],
@@ -952,6 +956,8 @@ export function formFromCard(card: Card): CardForm {
         flavorText: card.flavorText ?? '',
         completion: card.completion && completionFromCard(card.completion),
         releaseOrder: String(card.releaseOrder),
+        extendedCollectionIds: card.extendedCollectionIds,
+        reprintCollectionIds: card.reprintCollectionIds,
         arrivalZoneTitle: card.arrivalZoneTitle ?? '',
         effects: card.effects.map(effectToForm),
         eventDecks: card.eventDecks && deckForm(card.eventDecks),
@@ -1401,6 +1407,8 @@ export function toInput(form: CardForm): CardInput | null {
         flavorText: filled(form.flavorText) ? form.flavorText : null,
         completion,
         releaseOrder,
+        extendedCollectionIds: form.extendedCollectionIds,
+        reprintCollectionIds: form.reprintCollectionIds,
         arrivalZoneTitle: filled(form.arrivalZoneTitle)
           ? form.arrivalZoneTitle
           : null,

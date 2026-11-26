@@ -25,6 +25,7 @@ import {
   forcaSorteInvalidFixture,
 } from '../../mocks/editorFixtures'
 import { handlers } from '../../mocks/handlers'
+import { circulationDimension } from '../../mocks/collectionCirculationFixtures'
 import { EditorPage } from './EditorPage'
 
 const server = setupServer(...handlers)
@@ -1490,6 +1491,103 @@ describe('REQ-23: publicar, duplicar e excluir', () => {
 })
 
 describe('REQ-31: Carta de Dimensão e forma das setas', () => {
+  it('REQ-97: edita, reordena e reabre as listas salvas, destacando a referência inválida', async () => {
+    let card = {
+      ...circulationDimension,
+      id: 'fixture.test-dimension',
+      collectionId: 'fixture',
+    }
+    let saved: unknown
+    let reject = true
+    server.use(
+      http.get('*/lab/content/cards/fixture.test-dimension', () =>
+        HttpResponse.json({ status: 'published', card }),
+      ),
+      http.put(
+        '*/lab/content/cards/fixture.test-dimension',
+        async ({ request }) => {
+          saved = await request.json()
+          if (reject) {
+            return HttpResponse.json(
+              {
+                error: {
+                  code: 'CONTENT_INVALID',
+                  message: 'Referência inválida.',
+                  details: {
+                    fields: [
+                      {
+                        path: 'reprintCollectionIds.0',
+                        message: 'Coleção própria.',
+                      },
+                    ],
+                  },
+                },
+              },
+              { status: 400 },
+            )
+          }
+          card = { ...card, ...(saved as typeof card) }
+          return HttpResponse.json({ status: 'published', card })
+        },
+      ),
+    )
+    renderEditor()
+    const dimensionName = 'Dimensão de Teste · Dimensão · Publicada'
+    await openCard(dimensionName)
+    const extended = within(
+      within(form()).getByRole('group', { name: 'Coleções estendidas' }),
+    )
+    expect(
+      extended.getByRole('textbox', { name: 'ID da coleção 1' }),
+    ).toHaveValue(circulationDimension.extendedCollectionIds[0])
+    fireEvent.click(extended.getByRole('button', { name: 'Adicionar' }))
+    fireEvent.change(
+      extended.getByRole('textbox', { name: 'ID da coleção 2' }),
+      {
+        target: { value: 'older' },
+      },
+    )
+    fireEvent.click(extended.getAllByRole('button', { name: 'Subir' })[1])
+    fireEvent.click(saveButton())
+    const reprint = within(
+      within(form()).getByRole('group', { name: 'Reprints' }),
+    )
+    await reprint.findByText('Coleção própria.')
+    expect(reprint.getByRole('textbox')).toHaveAccessibleDescription(
+      'Coleção própria.',
+    )
+    reject = false
+    fireEvent.change(reprint.getByRole('textbox'), {
+      target: { value: 'another' },
+    })
+    fireEvent.click(saveButton())
+    await waitFor(() => expect(formStatus()).toHaveTextContent('Carta salva.'))
+    expect(saved).toMatchObject({
+      extendedCollectionIds: [
+        'older',
+        ...circulationDimension.extendedCollectionIds,
+      ],
+      reprintCollectionIds: ['another'],
+    })
+    fireEvent.click(
+      within(cards()).getByRole('button', {
+        name: 'Força · Atributo · Publicada',
+      }),
+    )
+    await waitFor(() => expect(field('Nome')).toHaveValue('Força'))
+    await openCard(dimensionName)
+    expect(
+      within(within(form()).getByRole('group', { name: 'Coleções estendidas' }))
+        .getAllByRole('textbox')
+        .map((input) => (input as HTMLInputElement).value),
+    ).toEqual(['older', ...circulationDimension.extendedCollectionIds])
+    expect(
+      within(within(form()).getByRole('group', { name: 'Reprints' })).getByRole(
+        'textbox',
+      ),
+    ).toHaveValue('another')
+  })
+
   it('REQ-31: Carta de Dimensão da lista abre o formulário dela, com a pré-visualização', async () => {
     renderEditor()
     await openCard('Dimensão de Teste · Dimensão · Publicada')
@@ -1531,6 +1629,8 @@ describe('REQ-31: Carta de Dimensão e forma das setas', () => {
       flavorText: null,
       releaseOrder: 2,
       arrivalZoneTitle: null,
+      extendedCollectionIds: [],
+      reprintCollectionIds: [],
       effects: [
         {
           trigger: null,

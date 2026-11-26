@@ -15,6 +15,7 @@ import {
 } from 'vitest'
 import type { DimensionCard as DimensionCardData } from '../../api/catalog'
 import { testDimensionFixture } from '../../mocks/catalogFixtures'
+import { circulationDimension } from '../../mocks/collectionCirculationFixtures'
 import { bossDimensionFixture } from '../../mocks/dimensionCompletionFixtures'
 import { internalErrorFixture } from '../../mocks/fixtures'
 import { handlers } from '../../mocks/handlers'
@@ -53,6 +54,29 @@ const deckItems = () =>
   within(screen.getByRole('list', { name: 'Decks de recompensas' }))
 
 describe('DimensionCard', () => {
+  it('REQ-97: exibe as duas listas publicadas na ordem configurada', async () => {
+    renderWithClient(
+      <DimensionCard
+        card={{
+          ...circulationDimension,
+          extendedCollectionIds: [
+            'older',
+            ...circulationDimension.extendedCollectionIds,
+          ],
+        }}
+      />,
+    )
+    expect(
+      within(screen.getByRole('list', { name: 'Coleções estendidas' }))
+        .getAllByRole('listitem')
+        .map((item) => item.textContent),
+    ).toEqual(['older', ...circulationDimension.extendedCollectionIds])
+    expect(
+      within(screen.getByRole('list', { name: 'Reprints' })).getByRole(
+        'listitem',
+      ),
+    ).toHaveTextContent(circulationDimension.reprintCollectionIds[0])
+  })
   it('REQ-91: apresenta os requisitos, o prêmio e o bloco de inimigo do chefe final', async () => {
     renderWithClient(<DimensionCard card={bossDimensionFixture} />)
     const boss = within(screen.getByRole('region', { name: 'Chefe final' }))

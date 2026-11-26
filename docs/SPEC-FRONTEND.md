@@ -1172,7 +1172,7 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 ### FEAT-33 — Coleções estendidas e reprint
 
 - [x] **T-96 — Cliente e fixtures MSW** (REQ-97 a REQ-101). Atualizar schemas, tipos e fixtures de catálogo, editor e mercado após o contrato ficar `acordado`. Cobrir legado, extensão, reprint e coleção fora de vigência.
-- [ ] **T-97 — Carta de Dimensão no catálogo e no editor** (REQ-97). Editar e exibir as listas, persistir os IDs e mostrar erros indexados. Verificar reabertura e importação de conteúdo legado.
+- [x] **T-97 — Carta de Dimensão no catálogo e no editor** (REQ-97). Editar e exibir as listas, persistir os IDs e mostrar erros indexados. Verificar reabertura e importação de conteúdo legado.
 - [ ] **T-98 — Mercado e abertura com múltiplas coleções** (REQ-98 a REQ-100). Cobrir lote, recusa por operação, compra por slot e abertura nos dois fluxos. Ajustar pressupostos de coleção única que os cenários revelarem.
 - [ ] **T-99 — Validação integrada** (REQ-97 a REQ-101). Repetir os cenários acordados contra a API real com MSW desligado, incluindo transição e save legado. Registrar evidências no devlog.
 

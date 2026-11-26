@@ -8,6 +8,11 @@ export function DimensionCard({ card }: { card: DimensionCardData }) {
   return (
     <CardFrame name={card.name} flavorText={card.flavorText}>
       <p>Ordem de lançamento {card.releaseOrder}</p>
+      <CirculationList
+        label="Coleções estendidas"
+        ids={card.extendedCollectionIds}
+      />
+      <CirculationList label="Reprints" ids={card.reprintCollectionIds} />
       <p>
         Zona de chegada:{' '}
         {card.arrivalZoneTitle ??
@@ -17,6 +22,16 @@ export function DimensionCard({ card }: { card: DimensionCardData }) {
       {card.completion && <CompletionDetails completion={card.completion} />}
       {card.rewardDecks.length > 0 && <RewardDecks decks={card.rewardDecks} />}
     </CardFrame>
+  )
+}
+
+function CirculationList({ label, ids }: { label: string; ids: string[] }) {
+  if (ids.length === 0) return null
+  return (
+    <section className="game-card-block">
+      <h4 className="game-card-block-title">{label}</h4>
+      <LabeledList label={label} items={ids} render={(id) => id} />
+    </section>
   )
 }
 

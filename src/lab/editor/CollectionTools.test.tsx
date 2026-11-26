@@ -27,6 +27,8 @@ import {
   importResultFixture,
 } from '../../mocks/editorFixtures'
 import { handlers } from '../../mocks/handlers'
+import { collectionExportSchema } from '../../api/editor'
+import { circulationDimension } from '../../mocks/collectionCirculationFixtures'
 import { EditorPage } from './EditorPage'
 
 const server = setupServer(...handlers)
@@ -276,6 +278,57 @@ describe('REQ-26: exportar coleção', () => {
 })
 
 describe('REQ-26: importar coleção', () => {
+  it('REQ-97: importa uma dimensão legada e abre as duas listas vazias', async () => {
+    const legacyCard = Object.fromEntries(
+      Object.entries({
+        ...circulationDimension,
+        id: 'fixture.test-dimension',
+        collectionId: 'fixture',
+      }).filter(
+        ([key]) =>
+          key !== 'extendedCollectionIds' && key !== 'reprintCollectionIds',
+      ),
+    )
+    const content = {
+      formatVersion: 1,
+      collection: { id: 'fixture', name: 'Coleção de Teste', description: '' },
+      cards: [{ status: 'published', card: legacyCard }],
+      classes: [],
+    }
+    let received: unknown
+    server.use(
+      http.post(importUrl, async ({ request }) => {
+        received = await request.json()
+        if (!collectionExportSchema.safeParse(received).success)
+          return new HttpResponse(null, { status: 400 })
+        return HttpResponse.json(
+          { ...importResultFixture, collectionId: 'fixture' },
+          { status: 201 },
+        )
+      }),
+      http.get('*/lab/content/cards/fixture.test-dimension', () =>
+        HttpResponse.json(content.cards[0]),
+      ),
+    )
+    await screen.findByRole('button', { name: /Coleção de Teste/ })
+    chooseFile(jsonFile(JSON.stringify(content)))
+    await waitFor(() => expect(status()).toHaveTextContent('Coleção importada'))
+    expect(received).toEqual(content)
+    fireEvent.click(
+      await screen.findByRole('button', {
+        name: 'Dimensão de Teste · Dimensão · Publicada',
+      }),
+    )
+    await screen.findByLabelText('Identificador')
+    for (const name of ['Coleções estendidas', 'Reprints']) {
+      const list = screen.getByRole('group', { name })
+      expect(within(list).queryByRole('textbox')).toBeNull()
+      expect(
+        within(list).getByRole('button', { name: 'Adicionar' }),
+      ).toBeEnabled()
+    }
+  })
+
   it('REQ-26: há o campo de arquivo "Importar coleção" (.json) e a caixa "Substituir se já existir" desmarcada, sem coleção escolhida', async () => {
     await screen.findByRole('button', { name: /Coleção de Teste/ })
     const input = screen.getByLabelText('Importar coleção')
