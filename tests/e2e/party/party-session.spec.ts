@@ -31,6 +31,10 @@ test('REQ-92: chefe sem fuga, membro sem itens e dimensão legada', async ({
   ).toBeVisible()
 
   await page.goto('/grupo/party-dimensao-concluida')
+  await page
+    .getByRole('dialog')
+    .getByRole('button', { name: 'Continuar' })
+    .click()
   await expect(page.getByText('Dimensão: Segunda Dimensão')).toBeVisible()
   await expect(
     page.getByRole('region', { name: 'Conclusão da dimensão' }),
@@ -40,6 +44,202 @@ test('REQ-92: chefe sem fuga, membro sem itens e dimensão legada', async ({
       .getByRole('region', { name: 'Lia' })
       .getByText('Nenhum item de conclusão.'),
   ).toBeVisible()
+})
+
+test('REQ-93 e REQ-95: concluir dimensão e continuar na próxima', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const fetch = window.fetch
+    window.fetch = async (input, init) => {
+      if (String(input).endsWith('/parties/party-conclusao/actions')) {
+        const released = new Promise<void>((resolve) =>
+          window.addEventListener('release-completion', () => resolve(), {
+            once: true,
+          }),
+        )
+        const [result] = await Promise.all([fetch(input, init), released])
+        return result
+      }
+      return fetch(input, init)
+    }
+  })
+  await page.goto('/grupo/party-conclusao')
+  const conclude = page.getByRole('button', {
+    name: 'Concluir dimensão (1 PA)',
+  })
+  const request = page.waitForRequest('**/parties/party-conclusao/actions')
+  await conclude.click()
+  expect((await request).postDataJSON()).toEqual({ type: 'completeDimension' })
+  await expect(conclude).toBeDisabled()
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Concluindo a dimensão…' }),
+  ).toBeVisible()
+  await page.evaluate(() =>
+    window.dispatchEvent(new Event('release-completion')),
+  )
+  const dialog = page.getByRole('dialog', { name: /^Dimensão concluída:/ })
+  await expect(dialog).toBeVisible()
+  await expect(
+    dialog.getByRole('list', { name: 'Prêmio máximo' }),
+  ).toContainText('1× Lâmina do Crepúsculo para o inventário')
+  await expect(dialog).toContainText('+100 de ouro')
+  await expect(dialog).toContainText('Lia: Pico +25')
+  await expect(dialog).toContainText('Itens de conclusão saíram do jogo.')
+  await expect(dialog).toContainText('Próxima dimensão: Segunda Dimensão')
+  const continueButton = dialog.getByRole('button', { name: 'Continuar' })
+  await expect(continueButton).toBeFocused()
+  await continueButton.click()
+  await expect(dialog).toHaveCount(0)
+  await expect(page.getByText('Dimensão: Segunda Dimensão')).toBeVisible()
+  await expect(conclude).toHaveCount(0)
+})
+
+test('REQ-93: concluir com chefe abre o combate com o título e as ações recebidas', async ({
+  page,
+}) => {
+  await page.goto('/grupo/party-chefe-final')
+  await page.getByRole('button', { name: 'Concluir dimensão (1 PA)' }).click()
+  const combat = page.getByRole('region', {
+    name: 'Chefe final · Guardião da Mina',
+  })
+  await expect(combat).toBeVisible()
+  await expect(combat.getByRole('button', { name: /^Fugir/ })).toHaveCount(0)
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+})
+
+test('REQ-94: lê a vitória antes do resumo da dimensão', async ({ page }) => {
+  await page.goto('/grupo/party-chefe-final')
+  await page.getByRole('button', { name: 'Concluir dimensão (1 PA)' }).click()
+  await page.getByRole('button', { name: /^Atacar / }).click()
+
+  const result = page.getByText('Vitória · inimigos derrotados · Pico +15', {
+    exact: true,
+  })
+  const dialog = page.getByRole('dialog', { name: /^Dimensão concluída:/ })
+  await expect(result).toBeVisible()
+  await expect(dialog).toHaveCount(0)
+  await page.getByRole('button', { name: 'Ver conclusão da dimensão' }).click()
+  await expect(dialog).toContainText('Lia: Pico +40')
+  await dialog.getByRole('button', { name: 'Continuar' }).click()
+  await expect(dialog).toHaveCount(0)
+  await expect(page.getByText('Dimensão: Segunda Dimensão')).toBeVisible()
+})
+
+test('REQ-94: reabertura preserva a sequência dos resumos', async ({
+  page,
+}) => {
+  await page.goto('/grupo/party-chefe-final-concluida')
+  const result = page.getByText('Vitória · inimigos derrotados · Pico +15', {
+    exact: true,
+  })
+  const dialog = page.getByRole('dialog', { name: /^Dimensão concluída:/ })
+  await expect(result).toBeVisible()
+  await expect(dialog).toHaveCount(0)
+  await page.getByRole('button', { name: 'Ver conclusão da dimensão' }).click()
+  await expect(dialog.getByRole('button', { name: 'Continuar' })).toBeFocused()
+})
+
+for (const [scenario, action, result] of [
+  ['fuga', /^Fugir/, 'Fuga · fuga bem-sucedida'],
+  ['derrota', 'Encerrar turno de combate', 'Derrota · jogador derrotado'],
+  ['limite', 'Encerrar turno de combate', 'Derrota · limite de ciclos'],
+] as const) {
+  test(`REQ-94: ${scenario} preserva os itens e permite tentar de novo`, async ({
+    page,
+  }) => {
+    await page.goto(`/grupo/party-chefe-final-${scenario}`)
+    const conclude = page.getByRole('button', {
+      name: 'Concluir dimensão (1 PA)',
+    })
+    await conclude.click()
+    await page.getByRole('button', { name: action }).click()
+
+    const report = page.getByText(result, { exact: false })
+    await expect(report).toBeVisible()
+    await expect(report.locator('xpath=following-sibling::*[1]')).toHaveText(
+      'A dimensão não foi concluída. Você pode tentar de novo.',
+    )
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+    await expect(
+      page.getByRole('list', { name: 'Itens de conclusão' }),
+    ).toHaveText('3× Fragmento')
+    await conclude.click()
+    await expect(
+      page.getByRole('region', { name: /^Chefe final ·/ }),
+    ).toBeVisible()
+    await expect(
+      page.getByText('A dimensão não foi concluída.', { exact: false }),
+    ).toHaveCount(0)
+  })
+}
+
+test('REQ-93: recusa, resposta inválida e falha de rede preservam a partida', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const fetch = window.fetch
+    let attempts = 0
+    window.fetch = async (input, init) => {
+      if (String(input).endsWith('/parties/party-conclusao/actions')) {
+        attempts++
+        if (attempts === 1)
+          return Response.json(
+            {
+              error: {
+                code: 'ACTION_NOT_ALLOWED',
+                message: 'Você precisa estar na zona de conclusão.',
+                details: { reason: 'notCompletionZone' },
+              },
+            },
+            { status: 409 },
+          )
+        if (attempts === 2) return Response.json({})
+        throw new TypeError('Falha de rede de teste')
+      }
+      return fetch(input, init)
+    }
+  })
+  await page.goto('/grupo/party-conclusao')
+  const conclude = page.getByRole('button', {
+    name: 'Concluir dimensão (1 PA)',
+  })
+  const status = page.getByRole('status')
+  for (const message of [
+    'Você precisa estar na zona de conclusão.',
+    'Servidor indisponível. Tente novamente.',
+    'Servidor indisponível. Tente novamente.',
+  ]) {
+    await conclude.click()
+    await expect(status.filter({ hasText: message })).toBeVisible()
+    await expect(conclude).toBeEnabled()
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+    await expect(
+      page.getByRole('list', { name: 'Itens de conclusão' }),
+    ).toHaveText('3× Fragmento')
+  }
+})
+
+test('REQ-95: reabre o resumo persistido e volta ao início quando congela', async ({
+  page,
+}) => {
+  await page.goto('/grupo/party-dimensao-concluida')
+  const dialog = page.getByRole('dialog', { name: /^Dimensão concluída:/ })
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('button', { name: 'Continuar' }).click()
+  await page.reload()
+  await expect(dialog).toBeVisible()
+
+  await page.goto('/grupo/party-ultima-dimensao')
+  await page.getByRole('button', { name: 'Concluir dimensão (1 PA)' }).click()
+  await expect(dialog).toContainText(
+    'O save ficou congelado até o lançamento da próxima dimensão.',
+  )
+  await dialog.getByRole('button', { name: 'Continuar' }).click()
+  await expect(page).toHaveURL(/\/$/)
+  await expect(
+    page.getByRole('region', { name: 'Seus jogos' }).getByRole('status'),
+  ).toHaveText('Save congelado.')
 })
 
 test.describe('REQ-16: grupo em sessão (MSW)', () => {

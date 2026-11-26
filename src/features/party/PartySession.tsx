@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   equipmentSlotSchema,
@@ -153,6 +153,9 @@ function cardIdsOf(party: Party): string[] {
     party.dimension.startingCityZoneId,
     ...party.dimension.map.zones.map(({ zoneId }) => zoneId),
     ...eventReceiptCardIds(party.randomEventEncounter?.payments ?? []),
+    ...(party.lastDimensionCompletion?.members.flatMap(({ cards }) =>
+      cards.map(({ cardId }) => cardId),
+    ) ?? []),
     ...party.pendingRewards.flatMap(({ cardId, discardOptions }) => [
       cardId,
       ...discardOptions.map((option) => option.cardId),
@@ -1582,6 +1585,7 @@ function TurnState({
   party,
   cards,
   onEndTurn,
+  onCompleteDimension,
   onSaveRespawnPoint,
   onRecover,
   onAdjust,
@@ -1598,6 +1602,7 @@ function TurnState({
   party: Party
   cards: Cards
   onEndTurn: () => void
+  onCompleteDimension: () => void
   onSaveRespawnPoint: () => void
   onRecover: (option: RecoverAction['option']) => void
   onAdjust: () => void
@@ -1704,6 +1709,11 @@ function TurnState({
             Salvar ponto de respawn
           </button>
         )}
+      {host?.player.availableActions.includes('completeDimension') && (
+        <button type="button" onClick={onCompleteDimension} disabled={pending}>
+          Concluir dimensão (1 PA)
+        </button>
+      )}
       {host?.player.availableActions.includes('endTurn') && (
         <button type="button" onClick={onEndTurn} disabled={pending}>
           Encerrar a vez
@@ -1743,12 +1753,79 @@ function DimensionCompletion({ card }: { card: Card | undefined }) {
 }
 
 /** Estado da partida preparada (REQ-30) com a vez (REQ-36) e o mapa (REQ-34). */
+function DimensionCompletionDialog({
+  summary,
+  members,
+  cards,
+  onContinue,
+}: {
+  summary: NonNullable<Party['lastDimensionCompletion']>
+  members: Party['members']
+  cards: Cards
+  onContinue: () => void
+}) {
+  const dialog = useRef<HTMLDialogElement>(null)
+  const title = useId()
+  const prizeTitle = useId()
+  const names = new Map(
+    members.map(({ id, characterName }) => [id, characterName]),
+  )
+
+  useEffect(() => {
+    dialog.current?.showModal()
+  }, [])
+
+  return (
+    <dialog
+      ref={dialog}
+      aria-labelledby={title}
+      onCancel={(event) => event.preventDefault()}
+    >
+      <h2 id={title}>Dimensão concluída: {summary.completedDimensionName}</h2>
+      <h3 id={prizeTitle}>Prêmio máximo</h3>
+      <ul aria-labelledby={prizeTitle}>
+        {summary.members.map(({ memberId, cards: prizes, gold }) => (
+          <li key={memberId}>
+            {names.get(memberId)}
+            <ul>
+              {prizes.map(({ cardId, copies, destination }) => (
+                <li key={JSON.stringify([cardId, destination])}>
+                  {copies}× {nameOf(cards, cardId)} para{' '}
+                  {receiveSpaceText[destination]}
+                </li>
+              ))}
+              <li>+{gold} de ouro</li>
+            </ul>
+          </li>
+        ))}
+      </ul>
+      <ul>
+        {summary.members.map(({ memberId, peakDelta }) => (
+          <li key={memberId}>
+            {names.get(memberId)}: Pico +{peakDelta}
+          </li>
+        ))}
+      </ul>
+      <p>Itens de conclusão saíram do jogo.</p>
+      <p>
+        {summary.next.type === 'nextDimension'
+          ? `Próxima dimensão: ${summary.next.name}`
+          : 'O save ficou congelado até o lançamento da próxima dimensão.'}
+      </p>
+      <button type="button" onClick={onContinue}>
+        Continuar
+      </button>
+    </dialog>
+  )
+}
+
 function PreparedMatch({
   party,
   classes,
   cards,
   onMove,
   onEndTurn,
+  onCompleteDimension,
   onSaveRespawnPoint,
   onRecover,
   onScavenge,
@@ -1781,6 +1858,7 @@ function PreparedMatch({
   quests: ReactNode
   onMove: (zoneId: string, viaZoneId?: string) => void
   onEndTurn: () => void
+  onCompleteDimension: () => void
   onSaveRespawnPoint: () => void
   onRecover: (option: RecoverAction['option']) => void
   onScavenge: (cardId: string) => void
@@ -1828,6 +1906,7 @@ function PreparedMatch({
           party={party}
           cards={cards}
           onEndTurn={onEndTurn}
+          onCompleteDimension={onCompleteDimension}
           onSaveRespawnPoint={onSaveRespawnPoint}
           onRecover={onRecover}
           onAdjust={() => setAdjusting(true)}
@@ -2016,6 +2095,22 @@ export function PartySession() {
       : undefined
     : start.data
   const party = confirmed?.party ?? initialParty
+  const completion = party?.lastDimensionCompletion
+  const [dismissedCompletion, setDismissedCompletion] = useState<string>()
+  const [viewedBossCompletion, setViewedBossCompletion] = useState<string>()
+  const combatResult = party?.lastCombatResult
+  const completionPending =
+    completion && completion.completedAt !== dismissedCompletion
+      ? completion
+      : undefined
+  const bossReportPending =
+    completionPending?.finalBossDefeated &&
+    combatResult?.finalBoss &&
+    combatResult.resolution === 'victory' &&
+    combatResult.cardId === completionPending.completedDimensionCardId &&
+    completionPending.completedAt !== viewedBossCompletion
+      ? completionPending
+      : undefined
   const combatNames = combatantNames(party?.combat, party?.members ?? [])
   if (action.data !== undefined && action.data !== confirmed?.response) {
     setConfirmed({ party: action.data, response: action.data, combatNames })
@@ -2131,6 +2226,11 @@ export function PartySession() {
       // REQ-86: os demais motivos do Movimentar mostram só a `message`.
       status = `${action.error.message} Você não tem montaria.`
     } else status = errorText(action.error)
+  } else if (
+    action.isPending &&
+    action.variables.type === 'completeDimension'
+  ) {
+    status = 'Concluindo a dimensão…'
   } else if (action.isSuccess && party !== undefined && host !== undefined) {
     if (
       action.variables.type === 'visitBlacksmith' ||
@@ -2194,7 +2294,11 @@ export function PartySession() {
       status = `Recuperou: vida ${health}/${maxHealth}, Vigor ${vigor}.`
     } else if (action.variables.type === 'saveRespawnPoint') {
       status = `Ponto de respawn salvo em ${nameOf(cards.cards, host.player.respawnZoneId)}.`
-    } else if (!eventAction && !combatAction) {
+    } else if (
+      !eventAction &&
+      !combatAction &&
+      action.variables.type !== 'completeDimension'
+    ) {
       status = `Você está em ${nameOf(cards.cards, host.player.zoneId)}.`
     }
   } else if (start.isError) status = errorText(start.error)
@@ -2248,7 +2352,14 @@ export function PartySession() {
             />
           )}
           <CombatReport
-            result={party.lastCombatResult}
+            result={
+              party.combat && combatResult?.finalBoss ? null : combatResult
+            }
+            onViewCompletion={
+              bossReportPending
+                ? () => setViewedBossCompletion(bossReportPending.completedAt)
+                : undefined
+            }
             updates={confirmed?.response?.combatUpdates}
             names={
               party.combat
@@ -2295,6 +2406,9 @@ export function PartySession() {
               )
             }
             onEndTurn={() => action.mutate({ type: 'endTurn' })}
+            onCompleteDimension={() =>
+              action.mutate({ type: 'completeDimension' })
+            }
             onSaveRespawnPoint={() =>
               action.mutate({ type: 'saveRespawnPoint' })
             }
@@ -2464,6 +2578,20 @@ export function PartySession() {
           />
         )}
       {notFound && <Link to="/">Voltar ao início</Link>}
+      {party && completionPending && !bossReportPending && (
+        <DimensionCompletionDialog
+          summary={completionPending}
+          members={party.members}
+          cards={cards.cards}
+          onContinue={() => {
+            if (completionPending.next.type === 'frozen') {
+              navigate('/', { state: { message: 'Save congelado.' } })
+            } else {
+              setDismissedCompletion(completionPending.completedAt)
+            }
+          }}
+        />
+      )}
     </main>
   )
 }

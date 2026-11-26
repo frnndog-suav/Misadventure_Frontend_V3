@@ -8,10 +8,12 @@ import { getQuestScenario, questPartyAction } from './questFixtures'
 import { knockoutAction, knockoutParty } from './knockoutFixtures'
 import {
   bossDimensionFixture,
+  escapableBossDimensionFixture,
   nextDimensionFixture,
   completionParty,
   completionPartySummaries,
   completeDimension,
+  finalBossAction,
   grantCompletionShard,
   startCompletionSession,
 } from './dimensionCompletionFixtures'
@@ -251,6 +253,14 @@ async function partyActionScenario(
   const body: unknown = await request.json().catch(() => undefined)
   const type = field(body, 'type')
   if (type === 'completeDimension') return completeDimension(partyId)
+  const boss = finalBossAction(
+    partyId,
+    type,
+    field(body, 'combatId'),
+    field(body, 'turnId'),
+    field(body, 'targetId'),
+  )
+  if (boss) return boss
   // FEAT-18 (D-64 item 6): montaria, Estábulo, Transferir e rotas.
   const mount = mountAction(partyId, body)
   if (mount) return mount
@@ -981,6 +991,7 @@ function catalogCardScenario(cardId: string): Response {
         : [
             ...fixtureCardsFixture,
             bossDimensionFixture,
+            escapableBossDimensionFixture,
             nextDimensionFixture,
           ].find((entry) => entry.id === cardId)
   return card === undefined

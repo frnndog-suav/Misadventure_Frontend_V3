@@ -152,3 +152,5 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 119 | T-89 | [Cliente e fixtures MSW da conclusão da dimensão](119-T-89-cliente-feat-19.md) | concluída |
 | 120 | T-90 | [Laboratório, catálogo e editor da conclusão](120-T-90-laboratorio-catalogo-editor-feat-19.md) | concluída |
 | 121 | T-91 | [Itens de conclusão e requisito na tela do grupo](121-T-91-conclusao-tela-do-grupo-feat-19.md) | concluída |
+| 122 | T-92 | [Ação e painel de conclusão da dimensão](122-T-92-acao-painel-conclusao-feat-19.md) | concluída |
+| 123 | T-93 | [Resultado do combate do chefe final](123-T-93-resultado-chefe-final-feat-19.md) | concluída |

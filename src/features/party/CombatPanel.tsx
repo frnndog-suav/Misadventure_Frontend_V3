@@ -356,7 +356,10 @@ export function CombatPanel({
 
   return (
     <section aria-labelledby={title}>
-      <h2 id={title}>{combat.card.title}</h2>
+      <h2 id={title}>
+        {combat.finalBoss && 'Chefe final · '}
+        {combat.card.title}
+      </h2>
       <p>
         Ciclo {combat.cycle}/{combat.maxCycles}
       </p>
@@ -505,10 +508,12 @@ export function CombatReport({
   result,
   updates,
   names,
+  onViewCompletion,
 }: {
   result: Result | null | undefined
   updates: Update[] | undefined
   names: ReadonlyMap<string, string>
+  onViewCompletion?: () => void
 }) {
   const started = updates?.find((update) => update.type === 'combatStarted')
   const displayNames = new Map(
@@ -531,6 +536,14 @@ export function CombatReport({
           {result.peakDelta}
           {result.playerDown && ' · jogador caído'}
         </p>
+      )}
+      {result?.finalBoss && result.resolution !== 'victory' && (
+        <p>A dimensão não foi concluída. Você pode tentar de novo.</p>
+      )}
+      {onViewCompletion && (
+        <button type="button" onClick={onViewCompletion}>
+          Ver conclusão da dimensão
+        </button>
       )}
     </div>
   )
