@@ -1134,7 +1134,7 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 
 - [x] **T-89 — Cliente e fixtures MSW da conclusão** (REQ-90 a REQ-96). Schemas e tipos do contrato da FEAT-19 (campos de conclusão da Carta de Dimensão, item de conclusão, área de itens de conclusão do jogador, ação de conclusão, resumo de conclusão, situação congelada do save, chaves novas e códigos de erro), com `.default()` nos valores legados; fixtures e grupos de dev da D-65 item 6. Só depois do contrato `acordado`.
 - [x] **T-90 — Laboratório, catálogo e editor da conclusão** (REQ-90, REQ-91). E2E nas áreas `lab` e `editor`.
-- [ ] **T-91 — Itens de conclusão e requisito na tela do grupo** (REQ-92). E2E na área `party`.
+- [x] **T-91 — Itens de conclusão e requisito na tela do grupo** (REQ-92). E2E na área `party`.
 - [ ] **T-92 — Concluir dimensão e painel de conclusão** (REQ-93, REQ-95). E2E na área `party`.
 - [ ] **T-93 — Chefe final** (REQ-93, REQ-94). E2E na área `party`.
 - [ ] **T-94 — Save congelado** (REQ-95, REQ-96). E2E nas áreas `app` e `party`.

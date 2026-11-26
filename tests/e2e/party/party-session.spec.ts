@@ -1,5 +1,47 @@
 import { expect, test } from '@playwright/test'
 
+test('REQ-92: conclusão abaixo da cidade e itens na seção do membro', async ({
+  page,
+}) => {
+  await page.goto('/grupo/party-conclusao')
+  const completion = page.getByRole('region', { name: 'Conclusão da dimensão' })
+  await expect(completion).toBeVisible()
+  await expect(completion.locator('xpath=preceding-sibling::*[1]')).toHaveText(
+    'Cidade inicial: Porto Cinzento',
+  )
+  await expect(completion).toContainText('Zona de conclusão: Mina Velha')
+  await expect(completion.getByRole('list', { name: 'Requisito' })).toHaveText(
+    '3× Fragmento',
+  )
+  await expect(completion.getByText('Chefe final:')).toHaveCount(0)
+
+  const lia = page.getByRole('region', { name: 'Lia' })
+  await expect(
+    lia.getByRole('list', { name: 'Itens de conclusão' }),
+  ).toHaveText('3× Fragmento')
+  await expect(lia.getByText('3× Fragmento', { exact: true })).toHaveCount(1)
+})
+
+test('REQ-92: chefe sem fuga, membro sem itens e dimensão legada', async ({
+  page,
+}) => {
+  await page.goto('/grupo/party-chefe-final')
+  await expect(
+    page.getByText('Chefe final: Guardião da Mina · Sem fuga'),
+  ).toBeVisible()
+
+  await page.goto('/grupo/party-dimensao-concluida')
+  await expect(page.getByText('Dimensão: Segunda Dimensão')).toBeVisible()
+  await expect(
+    page.getByRole('region', { name: 'Conclusão da dimensão' }),
+  ).toHaveCount(0)
+  await expect(
+    page
+      .getByRole('region', { name: 'Lia' })
+      .getByText('Nenhum item de conclusão.'),
+  ).toBeVisible()
+})
+
 test.describe('REQ-16: grupo em sessão (MSW)', () => {
   test.use({ timezoneId: 'America/Sao_Paulo' })
 
@@ -8,7 +50,11 @@ test.describe('REQ-16: grupo em sessão (MSW)', () => {
   }) => {
     await page.goto('/')
     const games = page.getByRole('region', { name: 'Seus jogos' })
-    await games.getByRole('button', { name: 'Continuar' }).click()
+    await games
+      .getByRole('listitem')
+      .filter({ hasText: 'Os Teimosos' })
+      .getByRole('button', { name: 'Continuar' })
+      .click()
     await expect(page).toHaveURL(/\/grupo\/party-os-teimosos$/)
 
     await expect(

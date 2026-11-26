@@ -1055,6 +1055,11 @@ describe('REQ-30: partida preparada na tela do grupo', () => {
     expect(
       await screen.findByText('Classe: Guerreiro (trava não cumprida)'),
     ).toBeInTheDocument()
+    // O requisito é consultado depois que a Carta de Dimensão chega.
+    const completion = await screen.findByRole('region', {
+      name: 'Conclusão da dimensão',
+    })
+    await within(completion).findByText('3× Fragmento')
   })
 
   it('REQ-30: "Mão (7)" mostra cada carta completa na ordem recebida, repetidas repetidas, uma consulta por id distinto', async () => {
@@ -1083,7 +1088,7 @@ describe('REQ-30: partida preparada na tela do grupo', () => {
       'Resistência',
       'Força',
     ])
-    expect(new Set(asked).size).toBe(asked.length)
+    expect(asked).toEqual([...new Set(asked)])
   })
 
   it('REQ-40: "Build (60 cartas)" e "Pasta de TCG (capacidade 30)" vêm antes da mão, na ordem recebida; pasta vazia mostra "Pasta vazia."', async () => {

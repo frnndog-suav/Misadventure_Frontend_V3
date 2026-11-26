@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useState, type ReactNode } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   equipmentSlotSchema,
@@ -165,6 +165,7 @@ function cardIdsOf(party: Party): string[] {
       ...player.build.map(({ cardId }) => cardId),
       ...player.tcgFolder.map(({ cardId }) => cardId),
       ...player.inventory.map(({ cardId }) => cardId),
+      ...player.completionItems.map(({ cardId }) => cardId),
       ...(player.mount === null
         ? []
         : [
@@ -268,12 +269,14 @@ function MemberState({
   cards,
   prepare,
   rewardPending,
+  quests,
 }: {
   member: PartyMember
   classes: ClassDefinition[]
   cards: Cards
   prepare: PrepareControls | null
   rewardPending: boolean
+  quests: ReactNode
 }) {
   const { player } = member
   const knockout = player.lastKnockout
@@ -288,9 +291,23 @@ function MemberState({
   const mountInventoryId = `mount-inventory-${member.id}`
   const mountFolderId = `mount-folder-${member.id}`
   const decksId = `vault-decks-${member.id}`
+  const completionItemsId = `completion-items-${member.id}`
   return (
     <section aria-labelledby={titleId}>
       <h2 id={titleId}>{member.characterName}</h2>
+      {quests}
+      <h3 id={completionItemsId}>Itens de conclusão</h3>
+      {player.completionItems.length === 0 ? (
+        <p>Nenhum item de conclusão.</p>
+      ) : (
+        <ul aria-labelledby={completionItemsId}>
+          {player.completionItems.map(({ cardId, quantity }) => (
+            <li key={cardId}>
+              {quantity}× {nameOf(cards, cardId)}
+            </li>
+          ))}
+        </ul>
+      )}
       {player.playerClasses.map(({ playerClass, deckLockMet }) => (
         <p key={playerClass}>
           Classe:{' '}
@@ -1696,6 +1713,35 @@ function TurnState({
   )
 }
 
+function DimensionCompletion({ card }: { card: Card | undefined }) {
+  const completion = card?.type === 'dimension' ? card.completion : null
+  const { cards } = useCatalogCards(
+    completion?.requirement.map(({ cardId }) => cardId) ?? [],
+  )
+  if (!completion) return null
+
+  return (
+    <section aria-labelledby="dimension-completion-title">
+      <h2 id="dimension-completion-title">Conclusão da dimensão</h2>
+      <p>Zona de conclusão: {completion.zoneTitle}</p>
+      <h3 id="dimension-requirement-title">Requisito</h3>
+      <ul aria-labelledby="dimension-requirement-title">
+        {completion.requirement.map(({ cardId, count }) => (
+          <li key={cardId}>
+            {count}× {nameOf(cards, cardId)}
+          </li>
+        ))}
+      </ul>
+      {completion.finalBoss && (
+        <p>
+          Chefe final: {completion.finalBoss.title}
+          {completion.finalBoss.noEscape && ' · Sem fuga'}
+        </p>
+      )}
+    </section>
+  )
+}
+
 /** Estado da partida preparada (REQ-30) com a vez (REQ-36) e o mapa (REQ-34). */
 function PreparedMatch({
   party,
@@ -1727,10 +1773,12 @@ function PreparedMatch({
   smithing,
   setSmithing,
   moving,
+  quests,
 }: {
   party: Party
   classes: ClassDefinition[]
   cards: Cards
+  quests: ReactNode
   onMove: (zoneId: string, viaZoneId?: string) => void
   onEndTurn: () => void
   onSaveRespawnPoint: () => void
@@ -1774,6 +1822,7 @@ function PreparedMatch({
     <>
       <p>Dimensão: {nameOf(cards, party.dimension.dimensionCardId)}</p>
       <p>Cidade inicial: {nameOf(cards, party.dimension.startingCityZoneId)}</p>
+      <DimensionCompletion card={cards.get(party.dimension.dimensionCardId)} />
       {!party.combat && (
         <TurnState
           party={party}
@@ -1884,6 +1933,7 @@ function PreparedMatch({
           member={member}
           classes={classes}
           cards={cards}
+          quests={member.isHost ? quests : null}
           rewardPending={party.pendingRewards.some(
             ({ memberId }) => memberId === member.id,
           )}
@@ -2223,18 +2273,20 @@ export function PartySession() {
               onAction={(intent) => action.mutate(intent)}
             />
           )}
-          {host && (
-            <QuestPanel
-              player={host.player}
-              classes={classes.data ?? []}
-              pending={action.isPending || end.isPending}
-              onAction={(intent) => action.mutate(intent)}
-            />
-          )}
           <PreparedMatch
             party={party}
             classes={classes.data ?? []}
             cards={cards.cards}
+            quests={
+              host && (
+                <QuestPanel
+                  player={host.player}
+                  classes={classes.data ?? []}
+                  pending={action.isPending || end.isPending}
+                  onAction={(intent) => action.mutate(intent)}
+                />
+              )
+            }
             onMove={(zoneId, viaZoneId) =>
               action.mutate(
                 viaZoneId === undefined
