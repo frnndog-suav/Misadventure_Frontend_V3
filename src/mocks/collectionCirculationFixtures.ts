@@ -32,8 +32,13 @@ const editorDimension = {
 const originalBooster = fixtureCardsFixture.find(
   (card) => card.type === 'item' && card.id === 'fixture.booster',
 )!
-const extraBoosters = [own, extended, outside].map((collectionId) => ({
+const extraBoosters = [
+  [own, 'Booster da coleção atual'],
+  [extended, 'Booster da coleção estendida'],
+  [outside, 'Booster fora de oferta'],
+].map(([collectionId, name]) => ({
   ...originalBooster,
+  name,
   id: `${collectionId}.booster`,
   collectionId,
   boosterCollectionId: collectionId,
@@ -183,10 +188,15 @@ export const collectionCirculationHandlers = [
   ...extraBoosters.map((card) =>
     http.get(`*/catalog/cards/${card.id}`, () => HttpResponse.json(card)),
   ),
-  ...[circulationMarket, legacyCirculationMarket, prepareParty, vaultParty].map(
-    (party) =>
-      http.get(`*/parties/${party.id}`, () => HttpResponse.json(party)),
-  ),
+  ...[
+    circulationMarket,
+    legacyCirculationMarket,
+    prepareParty,
+    vaultParty,
+  ].flatMap((party) => [
+    http.get(`*/parties/${party.id}`, () => HttpResponse.json(party)),
+    http.post(`*/parties/${party.id}/session`, () => HttpResponse.json(party)),
+  ]),
   http.post(`*/parties/${prepareParty.id}/actions`, async ({ request }) => {
     const action = await request.json()
     if (

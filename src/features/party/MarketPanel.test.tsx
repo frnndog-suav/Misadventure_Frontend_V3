@@ -24,6 +24,7 @@ import { MarketResult } from './MarketPanel'
 import type { Card } from '../../api/catalog'
 import type { MarketVisitResult } from '../../api/market'
 import { healingPotionFixture } from '../../mocks/catalogFixtures'
+import { circulationMarket } from '../../mocks/collectionCirculationFixtures'
 import { handlers } from '../../mocks/handlers'
 import {
   partyMarketGoldLostFixture,
@@ -57,10 +58,10 @@ beforeEach(() => {
 const [base] = partyInSessionFixture.members
 const market = base.player.market!
 
-function renderParty() {
+function renderParty(partyId = partyInSessionFixture.id) {
   return render(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={[`/grupo/${partyInSessionFixture.id}`]}>
+      <MemoryRouter initialEntries={[`/grupo/${partyId}`]}>
         <App />
       </MemoryRouter>
     </QueryClientProvider>,
@@ -95,8 +96,8 @@ const opTexts = () =>
 const inSection = (name: string) =>
   within(section()).getByRole('button', { name })
 
-async function openSection(): Promise<void> {
-  renderParty()
+async function openSection(partyId?: string): Promise<void> {
+  renderParty(partyId)
   await screen.findByRole('region', { name: 'A vez' })
   await waitFor(() =>
     expect(screen.getAllByRole('status')[0]).toHaveTextContent(''),
@@ -824,5 +825,125 @@ describe('REQ-88: Resultado do mercado com montaria', () => {
       'Comprou 1× Poção de Cura por 7 de ouro (1 no inventário extra)',
       'Comprou 1× Poção de Cura por 7 de ouro',
     ])
+  })
+})
+describe('FEAT-33: mercado e abertura de boosters', () => {
+  const circulationId = circulationMarket.id
+  const boosterNames = [
+    'Booster de Teste — 30 de ouro',
+    'Booster da coleção atual — 34 de ouro',
+    'Booster da coleção estendida — 28 de ouro',
+  ]
+  const confirm = 'Confirmar (1 ponto de ação)'
+  const boosterResult = 'Cartas do booster Booster de Teste'
+  const addSingle = () =>
+    fireEvent.click(
+      within(group('Singles')).getByRole('button', { name: 'Comprar Força' }),
+    )
+
+  it('REQ-98: compra em lote os boosters das três coleções aos preços da API', async () => {
+    await openSection(circulationId)
+    for (const offer of boosterNames) addTo('Boosters', offer)
+    fireEvent.click(inSection(confirm))
+    const result = await screen.findByRole('list', {
+      name: 'Resultado do mercado',
+    })
+    expect(
+      within(result)
+        .getAllByRole('listitem')
+        .map((item) => item.textContent),
+    ).toEqual(
+      boosterNames.map(
+        (offer) => `Comprou 1× ${offer.replace(' — ', ' por ')}`,
+      ),
+    )
+  })
+
+  it('REQ-98: identifica o booster que saiu da oferta e preserva o estado na recusa', async () => {
+    const player = circulationMarket.members[0].player
+    server.use(
+      http.post(`*/parties/${circulationId}/session`, () =>
+        HttpResponse.json({
+          ...circulationMarket,
+          members: [
+            {
+              ...circulationMarket.members[0],
+              player: {
+                ...player,
+                market: {
+                  ...player.market!,
+                  boosters: [{ cardId: 'msw-outside.booster', price: 28 }],
+                },
+              },
+            },
+          ],
+        }),
+      ),
+    )
+    await openSection(circulationId)
+    addSingle()
+    addTo('Boosters', 'Booster fora de oferta — 28 de ouro')
+    const member = screen.getByRole('region', {
+      name: circulationMarket.members[0].characterName,
+    })
+    const memberBefore = member.textContent
+    const turnBefore = turnRegion().textContent
+    fireEvent.click(inSection(confirm))
+    await within(section()).findByText(
+      /Booster fora de oferta não está à venda/,
+    )
+    const operations = within(section()).getByRole('list', {
+      name: 'Operações',
+    })
+    const [single, booster] = within(operations).getAllByRole('listitem')
+    expect(single).not.toHaveTextContent('Recusada')
+    expect(booster).toHaveTextContent('Recusada')
+    expect(member.textContent).toBe(memberBefore)
+    expect(turnRegion().textContent).toBe(turnBefore)
+    expect(section()).toHaveTextContent('Ouro na bolsa 150')
+    expect(group('Singles')).toHaveTextContent('Slot 1: Força — 6 de ouro')
+    expect(group('Boosters')).toHaveTextContent(
+      'Booster fora de oferta — 28 de ouro',
+    )
+    expect(
+      screen.queryByRole('list', { name: 'Resultado do mercado' }),
+    ).toBeNull()
+  })
+
+  it('REQ-99: compra o single reimpresso pelo slot e exibe o resultado da API', async () => {
+    await openSection(circulationId)
+    expect(group('Singles')).toHaveTextContent('Slot 1: Força — 6 de ouro')
+    addSingle()
+    fireEvent.click(inSection(confirm))
+    expect(
+      await screen.findByRole('list', { name: 'Resultado do mercado' }),
+    ).toHaveTextContent(
+      'Comprou Força (slot 1) por 6 de ouro; foi para a pasta de TCG',
+    )
+  })
+
+  it('REQ-100: abre o booster reimpresso em Preparar e mostra os destinos', async () => {
+    renderParty('party-msw-feat-33-prepare')
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Abrir Booster de Teste' }),
+    )
+    const result = await screen.findByRole('list', { name: boosterResult })
+    expect(result).toHaveTextContent('Força → pasta de TCG')
+    expect(result).toHaveTextContent('Poção de Cura → inventário')
+  })
+
+  it('REQ-100: abre um booster fora de oferta pelo cofre e mostra os destinos', async () => {
+    renderParty('party-msw-feat-33-vault')
+    fireEvent.click(await screen.findByRole('button', { name: 'Usar cofre' }))
+    const form = await screen.findByRole('group', { name: 'Abrir booster' })
+    await within(form).findByRole('option', { name: 'Booster de Teste' })
+    fireEvent.change(within(form).getByRole('combobox', { name: 'Booster' }), {
+      target: { value: 'fixture.booster' },
+    })
+    fireEvent.click(within(form).getByRole('button', { name: 'Acrescentar' }))
+    fireEvent.click(screen.getByRole('button', { name: confirm }))
+    const result = await screen.findByRole('list', { name: boosterResult })
+    expect(within(result).getAllByRole('listitem')).toHaveLength(8)
+    expect(result).toHaveTextContent('Força → cofre')
   })
 })

@@ -159,3 +159,5 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 126 | FEAT-33 | [Planejamento aprovado e contrato proposto](126-feat-33-planejamento.md) | concluída |
 | 127 | T-96 | [Cliente e fixtures MSW da FEAT-33](127-T-96-cliente-msw-feat-33.md) | concluída |
 | 128 | T-97 | [Carta de Dimensão no catálogo e no editor](128-T-97-dimensao-catalogo-editor-feat-33.md) | concluída |
+| 129 | T-98 | [Mercado e abertura com múltiplas coleções](129-T-98-mercado-abertura-feat-33.md) | concluída |
+| 130 | T-99 | [Validação integrada da FEAT-33](130-T-99-validacao-integrada-feat-33.md) | concluída |

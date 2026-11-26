@@ -190,6 +190,12 @@ function cardIdsOf(party: Party): string[] {
             ...eventReceiptCardIds(player.lastRandomEvent.payments),
           ]),
       ...(player.lastScavenge === null ? [] : [player.lastScavenge.cardId]),
+      ...(player.lastBoosterOpening
+        ? [
+            player.lastBoosterOpening.boosterCardId,
+            ...player.lastBoosterOpening.cards.map(({ cardId }) => cardId),
+          ]
+        : []),
       ...marketCardIds(player),
       ...blacksmithCardIds(player),
     ]),

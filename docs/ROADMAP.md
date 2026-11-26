@@ -1,6 +1,6 @@
 # Misadventures — Roadmap de desenvolvimento
 
-> **Versão:** 0.90 · **Data:** 2026-11-26
+> **Versão:** 0.92 · **Data:** 2026-11-26
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend; o autor copia o arquivo inteiro quando ele muda. Base: README Parte III (III.2 e III.4). As regras estão em [`README.md`](README.md); o que trafega entre os lados, em [`CONTRATO.md`](CONTRATO.md).
 
@@ -72,7 +72,7 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | FEAT-17 | Ferreiro e Oficina do Artífice | 25 | validado | validado |
 | FEAT-18 | Montarias e Estábulo | 26 | validado | validado |
 | FEAT-19 | Conclusão da dimensão, chefe final, passagem para a próxima, save congelado | 3.2, 28.1 | validado | validado |
-| FEAT-33 | Coleções estendidas e reprint: várias coleções vigentes para compra no mercado (README 27) | 27, 24 | a fazer | a fazer |
+| FEAT-33 | Coleções estendidas e reprint: várias coleções vigentes para compra no mercado (README 27) | 27, 24 | validado | validado |
 
 ### Momento 2 — Ajudantes de IA
 
@@ -204,3 +204,5 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | 0.88 | 2026-11-26 | FEAT-19 `validado` nos dois lados (T-86 e T-95, CONTRATO v1.00). |
 | 0.89 | 2026-11-26 | FEAT-33 aprovada no FE (SPEC-FRONTEND v1.09, REQ-97 a REQ-101, D-66 e T-96 a T-99); CONTRATO v1.01 `proposto (FE)`; FE `aguardando outro lado`. |
 | 0.90 | 2026-11-26 | FEAT-33 com contrato `acordado` (CONTRATO v1.02). T-96 liberada com MSW. |
+| 0.91 | 2026-11-26 | FEAT-33 implementada no backend (CONTRATO v1.03) e campanhas disponíveis para validação integrada na T-99. |
+| 0.92 | 2026-11-26 | FEAT-33 validada nos dois lados após a T-99 (devlog frontend 130, CONTRATO v1.04). |

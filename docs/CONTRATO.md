@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 1.02 · **Data:** 2026-11-26
+> **Versão do contrato:** 1.04 · **Data:** 2026-11-26
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -3909,7 +3909,7 @@ Contra a `fixture`, com o que o backend acrescenta nesta FEAT: `F` = `fixture.sh
 | Chefe final | Dimensão editada com `finalBoss` (1 inimigo `boss`, `noEscape: true`); POST | `200`, `combat.finalBoss: true`, `combatStarted.cardTitle` = título do chefe, `escape.unavailableReason` não nulo. Vitória → `lastCombatResult.finalBoss: true`, `lastDimensionCompletion.finalBossDefeated: true`, `peakDelta: 40`. Derrota ou limite de ciclos → nenhum `lastDimensionCompletion` novo, F mantidos, e a ação volta quando M estiver apto de novo. |
 | Editor | Salvar a Carta de Dimensão com `requirement[0].cardId: "fixture.healing-potion"` | `400 CONTENT_INVALID` com um item em `completion.requirement.0.cardId` (carta que não é item de conclusão). Com `zoneTitle: "Nenhuma"` → item em `completion.zoneTitle`. |
 
-### FEAT-33 — Coleções estendidas e reprint — `acordado`
+### FEAT-33 — Coleções estendidas e reprint — `validado`
 
 Base: README §§24.3, 24.4 e 27, ROADMAP v0.89 e SPEC-FRONTEND v1.09 (REQ-97 a REQ-101, D-66). As mudanças abaixo passam a valer com esta FEAT. Rotas, ações, formato de `MarketView` e configuração do laboratório são os já contratados.
 
@@ -4078,3 +4078,5 @@ Para a T-99, o backend entrega campanhas preparadas para mercado, abertura nos d
 | 1.00 | 2026-11-26 | BE | FEAT-19 `validado`: seis cenários do perfil base contra a API real na T-95 (devlog FE 125). Chefe, montaria e editor verificados localmente na T-86 (devlog BE 103). |
 | 1.01 | 2026-11-26 | FE | FEAT-33 `proposto (FE)`: listas de extensão e reprint na Carta de Dimensão, vigência comercial gravada e elegibilidade de boosters e singles de múltiplas coleções. |
 | 1.02 | 2026-11-26 | BE | FEAT-33 `acordado`. Detalha as verificações de editor, vigência persistida e recusa atômica. T-96 liberada com MSW. A entrega para a T-99 inclui campanhas preparadas, IDs e resultados esperados. |
+| 1.03 | 2026-11-26 | BE | FEAT-33 `implementado (BE)`. Suíte unitária confirmada e campanhas da T-99 preparadas na API local. Validação integrada no frontend pendente. |
+| 1.04 | 2026-11-26 | BE | FEAT-33 `validado` após a T-99 (devlog frontend 130). Os oito grupos passaram, incluindo a verificação HTTP do editor e a atomicidade no save. Alinhado o metadado de `GET /health` à versão do contrato. |
