@@ -1,6 +1,6 @@
 # Misadventures — Roadmap de desenvolvimento
 
-> **Versão:** 0.88 · **Data:** 2026-11-26
+> **Versão:** 0.90 · **Data:** 2026-11-26
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend; o autor copia o arquivo inteiro quando ele muda. Base: README Parte III (III.2 e III.4). As regras estão em [`README.md`](README.md); o que trafega entre os lados, em [`CONTRATO.md`](CONTRATO.md).
 
@@ -202,3 +202,5 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | 0.86 | 2026-11-25 | FEAT-19: planejada no FE (SPEC-FRONTEND v1.08, REQ-90 a REQ-96, T-89 a T-95); contrato proposto pelo FE (CONTRATO v0.95); FE `aguardando outro lado`. FEAT-33 nova (coleções estendidas e reprint, decisão do autor), tirada da FEAT-19. |
 | 0.87 | 2026-11-25 | FEAT-19: contrato `acordado` pelo BE (CONTRATO v0.96; README B.21 aplicada); FE `a fazer` (T-89 liberada); BE `a fazer` (falta planejar REQs e tarefas na SPEC-BACKEND). |
 | 0.88 | 2026-11-26 | FEAT-19 `validado` nos dois lados (T-86 e T-95, CONTRATO v1.00). |
+| 0.89 | 2026-11-26 | FEAT-33 aprovada no FE (SPEC-FRONTEND v1.09, REQ-97 a REQ-101, D-66 e T-96 a T-99); CONTRATO v1.01 `proposto (FE)`; FE `aguardando outro lado`. |
+| 0.90 | 2026-11-26 | FEAT-33 com contrato `acordado` (CONTRATO v1.02). T-96 liberada com MSW. |

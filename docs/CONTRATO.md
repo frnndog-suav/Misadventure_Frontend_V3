@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 1.00 · **Data:** 2026-11-26
+> **Versão do contrato:** 1.02 · **Data:** 2026-11-26
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -3909,6 +3909,42 @@ Contra a `fixture`, com o que o backend acrescenta nesta FEAT: `F` = `fixture.sh
 | Chefe final | Dimensão editada com `finalBoss` (1 inimigo `boss`, `noEscape: true`); POST | `200`, `combat.finalBoss: true`, `combatStarted.cardTitle` = título do chefe, `escape.unavailableReason` não nulo. Vitória → `lastCombatResult.finalBoss: true`, `lastDimensionCompletion.finalBossDefeated: true`, `peakDelta: 40`. Derrota ou limite de ciclos → nenhum `lastDimensionCompletion` novo, F mantidos, e a ação volta quando M estiver apto de novo. |
 | Editor | Salvar a Carta de Dimensão com `requirement[0].cardId: "fixture.healing-potion"` | `400 CONTENT_INVALID` com um item em `completion.requirement.0.cardId` (carta que não é item de conclusão). Com `zoneTitle: "Nenhuma"` → item em `completion.zoneTitle`. |
 
+### FEAT-33 — Coleções estendidas e reprint — `acordado`
+
+Base: README §§24.3, 24.4 e 27, ROADMAP v0.89 e SPEC-FRONTEND v1.09 (REQ-97 a REQ-101, D-66). As mudanças abaixo passam a valer com esta FEAT. Rotas, ações, formato de `MarketView` e configuração do laboratório são os já contratados.
+
+#### Catálogo e editor (FEAT-04 e FEAT-31)
+
+```ts
+interface DimensionCard {
+  // … campos atuais …
+  extendedCollectionIds: string[]
+  reprintCollectionIds: string[]
+}
+```
+
+- Cada lista contém IDs de coleções anteriores. Uma coleção anterior tem Carta de Dimensão publicada com `releaseOrder` menor que o da dimensão que a referencia. As listas preservam a ordem do autor e participam do `CardInput` e de `CollectionExport`. Ausência na leitura ou importação de conteúdo legado equivale a `[]`.
+- Validar as referências na publicação e na importação de conteúdo publicado. Coleção inexistente, sem lançamento anterior, própria, repetida ou presente nas duas listas → `400 CONTENT_INVALID` com `fields[].path` apontando para `extendedCollectionIds.N` ou `reprintCollectionIds.N`, com o prefixo da carta no import. Para sobreposição, indicar a entrada de reprint. Uma edição de Carta de Dimensão já publicada aplica as mesmas validações ao salvar.
+- Impedir exclusão ou substituição que invalide uma referência de outra dimensão com `409 CONTENT_REFERENCED`. Aplicar `409 CONTENT_IN_USE` quando a operação remover conteúdo protegido pelo save, inclusive a coleção registrada na vigência, cartas do pool ou da vitrine. Seguir a precedência da FEAT-31, com `CONTENT_IN_USE` antes de `CONTENT_REFERENCED`. Manter a proteção de IDs de cartas publicadas.
+
+#### Vigência e mercado (FEAT-16 e FEAT-19)
+
+- Ao criar a campanha ou iniciar uma nova dimensão, o backend grava a união dos IDs da coleção própria, das estendidas e dos reprints como vigência comercial daquela dimensão. Alterações no editor se aplicam a dimensões iniciadas depois da publicação. Save legado sem registro de vigência usa só a coleção própria na dimensão atual, preserva o pool e as vitrines já gravados e aplica a configuração publicada ao avançar. Zonas, eventos, inimigos e deck de recompensas continuam sendo gerados pela coleção própria.
+- `MarketView.boosters` inclui todos os boosters publicados cuja `boosterCollectionId` pertence à vigência, em ordem de `cardId`. Os preços retornados e a disponibilidade ilimitada seguem a FEAT-16. `buyBooster` usa `notMarketBooster` para IDs fora da oferta e preserva a atomicidade do lote, com `operationIndex` indicando a primeira falha. O estoque segue `ZoneCard.market.stock`.
+- Tanto no primeiro pool de singles quanto na renovação, sortear do conjunto de cartas publicadas elegíveis das coleções vigentes, com cada `cardId` participando uma única vez. Aplicar as exclusões do README §24.4 e as regras atuais de tamanho do pool, estoque, escassez e decaimento. Uma coleção pode ficar sem cartas no pool. `buySingle` continua a operar por slot com os destinos já contratados.
+- Reprint usa as cartas originais, com os mesmos IDs e raridades. A abertura em `prepare` ou `useVault` continua usando a coleção indicada em `boosterCollectionId`, inclusive para boosters que saíram de oferta. Venda e uso de cartas já adquiridas seguem as regras existentes.
+
+#### Cenários de acordo e validação
+
+Para a T-99, o backend entrega campanhas preparadas para mercado, abertura nos dois fluxos, transição e save legado, com URL da API, IDs de campanha, membro, dimensões, coleções, zonas, boosters e singles, raridades, slots e resultados esperados. O roteiro inclui os dados de editor e o estado inicial necessário para repetir cada cenário. A T-96 pode usar fixtures MSW com o mesmo formato.
+
+- Dado conteúdo legado e uma Carta de Dimensão com as duas listas, quando o catálogo e o editor leem cada carta, então retornam, respectivamente, listas vazias e os IDs configurados. Referência inválida na publicação ou no import retorna `400 CONTENT_INVALID` com o caminho correspondente em `error.details.fields`. Conferir coleção inexistente, sem dimensão publicada, com ordem igual ou posterior, própria, duplicada e sobreposição. Excluir ou substituir uma coleção referenciada retorna `409 CONTENT_REFERENCED`. Se a coleção constar na vigência de um save, a recusa é `409 CONTENT_IN_USE`.
+- Dado um mercado com boosters das três coleções vigentes, quando o jogador consulta a oferta e compra um lote válido, então vê as três origens ofertadas pelos IDs de booster e o resultado das compras. Em uma campanha preparada com single disponível e reposição possível, enviar um lote com `buySingle` válido seguido de `buyBooster` fora da oferta. A resposta é `409 ACTION_NOT_ALLOWED` com `details.reason: "notMarketBooster"` e `details.operationIndex: 1`. O GET seguinte preserva PA, ouro, cartas, vitrine, `lastMarketVisit` e `savedAt`. A verificação do backend também compara pool, estoques e RNG antes e depois da recusa.
+- Dado o pool controlado, quando a vitrine oferece um single estendido ou reimpresso e o jogador compra seu slot, então o resultado contém seu ID original e seu destino. No backend, conferir que o pool inicial e o renovado usam apenas atributos e recursos elegíveis da vigência gravada, com IDs únicos e sem cota por coleção. Esgotar o estoque global da última carta por compra ou decaimento deve iniciar a renovação com os mesmos filtros.
+- Dado um booster reimpresso ou fora de vigência em posse do jogador e espaço suficiente, quando o abre em Preparar ou Usar cofre, então `lastBoosterOpening` registra os IDs originais das cartas da coleção do booster e os destinos da FEAT-16 e da FEAT-18. Conferir no catálogo a raridade original de cada ID retornado. Conferir `prepare` a partir do inventário e `useVault` a partir do cofre.
+- Dado um save legado na dimensão atual, quando consulta o mercado, então a vigência é a coleção própria. Ao avançar para uma dimensão configurada, aplica-se a vigência do destino.
+- Dado um save com extensão ativa, quando avança para uma dimensão que encerra essa extensão e traz outra coleção por reprint, então a extensão encerrada sai da oferta de boosters e dos candidatos ao novo pool, o reprint volta e o conteúdo gerado pertence à coleção própria do destino. Reabrir o save após editar as listas da dimensão atual preserva sua vigência comercial, inclusive ao renovar o pool de singles.
+
 ## 4. Códigos de erro
 
 | Código | Quando acontece | FEAT |
@@ -4040,3 +4076,5 @@ Contra a `fixture`, com o que o backend acrescenta nesta FEAT: `F` = `fixture.sh
 | 0.98 | 2026-11-26 | BE | FEAT-19: frontend confirmou o ID `fixture-next.next-dimension` para a Segunda Dimensão. Corrigidas a descrição da fixture e as duas expectativas de ID em “Concluir com próxima”. |
 | 0.99 | 2026-11-26 | BE | FEAT-19 `implementado (BE)` após verificação local da T-86. Registradas as mensagens observadas do editor. Validação integrada da T-95 pendente. |
 | 1.00 | 2026-11-26 | BE | FEAT-19 `validado`: seis cenários do perfil base contra a API real na T-95 (devlog FE 125). Chefe, montaria e editor verificados localmente na T-86 (devlog BE 103). |
+| 1.01 | 2026-11-26 | FE | FEAT-33 `proposto (FE)`: listas de extensão e reprint na Carta de Dimensão, vigência comercial gravada e elegibilidade de boosters e singles de múltiplas coleções. |
+| 1.02 | 2026-11-26 | BE | FEAT-33 `acordado`. Detalha as verificações de editor, vigência persistida e recusa atômica. T-96 liberada com MSW. A entrega para a T-99 inclui campanhas preparadas, IDs e resultados esperados. |

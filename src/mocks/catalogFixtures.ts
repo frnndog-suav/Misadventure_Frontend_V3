@@ -287,6 +287,8 @@ export const dexterityBasicFixture: Card = {
 /** Cópia exata do cenário `GET /catalog/cards/fixture.test-dimension`. */
 export const testDimensionFixture: Extract<Card, { type: 'dimension' }> = {
   type: 'dimension',
+  extendedCollectionIds: [],
+  reprintCollectionIds: [],
   id: 'fixture.test-dimension',
   collectionId: 'fixture',
   name: 'Dimensão de Teste',

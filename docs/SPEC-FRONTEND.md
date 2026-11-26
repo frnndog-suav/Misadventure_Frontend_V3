@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 1.08 · **Data:** 2026-11-25
+> **Versão da spec:** 1.09 · **Data:** 2026-11-26
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -875,7 +875,36 @@ Alinha os REQ-14 e REQ-16.
 - **Dado** `/grupo/:partyId` de um save congelado (o backend recusa a sessão com o código do contrato), **então** a área de status mostra a `message` e o link "Voltar ao início".
 - **Dado** que a próxima dimensão foi lançada depois (no dev, pelo editor), **então** a lista mostra o save como "Pausado" e "Continuar" abre a nova dimensão, conforme o estado recebido.
 
+### Coleções estendidas e reprint (FEAT-33)
+
+Base: README §§24.3, 24.4 e 27; ROADMAP v0.88; CONTRATO v1.01 (proposto). Aprovada pelo autor em 2026-11-26.
+
+#### REQ-97 — Configurar a vigência
+
+- **Dado** uma Carta de Dimensão em edição e coleções lançadas anteriormente, **quando** o autor salva as listas “Coleções estendidas” e “Reprints”, **então** o editor recupera as listas ao reabrir a carta e o catálogo exibe a configuração publicada.
+- **Dado** conteúdo legado ou uma referência inválida, **quando** o editor carrega a carta legada ou recebe o erro da API, **então** exibe as duas listas vazias no primeiro caso e o erro no campo correspondente no segundo.
+
+#### REQ-98 — Comprar boosters vigentes
+
+- **Dado** um mercado com boosters da coleção própria, de uma estendida e de uma reimpressa, **quando** o jogador abre “Ir ao Mercado” e confirma o lote, **então** vê todas as ofertas e preços da API, envia os IDs selecionados em `buyBooster` e vê o resultado retornado.
+- **Dado** que um booster selecionado saiu da oferta, **quando** o backend rejeita o lote, **então** a tela identifica a operação que falhou e o estado permanece igual, inclusive PA, ouro, cartas e vitrine.
+
+#### REQ-99 — Comprar singles vigentes
+
+- **Dado** um mercado com singles e uma oferta de coleção estendida ou reimpressa, **quando** o jogador confirma a compra, **então** a tela envia `buySingle` pelo slot exibido e mostra a carta e o destino retornados no resultado.
+- **Dado** um conjunto vigente com várias coleções, **quando** o backend forma ou renova o pool, **então** considera cada ID elegível uma vez e aplica as regras atuais de estoque, escassez e reposição. O sorteio pode deixar uma coleção sem representação.
+
+#### REQ-100 — Abrir booster e usar cartas antigas
+
+- **Dado** que o jogador possui um booster reimpresso ou fora de vigência e tem espaço, **quando** usa “Preparar” ou “Usar cofre” para abri-lo, **então** recebe as cartas originais de `boosterCollectionId`, com a mesma raridade, e a tela mostra os destinos retornados. Cartas antigas adquiridas continuam utilizáveis.
+
+#### REQ-101 — Atualizar a oferta na mudança de dimensão
+
+- **Dado** uma transição em que termina uma extensão e volta outra coleção por reprint, **quando** o jogador acessa o mercado da dimensão de destino, **então** a oferta e o conjunto elegível de singles seguem a vigência do destino. Zonas, eventos, inimigos e deck de recompensas seguem a coleção própria da dimensão.
+
 ## Decisões
+
+- **D-66 — Vigência por dimensão (FEAT-33):** o autor configura as extensões e os reprints na dimensão de destino. Para manter uma extensão por várias dimensões, inclui a coleção em cada uma. As duas listas têm o mesmo efeito comercial. O backend resolve e grava a vigência ao iniciar a dimensão. Saves legados sem registro usam apenas a coleção própria até a próxima transição. O frontend usa as ofertas prontas da API. *(Aprovada em 2026-11-26.)*
 
 - **D-01 — Formato de erro:** os erros do backend chegam no formato de [`CONTRATO.md`](CONTRATO.md) §1.4 (`{ "error": { "code", "message" } }`). A UI mostra `message` (pt-BR) e decide o comportamento pelo `code`. Erro esperado nunca vira exceção na UI. Códigos: os do contrato.
 - **D-02 — Idioma:** identificadores, rotas da API, campos JSON e eventos em inglês; textos para o jogador em pt-BR. O glossário do contrato faz a ponte. *(Motivo: o contrato é compartilhado com um backend em NestJS e as APIs e libs são em inglês.)*
@@ -1140,6 +1169,13 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 - [x] **T-94 — Save congelado** (REQ-95, REQ-96). E2E nas áreas `app` e `party`.
 - [x] **T-95 — Validação integrada da FEAT-19.** Repetir os cenários do contrato contra o backend real com MSW desligado, com as campanhas preparadas pelo backend (no limiar da conclusão, sem e com chefe final, última dimensão lançada). Perfil base verificado diretamente na API real e evidências dos perfis chefe e montaria registradas na T-86 do backend. Ver [devlog 125](devlog/125-T-95-validacao-integrada-feat-19.md).
 
+### FEAT-33 — Coleções estendidas e reprint
+
+- [x] **T-96 — Cliente e fixtures MSW** (REQ-97 a REQ-101). Atualizar schemas, tipos e fixtures de catálogo, editor e mercado após o contrato ficar `acordado`. Cobrir legado, extensão, reprint e coleção fora de vigência.
+- [ ] **T-97 — Carta de Dimensão no catálogo e no editor** (REQ-97). Editar e exibir as listas, persistir os IDs e mostrar erros indexados. Verificar reabertura e importação de conteúdo legado.
+- [ ] **T-98 — Mercado e abertura com múltiplas coleções** (REQ-98 a REQ-100). Cobrir lote, recusa por operação, compra por slot e abertura nos dois fluxos. Ajustar pressupostos de coleção única que os cenários revelarem.
+- [ ] **T-99 — Validação integrada** (REQ-97 a REQ-101). Repetir os cenários acordados contra a API real com MSW desligado, incluindo transição e save legado. Registrar evidências no devlog.
+
 ## 8. Histórico
 
 | Versão | Data | Mudança |
@@ -1252,3 +1288,4 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 | 1.06 | 2026-11-25 | T-88 concluída com MSW: `craft` com `destination` (REQ-81, REQ-88) e `rewardDoesNotFit` para cópias acima do espaço no MSW. |
 | 1.07 | 2026-11-25 | T-87 concluída: FEAT-18 validada contra o backend real (CONTRATO v0.94); D-64 item 8 com o 400 de `useAbility` do backend, alinhado no MSW. |
 | 1.08 | 2026-11-25 | Proposta da FEAT-19 para aprovação: REQ-90 a REQ-96, D-65, T-89 a T-95. Base: ROADMAP v0.85; contrato da FEAT-19 a propor. Coleções estendidas e reprint fora (FEAT própria, decisão do autor). |
+| 1.09 | 2026-11-26 | Autor aprovou a FEAT-33 (REQ-97 a REQ-101, D-66 e T-96 a T-99). T-96 aguarda o acordo do CONTRATO v1.01. |

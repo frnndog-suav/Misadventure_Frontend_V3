@@ -1,3 +1,4 @@
+import { collectionCirculationHandlers } from './collectionCirculationFixtures'
 import {
   publishQuestEditorCard,
   questEditorCard,
@@ -1478,6 +1479,7 @@ const editorHandlers: RequestHandler[] = [
  * origem) quanto a absoluta nos testes em Node.
  */
 export const handlers: RequestHandler[] = [
+  ...collectionCirculationHandlers,
   http.get('*/health', () => HttpResponse.json(healthFixture)),
   http.get('*/lab/config', () => HttpResponse.json(progressionLabConfig())),
   http.patch('*/lab/config', async ({ request }) => {

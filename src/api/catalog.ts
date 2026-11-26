@@ -366,6 +366,8 @@ export const dimensionCardSchema = z.object({
   name: z.string(),
   flavorText,
   releaseOrder: z.number().int().min(1),
+  extendedCollectionIds: z.array(z.string()).default([]),
+  reprintCollectionIds: z.array(z.string()).default([]),
   completion: dimensionCompletionSchema.nullable().default(null),
   /** `null` = sorteada pelo backend entre as `urban` sem efeito negativo. */
   arrivalZoneTitle: z.string().nullable(),

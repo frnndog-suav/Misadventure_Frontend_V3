@@ -236,6 +236,8 @@ export const legacyEventDeckDraftFixture = {
   card: {
     type: 'dimension',
     id: 'fixture.legacy-event-deck-test',
+    extendedCollectionIds: [],
+    reprintCollectionIds: [],
     collectionId: 'fixture',
     name: 'Dimensão com evento legado',
     flavorText: null,

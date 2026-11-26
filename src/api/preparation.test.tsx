@@ -124,6 +124,8 @@ describe('REQ-28: Carta de Dimensão e forma das setas', () => {
   it('REQ-28: aceita a Carta de Dimensão do cenário e a zona com arrowLayout', () => {
     expect(cardSchema.parse(testDimensionFixture)).toEqual({
       type: 'dimension',
+      extendedCollectionIds: [],
+      reprintCollectionIds: [],
       id: 'fixture.test-dimension',
       collectionId: 'fixture',
       name: 'Dimensão de Teste',

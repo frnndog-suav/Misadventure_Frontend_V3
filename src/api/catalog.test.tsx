@@ -80,6 +80,29 @@ it('REQ-60: GET retains an executable combat card alongside legacy content', asy
 })
 
 describe('REQ-08: schema de Card (CONTRATO §3 FEAT-04)', () => {
+  it('REQ-97: defaults legacy lists and preserves configured IDs in author order', () => {
+    const legacy = Object.fromEntries(
+      Object.entries(testDimensionFixture).filter(
+        ([key]) =>
+          key !== 'extendedCollectionIds' && key !== 'reprintCollectionIds',
+      ),
+    )
+    expect(cardSchema.parse(legacy)).toMatchObject({
+      extendedCollectionIds: [],
+      reprintCollectionIds: [],
+    })
+    expect(
+      cardSchema.parse({
+        ...legacy,
+        extendedCollectionIds: ['second', 'first'],
+        reprintCollectionIds: ['older'],
+      }),
+    ).toMatchObject({
+      extendedCollectionIds: ['second', 'first'],
+      reprintCollectionIds: ['older'],
+    })
+  })
+
   it('REQ-08: aceita as 6 cartas da coleção fixture', () => {
     for (const card of fixtureCardsFixture) {
       expect(cardSchema.safeParse(card).success).toBe(true)
