@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 0.94 · **Data:** 2026-11-25
+> **Versão do contrato:** 0.95 · **Data:** 2026-11-25
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -309,6 +309,17 @@ Base dos nomes no código dos dois lados e dos termos com destaque e tooltip (RE
 | Coleção do booster | `boosterCollectionId` | |
 | Abrir booster | `openBooster` | no Preparar e no Usar cofre |
 | Expansão (serviço do mercado) | `expansions` / `MarketExpansion` (`vaultSlots`, `deckSlots`, `tcgFolder`, `purse`, `vaultGold`) | |
+
+### 2.18 Conclusão da dimensão (README 3.2, 28.1) — FEAT-19
+
+| Termo | Identificador | Observação |
+|---|---|---|
+| Concluir dimensão | `completeDimension` | ação contextual, 1 PA |
+| Conclusão (da Carta de Dimensão) | `completion` (`zoneTitle`, `requirement`, `grandPrize`, `finalBoss`) | |
+| Chefe final | `finalBoss` | impresso na Carta de Dimensão |
+| Área de itens de conclusão | `PlayerState.completionItems` | sem slot |
+| Resumo da conclusão | `lastDimensionCompletion` | |
+| Save congelado | `status: 'frozen'` | |
 
 ## 3. Features
 
@@ -2900,7 +2911,7 @@ Troca de dimensão, ajudantes e recrutamento acompanham as FEATs correspondentes
 
 Regras: README 3.4 (a carta de zona lista o estoque e diz se há singles), 5.1–5.3, 6.3–6.6, 12.2 (Ir ao Mercado: 1 PA, repetível; Preparar e Usar cofre abrem booster), 24.1–24.5, 27, 28.1 e Apêndice A (linhas "Mercado" e "Guardar"); Apêndice B K5, K6, M4, O2, S3, C20, C25, F1, F2, F25. Base no backend: SPEC-BACKEND REQ-136 a REQ-144, D-114 a D-122.
 
-**Fora desta FEAT:** Estábulo e espaço da montaria (FEAT-18); valorização por refino e encantamento e marcas de reparo na venda (FEAT-17); coleções estendidas e reprint (FEAT-19: até lá, só a coleção da dimensão é vigente); efeitos de desconto, de mais ouro na venda e `marketShowcaseModifier` (continua publicável e inerte, como os efeitos não executados da FEAT-13).
+**Fora desta FEAT:** Estábulo e espaço da montaria (FEAT-18); valorização por refino e encantamento e marcas de reparo na venda (FEAT-17); coleções estendidas e reprint (FEAT própria, a criar; até lá, só a coleção da dimensão é vigente); efeitos de desconto, de mais ouro na venda e `marketShowcaseModifier` (continua publicável e inerte, como os efeitos não executados da FEAT-13).
 
 **Decisões que o frontend precisa saber:**
 - **Ir ao Mercado é um lote**, como o Usar cofre (FEAT-32): um pedido com a lista de operações, aplicadas em ordem, por 1 PA. Se uma falha, nada muda (PA, ouro, cartas, vitrine e RNG) e o erro diz qual (`operationIndex`). A ação pode ser repetida na mesma vez.
@@ -3748,6 +3759,146 @@ Montaria de teste (v0.90, aceita a oferta do FE): o backend acrescenta à `fixtu
 
 Só nos e2e do backend: abrir booster e comprar single somando o espaço da montaria; arma que bloqueia escudo com o escudo indo ao inventário extra; Ajustar deck com a pasta extra; equipamento com estado no inventário extra; montaria como recompensa (sem montaria; com montaria → volta ao deck ou limbo); `loseMount` com conteúdo; efeitos passivos da montaria nos `effectiveModifiers`; saves v2 a v10. Para a validação integrada (T-80), o backend entrega campanhas preparadas (Estábulo, montaria com conteúdo, inventário cheio, mapa com dois caminhos a 2 zonas), os IDs e os resultados esperados.
 
+### FEAT-19 — Conclusão da dimensão, chefe final, passagem e save congelado — `proposto (FE)`
+
+Regras: README 3.2, 12.1, 12.2, 18.3, 19.1 (item 10), 21.1, 23, 24.5, 28.1 ("Ir para nova dimensão", "Mantém / Reinicia") e Apêndice A ("Pico por fonte"); Apêndice B I3. Base no frontend: SPEC-FRONTEND REQ-90 a REQ-96, D-65.
+
+**Fora desta FEAT:** coleções estendidas e reprint (README 27; FEAT própria, decisão do autor em 2026-11-25; corrige a nota "Fora desta FEAT" da FEAT-16); recrutar ajudantes no combate do chefe e negociar itens de conclusão (FEATs de grupo); ajudantes de IA.
+
+**Decisões que o frontend precisa saber:**
+- **Item de conclusão** é um `ItemCard` com `completionItem: true`. Vai sempre para `PlayerState.completionItems` (sem slot, nunca falta espaço) e nunca aparece em inventário, montaria, cofre, venda, descarte, booster, singles ou recompensa pendente. Nenhum efeito o manda ao limbo.
+- **Ação `completeDimension`** (1 PA). O backend só a põe em `availableActions` na zona cujo título é `completion.zoneTitle`, para o membro que tem sozinho todo o `requirement`, com ≥ 1 PA e fora de combate, encontro ou escolha pendente. Os itens são só verificados, nunca consumidos.
+- **Sem chefe:** o POST já conclui. **Com chefe:** o POST abre o combate (FEAT-13) com `CombatState.finalBoss: true`; `escape` segue `noEscape`. A vitória conclui no mesmo POST que encerra o combate; outro resultado não conclui nada.
+- **Conclusão** (README 28.1, "Ir para nova dimensão"): todos os membros recebem o prêmio e o Pico de conclusão; o Pico de Chefe vai para quem venceu (as fontes somam). A vez termina, os itens de conclusão saem do jogo e, havendo próxima dimensão lançada, o backend faz a nova preparação completa (menos classe e deck) no mesmo POST. Sem próxima, a sessão termina e o save fica `frozen`.
+- **Próxima dimensão** = a Carta de Dimensão publicada com o menor `releaseOrder` maior que o da atual. "Lançar", no dev, é publicar no editor.
+- **Prêmio sem espaço (decisão do autor, 2026-11-25; README B.21 a aplicar):** as cartas do prêmio seguem o destino automático (U2); a cópia que não couber vira `PendingReward` com `source: { type: 'grandPrize'; dimensionCardId }`, resolvida pelo dono já na nova dimensão (ou ao descongelar). `leave` manda a cópia ao limbo. Ouro: o excesso é perdido, como nas outras recompensas.
+- **Resumo persistido:** `lastDimensionCompletion` fica gravado até a próxima conclusão, para o painel sobreviver a GET e reabertura.
+
+**Mudanças em outras seções:**
+- **FEAT-03 (`validado`):** `GameConfigValues` ganha `dimensionCompletionPeakGain` (0–1000, padrão 25) e `bossPeakGain` (0–1000, padrão 15). Se a FEAT-13 já aplica o Pico de Chefe por outra chave, o backend indica e `bossPeakGain` sai.
+- **FEAT-04 (`validado`):** `ItemCard` ganha `completionItem`; `DimensionCard` ganha `completion`.
+- **FEAT-05 (`validado`):** `PartyStatus` ganha `frozen` (também em `PartySummary`); `POST …/session` num save congelado → `409 PARTY_FROZEN`.
+- **FEAT-08 (`validado`):** `PartyAction` ganha `CompleteDimensionAction`; `availableActions` ganha `completeDimension`, logo antes de `endTurn`.
+- **FEAT-10 (`validado`):** a doação do laboratório aceita item de conclusão (vai a `completionItems`, nunca `LAB_GRANT_NO_SPACE`).
+- **FEAT-12 (`validado`):** `PendingReward.source` ganha `{ type: 'grandPrize'; dimensionCardId: string }`. Recompensas (eventos, missões, deck de recompensas) aceitam item de conclusão, sempre entregue em `completionItems`.
+- **FEAT-13 (`validado`):** `CombatState` e `CombatResult` ganham `finalBoss: boolean`. No chefe final, `card` é a projeção `CombatEventCard` com `id` = id da Carta de Dimensão, `title` = `finalBoss.title`, os inimigos e o `noEscape` do chefe, e `goodOutcome`/`badOutcome` com `text` vazio. `combatStarted.cardTitle` = `finalBoss.title`.
+- **FEAT-16 (`validado`):** `sellOffers`, vitrine e boosters nunca incluem item de conclusão.
+- **FEAT-31 (`validado`):** o editor valida `completion` e `completionItem` (caminhos abaixo); "Validar como dimensão" acrescenta os problemas da conclusão; item de conclusão citado em `requirement` → `CONTENT_REFERENCED` ao excluir.
+- Saves e conteúdo de antes desta versão leem `completionItem: false`, `completion: null` (dimensão sem conclusão: a ação nunca aparece), `completionItems: []`, `lastDimensionCompletion: null` e `finalBoss: false`.
+
+#### Endpoints
+
+Sem rota nova; `completeDimension` usa `POST /parties/:partyId/actions`.
+
+| Método | Rota | Mudança |
+|---|---|---|
+| POST | `/parties/:partyId/session` | `409` `PARTY_FROZEN` num save congelado. |
+| POST | `/parties/:partyId/actions` | `completeDimension`; motivos novos em `ACTION_NOT_ALLOWED`. |
+
+Ordem das conferências do `completeDimension`: 404 → pedido malformado (400) → sem sessão (409 `PARTY_SESSION_NOT_ACTIVE`) → `noActionPoints` → `noCompletion` → `notCompletionZone` → `completionRequirementNotMet`.
+
+#### Tipos
+
+```ts
+interface ItemCard {
+  // … campos anteriores …
+  /** FEAT-19. Legado: false. */
+  completionItem: boolean
+}
+
+interface DimensionCard {
+  // … campos anteriores …
+  /** FEAT-19. null = dimensão sem conclusão (legado); completeDimension nunca aparece. */
+  completion: DimensionCompletion | null
+}
+
+interface DimensionCompletion {
+  /** Título de uma zona da coleção (README 3.4). */
+  zoneTitle: string
+  /** ≥ 1 entrada, sem cardId repetido; cada carta é ItemCard com completionItem: true; count ≥ 1. */
+  requirement: { cardId: string; count: number }[]
+  grandPrize: {
+    /** Cartas attribute, equipment, item (não de conclusão) ou mount; copies ≥ 1; pode ser vazia. */
+    cards: { cardId: string; copies: number }[]
+    /** ≥ 0. */
+    gold: number
+  }
+  finalBoss: FinalBoss | null
+}
+
+interface FinalBoss {
+  title: string
+  flavorText: string | null
+  /** ≥ 1; mesma validação executável dos inimigos da FEAT-13. */
+  enemies: Enemy[]
+  noEscape: boolean
+  /** Como em CombatEventCard (FEAT-13). */
+  escapeThreshold?: number | null
+}
+
+type PartyStatus = 'idle' | 'inSession' | 'frozen'
+
+interface PlayerState {
+  // … campos anteriores …
+  /** Área própria, sem slot, em ordem de id da carta. */
+  completionItems: { cardId: string; quantity: number }[]
+}
+
+interface Party {
+  // … campos anteriores …
+  lastDimensionCompletion: DimensionCompletionResult | null
+}
+
+interface CompleteDimensionAction { type: 'completeDimension' }
+
+interface DimensionCompletionResult {
+  completedDimensionCardId: string
+  completedDimensionName: string
+  completedByMemberId: string
+  finalBossDefeated: boolean
+  /** Um por membro, na ordem de members. */
+  members: {
+    memberId: string
+    /** Pico total recebido (conclusão + Chefe, se for o caso). */
+    peakDelta: number
+    /** Ouro efetivamente recebido (após o limite da bolsa). */
+    gold: number
+    /** Cópias entregues; as que não couberam estão em pendingRewards. */
+    cards: { cardId: string; copies: number; destination: ReceiveSpace }[]
+  }[]
+  next: { type: 'nextDimension'; dimensionCardId: string; name: string } | { type: 'frozen' }
+  completedAt: string
+}
+
+// ActionNotAllowedDetails.reason ganha: 'noCompletion' | 'notCompletionZone' | 'completionRequirementNotMet'
+// PendingReward.source ganha: { type: 'grandPrize'; dimensionCardId: string }
+// CombatState e CombatResult ganham: finalBoss: boolean
+// GameConfigValues ganha: dimensionCompletionPeakGain, bossPeakGain
+```
+
+**Ao descongelar:** um save `frozen` cuja próxima dimensão foi publicada aparece `idle` em `GET /parties` e `GET /parties/:id`. O `POST …/session` seguinte faz a nova preparação, troca `lastDimensionCompletion.next` para `nextDimension` e devolve `200` na nova dimensão.
+
+**Editor (`CONTENT_INVALID`):** caminhos `completion.zoneTitle` (`unknownZoneTitle`), `completion.requirement` (`required`), `completion.requirement.{n}.cardId` (`notCompletionItem`, `duplicate`), `completion.requirement.{n}.count`, `completion.grandPrize.cards.{n}.cardId` (`notPrizeCard`), `completion.grandPrize.gold`, `completion.finalBoss.title` e `completion.finalBoss.enemies.{n}.<campo>` (como na FEAT-13).
+
+Mensagem: `PARTY_FROZEN` "Este save está congelado até o lançamento da próxima dimensão.".
+
+#### Cenários de validação
+
+Contra a `fixture`, com o que o backend acrescenta nesta FEAT: `F` = `fixture.shard` ("Fragmento", item, `completionItem: true`); `fixture.test-dimension` com `completion = { zoneTitle: "Mina Velha", requirement: [{ cardId: F, count: 3 }], grandPrize: { cards: [{ cardId: "fixture.blade-of-dusk", copies: 1 }], gold: 100 }, finalBoss: null }`; e a coleção `fixture-next` com a Carta de Dimensão `fixture.next-dimension` ("Segunda Dimensão", `releaseOrder: 2`), publicada ou não conforme o cenário. Laboratório no padrão. `G` = grupo solo em sessão; `M` = o membro.
+
+| Cenário | Dado / Quando | Então |
+|---|---|---|
+| Catálogo | `GET /catalog/cards/fixture.test-dimension` e `…/fixture.shard` | `completion` como acima; `F.completionItem: true`; os demais itens com `false`. |
+| Doação | `POST /grants` `{ type: "card", cardId: F, quantity: 3 }` com o inventário cheio | `200`, `completionItems: [{ cardId: F, quantity: 3 }]`, inventário igual. |
+| Ação disponível | M na Mina Velha com 3 F e ≥ 1 PA | `availableActions` tem `completeDimension` antes de `endTurn`. Com 2 F ou em outra zona: ausente. |
+| Recusas | POST `{ type: "completeDimension" }` no Porto Cinzento com 3 F | `409 ACTION_NOT_ALLOWED`, `details.reason: "notCompletionZone"`. Na Mina Velha com 2 F → `completionRequirementNotMet`; com 0 PA → `noActionPoints`. Nada muda. |
+| Concluir com próxima | `fixture-next` publicada; POST na Mina Velha com 3 F | `200`: `lastDimensionCompletion` com `finalBossDefeated: false`, `members[0] = { peakDelta: 25, gold: 100, cards: [{ cardId: "fixture.blade-of-dusk", copies: 1, destination: "inventory" }] }`, `next: { type: "nextDimension", dimensionCardId: "fixture.next-dimension", name: "Segunda Dimensão" }`; `dimension.dimensionCardId: "fixture.next-dimension"`; `completionItems: []`; `openQuests: []`; mão com 7 cartas; zona atual e respawn = a cidade inicial nova; `status: "inSession"`. O GET devolve o mesmo resumo. |
+| Concluir e congelar | `fixture-next` não publicada; mesmo POST | `200`, `next: { type: "frozen" }`, `status: "frozen"`. `GET /parties` lista G como `frozen`. `POST /parties/G/session` → `409 PARTY_FROZEN`. |
+| Descongelar | Publicar `fixture-next` | `GET /parties` → G `idle`; `POST …/session` → `200` na Segunda Dimensão, com `next.type: "nextDimension"`. |
+| Prêmio sem espaço | Inventário, pasta e montaria cheios; concluir | `members[0].cards: []`, `pendingRewards[0].source = { type: "grandPrize", dimensionCardId: "fixture.test-dimension" }` e `availableActions: ["resolveReward"]` na nova dimensão. `leave` → a cópia vai ao limbo. |
+| Chefe final | Dimensão editada com `finalBoss` (1 inimigo `boss`, `noEscape: true`); POST | `200`, `combat.finalBoss: true`, `combatStarted.cardTitle` = título do chefe, `escape.unavailableReason` não nulo. Vitória → `lastCombatResult.finalBoss: true`, `lastDimensionCompletion.finalBossDefeated: true`, `peakDelta: 40`. Derrota ou limite de ciclos → nenhum `lastDimensionCompletion` novo, F mantidos, e a ação volta quando M estiver apto de novo. |
+| Editor | Salvar a Carta de Dimensão com `requirement[0].cardId: "fixture.healing-potion"` | `400 CONTENT_INVALID` em `completion.requirement.0.cardId` / `notCompletionItem`. Com `zoneTitle: "Nenhuma"` → `unknownZoneTitle`. |
+
 ## 4. Códigos de erro
 
 | Código | Quando acontece | FEAT |
@@ -3772,6 +3923,7 @@ Só nos e2e do backend: abrir booster e comprar single somando o espaço da mont
 | `ACTION_NOT_ALLOWED` | Intenção bem formada recusada pela regra (409), ex.: zona sem travessia com a atual, sem pontos de ação (FEAT-08), build irregular ou pasta cheia (FEAT-09); `details.reason`. | FEAT-07 |
 | `LAB_GRANT_INVALID` | Doação do laboratório malformada ou de carta que não se doa (400); `details.fields`. | FEAT-10 |
 | `MEMBER_NOT_FOUND` | Membro inexistente no grupo (404). | FEAT-10 |
+| `PARTY_FROZEN` | Save congelado: a dimensão foi concluída e a próxima ainda não foi lançada (409, ao abrir a sessão). | FEAT-19 |
 | `LAB_GRANT_NO_SPACE` | A doação não cabe no inventário ou na pasta (409); `details.reason`. Nada muda. | FEAT-10 |
 
 ## 5. Histórico
@@ -3872,3 +4024,4 @@ Só nos e2e do backend: abrir booster e comprar single somando o espaço da mont
 | 0.92 | 2026-11-25 | FE | FEAT-18: aceite da v0.91 sem mudanças; a seção continua `acordado`. Alinhamento do frontend na T-88. |
 | 0.93 | 2026-11-25 | BE | FEAT-18 `implementado (BE)` (SPEC-BACKEND T-74 a T-80; e2e da montaria, do Estábulo, do espaço e do movimento passando). Sem mudança de forma. Campanhas da validação integrada pelo preparador `test/prepare-feat-18.cjs` (devlog 097). |
 | 0.94 | 2026-11-25 | FE | FEAT-18 `validado` (T-87): os cenários das 5 campanhas do preparador `test/prepare-feat-18.cjs` passaram com chamadas HTTP contra o backend real (health 0.93), os saves reais passam nos schemas do frontend e as telas foram conferidas pelo autor com o MSW desligado. Sem mudança de forma. |
+| 0.95 | 2026-11-25 | FE | FEAT-19 proposta (`proposto (FE)`): `ItemCard.completionItem`, `DimensionCard.completion` (zona, requisito, prêmio máximo, chefe final), `PlayerState.completionItems`, ação `completeDimension` e 3 motivos, `Party.lastDimensionCompletion`, `PartyStatus` `frozen` e o código `PARTY_FROZEN`, `finalBoss` em `CombatState`/`CombatResult`, `PendingReward.source` `grandPrize`, 2 chaves de Pico, caminhos do editor; glossário §2.18. Prêmio sem espaço vira recompensa pendente (decisão do autor; README B.21 a aplicar no backend, que tem a B.20). Nota da FEAT-16: reprint sai da FEAT-19. |
