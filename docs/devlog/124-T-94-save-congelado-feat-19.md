@@ -22,7 +22,17 @@
 
 ## Retomada
 
-T-95, validação integrada da FEAT-19 com MSW desligado. Segundo o aviso do backend, a API ainda não oferece `completeDimension`, chefe final ou `frozen`. O backend entregará a URL e os IDs dos grupos após implementar e testar a FEAT-19. A validação segue pendente e usará os cenários do CONTRATO v0.96, seção FEAT-19, com os dados indicados no aviso.
+T-95, validação integrada da FEAT-19 com MSW desligado. O contrato está acordado na v0.96. A próxima etapa do backend é planejar os requisitos e as tarefas na SPEC-BACKEND. A T-95 aguarda a implementação e os testes do backend.
+
+Quando a API estiver pronta para a validação integrada, o backend enviará a URL, os IDs dos grupos preparados para os três cenários e o procedimento para publicar `fixture-next`. No cenário de congelamento, confirme primeiro o `409 PARTY_FROZEN` e só então siga o procedimento de publicação para verificar o descongelamento conforme a seção FEAT-19 do CONTRATO v0.96.
+
+## Sincronização do contrato v0.98
+
+- Horas — `null`
+- `docs/CONTRATO.md` foi copiado integralmente do backend. Os hashes SHA-256 coincidem.
+- `src/mocks/dimensionCompletionFixtures.ts` e `src/api/dimensionCompletion.test.ts` usam `fixture-next.next-dimension`, o mesmo ID do preparador de campanhas da FEAT-19 no backend.
+- A expectativa do REQ-93/REQ-95 falhou com o ID anterior. Após o ajuste, passaram os nove testes do cliente com MSW, o typecheck e `git diff --check`. Os cenários E2E foram conferidos pela leitura das expectativas de nome.
+- A verificação local das campanhas da T-86 no backend e a validação integrada da T-95 no frontend seguem pendentes. No cenário de publicação posterior, o save congelado deve recusar a retomada com `409 PARTY_FROZEN` antes da publicação e abrir na Segunda Dimensão após a publicação.
 
 ## Commit sugerido
 

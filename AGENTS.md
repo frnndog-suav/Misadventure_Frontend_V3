@@ -62,8 +62,8 @@ O mapa é uma referência, não uma lista de leituras obrigatórias. Não copie 
 
 ## Coordenação
 
-- Peça ao autor **uma única ação por vez**, sempre a de maior prioridade para avançar. Diga de forma direta o que fazer, onde fazer e qual resultado devolver, quando necessário. Repita essa mesma instrução se isso ajudar a evitar dúvidas.
-- Se houver etapas dependentes, espere a conclusão da ação atual antes de apresentar a próxima. Adie comandos, cenários manuais, sugestões de commit e prompts de retomada quando puderem ser confundidos com pedidos simultâneos. Esta regra também se aplica aos avisos copiáveis e prevalece sobre as instruções de entrega desses itens na mesma resposta. Quando o próximo passo couber ao Codex, execute-o assim que o pré-requisito estiver disponível.
+- O desenvolvimento é sequencial. Indique ao autor **uma única próxima ação por resposta**, sempre a de maior prioridade para avançar. Diga o que fazer, em um único destino, e qual resultado devolver, quando necessário. Aguarde a conclusão dessa ação antes de apresentar outra.
+- Entregue no máximo um item executável por resposta, seja um prompt, aviso copiável, comando, cenário manual ou sugestão de commit. Escolha o destino da ação atual e adie todos os outros itens para a etapa em que couberem. Essa regra vale mesmo para ações independentes e prevalece sobre os demais requisitos de entrega deste arquivo. Quando o próximo passo couber ao Codex, execute-o assim que o pré-requisito estiver disponível.
 
 - O usuário faz a ponte com o backend e com outras IAs.
 - Somente o autor executa comandos do Docker e do Docker Compose. Somente o autor inicia, reinicia ou para o Docker, os containers e a aplicação do backend. O Codex não aciona essas operações por ferramentas, scripts ou testes. Quando precisar do ambiente, informe quais serviços são necessários e aguarde a confirmação do autor. Após a confirmação, as verificações podem consultar a API em execução.
@@ -78,7 +78,7 @@ O mapa é uma referência, não uma lista de leituras obrigatórias. Não copie 
 ## Retomada e chamada de tarefas
 
 - Use um chat por etapa. Mantenha nele a implementação, os testes e os ajustes da mesma tarefa. Abra um novo chat para uma etapa independente.
-- Quando o autor indicar que está começando a programar no dia, quando uma etapa for concluída ou quando ele perguntar em que ponto o projeto está, inclua ao fim da resposta um prompt curto e copiável para a retomada. Sugira a próxima tarefa identificada no roadmap, na spec ou no devlog, sem iniciá-la sem autorização.
+- Quando o autor indicar que está começando a programar no dia, quando uma etapa for concluída ou quando ele perguntar em que ponto o projeto está, inclua um prompt curto e copiável de retomada somente se usá-lo for a única próxima ação do autor. Escolha a tarefa pelo roadmap, pela spec ou pelo devlog e siga a regra de Coordenação.
 - Use os IDs e o ponto de retomada confirmados. Omita decisões que não se aplicam e deixe campos a preencher quando a informação ainda não estiver definida.
 - Imediatamente acima de cada prompt de retomada, use em linha própria **💬 FRONTEND — COLE ESTE PROMPT NO CHAT DO FRONTEND** ou **💬 BACKEND — COLE ESTE PROMPT NO CHAT DO BACKEND**, conforme o destino. Quando houver também um comando de terminal, coloque-o em bloco próprio com o rótulo de execução definido em Coordenação.
 

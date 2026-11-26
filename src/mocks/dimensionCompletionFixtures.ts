@@ -14,7 +14,7 @@ const player = member.player
 
 export const nextDimensionFixture: DimensionCard = {
   ...testDimensionFixture,
-  id: 'fixture.next-dimension',
+  id: 'fixture-next.next-dimension',
   name: 'Segunda Dimensão',
   releaseOrder: 2,
   completion: null,

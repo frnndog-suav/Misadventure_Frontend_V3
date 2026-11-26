@@ -72,7 +72,7 @@ describe('FEAT-19', () => {
       members: [{ peakDelta: 25, gold: 100 }],
       next: {
         type: 'nextDimension',
-        dimensionCardId: 'fixture.next-dimension',
+        dimensionCardId: 'fixture-next.next-dimension',
       },
     })
     expect(party.members[0].player.completionItems).toEqual([])

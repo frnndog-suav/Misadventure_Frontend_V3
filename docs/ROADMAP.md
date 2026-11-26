@@ -1,6 +1,6 @@
 # Misadventures — Roadmap de desenvolvimento
 
-> **Versão:** 0.87 · **Data:** 2026-11-25
+> **Versão:** 0.88 · **Data:** 2026-11-26
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend; o autor copia o arquivo inteiro quando ele muda. Base: README Parte III (III.2 e III.4). As regras estão em [`README.md`](README.md); o que trafega entre os lados, em [`CONTRATO.md`](CONTRATO.md).
 
@@ -71,7 +71,7 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | FEAT-16 | Mercado: estoque, venda, boosters, singles, serviços | 24 | validado | validado |
 | FEAT-17 | Ferreiro e Oficina do Artífice | 25 | validado | validado |
 | FEAT-18 | Montarias e Estábulo | 26 | validado | validado |
-| FEAT-19 | Conclusão da dimensão, chefe final, passagem para a próxima, save congelado | 3.2, 28.1 | a fazer | a fazer |
+| FEAT-19 | Conclusão da dimensão, chefe final, passagem para a próxima, save congelado | 3.2, 28.1 | validado | validado |
 | FEAT-33 | Coleções estendidas e reprint: várias coleções vigentes para compra no mercado (README 27) | 27, 24 | a fazer | a fazer |
 
 ### Momento 2 — Ajudantes de IA
@@ -201,3 +201,4 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | 0.85 | 2026-11-25 | FEAT-18 `validado` nos dois lados (T-87, CONTRATO v0.94). |
 | 0.86 | 2026-11-25 | FEAT-19: planejada no FE (SPEC-FRONTEND v1.08, REQ-90 a REQ-96, T-89 a T-95); contrato proposto pelo FE (CONTRATO v0.95); FE `aguardando outro lado`. FEAT-33 nova (coleções estendidas e reprint, decisão do autor), tirada da FEAT-19. |
 | 0.87 | 2026-11-25 | FEAT-19: contrato `acordado` pelo BE (CONTRATO v0.96; README B.21 aplicada); FE `a fazer` (T-89 liberada); BE `a fazer` (falta planejar REQs e tarefas na SPEC-BACKEND). |
+| 0.88 | 2026-11-26 | FEAT-19 `validado` nos dois lados (T-86 e T-95, CONTRATO v1.00). |
