@@ -14,4 +14,4 @@ Na verificação com MSW, aceitar o convite em `fixture.group-combat-invite` e a
 
 Os testes iniciais detectaram a ausência da lista completa de combatentes e do cenário de segunda posição. Passaram os 250 testes finais de sessão e cliente MSW de combate em grupo, a checagem de tipos, o ESLint, o Prettier dos arquivos TypeScript alterados e o `git diff --check`. A suíte completa passou com 1.234 testes em 53 arquivos antes do ajuste final que inicia a fixture de rodízio diretamente no turno humano.
 
-A validação integrada com MSW desligado segue na T-112 com os cenários da seção FEAT-22 do CONTRATO v1.19.
+O backend confirmou a sincronização do ROADMAP v1.06 em `74084ef` e o acordo da seção FEAT-22 do CONTRATO v1.19 em `3fc6833`. O backend revisou os sete cenários, que aguardam implementação na API. A T-112 permanece pendente até a entrega da revisão da API e do pacote de validação com URL, IDs dos saves, catálogo, sementes, estados iniciais e resultados esperados por participante. Com esses dados, a T-112 executa os sete cenários com MSW desligado e registra as evidências HTTP e da interface.
