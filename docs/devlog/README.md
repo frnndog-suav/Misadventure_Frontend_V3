@@ -20,6 +20,8 @@ O tempo gasto no desenvolvimento fica em [`tempo.html`](tempo.html): um arquivo 
 
 ## Marcos jogáveis
 
+- [Registro 151 — Pausa antes do multiplayer online](151-pausa-antes-do-multiplayer.md)
+
 O [painel de tempo e progresso](tempo.html#titulo-marcos) mostra o avanço do frontend nos três marcos jogáveis e as [estimativas do trabalho restante](tempo.html#titulo-estimativas). Ao validar uma feature, atualize a data, as contagens e os destaques com base no roadmap. Revise as horas restantes em `ESTIMATIVAS` quando uma tarefa fechar ou o escopo mudar. O critério de progresso está no [registro 134](134-marcos-jogaveis.md) e as premissas de estimativa estão no [registro 135](135-estimativas-de-desenvolvimento.md).
 
 ## Índice

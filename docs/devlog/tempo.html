@@ -78,8 +78,10 @@
           ['FEAT-27', 'Relógio da vez', 'Exibir o tempo da vez e tratar na interface os estados de ausência do jogador.', 6, 12],
           ['FEAT-28', 'Desconexão e substituição por IA', 'Refletir a desconexão e a transferência de controle para a IA durante a sessão.', 8, 16],
         ],
-        finais: [
+        acabamento: [
           ['FEAT-30', 'Acabamento visual', 'Revisar telas, componentes e estados para PC com o tratamento PSX e as artes e ícones do autor.', 20, 45],
+        ],
+        empacotamento: [
           ['FEAT-29', 'Executável Tauri', 'Empacotar o cliente com o visual final e verificar a conexão com o servidor remoto.', 6, 12],
         ],
       }
@@ -236,19 +238,22 @@
       const fmtFaixa = ([min, max], unidade) =>
         (min === max ? fmtNumero(min) : fmtNumero(min) + '–' + fmtNumero(max)) + ' ' + unidade
       const fmtDias = (faixa) => fmtFaixa(faixa.map((horas) => horas / HORAS_POR_DIA), 'dias de trabalho')
-      const ateOnline = [...ESTIMATIVAS.ia, ...ESTIMATIVAS.online]
+      const ateTeste = [...ESTIMATIVAS.ia, ...ESTIMATIVAS.acabamento, ...ESTIMATIVAS.empacotamento]
+      const ateOnline = [...ateTeste, ...ESTIMATIVAS.online]
       const gruposEstimados = [
         ['Marco de companheiros de IA', ESTIMATIVAS.ia],
-        ['Marco multiplayer online', ESTIMATIVAS.online],
-        ['Acabamento e empacotamento', ESTIMATIVAS.finais],
+        ['Acabamento antes do teste do autor', ESTIMATIVAS.acabamento],
+        ['Executável Tauri antes do teste do autor', ESTIMATIVAS.empacotamento],
+        ['Marco multiplayer online após autorização', ESTIMATIVAS.online],
       ]
       document.getElementById('premissas').textContent =
         'Faixas preliminares de esforço do frontend, estimadas pelo escopo de implementação, testes e validação integrada. ' +
         'Cada dia equivale a ' + HORAS_POR_DIA + ' h de trabalho efetivo. O calendário também depende da disponibilidade do backend e das revisões. ' +
-        'Recalibre as faixas à medida que o trabalho avançar.'
+        'O tempo de teste e de espera pela autorização do autor antes do multiplayer fica fora das faixas.'
       document.getElementById('resumo-estimativas').innerHTML = [
+        ['Até o teste do autor', ateTeste],
         ['Até o multiplayer', ateOnline],
-        ['Até o executável', [...ateOnline, ...ESTIMATIVAS.finais]],
+        ['Até o executável', [...ateOnline, ...ESTIMATIVAS.empacotamento]],
       ].map(([titulo, etapas]) => {
         const faixa = somarFaixas(etapas)
         return '<div class="card"><b>' + fmtFaixa(faixa, 'h') + '</b><span>' +

@@ -77,6 +77,7 @@ O mapa é uma referência, não uma lista de leituras obrigatórias. Não copie 
 
 ## Retomada e chamada de tarefas
 
+- Aplique a pausa obrigatória do `docs/ROADMAP.md` §3, no Momento 2. Conclua e valide a versão para um humano com ajudantes de IA, incluindo o acabamento visual (FEAT-30) e, depois, o executável Tauri (FEAT-29). Entregue a versão jogável e o roteiro de teste ao autor, registre a revisão e interrompa o desenvolvimento nos dois repositórios. Após o teste e eventuais ajustes da versão com IA, peça autorização explícita ao autor para iniciar o Momento 3 e aguarde. Até recebê-la, mantenha bloqueados a implementação e qualquer trabalho preparatório de multiplayer entre humanos, incluindo protótipos, dependências e infraestrutura dedicados.
 - Use um chat por etapa. Mantenha nele a implementação, os testes e os ajustes da mesma tarefa. Abra um novo chat para uma etapa independente.
 - Quando o autor indicar que está começando a programar no dia, quando uma etapa for concluída ou quando ele perguntar em que ponto o projeto está, inclua um prompt curto e copiável de retomada somente se usá-lo for a única próxima ação do autor. Escolha a tarefa pelo roadmap, pela spec ou pelo devlog e siga a regra de Coordenação.
 - Use os IDs e o ponto de retomada confirmados. Omita decisões que não se aplicam e deixe campos a preencher quando a informação ainda não estiver definida.

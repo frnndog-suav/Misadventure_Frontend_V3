@@ -1,6 +1,6 @@
 # Misadventures — Roadmap de desenvolvimento
 
-> **Versão:** 1.06 · **Data:** 2026-11-27
+> **Versão:** 1.07 · **Data:** 2026-11-27
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend; o autor copia o arquivo inteiro quando ele muda. Base: README Parte III (III.2 e III.4). As regras estão em [`README.md`](README.md); o que trafega entre os lados, em [`CONTRATO.md`](CONTRATO.md).
 
@@ -83,19 +83,25 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | FEAT-22 | Recrutar ajudantes e combate em grupo | 19.5 | aguardando outro lado | a fazer |
 | FEAT-23 | Negociação | 23 | a fazer | a fazer |
 | FEAT-24 | Métricas da IA no laboratório (taxa de nocaute, rodadas até concluir) | II.6, II.7 | a fazer | a fazer |
+| FEAT-30 | Acabamento visual da interface para um humano com IA | II.1, II.4, II.5 | a fazer | — |
+| FEAT-29 | Executável Tauri para um humano com IA (cliente do servidor remoto) | II.2 | a fazer | — |
 
-### Momento 3 — Online
+#### Pausa obrigatória para teste do autor
+
+1. Finalizar e validar todas as funcionalidades previstas para um humano com ajudantes de IA, incluindo o acabamento visual e, depois, o executável. A FEAT-29 mantém o servidor remoto para o jogo individual.
+2. Assim que só restar o escopo de multiplayer entre humanos, entregar ao autor a versão jogável e o roteiro para testar uma campanha com IA, da criação do save à conclusão da dimensão. Registrar a revisão e interromper o desenvolvimento nos dois repositórios.
+3. Depois do teste do autor e da resolução de eventuais ajustes da versão com IA, pedir autorização explícita para iniciar o Momento 3. Até recebê-la, manter bloqueadas as tarefas de multiplayer online, inclusive código preparatório, protótipos, dependências e infraestrutura dedicados. A confirmação do teste e a conclusão das FEATs anteriores não liberam essa etapa.
+
+### Momento 3 — Online, bloqueado até autorização explícita do autor
 
 | FEAT | Título | README | FE | BE |
 |---|---|---|---|---|
-| FEAT-25 | Autenticação por usuário e papel de admin (detalhes decididos pelo autor na hora, F29) | II.1 | a fazer | a fazer |
-| FEAT-26 | Tempo real com Socket.IO: grupo com vários humanos, início de sessão, host | II.2, 28.1, 11.4 | a fazer | a fazer |
-| FEAT-27 | Relógios da vez e jogador ausente | 11.3 | a fazer | a fazer |
-| FEAT-28 | Desconexão e IA que assume o personagem | 28.1 | a fazer | a fazer |
-| FEAT-30 | Acabamento visual da interface: layout de jogo para PC em todas as telas, componentes e estados, tratamento PSX, artes e ícones do autor (feita **antes** da FEAT-29) | II.1, II.4, II.5 | a fazer | — |
-| FEAT-29 | Executável Tauri (cliente do servidor remoto) | II.2 | a fazer | — |
+| FEAT-25 | Autenticação por usuário e papel de admin (detalhes decididos pelo autor na hora, F29) | II.1 | bloqueado | bloqueado |
+| FEAT-26 | Tempo real com Socket.IO: grupo com vários humanos, início de sessão, host | II.2, 28.1, 11.4 | bloqueado | bloqueado |
+| FEAT-27 | Relógios da vez e jogador ausente | 11.3 | bloqueado | bloqueado |
+| FEAT-28 | Desconexão e IA que assume o personagem | 28.1 | bloqueado | bloqueado |
 
-**FEAT-30 (decisão do autor, 2026-11-15):** até lá, as tarefas cuidam de funcionalidade e comportamento, com a base visual da FEAT-02 (tokens e fontes) e sem passada de layout. A FEAT-30 vem depois de todas as FEATs funcionais e antes do executável (FEAT-29), para que ele já saia com o visual final. O que ela precisa (pesquisa de diretrizes, perguntas ao autor, lista de artes) está em `.claude/skills/guia-visual/SKILL.md` §8, no frontend.
+**FEAT-30 e FEAT-29:** o acabamento visual inclui layout de PC, componentes e estados, tratamento PSX e artes e ícones do autor. A FEAT-30 vem depois das funcionalidades para um humano com IA e antes do executável. As adaptações visuais e do executável específicas para vários humanos entram no Momento 3.
 
 **FEAT-31 (decisão do autor, 2026-11-15):** vem logo depois da FEAT-05, para o autor criar conteúdo de teste desde a FEAT-06. Como o laboratório, o editor cresce junto: cada FEAT que trouxer conteúdo novo (FEAT-06 classes com deck pré-pronto, Carta de Dimensão e forma das setas das zonas; FEAT-11 efeitos estruturados, FEAT-15 missões, FEAT-16 boosters e estoque, FEAT-17 encantamentos, FEAT-18 montarias, FEAT-19 campos de conclusão da Carta de Dimensão) acrescenta os campos dela ao editor.
 
@@ -220,3 +226,4 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | 1.04 | 2026-11-27 | FEAT-22 revisada no CONTRATO v1.18 após aceite da regra de Reflexão pelo FE. Elenco solo e precedência HTTP aguardam confirmação final do FE. T-109 com MSW começa após o acordo. |
 | 1.05 | 2026-11-27 | FEAT-22 acordada no CONTRATO v1.19. T-109 liberada com MSW. Validação integrada na T-112 com a API real e MSW desligado. |
 | 1.06 | 2026-11-27 | FEAT-22 pronta no frontend com MSW após a T-111. O acordo do CONTRATO v1.19 consta na revisão `3fc6833` do backend. A T-112 aguarda a revisão da API que implemente os cenários 1 a 7 e o pacote de validação. |
+| 1.07 | 2026-11-27 | Pausa obrigatória para teste do autor antes do Momento 3. FEAT-30 e FEAT-29 no Momento 2 para o jogo com IA. FEAT-25 a FEAT-28 bloqueadas até autorização explícita. |

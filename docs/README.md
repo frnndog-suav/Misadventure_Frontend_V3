@@ -1,5 +1,7 @@
 # Misadventures
 
+> **Revisão do documento:** 2026-11-27. A revisão desta data institui a pausa obrigatória antes do multiplayer online (III.4).
+
 > *Working title.* Jogo de cartas colecionáveis (TCG) para web, com frontend e backend, que mistura **TCG**, **RPG**, **jogo de tabuleiro**, **grind** e **interatividade em tempo real**.
 
 > **Atenção**: muitos conceitos estão sujeitos a mudar com o tempo devido a novas ideias ou à descoberta de problemas. Este documento apresenta as ideias básicas. Valores marcados como "ajustáveis no laboratório" são pontos de partida para testes (veja o [Laboratório de testes](#ii6-laboratório-de-testes) e o [Apêndice A](#apêndice-a--valores-ajustáveis)).
@@ -2609,6 +2611,7 @@ A lista completa de valores está no [Apêndice A](#apêndice-a--valores-ajustá
   1. Jogo funcional (frontend e backend) para **um jogador**.
   2. **Mais jogadores controlados por IA** (testar com outros três jogadores, todos IAs oniscientes; veja [II.7](#ii7-jogadores-controlados-por-ia)).
   3. Jogo **online web** com interatividade em tempo real, WebSockets, etc.
+- **Pausa obrigatória entre os momentos 2 e 3.** Concluir e validar a versão para um humano com ajudantes de IA, incluindo o acabamento visual (FEAT-30) e, em seguida, o executável Tauri (FEAT-29) com conexão ao servidor remoto. Entregar a versão jogável e o roteiro de teste ao autor e interromper o desenvolvimento nos dois repositórios. Após o teste e eventuais ajustes, pedir e aguardar a autorização explícita do autor antes de iniciar a implementação ou qualquer trabalho preparatório de multiplayer entre humanos. O [`ROADMAP.md`](ROADMAP.md) §3 detalha a passagem entre os momentos.
 - Separar em **dois arquivos**: um com todo o contexto, regras, aspectos e etapas do frontend, e outro com o mesmo para o backend.
 
 **Etapa 2 — Manual de regras para jogadores**
