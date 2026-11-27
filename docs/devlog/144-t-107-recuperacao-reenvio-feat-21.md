@@ -16,4 +16,8 @@ A T-107 continua o registro 143 e implementa o REQ-109 conforme D-67 e o CONTRAT
 - Vitest da área de grupo e da API — 798 testes passaram em 26 arquivos.
 - Playwright da área de grupo — 55 testes passaram no Chromium com MSW habilitado em porta separada. Checagem de tipos, ESLint dos arquivos alterados e `git diff --check` passaram.
 
-A T-108 aguarda a API real e os dados para os seis cenários do contrato, incluindo a medição do tamanho do lote e da duração da resposta com cinco ajudantes.
+## Retomada da T-108
+
+A FEAT-21 está acordada no CONTRATO v1.13 e aguarda implementação e verificações no backend. Após essas verificações, o backend enviará a URL da API e os saves ou dados de teste dos seis cenários, incluindo um cenário com cinco ajudantes e instruções para medir o tamanho do lote de `domainEvents` e a duração da resposta HTTP.
+
+A T-108 aguarda essa entrega para executar os seis cenários com MSW desligado e registrar os resultados.

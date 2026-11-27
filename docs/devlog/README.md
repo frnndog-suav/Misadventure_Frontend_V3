@@ -179,3 +179,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 142 | T-105 | [Contrato v1.13 e cliente com MSW](142-t-105-cliente-msw-feat-21.md) | cliente verificado com MSW |
 | 143 | T-106 | [Apresentação sequencial das vezes dos ajudantes](143-t-106-apresentacao-sequencial-feat-21.md) | concluída com MSW |
 | 144 | T-107 | [Recuperação e reenvio das vezes dos ajudantes](144-t-107-recuperacao-reenvio-feat-21.md) | concluída com MSW |
+| 145 | T-108 | [Validação integrada da FEAT-21](145-t-108-validacao-integrada-feat-21.md) | concluída |
