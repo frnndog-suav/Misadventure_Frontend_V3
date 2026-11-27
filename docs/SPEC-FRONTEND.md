@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 1.09 · **Data:** 2026-11-26
+> **Versão da spec:** 1.10 · **Data:** 2026-11-26
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -902,6 +902,23 @@ Base: README §§24.3, 24.4 e 27; ROADMAP v0.88; CONTRATO v1.01 (proposto). Apro
 
 - **Dado** uma transição em que termina uma extensão e volta outra coleção por reprint, **quando** o jogador acessa o mercado da dimensão de destino, **então** a oferta e o conjunto elegível de singles seguem a vigência do destino. Zonas, eventos, inimigos e deck de recompensas seguem a coleção própria da dimensão.
 
+### Ajudantes de IA (FEAT-20)
+
+#### REQ-102 — Criar grupo com ajudantes
+- **Dado** Novo jogo, **quando** o host escolhe a quantidade de ajudantes, **então** o total respeita os limites vigentes (0 a 5 ajudantes na configuração padrão), e a quantidade segue na criação. Uma recusa preserva os dados e aparece no campo. A composição é definida na criação.
+
+#### REQ-103 — Exibir membros e ordem
+- **Dado** um grupo com ajudantes, **quando** a campanha abre ou é retomada, **então** a tela identifica o host humano, os ajudantes e o membro da vez na ordem devolvida pela API. A ordem fica fixa na dimensão e é substituída na transição.
+
+#### REQ-104 — Acompanhar o avanço automático
+- **Dado** que uma IA joga primeiro ou recebe a vez após uma ação humana, **quando** o backend processa as vezes automáticas, **então** a tela bloqueia o envio durante a operação, aplica o estado recebido e libera ações apenas na vez humana. Se houver transição ou congelamento, mostra o estado correspondente. Com um humano, todos os relógios ficam desligados.
+
+#### REQ-105 — Retomar o save e preservar o solo
+- **Dado** um save solo legado ou um grupo com ajudantes, **quando** o host continua, **então** a tela apresenta composição e progresso persistidos, com os sorteios já gravados. O solo conserva o fluxo existente.
+
+#### REQ-106 — Configurar prioridades no laboratório
+- **Dada** a configuração da IA no laboratório, **quando** o autor consulta, altera ou restaura as prioridades, **então** a tela usa os valores e as validações do contrato. A ordem inicial é evitar nocaute, avançar a conclusão da dimensão, fazer missões, ganhar Pico e ganhar ouro.
+
 ## Decisões
 
 - **D-66 — Vigência por dimensão (FEAT-33):** o autor configura as extensões e os reprints na dimensão de destino. Para manter uma extensão por várias dimensões, inclui a coleção em cada uma. As duas listas têm o mesmo efeito comercial. O backend resolve e grava a vigência ao iniciar a dimensão. Saves legados sem registro usam apenas a coleção própria até a próxima transição. O frontend usa as ofertas prontas da API. *(Aprovada em 2026-11-26.)*
@@ -1176,6 +1193,14 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 - [x] **T-98 — Mercado e abertura com múltiplas coleções** (REQ-98 a REQ-100). Cobrir lote, recusa por operação, compra por slot e abertura nos dois fluxos. Ajustar pressupostos de coleção única que os cenários revelarem.
 - [x] **T-99 — Validação integrada** (REQ-97 a REQ-101). Repetir os cenários acordados contra a API real com MSW desligado, incluindo transição e save legado. Registrar evidências no devlog.
 
+### FEAT-20 — Ajudantes de IA
+
+- [ ] **T-100 — Cliente e fixtures MSW** (REQ-102 a REQ-106). Após o contrato ficar `acordado`, atualizar schemas e fixtures para solo legado, limite, recusa, IA em primeiro lugar e ajudantes consecutivos.
+- [ ] **T-101 — Quantidade de ajudantes em Novo jogo** (REQ-102). Usar limites vigentes e erros de campo. E2E em `app` e `party`.
+- [ ] **T-102 — Composição e avanço automático** (REQ-103 a REQ-105). Mostrar ordem e aplicar respostas de avanço, retomada e transição. E2E em `party`, com virada de rodada e recuperação após falha.
+- [ ] **T-103 — Prioridades no laboratório** (REQ-106). Integrar à tela existente. E2E em `lab`.
+- [ ] **T-104 — Validação integrada** (REQ-102 a REQ-106). Repetir os cenários do contrato com MSW desligado e registrar as evidências no devlog.
+
 ## 8. Histórico
 
 | Versão | Data | Mudança |
@@ -1289,3 +1314,4 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 | 1.07 | 2026-11-25 | T-87 concluída: FEAT-18 validada contra o backend real (CONTRATO v0.94); D-64 item 8 com o 400 de `useAbility` do backend, alinhado no MSW. |
 | 1.08 | 2026-11-25 | Proposta da FEAT-19 para aprovação: REQ-90 a REQ-96, D-65, T-89 a T-95. Base: ROADMAP v0.85; contrato da FEAT-19 a propor. Coleções estendidas e reprint fora (FEAT própria, decisão do autor). |
 | 1.09 | 2026-11-26 | Autor aprovou a FEAT-33 (REQ-97 a REQ-101, D-66 e T-96 a T-99). T-96 aguarda o acordo do CONTRATO v1.01. |
+| 1.10 | 2026-11-26 | FEAT-20 aprovada no FE (REQ-102 a REQ-106 e T-100 a T-104). T-100 aguarda o acordo do CONTRATO v1.05. |

@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 1.04 · **Data:** 2026-11-26
+> **Versão do contrato:** 1.08 · **Data:** 2026-11-26
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -3945,10 +3945,66 @@ Para a T-99, o backend entrega campanhas preparadas para mercado, abertura nos d
 - Dado um save legado na dimensão atual, quando consulta o mercado, então a vigência é a coleção própria. Ao avançar para uma dimensão configurada, aplica-se a vigência do destino.
 - Dado um save com extensão ativa, quando avança para uma dimensão que encerra essa extensão e traz outra coleção por reprint, então a extensão encerrada sai da oferta de boosters e dos candidatos ao novo pool, o reprint volta e o conteúdo gerado pertence à coleção própria do destino. Reabrir o save após editar as listas da dimensão atual preserva sua vigência comercial, inclusive ao renovar o pool de singles.
 
+### FEAT-20 — Ajudantes de IA — `acordado`
+
+Base: README §§1.3, 10.1, 11.2, 11.3, 28.1 e II.7, ROADMAP v0.93 e SPEC-FRONTEND v1.10 (REQ-102 a REQ-106). A entrega cobre criação, estado e avanço automático. A exibição das jogadas ao vivo, o recrutamento e combate em grupo, a negociação e as métricas ficam nas FEATs 21 a 24.
+
+#### Criação e estado público
+
+- Proposta para `POST /parties`: acrescentar `aiHelperCount?: number` a `CreatePartyRequest`, inteiro com padrão 0. O servidor valida o total de participantes (1 humano + ajudantes) contra os limites vigentes. O padrão do laboratório permite 0 a 5 ajudantes. Proposta de erro: `400 PARTY_INVALID` com `details.fields` apontando para `aiHelperCount`. O BE confirma os motivos e a leitura de `minPlayers` e `maxPlayers` disponível à tela de produção, inclusive a resposta se a configuração mudar antes do envio.
+- `PartyMember.kind` aceita `'human' | 'aiHelper'`. Só o humano criador é host. Cada ajudante tem identidade e estado próprios, começa na cidade inicial e recebe o deck pré-pronto da classe inicial sorteada. A composição é permanente. Saves legados solo continuam sendo lidos como grupos de um humano.
+- O BE confirma quais campos dos ajudantes podem ser retornados em `Party` e se a listagem de saves requer mudança. A resposta pública preserva as informações ocultas usadas pela heurística.
+- Todos entram no `turnOrder` por D20 decrescente, com nova rolagem entre os empatados. A ordem fica fixa até a próxima dimensão, que tem novo D20 e preserva a progressão. O BE persiste os resultados de sorteios e a progressão no save. Todas as escolhas de classes primárias e especializações pelos ajudantes são sorteios uniformes entre as opções válidas.
+
+#### Avanço automático
+
+- Quando o início ou a retomada da sessão ou uma ação humana entregar a vez à IA, o BE roda as vezes automáticas na ordem até a próxima vez humana ou o congelamento. O POST de sessão devolve `Party` e o POST de ações devolve `PartyActionResponse` com o estado gravado ao fim do avanço. Vale também se uma IA iniciar uma dimensão nova. A criação prepara o grupo e a ordem.
+- O BE decide as ações pela heurística do README II.7, valida quem pode agir e grava a cada fim de vez. A rodada avança ao passar do último membro para o primeiro. Com um único humano, os relógios ficam desligados. O BE confirma o comportamento ao interromper o processamento, recuperar após resposta perdida e repetir um pedido sem duplicar a ação humana ou uma vez automática já aplicada.
+
+#### Laboratório
+
+- Confirmar em `LabConfig` a representação das prioridades, o PATCH, validação, reset e quando mudanças passam a valer. Ordem padrão: evitar nocaute, avançar o requisito de conclusão, missões, Pico, ouro.
+
+#### Cenários para o acordo e a validação integrada
+
+1. Criar grupos com campo omitido, zero e máximo. Recusar valor fracionário, negativo, acima do máximo ou total abaixo do mínimo vigente. Abrir save solo anterior à FEAT.
+2. Preparar empate no D20 e IA em primeiro lugar. Verificar que só os empatados rerrolam, que a ordem fica fixa na dimensão e que iniciar sessão entrega ao humano o estado após as vezes automáticas.
+3. Encerrar uma vez humana com ajudantes consecutivos cruzando o fim da ordem. Verificar progresso salvo, avanço de rodada, estado de cada ajudante e próxima vez humana.
+4. Retomar o save por reenvio da ação e por POST de sessão após interrupção. Após a conclusão pelo POST de sessão ou a perda da resposta da ação concluída, reenviar a mesma chave e o mesmo corpo e verificar a resposta completa da ação, inclusive `combatUpdates`. Aplicar uma jogada posterior com chave nova e reenviar novamente a ação original. O reenvio devolve o mesmo corpo original completo, e o GET devolve o estado atual após a jogada posterior, sem duplicar jogadas ou sorteios.
+5. Transitar para nova dimensão com IA em primeiro lugar e verificar a nova ordem, a progressão preservada e o avanço até o humano. Cobrir também o save congelado ao concluir a última dimensão lançada.
+6. Consultar, alterar e restaurar as prioridades no laboratório. Verificar recusa de configuração inválida conforme os erros acordados.
+
+#### Formatos acordados
+
+Os formatos abaixo completam e prevalecem sobre os pontos em aberto nesta seção.
+
+**Quantidade e limites.** `GET /parties/creation-options` responde `200 { minPlayers: number, maxPlayers: number }`, inclusive com `LAB_ENABLED=false`. A consulta e a criação usam a mesma configuração efetiva. Os padrões são 1 e 6 participantes. A UI calcula o intervalo inclusivo de ajudantes `minPlayers - 1` a `maxPlayers - 1`. Só a ausência do campo equivale a zero. Para `aiHelperCount`, `400 PARTY_INVALID` usa `details.fields: [{ field: 'aiHelperCount', reason }]` para esse campo. Motivos: `notInteger` para tipo inválido (inclusive null) ou valor fracionário, `outOfRange` para negativo, `belowMinPlayers` e `aboveMaxPlayers` conforme o total. Se os limites mudarem entre consulta e criação, a configuração vigente na criação decide. Em caso de conflito, a UI pode consultar novamente as opções.
+
+**Estado público.** `Party.members` inclui `id`, `characterName`, `kind`, `isHost` e o mesmo formato público `player: PlayerState` para cada ajudante. Os campos de ações e alvos acionáveis dos ajudantes ficam vazios ou ausentes conforme a obrigatoriedade do campo; as intenções HTTP só podem agir pelo humano da sessão. As informações privadas da heurística, o estado interno do RNG e a ordem oculta de compra ficam no servidor. `PartySummary.characterNames` inclui os nomes de todos os membros na ordem de composição, com o formato existente. A ordem pública de jogo vem de `Party.turnOrder`. A mão dos ajudantes usa `hand: []`; os demais campos de cartas seguem as projeções públicas existentes.
+
+**Gatilhos e resposta.** Criar prepara e grava a campanha em `idle`, mesmo com IA em primeiro. Iniciar/retomar a sessão e qualquer ação humana aceita que deixe uma IA na vez disparam o avanço, inclusive se a ação fizer a transição de dimensão. `POST /parties/:partyId/session` devolve `200 Party`. `POST /parties/:partyId/actions` preserva `200 PartyActionResponse`, com `combatUpdates` obrigatório no nível superior, em ordem de resolução e vazio quando a ação e seu avanço não gerarem transições públicas de combate. Nos dois POSTs, o estado retornado é o gravado na vez humana ou em `frozen`. A retomada de save congelado com sucessora segue a FEAT-19 e então aplica o avanço. Sem sucessora, mantém `409 PARTY_FROZEN`. `GET /parties/:partyId` devolve `200 Party` com o estado atual gravado, sem `combatUpdates`. O limite de trabalho, incluindo as escolhas dentro de cada vez, é responsabilidade do backend. A preparação integrada registra a duração observada com cinco ajudantes e confirma que o fluxo cabe no timeout do cliente e da infraestrutura antes de marcar a entrega pronta.
+
+**Recuperação e repetição.** Em grupos com ajudantes, `POST /parties/:partyId/actions` exige `Idempotency-Key` em UUID. Cabeçalho ausente ou inválido retorna `400 ACTION_INVALID` com `details.fields: [{ field: 'Idempotency-Key', reason: 'invalidIdempotencyKey' }]`. Reuso no mesmo save com outro corpo validado retorna `409 ACTION_IDEMPOTENCY_CONFLICT`. O cliente gera a chave por intenção e conserva a chave e o corpo até obter confirmação. A ação humana e seu recibo persistem na mesma transação. Cada vez automática concluída faz um commit próprio do estado e RNG, com trava por save e nova leitura antes de decidir a vez. Os checkpoints preservam o lote público de `combatUpdates` acumulado pela ação e seu avanço. Ao concluir o avanço, o recibo registra o corpo completo de `PartyActionResponse`, com o snapshot público gravado ao concluir e o lote completo. Isso vale também quando o POST de sessão conclui o avanço pendente.
+
+Reenviar a mesma chave e o mesmo corpo validado enquanto o avanço estiver pendente retoma do checkpoint. Após a conclusão, o reenvio devolve `200` com o corpo original completo do recibo, inclusive `combatUpdates`, mesmo após outra jogada. O reenvio concluído não altera o save, não executa jogadas e não consome RNG. Recibos permanecem enquanto existir o save. Uma chave nova enquanto o avanço de uma ação anterior estiver pendente recebe `409 ACTION_ADVANCE_PENDING`. A retomada pode ocorrer com a chave original ou pelo POST de sessão. O POST de sessão reaproveita a semântica idempotente existente e, com a sessão ativa e uma IA na vez, retoma o checkpoint. Grupos solo preservam a entrada atual sem chave.
+
+**LabConfig.** `values.aiPlayerPriorities` e `defaults.aiPlayerPriorities` são arrays com a permutação completa de `avoidKnockout`, `dimensionCompletion`, `quests`, `peak`, `gold`, nessa ordem por padrão. A chave não entra em `limits` numéricos. PATCH substitui a lista toda e recusa tipo inválido, ausência de item na lista enviada, duplicata ou valor desconhecido com `400 LAB_CONFIG_INVALID`, `details.fields: [{ field: 'aiPlayerPriorities', reason: 'invalidPriorities' }]` para esse campo. Reset restaura os padrões globais. Criação fotografa as prioridades no save; editar/resetar tem efeito em campanhas novas. Saves legados leem a configuração padrão ausente.
+
+**Preparação da validação integrada.** Entregar URL, IDs, ordem inicial e esperada, rodada, sementes e condições iniciais. Usar catálogo de teste e Postgres dedicados, com restauração da configuração anterior. Preparar grupos pelo fluxo real e usar sementes conhecidas para forçar D20 e sorteios, sem simular respostas do backend.
+
+1. Publicar opções com lab desligado e confirmar 1–6 em configuração padrão. Exercitar os corpos válidos e inválidos do cenário 1 e o save legado. Com lab ligado, mudar o mínimo entre consulta e POST, verificar o erro e restaurar.
+2. Preparar semente com empate inicial e IA vencedora após a rerrolagem. Conferir o consumo de D20 no teste determinístico e entregar ao FE a ordem esperada, o primeiro membro e o estado antes/depois de iniciar sessão.
+3. Preparar ordem com humano entre ajudantes, de modo que a sequência automática passe do último para o primeiro. Entregar os estados antes/depois, a rodada esperada e os checkpoints de cada vez.
+4. Preparar uma ação com `combatUpdates` não vazio e avanço automático. Interromper após o commit da ação humana e, em outra execução, após o commit de uma vez da IA. Cobrir retomada pela mesma chave e pelo POST de sessão. Comparar o estado, o RNG e o corpo completo devolvido pelo reenvio com os resultados de uma execução equivalente sem interrupção, inclusive o lote em ordem. Cobrir também perda de resposta após conclusão e reenvios simultâneos. Depois, aplicar uma ação válida com chave nova que mude o estado. Comparar o GET antes e depois de reenviar a chave e o corpo originais. Ambos os GETs devem devolver o estado da jogada posterior, sem `combatUpdates`, e o reenvio deve devolver o `PartyActionResponse` original completo. Conferir que o reenvio não muda a versão gravada ou o RNG nem acrescenta jogadas.
+5. Preparar dois saves perto da conclusão: um com sucessora e semente que coloque IA primeiro no novo D20, outro na última dimensão. Conferir ordem, cidade inicial, progressão individual e próxima vez humana no primeiro; status congelado e fim do avanço no segundo.
+6. Entregar configuração inicial e uma permutação alternativa. Exercitar GET/PATCH/reset e uma lista inválida, comparar duas campanhas criadas antes/depois do PATCH e confirmar que a primeira conserva a configuração fotografada.
+
 ## 4. Códigos de erro
 
 | Código | Quando acontece | FEAT |
 |---|---|---|
+| `ACTION_IDEMPOTENCY_CONFLICT` | Chave de ação já usada com outro corpo (409, proposta). | FEAT-20 |
+| `ACTION_ADVANCE_PENDING` | Outra ação aguarda a conclusão do avanço da IA (409, proposta). | FEAT-20 |
 | `NOT_FOUND` | Rota ou recurso inexistente. | FEAT-01 |
 | `INTERNAL_ERROR` | Falha inesperada no servidor (5xx). | FEAT-01 |
 | `LAB_CONFIG_INVALID` | Ajuste do laboratório inválido (400); `details.fields` diz cada chave e o motivo. | FEAT-03 |
@@ -4080,3 +4136,7 @@ Para a T-99, o backend entrega campanhas preparadas para mercado, abertura nos d
 | 1.02 | 2026-11-26 | BE | FEAT-33 `acordado`. Detalha as verificações de editor, vigência persistida e recusa atômica. T-96 liberada com MSW. A entrega para a T-99 inclui campanhas preparadas, IDs e resultados esperados. |
 | 1.03 | 2026-11-26 | BE | FEAT-33 `implementado (BE)`. Suíte unitária confirmada e campanhas da T-99 preparadas na API local. Validação integrada no frontend pendente. |
 | 1.04 | 2026-11-26 | BE | FEAT-33 `validado` após a T-99 (devlog frontend 130). Os oito grupos passaram, incluindo a verificação HTTP do editor e a atomicidade no save. Alinhado o metadado de `GET /health` à versão do contrato. |
+| 1.05 | 2026-11-26 | FE | FEAT-20 `proposto (FE)`: criação com ajudantes, estado público, avanço automático, persistência e prioridades da IA. |
+| 1.06 | 2026-11-26 | BE | FEAT-20 proposto (BE): opções de criação, estado público, avanço e retomada idempotentes, prioridades e preparação dos cenários. |
+| 1.07 | 2026-11-26 | BE | FEAT-20 proposto (BE): preserva `PartyActionResponse` e o corpo completo no reenvio, inclusive após conclusão pelo POST de sessão. Cenário 4 cobre reenvio após jogada posterior e GET do estado atual. |
+| 1.08 | 2026-11-26 | FE | FEAT-20 `acordado` com os formatos e cenários da v1.07. T-100 liberada com MSW. |

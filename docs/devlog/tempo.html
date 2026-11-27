@@ -102,11 +102,50 @@
       td.num, th.num { text-align: right; white-space: nowrap; }
       .nota { color: var(--muted); font-size: 13px; }
       .aviso { color: var(--muted); font-size: 13px; margin-top: 8px; }
+      .marcos { display: grid; gap: 12px; }
+      .marco { min-width: 0; }
+      .marco h3 { margin: 0; font-size: 15px; }
+      .marco p { margin: 6px 0; }
+      .marco progress { display: block; width: 100%; height: 14px; accent-color: var(--accent); }
+      .marco strong { color: var(--accent); }
     </style>
   </head>
   <body>
     <h1>Misadventures — Tempo de desenvolvimento</h1>
-    <p class="sub">Frontend · fonte: array <code>SESSOES</code> dentro deste arquivo · edite e recarregue</p>
+    <p class="sub">Frontend</p>
+    <section aria-labelledby="titulo-marcos">
+      <h2 id="titulo-marcos">Progresso até o multiplayer</h2>
+      <p class="nota">Atualizado em 26/11/2026 com o <a href="../ROADMAP.md">roadmap v0.96</a>. Cada feature validada no frontend tem o mesmo peso. As barras medem entregas por marco, independentemente das horas registradas.</p>
+      <div class="marcos">
+        <article class="card marco">
+          <h3 id="progresso-geral">Visão geral</h3>
+          <p><strong>68%</strong> · 19 de 28 features validadas</p>
+          <progress aria-labelledby="progresso-geral" value="19" max="28"></progress>
+          <p>Primeiro marco concluído. O trabalho agora está no início do segundo marco.</p>
+        </article>
+        <article class="card marco">
+          <h3 id="progresso-solo">1. Jogar sozinho</h3>
+          <p><strong>100%</strong> · 19 de 19 features validadas</p>
+          <progress aria-labelledby="progresso-solo" value="19" max="19"></progress>
+          <p>Campanha e saves, exploração, combate solo, progressão de personagem e conclusão da dimensão com chefe final.</p>
+        </article>
+        <article class="card marco">
+          <h3 id="progresso-ia">2. Jogar com companheiros de IA</h3>
+          <p><strong>0%</strong> · 0 de 5 features validadas</p>
+          <progress aria-labelledby="progresso-ia" value="0" max="5"></progress>
+          <p>Planejamento e contrato da FEAT-20 concluídos. A T-100 está liberada para iniciar o cliente e os mocks dos ajudantes.</p>
+          <p>O marco inclui criar um grupo com ajudantes, acompanhar suas vezes, recrutar, combater em grupo, negociar e medir o desempenho da IA (FEAT-20 a FEAT-24).</p>
+        </article>
+        <article class="card marco">
+          <h3 id="progresso-online">3. Jogar multiplayer online</h3>
+          <p><strong>0%</strong> · 0 de 4 features validadas</p>
+          <progress aria-labelledby="progresso-online" value="0" max="4"></progress>
+          <p>Autenticação, grupos com jogadores humanos em tempo real, relógio da vez e tratamento de desconexões (FEAT-25 a FEAT-28).</p>
+        </article>
+      </div>
+      <p class="nota">A contagem cobre os três marcos jogáveis. Fundação, acabamento visual (FEAT-30) e executável Tauri (FEAT-29) ficam fora desse recorte.</p>
+    </section>
+    <h2>Tempo registrado</h2>
     <div class="cards" id="cards"></div>
     <h2>Horas por etapa</h2>
     <table><thead><tr><th>Etapa</th><th class="num">Horas</th></tr></thead><tbody id="porEtapa"></tbody></table>

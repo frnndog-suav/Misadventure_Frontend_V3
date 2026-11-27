@@ -18,6 +18,10 @@ Registro de cada etapa do frontend, escrito para que **outra IA consiga replicar
 
 O tempo gasto no desenvolvimento fica em [`tempo.html`](tempo.html): um arquivo só, com os dados (array `SESSOES` no topo) e a visualização (abrir no navegador — totais, dias, período e horas por etapa). Uma linha por sessão de trabalho: `{ data, horas, etapa, nota }`; `horas: null` enquanto não souber. Desde 2026-11-14, os hooks `UserPromptSubmit`/`Stop` (`.claude/hooks/time-log.mjs`) gravam a hora do sistema em `tempo-eventos.log`; `node .claude/hooks/time-log.mjs --resumo [AAAA-MM-DD]` soma o tempo ativo por dia (intervalos ≥ 30 min contam como pausa). A `/registrar-etapa` acrescenta a sessão de cada etapa; sessões fora das etapas (estudo, documentação), o autor acrescenta à mão.
 
+## Marcos jogáveis
+
+O [painel de tempo e progresso](tempo.html#titulo-marcos) mostra o avanço do frontend nos três marcos jogáveis. Ao validar uma feature, atualize a data, as contagens e os destaques com base no roadmap. O critério e a primeira fotografia do progresso estão no [registro 134](134-marcos-jogaveis.md).
+
 ## Índice
 | Nº | ID | Título | Status |
 |---|---|---|---|
@@ -161,3 +165,7 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 128 | T-97 | [Carta de Dimensão no catálogo e no editor](128-T-97-dimensao-catalogo-editor-feat-33.md) | concluída |
 | 129 | T-98 | [Mercado e abertura com múltiplas coleções](129-T-98-mercado-abertura-feat-33.md) | concluída |
 | 130 | T-99 | [Validação integrada da FEAT-33](130-T-99-validacao-integrada-feat-33.md) | concluída |
+| 131 | FEAT-20 | [Planejamento aprovado e contrato proposto](131-feat-20-planejamento.md) | concluída |
+| 132 | FEAT-20 | [Revisão da contraproposta do backend](132-feat-20-revisao-contrato.md) | aguardando outro lado |
+| 133 | FEAT-20 | [Aceite do contrato e liberação da T-100](133-feat-20-contrato-acordado.md) | concluída |
+| 134 | DOC | [Progresso dos três marcos jogáveis](134-marcos-jogaveis.md) | concluída |
