@@ -54,7 +54,7 @@ import { equipmentStateSuffix } from './equipmentState'
 import { RandomEventPanel } from './RandomEventPanel'
 import { receiveSpaceText } from './receiveSpace'
 import { RewardChoice } from './RewardChoice'
-import { QuestPanel } from './QuestPanel'
+import { CombatQuestProgress, QuestPanel } from './QuestPanel'
 import { BoosterResult } from './BoosterResult'
 import { MarketPanel, MarketResult } from './MarketPanel'
 import {
@@ -2699,6 +2699,15 @@ function PartySessionView({ partyId }: { partyId: string }) {
                 : (confirmed?.combatNames ?? combatNames)
             }
           />
+          {!party.combat && combatResult?.participants && (
+            <CombatQuestProgress
+              members={party.members.filter(({ id }) =>
+                combatResult.participants?.some(
+                  ({ memberId }) => memberId === id,
+                ),
+              )}
+            />
+          )}
           {party.triggeredEffectChoice && host && (
             <TriggeredEffectPanel
               choice={party.triggeredEffectChoice}
@@ -2843,6 +2852,16 @@ function PartySessionView({ partyId }: { partyId: string }) {
             <RewardChoice
               key={reward.id}
               reward={{ ...reward, decisionDeadlineAt: deadline ?? null }}
+              recipient={
+                canResolveCombatReward
+                  ? (combatNames.get(reward.memberId) ?? reward.memberId)
+                  : undefined
+              }
+              rotationPosition={
+                canResolveCombatReward
+                  ? ownedDecision.rotationPosition
+                  : undefined
+              }
               cards={cards.cards}
               disabled={
                 reward.memberId !== host?.id ||

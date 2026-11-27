@@ -333,6 +333,12 @@ export function PrepareAbilities({ host, cards, pending, onAction }: Controls) {
   ))
 }
 
+const conditionLabel = {
+  standing: 'De pé',
+  knockedOut: 'Caído',
+  escaped: 'Fugiu',
+}
+
 export function CombatPanel({
   combat,
   host,
@@ -375,11 +381,21 @@ export function CombatPanel({
         ))}
       </ol>
       <ul aria-label="Participantes">
-        <li>
-          {name(combat.memberId)}
-          {host?.id === combat.memberId &&
-            ` · PV ${host.player.health}/${host.player.maxHealth} · Vigor ${host.player.vigor}`}
-        </li>
+        {combat.participants ? (
+          combat.participants.map(
+            ({ memberId, health, maxHealth, condition }) => (
+              <li key={memberId}>
+                {`${name(memberId)} · PV ${health}/${maxHealth} · ${conditionLabel[condition]}`}
+              </li>
+            ),
+          )
+        ) : (
+          <li>
+            {name(combat.memberId)}
+            {host?.id === combat.memberId &&
+              ` · PV ${host.player.health}/${host.player.maxHealth} · Vigor ${host.player.vigor}`}
+          </li>
+        )}
         {combat.enemies.map((enemy) => (
           <li key={enemy.id}>
             {name(enemy.id)} · PV {enemy.health}/{enemy.maxHealth}
@@ -512,11 +528,35 @@ export function CombatReport({
       )}
       {result && (
         <p>
-          {combatResolutionLabel[result.resolution]} · {cause[result.cause]} ·
-          Pico {result.peakDelta > 0 ? '+' : ''}
-          {result.peakDelta}
-          {result.playerDown && ' · jogador caído'}
+          {combatResolutionLabel[result.resolution]} · {cause[result.cause]}
+          {!result.participants &&
+            ` · Pico ${result.peakDelta > 0 ? '+' : ''}${result.peakDelta}${result.playerDown ? ' · jogador caído' : ''}`}
         </p>
+      )}
+      {result?.participants && (
+        <ul aria-label="Desfecho por participante">
+          {result.participants.map((participant) => {
+            const {
+              memberId,
+              condition,
+              peakDelta,
+              vigorDelta,
+              goldGranted,
+              rewardIds,
+            } = participant
+            return (
+              <li key={memberId}>
+                {`${name(memberId)} · ${conditionLabel[condition]} · Pico ${peakDelta > 0 ? '+' : ''}${peakDelta} · Vigor ${vigorDelta > 0 ? '+' : ''}${vigorDelta} · Ouro ${goldGranted} · Cartas recebidas: ${rewardIds.length}`}
+                {participant.knockedOut &&
+                  condition !== 'knockedOut' &&
+                  ' · Sofreu nocaute'}
+                {participant.revived && ' · Foi revivido'}
+                {participant.respawned && ' · Renasceu'}
+                {participant.skipsNextTurn && ' · Perde a próxima vez'}
+              </li>
+            )
+          })}
+        </ul>
       )}
       {result?.finalBoss && result.resolution !== 'victory' && (
         <p>A dimensão não foi concluída. Você pode tentar de novo.</p>

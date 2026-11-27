@@ -9,6 +9,28 @@ const stageLabels = {
   completed: 'Concluída',
 }
 
+export function CombatQuestProgress({ members }: { members: PartyMember[] }) {
+  const entries = members.flatMap(({ id, characterName, player }) =>
+    player.openQuests.map((quest) => {
+      const stage = quest.type === 'zoneQuest' ? quest.stage : null
+      const victories = (
+        quest.type === 'zoneQuest' ? quest.stage.objectives : quest.objectives
+      )?.combatVictories
+      return (
+        <li key={JSON.stringify([id, quest.questId])}>
+          {`${characterName} · ${quest.title}`}
+          {stage &&
+            ` · Etapa ${stage.index + 1} · ${stageLabels[stage.status]}`}
+          {victories && ` · Vitórias ${victories.current}/${victories.target}`}
+        </li>
+      )
+    }),
+  )
+  return entries.length > 0 ? (
+    <ul aria-label="Progresso atual das missões dos combatentes">{entries}</ul>
+  ) : null
+}
+
 const actionLabels = {
   takeQuest: 'Aceitar',
   continueQuest: 'Continuar',

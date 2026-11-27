@@ -18,11 +18,15 @@ const optionKey = (cardId: string, space: ReceiveSpace) => `${space}:${cardId}`
 
 export function RewardChoice({
   reward,
+  recipient,
+  rotationPosition,
   cards,
   disabled,
   onResolve,
 }: {
   reward: Party['pendingRewards'][number]
+  recipient?: string
+  rotationPosition?: number
   cards: ReadonlyMap<string, Card>
   disabled: boolean
   onResolve: (action: ResolveRewardAction) => void
@@ -41,6 +45,13 @@ export function RewardChoice({
   return (
     <section aria-labelledby={title}>
       <h2 id={title}>Recompensa pendente</h2>
+      {recipient && (
+        <p>
+          {recipient}
+          {rotationPosition !== undefined &&
+            ` · posição ${rotationPosition} no rodízio`}
+        </p>
+      )}
       <p>{`1× ${nameOf(cards, cardId)} para ${receiveSpaceText[destination]}.`}</p>
       {reward.source.type === 'booster' && (
         <p>Origem: Booster {nameOf(cards, reward.source.boosterCardId)}</p>

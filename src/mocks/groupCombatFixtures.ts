@@ -33,10 +33,25 @@ const campaign = partyWithHelpersFixture(3)
 const [human, helper, decliningHelper, remoteHelper] = campaign.members
 const combatId = 'fixture.group-combat'
 const rewardId = 'fixture.group-combat-loot'
+const automaticRewardId = 'fixture.group-combat-loot-ai'
 const rewardCardId = 'fixture.short-sword'
 const turnId = 'fixture.group-combat-turn'
 const card = combatFixture.card
 const enemy = combatFixture.enemies[0]!
+const groupQuest = {
+  type: 'zoneQuest',
+  questId: 'fixture.group-combat-quest',
+  questCardId: 'fixture.group-combat-quest-card',
+  originZoneId: helper.player.zoneId,
+  title: 'Patrulha em grupo',
+  stage: {
+    index: 0,
+    text: 'Derrote o inimigo da patrulha.',
+    location: { type: 'zoneType', zoneType: 'urban' },
+    status: 'inProgress',
+    objectives: null,
+  },
+} satisfies Member['player']['openQuests'][number]
 
 function decision<T extends Decision['type']>(type: T) {
   return { type, id: combatId + '-' + type, combatId, memberId: human.id }
@@ -65,6 +80,11 @@ const inviteOpened = {
 } satisfies Update
 
 function setup(suffix: string, pending: Decision): Party {
+  const questOwner = {
+    ...helper,
+    player: { ...helper.player, openQuests: [groupQuest] },
+  }
+  const invitedCampaign = [human, suffix === 'decline' ? helper : questOwner]
   return {
     ...campaign,
     id: 'fixture.group-combat-' + suffix,
@@ -99,9 +119,29 @@ function setup(suffix: string, pending: Decision): Party {
               player: { ...remoteHelper.player, zoneId: 'fixture.stone-bend' },
             },
           ]
-        : [human, helper],
+        : invitedCampaign,
     turnOrder:
       pending.type === 'roster' ? campaign.turnOrder : [helper.id, human.id],
+  }
+}
+
+function setupRotation(): Party {
+  const base = setup('rotation', invite)
+  const members: Member[] = [
+    {
+      ...human,
+      player: { ...human.player, availableActions: ['combatAttack'] },
+    },
+    base.members[1]!,
+    decliningHelper,
+  ]
+  const turnOrder = [helper.id, decliningHelper.id, human.id]
+  return {
+    ...base,
+    members,
+    turnOrder,
+    combat: started(base, members, turnOrder).combat,
+    pendingCombatDecision: { ...decision('turn'), turnId },
   }
 }
 
@@ -110,6 +150,7 @@ const initial = [
   setup('invite', invite),
   setup('decline', invite),
   setup('recovery', invite),
+  setupRotation(),
 ]
 type Receipt = { body: string; response: PartyActionResponse }
 type Checkpoint = {
@@ -353,16 +394,18 @@ export function groupCombatAction(
     case 'respondCombatInvite': {
       if (pending.type !== 'invite') return deny('combatDecisionPending')
       const { accept } = action
+      const initiator = party.members.find(({ id }) => id === helper.id)!
+      const allies = accept ? [initiator, human] : [initiator]
       updates.push(
         { ...inviteOpened, type: 'combatInviteAnswered', accept },
         rosterConfirmed(
           helper.id,
-          accept ? [helper.id, human.id] : [helper.id],
+          allies.map(({ id }) => id),
           accept ? [] : [human.id],
         ),
       )
       if (accept) {
-        const group = started(party, [helper, human], [helper.id, human.id])
+        const group = started(party, allies, party.turnOrder)
         next = {
           ...next,
           combat: group.combat,
@@ -416,6 +459,16 @@ export function groupCombatAction(
       const result = victory(party.turn.memberId)
       next.combat = null
       const knockedOut = party.turn.memberId === helper.id
+      const automaticRecipient = party.combat.participants?.find(
+        ({ memberId }) => memberId === decliningHelper.id,
+      )?.memberId
+      const quest = party.members
+        .find(({ id }) => id === result.memberId)
+        ?.player.openQuests.find(
+          (openQuest) =>
+            openQuest.type === 'zoneQuest' &&
+            openQuest.questId === groupQuest.questId,
+        )
       if (knockedOut)
         updates.push({
           type: 'combatParticipantKnockedOut',
@@ -444,7 +497,13 @@ export function groupCombatAction(
             condition: down ? 'knockedOut' : 'standing',
             peakDelta: down ? -1 : 1,
             vigorDelta: 0,
-            goldGranted: memberId === human.id ? 5 : 0,
+            goldGranted: down
+              ? 0
+              : automaticRecipient
+                ? 2
+                : memberId === human.id
+                  ? 5
+                  : 0,
             rewardIds: [],
             knockedOut: down,
             revived: false,
@@ -466,13 +525,21 @@ export function groupCombatAction(
               gold: player.gold + outcome.goldGranted,
               health: outcome.knockedOut ? 0 : player.health,
               down: outcome.knockedOut,
+              openQuests: player.openQuests.map((openQuest) =>
+                openQuest === quest && openQuest.type === 'zoneQuest'
+                  ? {
+                      ...openQuest,
+                      stage: { ...openQuest.stage, status: 'completed' },
+                    }
+                  : openQuest,
+              ),
             },
           }
         })
         next.pendingCombatDecision = {
           ...decision('reward'),
           rewardId,
-          rotationPosition: 1,
+          rotationPosition: automaticRecipient ? 2 : knockedOut ? 1 : undefined,
         }
         next.pendingRewards = [
           {
@@ -480,7 +547,14 @@ export function groupCombatAction(
             memberId: human.id,
             cardId: rewardCardId,
             origin: { type: 'fixed' },
-            source: { type: 'combatEvent', combatId },
+            source:
+              quest?.type === 'zoneQuest'
+                ? {
+                    type: 'quest',
+                    questId: quest.questId,
+                    questCardId: quest.questCardId,
+                  }
+                : { type: 'combatEvent', combatId },
             destination: 'inventory',
             discardOptions: [],
             decisionDeadlineAt: null,
@@ -489,6 +563,36 @@ export function groupCombatAction(
       }
       next.lastCombatResult = result
       updates.push({ type: 'combatEnded', combatId, result })
+      if (automaticRecipient && result.participants) {
+        next.lastCombatResult = {
+          ...result,
+          participants: result.participants.map((participant) =>
+            participant.memberId === automaticRecipient
+              ? { ...participant, rewardIds: [automaticRewardId] }
+              : participant,
+          ),
+        }
+        next.members = next.members.map((member) =>
+          member.id === automaticRecipient
+            ? {
+                ...member,
+                player: {
+                  ...member.player,
+                  inventory: [
+                    ...member.player.inventory,
+                    { cardId: rewardCardId, quantity: 1 },
+                  ],
+                },
+              }
+            : member,
+        )
+        updates.push({
+          type: 'combatRewardDelivered',
+          combatId,
+          memberId: automaticRecipient,
+          rewardId: automaticRewardId,
+        })
+      }
       break
     }
     case 'resolveReward': {

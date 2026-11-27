@@ -5015,3 +5015,107 @@ describe('T-110 — recrutamento em grupo', () => {
     ).not.toBeInTheDocument()
   })
 })
+
+describe('T-111 — combate e recompensas em grupo', () => {
+  beforeEach(resetGroupCombatScenarios)
+
+  it('REQ-113: apresenta a entrega automática antes da escolha humana na segunda posição', async () => {
+    renderParty('fixture.group-combat-rotation')
+    fireEvent.click(await screen.findByRole('button', { name: /^Atacar / }))
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Pular apresentação' }),
+    )
+    expect(await screen.findByText('Lia · posição 2 no rodízio')).toBeVisible()
+    expect(
+      screen.getByText(/Ajudante 2 · De pé.*Cartas recebidas: 1/),
+    ).toBeVisible()
+    expect(screen.getByText(/Lia · De pé.*Cartas recebidas: 0/)).toBeVisible()
+  })
+
+  it('REQ-112 e REQ-113: apresenta combatentes, missão do iniciador caído e recompensa pendente', async () => {
+    renderParty('fixture.group-combat-invite')
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Aceitar convite' }),
+    )
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Pular apresentação' }),
+    )
+    const participants = await screen.findByRole('list', {
+      name: 'Participantes',
+    })
+    expect(within(participants).getByText(/Lia · PV.*De pé/)).toBeVisible()
+    expect(
+      within(participants).getByText(/Ajudante 1 · PV.*De pé/),
+    ).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: /^Atacar / }))
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Pular apresentação' }),
+    )
+    const result = await screen.findByRole('list', {
+      name: 'Desfecho por participante',
+    })
+    expect(within(result).getByText(/Ajudante 1 · Caído/)).toBeVisible()
+    expect(within(result).getByText(/Lia · De pé.*Ouro 5/)).toBeVisible()
+    expect(
+      screen.getByText(/Ajudante 1 · Patrulha em grupo.*Concluída/),
+    ).toBeVisible()
+    expect(screen.getByText('Lia · posição 1 no rodízio')).toBeVisible()
+    fireEvent.click(screen.getByRole('button', { name: 'Manter' }))
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Pular apresentação' }),
+    )
+    expect(
+      await screen.findByText(
+        /Ajudante 1 · Caído.*Renasceu.*Perde a próxima vez/,
+      ),
+    ).toBeVisible()
+    expect(screen.getByText(/Lia · De pé.*Cartas recebidas: 1/)).toBeVisible()
+  })
+
+  it('REQ-114: reenvia a chave persistida e preserva a recompensa após receber o recibo antigo', async () => {
+    const id = 'fixture.group-combat-recovery'
+    const requests: { key: string | null; body: string }[] = []
+    server.events.on('request:start', async ({ request }) => {
+      if (request.method === 'POST' && request.url.endsWith('/actions')) {
+        requests.push({
+          key: request.headers.get('Idempotency-Key'),
+          body: await request.clone().text(),
+        })
+      }
+    })
+    const first = renderParty(id)
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Aceitar convite' }),
+    )
+    const resend = await screen.findByRole('button', { name: 'Reenviar ação' })
+    await waitFor(() => expect(resend).toBeEnabled())
+    const storageKey = 'party-action:http://localhost:3000:' + id
+    const saved = sessionStorage.getItem(storageKey)!
+    fireEvent.click(resend)
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Pular apresentação' }),
+    )
+    fireEvent.click(await screen.findByRole('button', { name: /^Atacar / }))
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Pular apresentação' }),
+    )
+    await screen.findByRole('heading', { name: 'Recompensa pendente' })
+    first.unmount()
+    queryClient.clear()
+    sessionStorage.setItem(storageKey, saved)
+    renderParty(id)
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Reenviar ação' }),
+    )
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Manter' })).toBeEnabled(),
+    )
+    expect(requests).toHaveLength(4)
+    expect(requests[1]).toEqual(requests[0])
+    expect(requests[3]).toEqual(requests[0])
+    expect(
+      screen.queryByRole('button', { name: /^Atacar |Pular apresentação/ }),
+    ).not.toBeInTheDocument()
+    expect(sessionStorage.getItem(storageKey)).toBeNull()
+  })
+})
