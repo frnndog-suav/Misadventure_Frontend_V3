@@ -57,6 +57,11 @@ import {
   executableCombatCardFixture,
 } from './combatFixtures'
 import {
+  groupCombatAction,
+  groupCombatParty,
+  groupCombatSession,
+} from './groupCombatFixtures'
+import {
   eventMinimumNotMetFixture,
   eventScenarios,
   partyAnticipationFixture,
@@ -300,6 +305,12 @@ async function partyActionScenario(
 ): Promise<Response> {
   const body: unknown = await request.json().catch(() => undefined)
   const type = field(body, 'type')
+  const groupCombat = groupCombatAction(
+    partyId,
+    body,
+    request.headers.get('Idempotency-Key'),
+  )
+  if (groupCombat) return groupCombat
   if (type === 'completeDimension') return completeDimension(partyId)
   const boss = finalBossAction(
     partyId,
@@ -1052,7 +1063,8 @@ function knownParty(
   partyId: unknown,
   ok: () => Response | Promise<Response>,
 ): Response | Promise<Response> {
-  return completionParty(partyId) !== undefined ||
+  return groupCombatParty(partyId) !== undefined ||
+    completionParty(partyId) !== undefined ||
     questParty(partyId) !== undefined ||
     mountParty(partyId) !== undefined ||
     knockoutParty(partyId) !== undefined ||
@@ -1629,7 +1641,8 @@ export const handlers: RequestHandler[] = [
   http.get('*/parties/:partyId', ({ params }) =>
     knownParty(params.partyId, () =>
       HttpResponse.json(
-        completionParty(params.partyId) ??
+        groupCombatParty(params.partyId) ??
+          completionParty(params.partyId) ??
           questParty(params.partyId) ??
           mountParty(params.partyId) ??
           knockoutParty(params.partyId) ??
@@ -1665,6 +1678,8 @@ export const handlers: RequestHandler[] = [
         status: 'inSession',
         turn: { ...party.turn, memberId: party.members[0].id },
       })
+    const groupCombat = groupCombatSession(params.partyId)
+    if (groupCombat) return groupCombat
     const completion = completionParty(params.partyId)
     if (completion) return startCompletionSession(completion)
     return knownParty(params.partyId, () =>

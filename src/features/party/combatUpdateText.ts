@@ -10,6 +10,18 @@ export const combatResolutionLabel = {
 
 export function combatUpdateText(update: Update, name: (id: string) => string) {
   switch (update.type) {
+    case 'combatInviteOpened':
+      return `${name(update.initiatorMemberId)} convidou ${name(update.inviteeMemberId)} para o combate`
+    case 'combatInviteAnswered':
+      return `${name(update.inviteeMemberId)} ${update.accept ? 'aceitou' : 'recusou'} o convite`
+    case 'combatRosterConfirmed':
+      return `Elenco confirmado · ${update.participantMemberIds.map(name).join(', ')}`
+    case 'combatParticipantKnockedOut':
+      return `${name(update.memberId)} foi nocauteado`
+    case 'combatParticipantRevived':
+      return `${name(update.memberId)} foi revivido`
+    case 'combatRewardDelivered':
+      return `${name(update.memberId)} recebeu uma recompensa do combate`
     case 'combatStarted':
       return `Combate iniciado · ${update.cardTitle} · ${update.participants.map(({ id }) => name(id)).join(', ')}`
     case 'combatTurnStarted':

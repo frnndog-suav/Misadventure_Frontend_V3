@@ -97,12 +97,43 @@ export const triggeredEffectChoiceSchema = z.object({
   ),
 })
 
+const decision = z.object({ id, combatId: id, memberId: id })
+export const pendingCombatDecisionSchema = z.discriminatedUnion('type', [
+  decision.extend({
+    type: z.literal('roster'),
+    candidateMemberIds: z.array(id),
+  }),
+  decision.extend({
+    type: z.literal('invite'),
+    initiatorMemberId: id,
+    cardTitle: z.string(),
+  }),
+  decision.extend({
+    type: z.literal('order'),
+    defaultMemberIds: z.array(id),
+    alternativeMemberOrders: z.array(z.array(id)),
+  }),
+  decision.extend({ type: z.literal('turn'), turnId: id }),
+  decision.extend({
+    type: z.literal('reward'),
+    rewardId: id,
+    rotationPosition: positive.optional(),
+  }),
+])
+
+const condition = z.enum(['standing', 'knockedOut', 'escaped'])
+
 export const combatStateSchema = z.object({
   finalBoss: z.boolean().default(false),
   id,
   cardId: id.optional(),
   card: combatEventCardSchema,
   memberId: id,
+  participants: z
+    .array(
+      z.object({ memberId: id, health: count, maxHealth: count, condition }),
+    )
+    .optional(),
   cycle: positive,
   maxCycles: positive,
   turn: z.object({
@@ -162,10 +193,51 @@ export const combatResultSchema = z.object({
   ]),
   playerDown: z.boolean(),
   peakDelta: z.number().int(),
+  participants: z
+    .array(
+      z.object({
+        memberId: id,
+        condition,
+        peakDelta: z.int(),
+        vigorDelta: z.int(),
+        goldGranted: count,
+        rewardIds: z.array(id),
+        knockedOut: z.boolean(),
+        revived: z.boolean(),
+        respawned: z.boolean(),
+        skipsNextTurn: z.boolean(),
+      }),
+    )
+    .optional(),
 })
 
 const update = z.object({ combatId: id })
+const inviteUpdate = update.extend({
+  initiatorMemberId: id,
+  inviteeMemberId: id,
+})
 export const combatUpdateSchema = z.discriminatedUnion('type', [
+  inviteUpdate.extend({ type: z.literal('combatInviteOpened') }),
+  inviteUpdate.extend({
+    type: z.literal('combatInviteAnswered'),
+    accept: z.boolean(),
+  }),
+  update.extend({
+    type: z.literal('combatRosterConfirmed'),
+    initiatorMemberId: id,
+    participantMemberIds: z.array(id),
+    declinedMemberIds: z.array(id),
+  }),
+  update.extend({
+    type: z.literal('combatParticipantKnockedOut'),
+    memberId: id,
+  }),
+  update.extend({ type: z.literal('combatParticipantRevived'), memberId: id }),
+  update.extend({
+    type: z.literal('combatRewardDelivered'),
+    memberId: id,
+    rewardId: id,
+  }),
   update.extend({
     type: z.literal('combatStarted'),
     cardId: id,
@@ -225,6 +297,9 @@ export const combatUpdateSchema = z.discriminatedUnion('type', [
 ])
 
 export const combatActionTypes = [
+  'confirmCombatRoster',
+  'respondCombatInvite',
+  'confirmCombatOrder',
   'activateCombatEffect',
   'useAbility',
   'escapeCombat',
@@ -232,6 +307,27 @@ export const combatActionTypes = [
   'endCombatTurn',
   'resolveTriggeredEffect',
 ] as const
+
+const decisionAction = z.strictObject({
+  combatId: id.min(1),
+  decisionId: id.min(1),
+})
+export const combatDecisionActionSchema = z.discriminatedUnion('type', [
+  decisionAction.extend({
+    type: z.literal('confirmCombatRoster'),
+    inviteeMemberIds: z.array(id.min(1)),
+  }),
+  decisionAction.extend({
+    type: z.literal('respondCombatInvite'),
+    accept: z.boolean(),
+  }),
+  decisionAction.extend({
+    type: z.literal('confirmCombatOrder'),
+    memberIds: z.array(id.min(1)),
+  }),
+])
+
+export type CombatDecisionAction = z.infer<typeof combatDecisionActionSchema>
 
 /** FEAT-18: habilidade de equipamento em uso ou da montaria, nunca as duas. */
 export type AbilitySource =

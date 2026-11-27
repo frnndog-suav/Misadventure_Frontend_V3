@@ -28,10 +28,12 @@ import {
   combatAbilityOptionSchema,
   combatResultSchema,
   combatStateSchema,
+  pendingCombatDecisionSchema,
   combatUpdateSchema,
   triggeredEffectChoiceSchema,
   type AbilitySource,
   type CombatAction,
+  type CombatDecisionAction,
   type ResolveTriggeredEffectAction,
 } from './combat'
 import type { EquipmentSlot, PlayerClass } from './catalog'
@@ -332,6 +334,7 @@ export const partySchema = z.object({
   ).nullable(),
   pendingRewards: z.array(pendingRewardSchema),
   combat: combatStateSchema.nullable().optional(),
+  pendingCombatDecision: pendingCombatDecisionSchema.nullable().optional(),
   lastCombatResult: combatResultSchema.nullable().optional(),
   triggeredEffectChoice: triggeredEffectChoiceSchema.nullable().optional(),
   createdAt: z.iso.datetime(),
@@ -407,7 +410,7 @@ const domainEventSchema = z.discriminatedUnion('type', [
 export type DomainEvent = z.infer<typeof domainEventSchema>
 const domainEvents = z.array(domainEventSchema).optional()
 
-const partySessionResponseSchema = partySchema
+export const partySessionResponseSchema = partySchema
   .extend({ domainEvents })
   .refine(
     ({ revision, domainEvents }) =>
@@ -419,7 +422,7 @@ const partySessionResponseSchema = partySchema
 export type PartySessionResponse = z.infer<typeof partySessionResponseSchema>
 
 // Apenas o POST projeta o lote transitório. Respostas anteriores à FEAT-13 o omitem.
-const partyActionResponseSchema = partySchema
+export const partyActionResponseSchema = partySchema
   .extend({
     revision: z.int().nonnegative().optional(),
     combatUpdates: z.array(combatUpdateSchema).optional(),
@@ -665,6 +668,7 @@ export type PartyAction =
   | RandomEventAction
   | ResolveRewardAction
   | CombatAction
+  | CombatDecisionAction
   | ResolveTriggeredEffectAction
 
 /** Movimentar (README 12.2); `zoneId` vem de `moveTargets`. */
@@ -812,6 +816,12 @@ export const actionNotAllowedDetailsSchema = z.object({
     'combatAbilityUnavailable',
     'playerDown',
     'staleTriggeredEffectChoice',
+    'combatDecisionExpired',
+    'combatRecruitmentClosed',
+    'combatDecisionNotOwned',
+    'combatCandidateIneligible',
+    'combatOrderInvalid',
+    'combatDecisionPending',
     'triggeredEffectUnavailable',
     'questOfferUnavailable',
     'questNotOpen',

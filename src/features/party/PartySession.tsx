@@ -727,6 +727,12 @@ function reasonText(error: ActionNotAllowedError, name: string): string {
     case 'combatTargetUnavailable':
     case 'combatAbilityUnavailable':
     case 'playerDown':
+    case 'combatDecisionExpired':
+    case 'combatRecruitmentClosed':
+    case 'combatDecisionNotOwned':
+    case 'combatCandidateIneligible':
+    case 'combatOrderInvalid':
+    case 'combatDecisionPending':
     case 'staleTriggeredEffectChoice':
     case 'triggeredEffectUnavailable':
       return ''
@@ -982,6 +988,12 @@ function vaultReasonText(error: ActionNotAllowedError, name: string): string {
     case 'combatTargetUnavailable':
     case 'combatAbilityUnavailable':
     case 'playerDown':
+    case 'combatDecisionExpired':
+    case 'combatRecruitmentClosed':
+    case 'combatDecisionNotOwned':
+    case 'combatCandidateIneligible':
+    case 'combatOrderInvalid':
+    case 'combatDecisionPending':
     case 'staleTriggeredEffectChoice':
     case 'triggeredEffectUnavailable':
       return ''
