@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 1.15 · **Data:** 2026-11-27
+> **Versão do contrato:** 1.16 · **Data:** 2026-11-27
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -4054,6 +4054,51 @@ type DomainEvent = { id: string; memberId: string; dimensionId: string; round: n
 A T-105 começa com MSW após o acordo. A validação integrada ocorre após a implementação no backend, com os seis cenários e a medição de tamanho do lote e duração da resposta com cinco ajudantes.
 
 
+### FEAT-22 — Recrutar ajudantes e combate em grupo — `proposto (FE)`
+
+Base: README §§3.2, 11.3, 19.1, 19.5, 20.2, 21.1 e II.7, ROADMAP v1.02, SPEC-FRONTEND v1.12 (D-68, REQ-110 a REQ-114). Momento 2, um humano por save, incluindo combate de evento, missão e chefe final. A composição da campanha continua definida na criação. Reutilizar os parâmetros aplicáveis do laboratório, inclusive o limite de ciclos. Os relógios ficam desligados.
+
+#### Estado público e intenções propostas
+
+Reutilizar `POST /parties/:partyId/actions`, GET de save e POST de sessão. Proposta de projeção com uma decisão de combate pendente por save, identificada por ID opaco estável, ID do combate, membro responsável e tipo. GET e sessão devolvem a decisão corrente com suas opções públicas. Combate sem candidato elegível segue o fluxo existente.
+
+| Decisão | Quem responde | Intenção e projeção propostas |
+|---|---|---|
+| Recrutamento | Humano iniciador | `confirmCombatRoster` recebe `combatId`, `decisionId` e IDs dos convidados escolhidos entre os candidatos projetados. Lista vazia confirma solo. O servidor avalia as respostas de IA antes do primeiro ciclo. |
+| Convite | Humano convidado pela IA | `respondCombatInvite` recebe `combatId`, `decisionId` e `accept`. A projeção identifica o iniciador e o encontro. |
+| Acordo de desempate | Humano que participa do combate | Quando houver empate entre jogadores, a janela anterior ao primeiro ciclo projeta a ordem padrão e as alternativas aceitas pelas IAs. Proposta de `confirmCombatOrder` com `combatId`, `decisionId` e a ordem escolhida. Confirmar a padrão basta para seguir. |
+| Turno de combate | Humano combatente | Reutilizar ações da FEAT-13 com `combatId` e `turnId`. Opções, alvos e custos correspondem ao ator humano do turno, inclusive na vez de exploração de uma IA. |
+| Entrega de recompensa | Humano destinatário | Reutilizar `resolveReward` com o ID da recompensa corrente. Projetar destinatário e posição no rodízio quando aplicável. |
+
+Propor elenco público por ID de membro com PV e condição de participação (de pé, nocauteado ou fugiu). Distinguir iniciador, membro da vez de exploração, ator do turno e responsável pela decisão. Preservar o significado histórico de `CombatState.memberId` e `CombatResult.memberId` como iniciador. Acrescentar desfechos por membro, com condição antes do respawn, variações de Pico e Vigor, entregas e demais consequências aplicadas. Reutilizar a projeção solo para um participante e preservar a leitura de saves e recibos anteriores. O backend deve confirmar a forma exata dos tipos, a elegibilidade além da zona, a política determinística de convite e aceitação das IAs e a representação de acordo de desempate quando todos os participantes forem IAs.
+
+Validar sessão, dono da decisão, IDs e fase antes de validar candidatos, alvos ou custos. Payload malformado usa `400 ACTION_INVALID`. Decisão vencida, convite tardio ou membro inelegível usa `409 ACTION_NOT_ALLOWED` com motivo de domínio a acordar. Recusas preservam estado, revisão e RNG. O custo aplicável ao iniciador é cobrado uma única vez, mesmo quando o combate exige confirmações adicionais.
+
+#### Pausa, recuperação e acontecimentos
+
+Uma decisão humana é um ponto de conclusão da requisição. Gravar decisão, continuação da vez automática, RNG, revisão e recibo na mesma transação. A requisição que chega à decisão devolve 200 com o estado e o lote já resolvidos. A resposta à decisão usa uma nova chave e retoma a continuação a partir do ponto gravado. Enquanto o servidor recupera uma operação incompleta, preservar `ACTION_ADVANCE_PENDING`; uma decisão humana já gravada e aguardando resposta aceita a intenção correspondente. GET só projeta. Uma nova abertura de sessão com decisão já gravada devolve a escolha corrente, sem respondê-la; a recuperação de operação interrompida segue FEATs 20 e 21.
+
+Propor transições públicas para abertura e resposta de convite, confirmação de elenco, nocaute, ressurreição e entrega. Emitir `combatStarted` com elenco final antes do primeiro turno, e `combatEnded` uma vez no resultado coletivo. Nas vezes automáticas, manter IDs de acontecimento, posições em `combatUpdates` e ordem de resolução conforme a FEAT-21. `DomainEvent.memberId` continua identificando o dono da vez automática, inclusive quando o humano é o ator. Abertura, recuperação e reenvio preservam a semântica de revisão e recibos da FEAT-21 e o sigilo das mãos e da heurística.
+
+#### Desfecho e dependências
+
+- O servidor resolve as regras do README §19.5 e do limite de ciclos do §19.1. Projetar separadamente o resultado coletivo e a saída, penalidade ou recompensa de cada participante.
+- Gravar a ordem do rodízio pela Celeridade efetiva dos sobreviventes no desfecho, usando o desempate acordado quando aplicável. Concluir a entrega ou escolha da carta atual antes da próxima compra. As escolhas das IAs são automáticas. Reutilizar o fluxo de escolha por falta de espaço e projetar a próxima decisão humana, se houver.
+- Gravar o progresso da missão na transação da vitória, inclusive com dono caído ou que fugiu. Propor concluir o rodízio antes de efetivar respawns pendentes e retomar a exploração.
+- No chefe final, a vitória coletiva habilita a conclusão mesmo se o iniciador fugiu ou caiu. Proposta para revisão do BE: compor o Pico de Chefe no cálculo de vitória aplicável a cada participante de pé, uma vez por chefe derrotado, e aplicar separadamente o prêmio e o Pico de conclusão conforme FEAT-19. Finalizar o desfecho do combate e suas escolhas antes de passar para a sucessora ou congelar. Confirmar incidência do Pico de Chefe, ordem de gravação e interação com recompensas pendentes do prêmio da dimensão.
+
+#### Cenários para acordo e validação integrada
+
+1. Humano inicia evento com IA que aceita, IA que recusa e membro de outra zona. Conferir elenco, início após confirmação, custo individual e 409 sem mutação em tentativa tardia. Repetir sem candidatos num save solo legado.
+2. IA inicia combate e convida o humano. Testar aceitar e recusar em saves equivalentes. Recuperar por GET e sessão no convite e no turno humano. Conferir autorização fora da vez, retomada da mesma vez automática e ordem das transições.
+3. Forçar empates, mudança de Celeridade entre ciclos e nocaute seguido de ressurreição. Conferir ordem padrão e alternativa acordada, alvos permitidos, turno pulado, ausência de penalidade após ressurreição e respawn normal numa vitória com aliado ainda caído.
+4. Forçar fuga falha, fuga de todos, fuga seguida de derrota dos remanescentes e limite de ciclos com participantes de pé e nocauteados. Conferir ataque livre, resultado coletivo, custos e destinatários das penalidades.
+5. Comparar vitória com iniciador de pé, caído e fugido. Usar ouro com resto, cartas suficientes para rodízio, empate de Celeridade e escolha humana com inventário cheio. Verificar Pico, Vigor explícito e ausente, progresso único de missão para o dono e missão aberta após derrota ou fuga coletiva.
+6. Vencer chefe final com iniciador fora de combate, tanto com sucessora quanto na última dimensão. Conferir bônus, recompensas, respawn, conclusão única e transição ou congelamento na ordem acordada. Cobrir também chefe sem fuga permitida e desfecho sem vitória.
+7. Interromper operação antes da decisão e perder o 200 que confirma uma decisão. Retomar pela chave original e por sessão nos casos aplicáveis. Reenviar em paralelo e após revisão posterior. Comparar estado, RNG e recibos com execução de controle e verificar na interface que a apresentação e o estado não regridem.
+
+Preparar URL, IDs de saves, catálogo, sementes, estado inicial e resultados por participante. T-109 começa após o acordo. T-112 usa API real, MSW desligado e os cenários acima.
+
 ## 4. Códigos de erro
 
 | Código | Quando acontece | FEAT |
@@ -4202,3 +4247,4 @@ A T-105 começa com MSW após o acordo. A validação integrada ocorre após a i
 | 1.13 | 2026-11-27 | BE | FEAT-21 `acordado` após o frontend aceitar os seis cenários da v1.12. T-105 liberada com MSW. |
 | 1.14 | 2026-11-27 | FEAT-21 `implementado (BE)`. E2E da FEAT e seis cenários HTTP conferidos no backend. T-108 aguarda validação do frontend. |
 | 1.15 | 2026-11-27 | BE | FEAT-21 `validado` após os seis cenários da T-108 contra a API real, com MSW desligado. `GET /health` confirmou a interface 1.13 (devlog FE 145, commit `88975b5`). |
+| 1.16 | 2026-11-27 | FE | FEAT-22 `proposto (FE)`: recrutamento, combate em grupo, decisões persistidas e validação integrada. |

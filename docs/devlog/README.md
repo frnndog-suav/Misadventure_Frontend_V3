@@ -180,3 +180,5 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 143 | T-106 | [Apresentação sequencial das vezes dos ajudantes](143-t-106-apresentacao-sequencial-feat-21.md) | concluída com MSW |
 | 144 | T-107 | [Recuperação e reenvio das vezes dos ajudantes](144-t-107-recuperacao-reenvio-feat-21.md) | concluída com MSW |
 | 145 | T-108 | [Validação integrada da FEAT-21](145-t-108-validacao-integrada-feat-21.md) | concluída |
+| 146 | FEAT-22 | [Planejamento e contrato proposto](146-feat-22-planejamento.md) | aguardando revisão do backend |
+| 147 | DOC | [Jogabilidade e situação das funcionalidades na timeline](147-timeline-jogabilidade.md) | concluída |

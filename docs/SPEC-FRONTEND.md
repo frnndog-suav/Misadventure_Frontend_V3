@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 1.11 · **Data:** 2026-11-27
+> **Versão da spec:** 1.12 · **Data:** 2026-11-27
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -933,8 +933,28 @@ Base: README §§24.3, 24.4 e 27; ROADMAP v0.88; CONTRATO v1.01 (proposto). Apro
 
 **Dado** um avanço interrompido, **quando** o reenvio da ação ou a retomada da sessão devolver o lote recuperado, **então** a tela apresenta apenas os acontecimentos ainda não consumidos na sessão da interface. Se uma jogada posterior já tiver superado a revisão do recibo, a tela preserva o estado atual e descarta o lote antigo.
 
+### Recrutar ajudantes e combate em grupo (FEAT-22)
+
+Base: README §§3.2, 11.3, 19.1, 19.5, 20.2, 21.1 e II.7, D-68 e CONTRATO FEAT-22.
+
+#### REQ-110 — Recrutamento antes do primeiro ciclo
+- **Dado** um combate de evento, missão ou chefe final com candidatos elegíveis na mesma zona, **quando** o iniciador convida e confirma o começo, **então** a tela mostra o elenco aceito, as recusas e o custo aplicável apenas ao iniciador. A janela fecha antes do primeiro ciclo e a interface não oferece entradas tardias. Sem candidatos, o fluxo solo segue diretamente.
+
+#### REQ-111 — Decisão humana na vez da IA
+- **Dado** um convite de IA ou outra decisão de combate atribuída ao humano durante uma vez automática, **quando** o humano responde, **então** a tela envia a decisão autorizada e acompanha a retomada da mesma vez de exploração. Recarregar recupera a decisão persistida. O humano também pode agir como combatente ou destinatário de recompensa quando for o dono da decisão.
+
+#### REQ-112 — Combate e resultado por participante
+- **Dado** um elenco confirmado, **quando** começar um ciclo, ocorrer fuga, nocaute, ressurreição ou terminar o combate, **então** a tela apresenta ordem, ator, alvos, alterações de estado e resultado coletivo e individual informados pela API. A interface distingue quem fugiu, quem foi revivido e quem ainda está caído no desfecho. Negociação fica indisponível durante o combate.
+
+#### REQ-113 — Recompensas, missão e chefe final
+- **Dado** um combate em grupo encerrado, **quando** o servidor registrar progresso, penalidades ou recompensas, **então** a tela mostra o desfecho e seus destinatários, inclusive as escolhas individuais no rodízio, sem recalcular valores. Exibe o progresso do dono da missão na vitória mesmo se ele fugiu ou caiu. No chefe final, apresenta também a conclusão e seu destino conforme a API.
+
+#### REQ-114 — Reenvio, recarga e compatibilidade
+- **Dado** um combate pausado, uma resposta perdida ou um recibo antigo, **quando** a interface recuperar a sessão ou a ação, **então** apresenta a decisão atual com os dados persistidos, consome cada transição uma vez e preserva o estado de revisão superior. Saves solo legados continuam com o fluxo já validado.
+
 ## Decisões
 
+- **D-68 — Recrutamento e combate em grupo (FEAT-22, aprovada em 2026-11-27):** inclui evento, missão e chefe final no momento 2. Seleção e confirmação antes do primeiro ciclo, com convite e resposta de IA decididos no backend. Ordem da campanha como desempate padrão, com acordo prévio permitido. Decisões do humano persistem mesmo na vez de uma IA. O servidor resolve a distribuição por Celeridade efetiva no desfecho e entrega uma carta por vez, preservando a ordem gravada. Os detalhes da interface HTTP e da conclusão do chefe final seguem para acordo no contrato.
 - **D-66 — Vigência por dimensão (FEAT-33):** o autor configura as extensões e os reprints na dimensão de destino. Para manter uma extensão por várias dimensões, inclui a coleção em cada uma. As duas listas têm o mesmo efeito comercial. O backend resolve e grava a vigência ao iniciar a dimensão. Saves legados sem registro usam apenas a coleção própria até a próxima transição. O frontend usa as ofertas prontas da API. *(Aprovada em 2026-11-26.)*
 
 - **D-01 — Formato de erro:** os erros do backend chegam no formato de [`CONTRATO.md`](CONTRATO.md) §1.4 (`{ "error": { "code", "message" } }`). A UI mostra `message` (pt-BR) e decide o comportamento pelo `code`. Erro esperado nunca vira exceção na UI. Códigos: os do contrato.
@@ -1222,6 +1242,13 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 - [x] **T-107 — Recuperação e reenvio** (REQ-109). Testar retomada, deduplicação e descarte de recibo antigo com MSW.
 - [x] **T-108 — Validação integrada** (REQ-107 a REQ-109). Executar os cenários do contrato com MSW desligado e registrar a evidência.
 
+### FEAT-22 — Recrutar ajudantes e combate em grupo
+
+- [ ] **T-109 — Cliente e fixtures MSW** (REQ-110 a REQ-114). Após o acordo, cobrir decisões pendentes, projeção de combatentes, desfechos individuais, recibos e solo legado.
+- [ ] **T-110 — Recrutamento e pausa da IA** (REQ-110, REQ-111, REQ-114). Cobrir convite nos dois sentidos, confirmação, desempate, recusa e recarga fora da vez humana.
+- [ ] **T-111 — Combate e recompensas em grupo** (REQ-112 a REQ-114). Apresentar combate por participante, rodízio e progresso de missão ou dimensão. Cobrir reenvio e recibo antigo.
+- [ ] **T-112 — Validação integrada** (REQ-110 a REQ-114). Executar os cenários do contrato com MSW desligado e registrar evidência HTTP e da interface.
+
 ## 8. Histórico
 
 | Versão | Data | Mudança |
@@ -1337,3 +1364,4 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 | 1.09 | 2026-11-26 | Autor aprovou a FEAT-33 (REQ-97 a REQ-101, D-66 e T-96 a T-99). T-96 aguarda o acordo do CONTRATO v1.01. |
 | 1.10 | 2026-11-26 | FEAT-20 aprovada no FE (REQ-102 a REQ-106 e T-100 a T-104). T-100 aguarda o acordo do CONTRATO v1.05. |
 | 1.11 | 2026-11-27 | FEAT-21 aprovada no FE. D-67, REQ-107 a REQ-109 e T-105 a T-108. T-105 aguarda o acordo do CONTRATO v1.11. |
+| 1.12 | 2026-11-27 | FEAT-22 aprovada no FE. D-68, REQ-110 a REQ-114 e T-109 a T-112. T-109 aguarda o acordo do CONTRATO v1.16. |

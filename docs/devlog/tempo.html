@@ -17,7 +17,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Misadventures — Tempo de desenvolvimento (frontend)</title>
+    <title>Misadventures — Progresso e tempo de desenvolvimento</title>
     <script>
       // === EDITE AQUI: uma linha por sessão de trabalho ===
       const SESSOES = [
@@ -68,8 +68,6 @@
       // Atualize as faixas quando uma tarefa fechar ou o escopo mudar.
       const ESTIMATIVAS = {
         ia: [
-          ['FEAT-20', 'Ajudantes na criação do grupo', 'Cliente e MSW, configuração em Novo jogo, avanço automático, laboratório e validação integrada.', 8, 16],
-          ['FEAT-21', 'Acompanhar outras vezes', 'Reproduzir em ordem os eventos recebidos do backend e mostrar as ações dos demais personagens.', 8, 16],
           ['FEAT-22', 'Recrutamento e combate em grupo', 'Adicionar a interface de recrutamento e adaptar o fluxo de combate para vários integrantes.', 12, 24],
           ['FEAT-23', 'Negociação', 'Implementar o fluxo de negociação e os estados de interface conforme as regras e o contrato da feature.', 6, 12],
           ['FEAT-24', 'Métricas da IA', 'Exibir no laboratório indicadores como taxa de nocaute e rodadas até concluir.', 4, 8],
@@ -103,10 +101,10 @@
         background: var(--bg);
         color: var(--ink);
         font: 15px/1.5 system-ui, 'Segoe UI', sans-serif;
-        max-width: 880px;
+        max-width: 1080px;
         margin-inline: auto;
       }
-      h1 { font-size: 22px; margin: 0 0 4px; }
+      h1 { font-size: clamp(26px, 4vw, 38px); line-height: 1.15; margin: 0 0 8px; }
       .sub { color: var(--muted); margin: 0 0 24px; font-size: 13px; }
       .cards { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 28px; }
       .card {
@@ -118,7 +116,20 @@
       }
       .card b { display: block; font-size: 24px; color: var(--accent); }
       .card span { font-size: 12px; color: var(--muted); }
-      h2 { font-size: 15px; margin: 28px 0 8px; }
+      h2 { font-size: 22px; margin: 0 0 12px; }
+      main > section { margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--line); }
+      h3 { font-size: 16px; }
+      a { color: #674a22; }
+      .destaque { border-left: 4px solid var(--accent); padding: 20px; }
+      .destaque h2 { margin-bottom: 8px; }
+      .destaque p { margin: 8px 0 0; }
+      .grade { grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+      .tabela { overflow-x: auto; }
+      .historico { display: grid; gap: 16px 24px; grid-template-columns: minmax(0, 1fr) minmax(0, 3fr); }
+      @media (max-width: 760px) {
+        body { padding: 24px 16px 40px; }
+        .historico { grid-template-columns: minmax(0, 1fr); }
+      }
       table { border-collapse: collapse; width: 100%; background: var(--card); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
       th, td { text-align: left; padding: 8px 12px; border-top: 1px solid var(--line); vertical-align: top; }
       thead th { border-top: none; background: #efece4; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
@@ -131,83 +142,90 @@
       .marco p { margin: 6px 0; }
       .marco progress { display: block; width: 100%; height: 14px; accent-color: var(--accent); }
       .marco strong { color: var(--accent); }
-      details { margin-top: 12px; }
-      summary { cursor: pointer; font-weight: 600; }
       .etapas { padding-left: 20px; }
       .etapas li + li { margin-top: 8px; }
     </style>
   </head>
   <body>
-    <h1>Misadventures — Tempo de desenvolvimento</h1>
-    <p class="sub">Frontend</p>
+    <header>
+      <h1>Misadventures — Progresso de desenvolvimento</h1>
+      <p class="sub">Frontend · situação em <time datetime="2026-11-27">27/11/2026</time> · <a href="../ROADMAP.md">Roadmap v1.02</a></p>
+    </header>
+    <main>
+    <section class="card destaque" aria-labelledby="titulo-jogavel">
+      <h2 id="titulo-jogavel">Até onde dá para jogar hoje?</h2>
+      <p><strong>Solo:</strong> é possível criar uma campanha, salvar e retomar, explorar o mapa, evoluir o personagem, enfrentar o chefe final e concluir uma dimensão. Com conteúdo publicado para uma dimensão sucessora, dá para continuar nela. Na última dimensão, o save é congelado.</p>
+      <p><strong>Com ajudantes de IA:</strong> é possível criar um grupo com até cinco ajudantes, conforme a configuração do ambiente, e acompanhar as ações que eles executam automaticamente em suas vezes. Recrutamento durante a campanha e combate em grupo fazem parte da FEAT-22. O multiplayer online ainda está no roadmap.</p>
+      <p class="nota">O alcance descrito vem dos cenários integrados registrados com a API real e MSW desligado. O percurso disponível em cada ambiente depende do conteúdo publicado e dos saves de teste. <a href="125-T-95-validacao-integrada-feat-19.md">Conclusão da dimensão</a> · <a href="136-t-104-validacao-integrada-feat-20.md">Criação do grupo com IA</a> · <a href="145-t-108-validacao-integrada-feat-21.md">Apresentação das vezes</a></p>
+    </section>
     <section aria-labelledby="titulo-marcos">
       <h2 id="titulo-marcos">Progresso até o multiplayer</h2>
-      <p class="nota">Atualizado em 26/11/2026 com o <a href="../ROADMAP.md">roadmap v0.96</a>. Cada feature validada no frontend tem o mesmo peso. As barras medem entregas por marco, independentemente das horas registradas.</p>
-      <div class="marcos">
+      <div class="marcos grade">
         <article class="card marco">
           <h3 id="progresso-geral">Visão geral</h3>
-          <p><strong>68%</strong> · 19 de 28 features validadas</p>
-          <progress aria-labelledby="progresso-geral" value="19" max="28"></progress>
-          <p>Primeiro marco concluído. O trabalho agora está no início do segundo marco.</p>
+          <p><strong>75%</strong> · 21 de 28 features validadas</p>
+          <progress aria-labelledby="progresso-geral" value="21" max="28"></progress>
         </article>
         <article class="card marco">
           <h3 id="progresso-solo">1. Jogar sozinho</h3>
           <p><strong>100%</strong> · 19 de 19 features validadas</p>
           <progress aria-labelledby="progresso-solo" value="19" max="19"></progress>
-          <p>Campanha e saves, exploração, combate solo, progressão de personagem e conclusão da dimensão com chefe final.</p>
-          <details>
-            <summary>Etapas concluídas</summary>
-            <ul class="etapas">
-              <li><b>Fundação do frontend</b> · Ferramentas, integração inicial com a API, base visual e laboratório de desenvolvimento (FEAT-00 a FEAT-03).</li>
-              <li><b>Conteúdo e início de partida</b> · Catálogo de cartas, editor de coleções, campanha com saves e preparação de classe, deck e mapa (FEAT-04 a FEAT-06 e FEAT-31).</li>
-              <li><b>Exploração e gestão do personagem</b> · Movimento, ações por vez, ajuste de deck, equipamentos, bolsa, cofre e recompensas de Vasculhar (FEAT-07 a FEAT-10 e FEAT-32).</li>
-              <li><b>Encontros e progressão</b> · Efeitos e status, eventos aleatórios, combate solo, nocaute, retorno ao ponto de respawn e missões de especialização (FEAT-11 a FEAT-15).</li>
-              <li><b>Serviços e fim da dimensão</b> · Mercado, ferreiro, oficina, montarias, chefe final, passagem para a próxima dimensão e coleções estendidas (FEAT-16 a FEAT-19 e FEAT-33).</li>
-            </ul>
-            <p class="nota"><a href="README.md#índice">Ver registros por tarefa no devlog</a></p>
-          </details>
         </article>
         <article class="card marco">
           <h3 id="progresso-ia">2. Jogar com companheiros de IA</h3>
-          <p><strong>0%</strong> · 0 de 5 features validadas</p>
-          <progress aria-labelledby="progresso-ia" value="0" max="5"></progress>
-          <p><b>Etapa atual · FEAT-20.</b> Planejamento aprovado e <a href="133-feat-20-contrato-acordado.md">contrato acordado</a>. A implementação começa pela T-100, liberada com MSW.</p>
-          <details open>
-            <summary>Tarefas da etapa atual</summary>
-            <ul class="etapas">
-              <li><b>T-100 · Cliente e mocks.</b> Cobrir o solo legado, limites de ajudantes e ordem das vezes.</li>
-              <li><b>T-101 · Novo jogo.</b> Adicionar a escolha da quantidade de ajudantes e os erros de campo.</li>
-              <li><b>T-102 · Tela do grupo.</b> Exibir a ordem dos personagens e aplicar o avanço automático, inclusive na retomada e nas transições.</li>
-              <li><b>T-103 · Laboratório.</b> Integrar a edição das prioridades dos ajudantes à tela existente.</li>
-              <li><b>T-104 · Validação integrada.</b> Rodar os cenários do contrato com MSW desligado e registrar as evidências.</li>
-            </ul>
-          </details>
+          <p><strong>40%</strong> · 2 de 5 features validadas</p>
+          <progress aria-labelledby="progresso-ia" value="2" max="5"></progress>
         </article>
         <article class="card marco">
           <h3 id="progresso-online">3. Jogar multiplayer online</h3>
           <p><strong>0%</strong> · 0 de 4 features validadas</p>
           <progress aria-labelledby="progresso-online" value="0" max="4"></progress>
-          <p>Autenticação, grupos com jogadores humanos em tempo real, relógio da vez e tratamento de desconexões (FEAT-25 a FEAT-28).</p>
         </article>
       </div>
-      <p class="nota">A contagem cobre os três marcos jogáveis. Fundação, acabamento visual (FEAT-30) e executável Tauri (FEAT-29) ficam fora desse recorte.</p>
+      <p class="nota">Cada feature validada no frontend conta como uma entrega. A contagem exclui fundação, acabamento visual e empacotamento.</p>
+    </section>
+    <section aria-labelledby="titulo-prontas">
+      <h2 id="titulo-prontas">Funcionalidades prontas</h2>
+      <ul class="etapas">
+        <li><strong>Campanha e conteúdo:</strong> Novo jogo, saves, classe e deck iniciais, montagem do mapa, catálogo de cartas e editor de coleções no laboratório (FEAT-04 a FEAT-06 e FEAT-31).</li>
+        <li><strong>Exploração e gestão:</strong> mapa, movimento, ações por vez, ajuste de deck, equipamentos, bolsa, cofre e recompensas de Vasculhar (FEAT-07 a FEAT-10 e FEAT-32).</li>
+        <li><strong>Encontros e progressão:</strong> efeitos e status, eventos aleatórios, combate solo, nocaute e respawn, missões e especializações (FEAT-11 a FEAT-15).</li>
+        <li><strong>Serviços e fim da dimensão:</strong> Mercado, ferreiro, oficina, montarias e Estábulo, chefe final, transição de dimensão e coleções estendidas (FEAT-16 a FEAT-19 e FEAT-33).</li>
+        <li><strong>Companheiros de IA:</strong> composição do grupo em Novo jogo, avanço automático das vezes e apresentação sequencial das ações (FEAT-20 e FEAT-21).</li>
+      </ul>
+      <p class="nota"><a href="README.md#índice">Registros de implementação e validação por tarefa</a></p>
+    </section>
+    <section aria-labelledby="titulo-validacao">
+      <h2 id="titulo-validacao">Funcionalidades que faltam validar ou testar</h2>
+      <p>O roadmap atual indica que todas as funcionalidades já entregues no frontend foram validadas. A próxima validação integrada prevista é a <strong>T-112 da FEAT-22</strong>, após o acordo de contrato e a implementação.</p>
+      <p>Os cenários cobrem recrutamento, decisões durante a vez da IA, combate por participante e retomada. Um caso de borda é reenviar uma decisão após perda de resposta e avanço da revisão do save, preservando o recibo e evitando duplicar efeitos. <a href="146-feat-22-planejamento.md">Planejamento e cenários da FEAT-22</a></p>
     </section>
     <section aria-labelledby="titulo-estimativas">
-      <h2 id="titulo-estimativas">Trabalho restante</h2>
+      <h2 id="titulo-estimativas">Funcionalidades a fazer</h2>
+      <p><strong>Etapa atual:</strong> a FEAT-22 aguarda a revisão do backend sobre o contrato v1.16. O acordo libera a T-109 para cliente e mocks. A T-110 cobre recrutamento e pausas nas vezes da IA, e a T-111 cobre combate e recompensas em grupo. <a href="146-feat-22-planejamento.md">Registro da etapa</a></p>
       <p class="nota" id="premissas"></p>
       <div class="cards" id="resumo-estimativas"></div>
       <div class="marcos" id="detalhes-estimativas"></div>
     </section>
-    <h2>Tempo registrado</h2>
+    <section aria-labelledby="titulo-historico">
+    <h2 id="titulo-historico">Histórico de tempo</h2>
     <div class="cards" id="cards"></div>
-    <h2>Horas por etapa</h2>
+    <p class="aviso" id="aviso"></p>
+    <div class="historico">
+    <div class="tabela">
+    <h3>Horas por etapa</h3>
     <table><thead><tr><th>Etapa</th><th class="num">Horas</th></tr></thead><tbody id="porEtapa"></tbody></table>
-    <h2>Sessões</h2>
+    </div>
+    <div class="tabela">
+    <h3>Sessões mais recentes primeiro</h3>
     <table>
       <thead><tr><th>Data</th><th>Etapa</th><th class="num">Horas</th><th>Nota</th></tr></thead>
       <tbody id="sessoes"></tbody>
     </table>
-    <p class="aviso" id="aviso"></p>
+    </div>
+    </div>
+    </section>
+    </main>
     <script>
       const fmtH = (h) => (h === null ? '—' : h.toLocaleString('pt-BR') + ' h')
       const somarFaixas = (etapas) => etapas.reduce(
@@ -244,8 +262,7 @@
         ).join('')
         return '<article class="card marco"><h3>' + titulo + '</h3><p><strong>' +
           fmtFaixa(faixa, 'h') + '</strong> · ' + fmtDias(faixa) +
-          '</p><details><summary>Ver escopo e estimativa por feature</summary><ul class="etapas">' +
-          linhas + '</ul></details></article>'
+          '</p><ul class="etapas">' + linhas + '</ul></article>'
       }).join('')
 
       const fmtData = (iso) => {
@@ -276,7 +293,7 @@
           .map(([e, h]) => '<tr><td>' + e + '</td><td class="num">' + fmtH(h) + '</td></tr>')
           .join('') || '<tr><td colspan="2">Nenhuma sessão com horas.</td></tr>'
 
-      document.getElementById('sessoes').innerHTML = ordenadas
+      document.getElementById('sessoes').innerHTML = [...ordenadas].reverse()
         .map(
           (s) =>
             '<tr><td>' + fmtData(s.data) + '</td><td>' + s.etapa + '</td><td class="num">' + fmtH(s.horas) +
