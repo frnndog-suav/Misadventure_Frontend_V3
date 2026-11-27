@@ -73,6 +73,11 @@ const characterField = () =>
 const createButton = () => screen.getByRole('button', { name: 'Criar grupo' })
 const status = () => screen.getByRole('status')
 
+async function submitParty() {
+  await waitFor(() => expect(createButton()).toBeEnabled())
+  fireEvent.click(createButton())
+}
+
 function fill(name: string, characterName: string): void {
   fireEvent.change(nameField(), { target: { value: name } })
   fireEvent.change(characterField(), { target: { value: characterName } })
@@ -92,6 +97,69 @@ function invalid(fields: { field: string | null; reason: string }[]) {
 }
 
 const classGroup = () => screen.getByRole('radiogroup', { name: 'Classe' })
+
+it('REQ-102: atualiza os limites após recusa e preserva os dados para corrigir a quantidade', async () => {
+  let maxPlayers = 4
+  const bodies: unknown[] = []
+  server.use(
+    http.get('*/parties/creation-options', () =>
+      HttpResponse.json({ minPlayers: 2, maxPlayers }),
+    ),
+    http.post('*/parties', async ({ request }) => {
+      bodies.push(await request.json())
+      if (bodies.length === 1) {
+        maxPlayers = 3
+        return invalid([{ field: 'aiHelperCount', reason: 'aboveMaxPlayers' }])
+      }
+      return HttpResponse.json(partyCreatedFixture, { status: 201 })
+    }),
+  )
+  renderNewGame()
+  fill('Os Teimosos', 'Lia')
+  const rogue = await screen.findByRole('radio', { name: /^Ladino/ })
+  fireEvent.click(rogue)
+  const helpers = await screen.findByRole('combobox', {
+    name: 'Ajudantes de IA',
+  })
+  expect(
+    within(helpers)
+      .getAllByRole('option')
+      .map((option) => option.textContent),
+  ).toEqual(['1', '2', '3'])
+  expect(helpers).toHaveValue('1')
+  fireEvent.change(helpers, { target: { value: '3' } })
+  await submitParty()
+  await waitFor(() =>
+    expect(within(helpers).getByRole('option', { name: '3' })).toBeDisabled(),
+  )
+  expect(helpers).toHaveAccessibleDescription(
+    'A quantidade ultrapassa o máximo atual de participantes.',
+  )
+  expect(helpers).toHaveValue('3')
+  expect(nameField()).toHaveValue('Os Teimosos')
+  expect(characterField()).toHaveValue('Lia')
+  expect(rogue).toBeChecked()
+  expect(createButton()).toBeDisabled()
+  fireEvent.change(helpers, { target: { value: '2' } })
+  await submitParty()
+  await waitFor(() =>
+    expect(screen.getByTestId('location')).toHaveTextContent('/grupo/'),
+  )
+  expect(bodies).toEqual([
+    {
+      name: 'Os Teimosos',
+      characterName: 'Lia',
+      playerClass: 'rogue',
+      aiHelperCount: 3,
+    },
+    {
+      name: 'Os Teimosos',
+      characterName: 'Lia',
+      playerClass: 'rogue',
+      aiHelperCount: 2,
+    },
+  ])
+})
 
 describe('REQ-29: escolha da classe', () => {
   it('REQ-29: grupo "Classe" depois de "Nome do personagem", uma opção por classe na ordem recebida, nenhuma escolhida', async () => {
@@ -186,12 +254,13 @@ describe('REQ-29: escolha da classe', () => {
     fireEvent.click(
       await screen.findByRole('radio', { name: 'Ladino (Destreza)' }),
     )
-    fireEvent.click(createButton())
+    await submitParty()
     await waitFor(() =>
       expect(body).toEqual({
         name: 'Os Teimosos',
         characterName: 'Lia',
         playerClass: 'rogue',
+        aiHelperCount: 0,
       }),
     )
   })
@@ -200,7 +269,7 @@ describe('REQ-29: escolha da classe', () => {
     renderNewGame()
     fill('Os Teimosos', 'Lia')
     await screen.findByRole('radio', { name: 'Ladino (Destreza)' })
-    fireEvent.click(createButton())
+    await submitParty()
     await waitFor(() =>
       expect(classGroup()).toHaveAccessibleDescription('Escolha uma classe.'),
     )
@@ -217,7 +286,7 @@ describe('REQ-29: escolha da classe', () => {
     fireEvent.click(
       await screen.findByRole('radio', { name: 'Ladino (Destreza)' }),
     )
-    fireEvent.click(createButton())
+    await submitParty()
     await waitFor(() =>
       expect(classGroup()).toHaveAccessibleDescription(
         'Esta classe não está mais disponível.',
@@ -237,7 +306,7 @@ describe('REQ-29: escolha da classe', () => {
       name: 'Ladino (Destreza)',
     })
     fireEvent.click(rogue)
-    fireEvent.click(createButton())
+    await submitParty()
     await waitFor(() =>
       expect(status()).toHaveTextContent(dimensionInvalidFixture.error.message),
     )
@@ -283,7 +352,7 @@ describe('REQ-15: novo jogo', () => {
     ).toBeInTheDocument()
     expect(nameField()).toBeInTheDocument()
     expect(characterField()).toBeInTheDocument()
-    expect(createButton()).toBeEnabled()
+    expect(createButton()).toBeDisabled()
     expect(screen.getByRole('link', { name: 'Voltar' })).toHaveAttribute(
       'href',
       '/',
@@ -303,12 +372,16 @@ describe('REQ-15: novo jogo', () => {
     )
     renderNewGame()
     fill('  Os Teimosos ', ' Lia')
-    fireEvent.click(createButton())
+    await submitParty()
 
     await waitFor(() => expect(status()).toHaveTextContent('Criando grupo…'))
     expect(createButton()).toBeDisabled()
     await waitFor(() =>
-      expect(body).toEqual({ name: '  Os Teimosos ', characterName: ' Lia' }),
+      expect(body).toEqual({
+        name: '  Os Teimosos ',
+        characterName: ' Lia',
+        aiHelperCount: 0,
+      }),
     )
     release()
   })
@@ -317,7 +390,7 @@ describe('REQ-15: novo jogo', () => {
     renderNewGame()
     fill('Os Teimosos', 'Lia')
     fireEvent.click(await screen.findByRole('radio', { name: /^Guerreiro/ }))
-    fireEvent.click(createButton())
+    await submitParty()
     await waitFor(() =>
       expect(screen.getByTestId('location')).toHaveTextContent(
         `/grupo/${partyCreatedFixture.id}`,
@@ -333,7 +406,7 @@ describe('REQ-15: novo jogo', () => {
     )
     renderNewGame()
     fill('   ', 'Um nome com mais de vinte e quatro letras')
-    fireEvent.click(createButton())
+    await submitParty()
 
     await waitFor(() =>
       expect(nameField()).toHaveAccessibleDescription(
@@ -368,7 +441,7 @@ describe('REQ-15: novo jogo', () => {
       )
       renderNewGame()
       fill('a', 'b')
-      fireEvent.click(createButton())
+      await submitParty()
       await waitFor(() =>
         expect(nameField()).toHaveAccessibleDescription(nameText),
       )
@@ -379,7 +452,7 @@ describe('REQ-15: novo jogo', () => {
   it('REQ-15: members belowMinPlayers mostra o aviso na área de status', async () => {
     renderNewGame()
     fill('Solo', 'Lia')
-    fireEvent.click(createButton())
+    await submitParty()
     await waitFor(() =>
       expect(status()).toHaveTextContent(
         'A configuração atual não permite jogar com um grupo de 1.',
@@ -396,7 +469,7 @@ describe('REQ-15: novo jogo', () => {
     )
     renderNewGame()
     fill('a', 'b')
-    fireEvent.click(createButton())
+    await submitParty()
     await waitFor(() =>
       expect(status()).toHaveTextContent('Dados do grupo inválidos.'),
     )
@@ -417,13 +490,13 @@ describe('REQ-15: novo jogo', () => {
     )
     renderNewGame()
     fill('   ', 'x')
-    fireEvent.click(createButton())
+    await submitParty()
     await waitFor(() =>
       expect(nameField()).toHaveAccessibleDescription(
         'Informe o nome do grupo.',
       ),
     )
-    fireEvent.click(createButton())
+    await submitParty()
     await waitFor(() => expect(status()).toHaveTextContent('Criando grupo…'))
     expect(nameField()).not.toHaveAccessibleDescription()
     expect(characterField()).not.toHaveAccessibleDescription()
@@ -438,7 +511,7 @@ describe('REQ-15: novo jogo', () => {
     )
     renderNewGame()
     fill('a', 'b')
-    fireEvent.click(createButton())
+    await submitParty()
     await waitFor(() =>
       expect(status()).toHaveTextContent(internalErrorFixture.error.message),
     )
@@ -448,7 +521,7 @@ describe('REQ-15: novo jogo', () => {
     server.use(http.post('*/parties', () => HttpResponse.error()))
     renderNewGame()
     fill('a', 'b')
-    fireEvent.click(createButton())
+    await submitParty()
     await waitFor(() =>
       expect(status()).toHaveTextContent(
         'Servidor indisponível. Tente novamente.',
@@ -464,7 +537,7 @@ describe('REQ-15: novo jogo', () => {
     )
     renderNewGame()
     fill('a', 'b')
-    fireEvent.click(createButton())
+    await submitParty()
     await waitFor(() =>
       expect(status()).toHaveTextContent(
         'Servidor indisponível. Tente novamente.',

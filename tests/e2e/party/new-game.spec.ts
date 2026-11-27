@@ -1,6 +1,30 @@
 import { expect, test } from '@playwright/test'
 
 test.describe('REQ-15: novo jogo (MSW)', () => {
+  test('REQ-102: cria um grupo com o máximo padrão de cinco ajudantes', async ({
+    page,
+  }) => {
+    await page.goto('/novo')
+    const helpers = page.getByRole('combobox', { name: 'Ajudantes de IA' })
+    await expect(helpers.getByRole('option')).toHaveText([
+      '0',
+      '1',
+      '2',
+      '3',
+      '4',
+      '5',
+    ])
+    await expect(helpers).toHaveValue('0')
+    await helpers.selectOption('5')
+    await page
+      .getByRole('textbox', { name: 'Nome do grupo' })
+      .fill('Os Teimosos')
+    await page.getByRole('textbox', { name: 'Nome do personagem' }).fill('Lia')
+    await page.getByRole('radio', { name: /^Guerreiro/ }).check()
+    await page.getByRole('button', { name: 'Criar grupo' }).click()
+    await expect(page).toHaveURL(/\/grupo\/fixture\.party-with-5-helpers$/)
+  })
+
   test('REQ-15: criar "Os Teimosos" / "Lia" vai para o grupo criado', async ({
     page,
   }) => {

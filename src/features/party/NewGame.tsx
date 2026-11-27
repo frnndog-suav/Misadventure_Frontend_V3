@@ -13,6 +13,7 @@ import {
   DimensionInvalidError,
   PartyInvalidError,
   useCreateParty,
+  usePartyCreationOptions,
   type PartyInvalidDetails,
 } from '../../api/parties'
 import { Term } from '../../ui/Term'
@@ -42,6 +43,13 @@ const fieldText: Record<
 const belowMinPlayersText =
   'A configuração atual não permite jogar com um grupo de 1.'
 
+const helperCountText: Partial<Record<Reason, string>> = {
+  notInteger: 'Escolha uma quantidade inteira de ajudantes.',
+  outOfRange: 'Escolha uma quantidade válida de ajudantes.',
+  belowMinPlayers: 'A quantidade fica abaixo do mínimo atual de participantes.',
+  aboveMaxPlayers: 'A quantidade ultrapassa o máximo atual de participantes.',
+}
+
 /** Texto do grupo "Classe" por `reason` (REQ-29). */
 const classText: Partial<Record<Reason, string>> = {
   required: 'Escolha uma classe.',
@@ -55,6 +63,7 @@ interface Feedback {
   name?: string
   characterName?: string
   playerClass?: string
+  aiHelperCount?: string
   problems?: string[]
 }
 
@@ -77,6 +86,8 @@ function feedbackFor(error: Error): Feedback {
       feedback[field] = fieldText[field][reason]
     } else if (field === 'playerClass' && reason in classText) {
       feedback.playerClass = classText[reason]
+    } else if (field === 'aiHelperCount') {
+      feedback.aiHelperCount = helperCountText[reason] ?? error.message
     } else if (reason === 'belowMinPlayers') {
       feedback.status = belowMinPlayersText
     } else {
@@ -127,24 +138,50 @@ function ClassDetails({ definition }: { definition: ClassDefinition }) {
   )
 }
 
-/** Tela "Novo jogo": cria o grupo de 1 com a classe escolhida (REQ-15, REQ-29). */
+/** Tela "Novo jogo" (REQ-15, REQ-29, REQ-102). */
 export function NewGame() {
   const create = useCreateParty()
   const classes = useClasses()
+  const options = usePartyCreationOptions()
   const navigate = useNavigate()
   const [name, setName] = useState('')
   const [characterName, setCharacterName] = useState('')
   const [playerClass, setPlayerClass] = useState<PlayerClass | null>(null)
+  const [selectedHelpers, setSelectedHelpers] = useState<number | null>(null)
+  const minHelpers = (options.data?.minPlayers ?? 1) - 1
+  const maxHelpers = (options.data?.maxPlayers ?? 1) - 1
+  const aiHelperCount = selectedHelpers ?? minHelpers
+  const countInRange =
+    aiHelperCount >= minHelpers && aiHelperCount <= maxHelpers
+  const canSubmit =
+    options.isSuccess &&
+    !options.isFetching &&
+    countInRange &&
+    !create.isPending
 
   function submit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault()
+    if (!canSubmit) return
+    setSelectedHelpers(aiHelperCount)
     create.mutate(
       playerClass === null
-        ? { name, characterName }
-        : { name, characterName, playerClass },
+        ? { name, characterName, aiHelperCount }
+        : { name, characterName, playerClass, aiHelperCount },
       {
         onSuccess: (party) =>
           navigate(`/grupo/${encodeURIComponent(party.id)}`),
+        onError: (error) => {
+          if (
+            error instanceof PartyInvalidError &&
+            error.fields.some(
+              ({ field, reason }) =>
+                field === 'aiHelperCount' &&
+                (reason === 'belowMinPlayers' || reason === 'aboveMaxPlayers'),
+            )
+          ) {
+            void options.refetch()
+          }
+        },
       },
     )
   }
@@ -155,6 +192,13 @@ export function NewGame() {
   else if (classes.isPending) feedback = { status: 'Carregando classes…' }
   else if (classes.isError) feedback = { status: messageOf(classes.error) }
 
+  const countError = feedback.aiHelperCount
+  const helperChoices = options.data
+    ? Array.from(
+        { length: maxHelpers - minHelpers + 1 },
+        (_, i) => minHelpers + i,
+      )
+    : []
   const chosen = classes.data?.find((c) => c.playerClass === playerClass)
 
   return (
@@ -219,7 +263,43 @@ export function NewGame() {
         )}
         {chosen !== undefined && <ClassDetails definition={chosen} />}
 
-        <button type="submit" disabled={create.isPending}>
+        <label htmlFor="ai-helper-count">Ajudantes de IA</label>
+        <select
+          id="ai-helper-count"
+          value={options.data ? aiHelperCount : ''}
+          disabled={!options.data || options.isFetching || create.isPending}
+          aria-invalid={countError ? true : undefined}
+          aria-describedby={countError ? 'ai-helper-count-error' : undefined}
+          onChange={(event) => setSelectedHelpers(Number(event.target.value))}
+        >
+          {!options.data && <option value="">—</option>}
+          {!countInRange && (
+            <option value={aiHelperCount} disabled>
+              {aiHelperCount}
+            </option>
+          )}
+          {helperChoices.map((count) => (
+            <option key={count} value={count}>
+              {count}
+            </option>
+          ))}
+        </select>
+        {countError && (
+          <p id="ai-helper-count-error" role="alert">
+            {countError}
+          </p>
+        )}
+        {options.isPending && <p>Carregando limites de criação…</p>}
+        {options.isError && (
+          <>
+            <p role="alert">{messageOf(options.error)}</p>
+            <button type="button" onClick={() => void options.refetch()}>
+              Recarregar limites
+            </button>
+          </>
+        )}
+
+        <button type="submit" disabled={!canSubmit}>
           Criar grupo
         </button>
       </form>
