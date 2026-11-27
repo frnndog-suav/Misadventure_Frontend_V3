@@ -1,5 +1,36 @@
 import { expect, test } from '@playwright/test'
 
+test('REQ-103 a REQ-105: abre com IA em primeiro e recupera o fim da vez sem enviar outra intenção', async ({
+  page,
+}) => {
+  await page.goto('/grupo/fixture.party-with-3-helpers-recovery')
+  const order = page.getByRole('list', { name: 'Ordem dos jogadores' })
+  const turn = page.getByRole('region', { name: 'A vez' })
+  const endTurn = turn.getByRole('button', { name: 'Encerrar a vez' })
+  await expect(order.getByRole('listitem')).toHaveText([
+    'Ajudante 1',
+    'Lia',
+    'Ajudante 2',
+    'Ajudante 3',
+  ])
+  await expect(order.locator('[aria-current="true"]')).toHaveText('Lia')
+  await expect(page.getByRole('list', { name: 'Membros' })).toContainText(
+    'Ajudante 3 (IA)',
+  )
+  await expect(turn).toContainText('Rodada 1')
+
+  await endTurn.click()
+  const retry = page.getByRole('button', { name: 'Reenviar ação' })
+  await expect(retry).toBeEnabled()
+  await expect(endTurn).toBeDisabled()
+  await expect(turn).toContainText('Rodada 1')
+  await retry.click()
+  await expect(turn).toContainText('Rodada 2')
+  await expect(order.locator('[aria-current="true"]')).toHaveText('Lia')
+  await expect(endTurn).toBeEnabled()
+  await expect(retry).toHaveCount(0)
+})
+
 test('REQ-92: conclusão abaixo da cidade e itens na seção do membro', async ({
   page,
 }) => {

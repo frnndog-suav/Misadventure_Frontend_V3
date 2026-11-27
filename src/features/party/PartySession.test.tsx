@@ -32,6 +32,7 @@ import {
   resetCombatScenarios,
 } from '../../mocks/combatFixtures'
 import { handlers } from '../../mocks/handlers'
+import { nextDimensionFixture } from '../../mocks/dimensionCompletionFixtures'
 import {
   marketRefusalFixture,
   partyBoosterOpenedFixture,
@@ -63,6 +64,7 @@ import {
   partyScavengedFixture,
   partySessionNotActiveFixture,
   partyVaultUsedFixture,
+  partyWithHelpersFixture,
 } from '../../mocks/partyFixtures'
 
 const server = setupServer(...handlers)
@@ -106,6 +108,134 @@ function renderParty(id: string = partyId) {
 
 const status = () => screen.getAllByRole('status')[0]
 const endButton = () => screen.getByRole('button', { name: 'Encerrar sessão' })
+
+it('REQ-103 a REQ-105: reenvia a mesma intenção após falha e aplica a nova ordem', async () => {
+  const party = partyWithHelpersFixture(3)
+  const host = party.members[0]
+  const resumed = {
+    ...party,
+    status: 'inSession',
+    members: [
+      {
+        ...host,
+        player: {
+          ...host.player,
+          availableActions: [
+            ...host.player.availableActions,
+            'completeDimension',
+          ],
+        },
+      },
+      ...party.members.slice(1),
+    ],
+    turn: { ...party.turn, memberId: host.id },
+  }
+  const requests: { key: string | null; body: string }[] = []
+  let respond!: () => void
+  const gate = new Promise<void>((resolve) => {
+    respond = resolve
+  })
+  server.use(
+    http.post('*/parties/:id/session', () => HttpResponse.json(resumed)),
+    http.post('*/parties/:id/actions', async ({ request }) => {
+      requests.push({
+        key: request.headers.get('Idempotency-Key'),
+        body: await request.text(),
+      })
+      if (requests.length === 1) {
+        await gate
+        return HttpResponse.json(internalErrorFixture, { status: 500 })
+      }
+      return HttpResponse.json({
+        ...resumed,
+        dimension: {
+          ...party.dimension,
+          dimensionCardId: nextDimensionFixture.id,
+        },
+        turnOrder: [...party.turnOrder].reverse(),
+        turn: { ...resumed.turn, round: 2 },
+        combatUpdates: [],
+      })
+    }),
+  )
+  const view = renderParty(party.id)
+  const endTurn = () => screen.getByRole('button', { name: 'Encerrar a vez' })
+  const order = () => screen.getByRole('list', { name: 'Ordem dos jogadores' })
+  fireEvent.click(
+    await screen.findByRole('button', { name: /^Concluir dimensão/ }),
+  )
+  await waitFor(() => expect(requests).toHaveLength(1))
+  expect(requests[0].key).toMatch(/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i)
+  expect(endTurn()).toBeDisabled()
+  expect(within(order()).getByText('Lia').closest('li')).toHaveAttribute(
+    'aria-current',
+    'true',
+  )
+  expect(screen.getByRole('list', { name: 'Membros' })).toHaveTextContent(
+    'Ajudante 1 (IA)',
+  )
+  respond()
+  await screen.findByRole('button', { name: 'Reenviar ação' })
+  expect(endTurn()).toBeDisabled()
+  expect(endButton()).toBeDisabled()
+  view.unmount()
+  renderParty(party.id)
+  fireEvent.click(await screen.findByRole('button', { name: 'Reenviar ação' }))
+  await screen.findByText('Rodada 2', { exact: true })
+  expect(requests[1]).toEqual(requests[0])
+  expect(JSON.parse(requests[1].body)).toEqual({ type: 'completeDimension' })
+  expect(await screen.findByText('Dimensão: Segunda Dimensão')).toBeVisible()
+  expect(
+    within(order())
+      .getAllByRole('listitem')
+      .map((item) => item.textContent),
+  ).toEqual(['Ajudante 3', 'Ajudante 2', 'Lia', 'Ajudante 1'])
+  expect(endTurn()).toBeEnabled()
+  fireEvent.click(endTurn())
+  await waitFor(() => expect(requests).toHaveLength(3))
+  expect(requests[2].key).not.toBe(requests[0].key)
+  await waitFor(() => expect(endTurn()).toBeEnabled())
+})
+
+it('REQ-104: retoma um avanço pendente pela sessão e aplica o congelamento recebido', async () => {
+  const party = partyWithHelpersFixture(2)
+  const host = party.members[0]
+  let opens = 0
+  server.use(
+    http.post('*/parties/:id/session', () => {
+      opens += 1
+      const snapshot = {
+        ...party,
+        status: opens === 1 ? 'inSession' : 'frozen',
+        turn: { ...party.turn, memberId: host.id, round: opens },
+      }
+      return HttpResponse.json(snapshot)
+    }),
+    http.post('*/parties/:id/actions', () =>
+      HttpResponse.json(
+        {
+          error: {
+            code: 'ACTION_ADVANCE_PENDING',
+            message: 'Avanço pendente.',
+          },
+        },
+        { status: 409 },
+      ),
+    ),
+  )
+  renderParty(party.id)
+  const endTurn = await screen.findByRole('button', { name: 'Encerrar a vez' })
+  fireEvent.click(endTurn)
+  const resume = await screen.findByRole('button', { name: 'Retomar sessão' })
+  expect(endTurn).toBeDisabled()
+  expect(
+    screen.queryByRole('button', { name: 'Reenviar ação' }),
+  ).not.toBeInTheDocument()
+  fireEvent.click(resume)
+  await screen.findByText('Congelado')
+  expect(screen.getByText('Rodada 2', { exact: true })).toBeVisible()
+  expect(endTurn).toBeDisabled()
+})
 
 it('REQ-63: salva a Urbana atual, mantém o estado em uma recusa e recupera o ponto ao reabrir', async () => {
   const id = 'fixture.knockout-spawn'

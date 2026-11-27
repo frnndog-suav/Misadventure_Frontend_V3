@@ -173,3 +173,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 136 | T-104 | [Validação integrada da FEAT-20](136-t-104-validacao-integrada-feat-20.md) | bloqueada |
 | 137 | T-100 | [Cliente e fixtures MSW da FEAT-20](137-t-100-cliente-msw-feat-20.md) | concluída |
 | 138 | T-101 | [Ajudantes de IA em Novo jogo](138-t-101-ajudantes-novo-jogo.md) | concluída |
+| 139 | T-102 | [Composição e avanço automático dos ajudantes](139-t-102-composicao-avanco-ajudantes.md) | concluída |

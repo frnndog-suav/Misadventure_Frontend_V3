@@ -270,8 +270,12 @@ async function createPartyScenario(request: Request): Promise<Response> {
   return HttpResponse.json(partyCreatedFixture, { status: 201 })
 }
 
+const helperRecoveryId = 'fixture.party-with-3-helpers-recovery'
+const interruptedHelperActions = new Set<string>()
+
 function helperParty(id: unknown) {
   if (typeof id !== 'string') return
+  if (id === helperRecoveryId) return { ...partyWithHelpersFixture(3), id }
   const match = /^fixture\.party-with-([1-5])-helpers$/.exec(id)
   if (match) return partyWithHelpersFixture(Number(match[1]))
 }
@@ -1678,16 +1682,18 @@ export const handlers: RequestHandler[] = [
       ),
     )
   }),
-  http.post('*/parties/:partyId/session/end', ({ params }) =>
-    knownParty(params.partyId, () =>
+  http.post('*/parties/:partyId/session/end', ({ params }) => {
+    const party = helperParty(params.partyId)
+    if (party) return HttpResponse.json(party)
+    return knownParty(params.partyId, () =>
       HttpResponse.json(
         completionParty(params.partyId) ??
           questParty(params.partyId, 'idle') ??
           knockoutParty(params.partyId, 'idle') ??
           partyIdleFixture,
       ),
-    ),
-  ),
+    )
+  }),
   http.post('*/parties/:partyId/actions', async ({ params, request }) => {
     const party = helperParty(params.partyId)
     if (party) {
@@ -1712,6 +1718,10 @@ export const handlers: RequestHandler[] = [
         return HttpResponse.json(actionInvalidUnknownActionFixture, {
           status: 400,
         })
+      }
+      if (party.id === helperRecoveryId && !interruptedHelperActions.has(key)) {
+        interruptedHelperActions.add(key)
+        return HttpResponse.error()
       }
       return HttpResponse.json({
         ...party,

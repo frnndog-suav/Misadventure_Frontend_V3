@@ -21,6 +21,8 @@ import {
   useStartSession,
   type CardCopies,
   type Party,
+  type PartyAction,
+  type PartyActionRequest,
   type PartyActionResponse,
   type PartyMember,
   type PartyStatus,
@@ -1902,6 +1904,7 @@ function PreparedMatch({
 }) {
   const names = new Map(party.members.map((m) => [m.id, m.characterName]))
   const host = party.members.find((m) => m.isHost)
+  const hasHelpers = party.members.some((member) => member.kind === 'aiHelper')
   return (
     <>
       <p>Dimensão: {nameOf(cards, party.dimension.dimensionCardId)}</p>
@@ -2009,7 +2012,13 @@ function PreparedMatch({
       <h2 id="turn-order-title">Ordem dos jogadores</h2>
       <ul aria-labelledby="turn-order-title">
         {party.turnOrder.map((id) => (
-          <li key={id}>{names.get(id)}</li>
+          <li key={id} aria-current={id === party.turn.memberId || undefined}>
+            {hasHelpers && id === party.turn.memberId ? (
+              <strong>{names.get(id)}</strong>
+            ) : (
+              names.get(id)
+            )}
+          </li>
         ))}
       </ul>
       {party.members.map((member) => (
@@ -2061,20 +2070,63 @@ function isNotFound(error: Error | null): boolean {
   return error instanceof ApiError && error.code === 'PARTY_NOT_FOUND'
 }
 
+type ActionCallbacks = {
+  onSuccess?: (response: PartyActionResponse) => void
+  onError?: (error: Error) => void
+}
+
+function readPendingAction(storageKey: string): PartyActionRequest | null {
+  try {
+    const value = sessionStorage.getItem(storageKey)
+    if (value !== null) return JSON.parse(value) as PartyActionRequest
+  } catch {
+    // A ação continua recuperável na tela se o navegador bloquear o storage.
+  }
+  return null
+}
+
+function storePendingAction(
+  storageKey: string,
+  request: PartyActionRequest | null,
+): void {
+  try {
+    if (request === null) sessionStorage.removeItem(storageKey)
+    else sessionStorage.setItem(storageKey, JSON.stringify(request))
+  } catch {
+    // O armazenamento local não deve impedir o envio.
+  }
+}
+
+function actionWasRefused(error: Error): boolean {
+  if (error instanceof ActionNotAllowedError) return true
+  return (
+    error instanceof ApiError &&
+    error.status !== undefined &&
+    error.status >= 400 &&
+    error.status < 500 &&
+    ![408, 425, 429].includes(error.status)
+  )
+}
+
 /** Tela do grupo em sessão (REQ-16): Continuar ao abrir, "Encerrar sessão". */
 export function PartySession() {
   const { partyId = '' } = useParams()
+  return <PartySessionView key={partyId} partyId={partyId} />
+}
+
+function PartySessionView({ partyId }: { partyId: string }) {
   const navigate = useNavigate()
   const start = useStartSession(partyId)
   const end = useEndSession(partyId)
   const action = usePartyAction(partyId)
   const { mutate: startSession } = start
   const reloadChoice =
-    start.data?.combat != null ||
-    start.data?.triggeredEffectChoice != null ||
-    start.data?.lastCombatResult != null ||
-    start.data?.randomEventEncounter != null ||
-    (start.data?.pendingRewards.length ?? 0) > 0
+    !start.data?.members.some((member) => member.kind === 'aiHelper') &&
+    (start.data?.combat != null ||
+      start.data?.triggeredEffectChoice != null ||
+      start.data?.lastCombatResult != null ||
+      start.data?.randomEventEncounter != null ||
+      (start.data?.pendingRewards.length ?? 0) > 0)
   const restoredParty = useParty(start.isSuccess ? partyId : null, reloadChoice)
 
   // Continuar ao abrir; repetir não muda nada (CONTRATO §3 FEAT-05, D-37).
@@ -2101,6 +2153,78 @@ export function PartySession() {
       : undefined
     : start.data
   const party = confirmed?.party ?? initialParty
+  const hasHelpers = party?.members.some((member) => member.kind === 'aiHelper')
+  const host = party?.members.find((m) => m.isHost)
+  const waitingForHuman =
+    hasHelpers &&
+    party?.status === 'inSession' &&
+    party.turn.memberId !== host?.id
+  const storageKey = `party-action:${import.meta.env.VITE_API_URL ?? ''}:${partyId}`
+  const [pendingRequest, setPendingRequest] = useState(() =>
+    readPendingAction(storageKey),
+  )
+  const inFlight = useRef(false)
+  const callbacks = useRef<ActionCallbacks | undefined>(undefined)
+  const unresolvedAction = hasHelpers && pendingRequest !== null
+  const advancePending =
+    action.error instanceof ApiError &&
+    action.error.code === 'ACTION_ADVANCE_PENDING'
+  const busy = start.isPending || end.isPending || action.isPending
+  const actionsBlocked =
+    busy ||
+    unresolvedAction ||
+    advancePending ||
+    waitingForHuman ||
+    party?.status === 'frozen'
+
+  function sendPending(request: PartyActionRequest): void {
+    if (inFlight.current) return
+    inFlight.current = true
+    action.mutate(request, {
+      onSuccess: (response) => {
+        inFlight.current = false
+        setPendingRequest(null)
+        storePendingAction(storageKey, null)
+        callbacks.current?.onSuccess?.(response)
+        callbacks.current = undefined
+      },
+      onError: (error) => {
+        inFlight.current = false
+        if (actionWasRefused(error)) {
+          setPendingRequest(null)
+          storePendingAction(storageKey, null)
+          callbacks.current?.onError?.(error)
+          callbacks.current = undefined
+        }
+      },
+    })
+  }
+
+  function sendAction(intent: PartyAction, handlers?: ActionCallbacks): void {
+    if (actionsBlocked || inFlight.current) return
+    if (!hasHelpers) {
+      action.mutate(intent, handlers)
+      return
+    }
+    const request = structuredClone({
+      ...intent,
+      idempotencyKey: crypto.randomUUID(),
+    })
+    callbacks.current = handlers
+    setPendingRequest(request)
+    storePendingAction(storageKey, request)
+    sendPending(request)
+  }
+
+  function resumeAdvance(): void {
+    startSession(undefined, {
+      onSuccess: (party) => {
+        action.reset()
+        setConfirmed({ party })
+      },
+    })
+  }
+
   const completion = party?.lastDimensionCompletion
   const [dismissedCompletion, setDismissedCompletion] = useState<string>()
   const [viewedBossCompletion, setViewedBossCompletion] = useState<string>()
@@ -2123,9 +2247,12 @@ export function PartySession() {
   }
   const classes = useClasses()
   const cards = useCatalogCards(party === undefined ? [] : cardIdsOf(party))
-  const host = party?.members.find((m) => m.isHost)
   const reward = party?.pendingRewards[0]
-  const deadline = reward?.decisionDeadlineAt
+  const deadline =
+    hasHelpers &&
+    party?.members.filter(({ kind }) => kind === 'human').length === 1
+      ? null
+      : reward?.decisionDeadlineAt
   const { refetch } = restoredParty
   const [expiredDeadline, setExpiredDeadline] = useState<string>()
   const deadlineKey = deadline
@@ -2191,7 +2318,14 @@ export function PartySession() {
   )
 
   let status = ''
-  if (end.isError) status = errorText(end.error)
+  if (hasHelpers && start.isPending)
+    status = 'Retomando o avanço dos ajudantes…'
+  else if (hasHelpers && action.isPending)
+    status = 'Processando a ação e o avanço dos ajudantes…'
+  else if (hasHelpers && start.isError) status = errorText(start.error)
+  else if (unresolvedAction && action.isError) status = errorText(action.error)
+  else if (unresolvedAction) status = 'Aguardando a confirmação da ação.'
+  else if (end.isError) status = errorText(end.error)
   else if (
     action.isError &&
     !adjustFailed &&
@@ -2334,7 +2468,9 @@ export function PartySession() {
             {party.members.map((member) => (
               <li key={member.id}>
                 {member.characterName}
-                {member.isHost && ' (host)'}
+                {member.isHost
+                  ? ' (host)'
+                  : member.kind === 'aiHelper' && ' (IA)'}
               </li>
             ))}
           </ul>
@@ -2343,7 +2479,7 @@ export function PartySession() {
           <button
             type="button"
             onClick={endSession}
-            disabled={end.isPending || action.isPending || !!party.combat}
+            disabled={actionsBlocked || !!party.combat}
           >
             Encerrar sessão
           </button>
@@ -2354,8 +2490,8 @@ export function PartySession() {
               cards={cards.cards}
               names={combatNames}
               catalogPending={cards.isPending}
-              pending={action.isPending || end.isPending}
-              onAction={(intent) => action.mutate(intent)}
+              pending={actionsBlocked}
+              onAction={(intent) => sendAction(intent)}
             />
           )}
           <CombatReport
@@ -2379,16 +2515,16 @@ export function PartySession() {
               choice={party.triggeredEffectChoice}
               host={host}
               cards={cards.cards}
-              pending={action.isPending || end.isPending}
-              onAction={(intent) => action.mutate(intent)}
+              pending={actionsBlocked}
+              onAction={(intent) => sendAction(intent)}
             />
           )}
           {!party.combat && host && (
             <PrepareAbilities
               host={host}
               cards={cards.cards}
-              pending={action.isPending || end.isPending}
-              onAction={(intent) => action.mutate(intent)}
+              pending={actionsBlocked}
+              onAction={(intent) => sendAction(intent)}
             />
           )}
           <PreparedMatch
@@ -2400,47 +2536,45 @@ export function PartySession() {
                 <QuestPanel
                   player={host.player}
                   classes={classes.data ?? []}
-                  pending={action.isPending || end.isPending}
-                  onAction={(intent) => action.mutate(intent)}
+                  pending={actionsBlocked}
+                  onAction={(intent) => sendAction(intent)}
                 />
               )
             }
             onMove={(zoneId, viaZoneId) =>
-              action.mutate(
+              sendAction(
                 viaZoneId === undefined
                   ? { type: 'move', zoneId }
                   : { type: 'move', zoneId, viaZoneId },
               )
             }
-            onEndTurn={() => action.mutate({ type: 'endTurn' })}
+            onEndTurn={() => sendAction({ type: 'endTurn' })}
             onCompleteDimension={() =>
-              action.mutate({ type: 'completeDimension' })
+              sendAction({ type: 'completeDimension' })
             }
-            onSaveRespawnPoint={() =>
-              action.mutate({ type: 'saveRespawnPoint' })
-            }
-            onRecover={(option) => action.mutate({ type: 'recover', option })}
-            onScavenge={(cardId) => action.mutate({ type: 'scavenge', cardId })}
+            onSaveRespawnPoint={() => sendAction({ type: 'saveRespawnPoint' })}
+            onRecover={(option) => sendAction({ type: 'recover', option })}
+            onScavenge={(cardId) => sendAction({ type: 'scavenge', cardId })}
             onSaveBuild={(build) =>
-              action.mutate(
+              sendAction(
                 { type: 'adjustDeck', build },
                 { onSuccess: () => setAdjusting(false) },
               )
             }
             onUseVault={(operations, onError) =>
-              action.mutate(
+              sendAction(
                 { type: 'useVault', operations },
                 { onSuccess: () => setVaulting(false), onError },
               )
             }
             onVisitMarket={(operations, onError) =>
-              action.mutate(
+              sendAction(
                 { type: 'visitMarket', operations },
                 { onSuccess: () => setMarketing(false), onError },
               )
             }
             onBlacksmith={(source, operations, onError) =>
-              action.mutate(
+              sendAction(
                 {
                   type:
                     source === 'blacksmith'
@@ -2453,15 +2587,15 @@ export function PartySession() {
             }
             onEquip={(cardId) => {
               setPreparedCardId(cardId)
-              action.mutate({ type: 'prepare', operation: 'equip', cardId })
+              sendAction({ type: 'prepare', operation: 'equip', cardId })
             }}
             onUnequip={(slot, cardId) => {
               setPreparedCardId(cardId)
-              action.mutate({ type: 'prepare', operation: 'unequip', slot })
+              sendAction({ type: 'prepare', operation: 'unequip', slot })
             }}
             onOpenBooster={(cardId) => {
               setPreparedCardId(cardId)
-              action.mutate({
+              sendAction({
                 type: 'prepare',
                 operation: 'openBooster',
                 cardId,
@@ -2469,16 +2603,16 @@ export function PartySession() {
             }}
             onTransfer={(request) => {
               setPreparedCardId(request.cardId)
-              action.mutate({
+              sendAction({
                 type: 'prepare',
                 operation: 'transferMount',
                 ...request,
               })
             }}
             onActivate={(activation, onSuccess) =>
-              action.mutate(activation, { onSuccess })
+              sendAction(activation, { onSuccess })
             }
-            onEvent={(event) => action.mutate(event)}
+            onEvent={(event) => sendAction(event)}
             eventError={eventAction ? action.error : null}
             adjustError={
               adjustFailed
@@ -2501,7 +2635,7 @@ export function PartySession() {
             setMarketing={setMarketing}
             smithing={smithing}
             setSmithing={setSmithing}
-            moving={action.isPending || end.isPending}
+            moving={actionsBlocked}
           />
           {delivery && (
             <p aria-live="polite">
@@ -2519,18 +2653,17 @@ export function PartySession() {
           {reward && (
             <RewardChoice
               key={reward.id}
-              reward={reward}
+              reward={{ ...reward, decisionDeadlineAt: deadline ?? null }}
               cards={cards.cards}
               disabled={
                 reward.memberId !== host?.id ||
                 !host.player.availableActions.includes('resolveReward') ||
-                action.isPending ||
-                end.isPending ||
+                actionsBlocked ||
                 awaitingReward
               }
               onResolve={(choice) => {
                 setResolvingScavenge(reward.source.type === 'scavenge')
-                action.mutate(choice)
+                sendAction(choice)
               }}
             />
           )}
@@ -2553,6 +2686,22 @@ export function PartySession() {
         </>
       )}
       <p role="status">{status}</p>
+      {unresolvedAction && (
+        <button
+          type="button"
+          disabled={busy || advancePending}
+          onClick={() => sendPending(pendingRequest)}
+        >
+          Reenviar ação
+        </button>
+      )}
+      {(waitingForHuman ||
+        advancePending ||
+        (start.isError && !canReturnHome)) && (
+        <button type="button" disabled={busy} onClick={resumeAdvance}>
+          Retomar sessão
+        </button>
+      )}
       {action.isSuccess &&
         action.variables.type === 'visitMarket' &&
         host?.player.lastMarketVisit != null && (

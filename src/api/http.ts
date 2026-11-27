@@ -20,12 +20,19 @@ export class ApiError extends Error {
   readonly code: string
   /** `details` do envelope, ainda não validado (cada código tem o seu formato). */
   readonly details: unknown
+  readonly status?: number
 
-  constructor(code: string, message: string, details?: unknown) {
+  constructor(
+    code: string,
+    message: string,
+    details?: unknown,
+    status?: number,
+  ) {
     super(message)
     this.name = 'ApiError'
     this.code = code
     this.details = details
+    this.status = status
   }
 }
 
@@ -63,7 +70,7 @@ export async function requestJson(
     const envelope = errorEnvelopeSchema.safeParse(errorBody)
     if (envelope.success) {
       const { code, message, details } = envelope.data.error
-      throw new ApiError(code, message, details)
+      throw new ApiError(code, message, details, response.status)
     }
     throw new Error(
       `Resposta de erro fora do contrato (§1.4): HTTP ${response.status}`,
