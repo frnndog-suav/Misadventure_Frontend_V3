@@ -58,7 +58,7 @@ export async function requestJson(
   const response = await fetch(
     `${base}${path}`,
     body === undefined
-      ? { method }
+      ? { method, headers }
       : {
           method,
           headers: { 'Content-Type': 'application/json', ...headers },

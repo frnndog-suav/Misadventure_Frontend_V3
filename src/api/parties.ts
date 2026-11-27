@@ -43,6 +43,7 @@ import {
   eventMinimumCheckSchema,
   pendingRewardSchema,
   randomEventActionTypes,
+  randomEventResultSchema,
   randomEventPlayerFields,
   type EventPayment,
   type RandomEventAction,
@@ -314,6 +315,7 @@ export type DimensionCompletionResult = z.infer<
 >
 
 export const partySchema = z.object({
+  revision: z.int().positive().optional(),
   lastDimensionCompletion: dimensionCompletionResultSchema
     .nullable()
     .default(null),
@@ -337,16 +339,119 @@ export const partySchema = z.object({
 })
 export type Party = z.infer<typeof partySchema>
 
+const domainEvent = z.object({
+  id: z.string(),
+  memberId: z.string(),
+  dimensionId: z.string(),
+  round: z.int().positive(),
+})
+
+const domainEventSchema = z.discriminatedUnion('type', [
+  domainEvent.extend({
+    type: z.literal('turnStarted'),
+    payload: z.object({
+      zoneId: z.string(),
+      actionPoints: z.int().nonnegative(),
+    }),
+  }),
+  domainEvent.extend({
+    type: z.literal('turnEnded'),
+    payload: z.object({
+      reason: z.enum(['passed', 'dimensionChanged', 'frozen']),
+    }),
+  }),
+  domainEvent.extend({
+    type: z.literal('moved'),
+    payload: z.object({
+      fromZoneId: z.string(),
+      traversedZoneIds: z.array(z.string()).min(1),
+    }),
+  }),
+  domainEvent.extend({
+    type: z.literal('randomEventStarted'),
+    payload: z.object({ encounterId: z.string(), zoneId: z.string() }),
+  }),
+  domainEvent.extend({
+    type: z.literal('randomEventRevealed'),
+    payload: z.object({
+      encounterId: z.string(),
+      cardId: z.string(),
+      cardTitle: z.string(),
+    }),
+  }),
+  domainEvent.extend({
+    type: z.literal('randomEventPhaseChanged'),
+    payload: z.object({
+      encounterId: z.string(),
+      phase: z.enum(['success', 'setback']),
+    }),
+  }),
+  domainEvent.extend({
+    type: z.literal('randomEventEnded'),
+    payload: randomEventResultSchema.pick({
+      encounterId: true,
+      cardId: true,
+      resolution: true,
+      cause: true,
+    }),
+  }),
+  domainEvent.extend({
+    type: z.literal('combatUpdated'),
+    payload: z.object({
+      update: combatUpdateSchema,
+      combatUpdateIndex: z.int().nonnegative(),
+    }),
+  }),
+])
+
+export type DomainEvent = z.infer<typeof domainEventSchema>
+const domainEvents = z.array(domainEventSchema).optional()
+
+const partySessionResponseSchema = partySchema
+  .extend({ domainEvents })
+  .refine(
+    ({ revision, domainEvents }) =>
+      (revision === undefined) === (domainEvents === undefined),
+    {
+      path: ['domainEvents'],
+    },
+  )
+export type PartySessionResponse = z.infer<typeof partySessionResponseSchema>
+
 // Apenas o POST projeta o lote transitório. Respostas anteriores à FEAT-13 o omitem.
 const partyActionResponseSchema = partySchema
-  .extend({ combatUpdates: z.array(combatUpdateSchema).optional() })
+  .extend({
+    revision: z.int().nonnegative().optional(),
+    combatUpdates: z.array(combatUpdateSchema).optional(),
+    domainEvents,
+  })
   .refine(
-    ({ members, combatUpdates }) =>
+    ({ revision, domainEvents }) =>
+      (revision === undefined) === (domainEvents === undefined) &&
+      (revision !== 0 || domainEvents?.length === 0),
+    { path: ['domainEvents'] },
+  )
+  .refine(
+    ({ revision, members, combatUpdates }) =>
       combatUpdates !== undefined ||
-      members.every(({ kind }) => kind === 'human'),
+      revision === 0 ||
+      (revision === undefined && members.every(({ kind }) => kind === 'human')),
     {
       path: ['combatUpdates'],
       message: 'Required for parties with AI helpers',
+    },
+  )
+  .refine(
+    ({ domainEvents, combatUpdates }) =>
+      domainEvents?.every(
+        (event) =>
+          event.type !== 'combatUpdated' ||
+          JSON.stringify(event.payload.update) ===
+            JSON.stringify(combatUpdates?.[event.payload.combatUpdateIndex]),
+      ) ?? true,
+    {
+      path: ['domainEvents'],
+      message: 'Combat event must match its indexed update',
     },
   )
 export type PartyActionResponse = z.infer<typeof partyActionResponseSchema>
@@ -519,11 +624,18 @@ export function useCreateParty(): UseMutationResult<
 /** Continuar: abre (ou mantém) a sessão do grupo. */
 export function useStartSession(
   partyId: string,
-): UseMutationResult<Party, Error, void> {
+): UseMutationResult<PartySessionResponse, Error, string | void> {
   return useMutation({
-    mutationFn: async () =>
-      partySchema.parse(
-        await requestJson('POST', `${partyPath(partyId)}/session`),
+    mutationFn: async (idempotencyKey) =>
+      partySessionResponseSchema.parse(
+        await requestJson(
+          'POST',
+          `${partyPath(partyId)}/session`,
+          undefined,
+          idempotencyKey === undefined
+            ? undefined
+            : { 'Idempotency-Key': idempotencyKey },
+        ),
       ),
     retry: false,
   })

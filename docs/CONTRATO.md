@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 1.10 · **Data:** 2026-11-27
+> **Versão do contrato:** 1.13 · **Data:** 2026-11-27
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -48,7 +48,7 @@
 O backend informa qual versão deste contrato implementa (o endpoint é definido na seção da FEAT-01).
 
 ### 1.6 Estado e intenções
-O frontend lê o **estado** e envia **intenções** (o que o jogador quer fazer). O backend valida a intenção, aplica as regras e devolve o novo estado (ou um erro de §1.4). Como os acontecimentos intermediários chegam à tela (a lista ordenada de `domainEvent` da pendência P-02) é decidido antes da FEAT-21.
+O frontend lê o **estado** e envia **intenções** (o que o jogador quer fazer). O backend valida a intenção, aplica as regras e devolve o novo estado (ou um erro de §1.4). O transporte dos acontecimentos intermediários está definido na FEAT-21, conforme a decisão da P-02.
 
 ## 2. Glossário termo → identificador — `acordado`
 
@@ -3999,6 +3999,61 @@ Reenviar a mesma chave e o mesmo corpo validado enquanto o avanço estiver pende
 5. Preparar dois saves perto da conclusão: um com sucessora e semente que coloque IA primeiro no novo D20, outro na última dimensão. Conferir ordem, cidade inicial, progressão individual e próxima vez humana no primeiro; status congelado e fim do avanço no segundo.
 6. Entregar configuração inicial e uma permutação alternativa. Exercitar GET/PATCH/reset e uma lista inválida, comparar duas campanhas criadas antes/depois do PATCH e confirmar que a primeira conserva a configuração fotografada.
 
+### FEAT-21 — Acompanhar as vezes dos ajudantes — `acordado`
+
+Base: README §11.4, P-02 aprovada no ROADMAP v0.99, SPEC-FRONTEND D-67 e REQ-107 a REQ-109, e avanço da FEAT-20 (SPEC-BACKEND REQ-183 a REQ-185 e D-157). No momento 2, o frontend apresenta as vezes em sequência após a resposta HTTP. A entrega contínua por Socket.IO fica para a FEAT-26.
+
+#### Respostas e acontecimentos públicos
+
+```ts
+type PartyActionResponse = Party & { combatUpdates: CombatUpdate[]; domainEvents: DomainEvent[] }
+type PartySessionResponse = Party & { domainEvents: DomainEvent[] }
+
+type DomainEvent = { id: string; memberId: string; dimensionId: string; round: number } & (
+  | { type: 'turnStarted'; payload: { zoneId: string; actionPoints: number } }
+  | { type: 'turnEnded'; payload: { reason: 'passed' | 'dimensionChanged' | 'frozen' } }
+  | { type: 'moved'; payload: { fromZoneId: string; traversedZoneIds: string[] } }
+  | { type: 'randomEventStarted'; payload: { encounterId: string; zoneId: string } }
+  | { type: 'randomEventRevealed'; payload: { encounterId: string; cardId: string; cardTitle: string } }
+  | { type: 'randomEventPhaseChanged'; payload: { encounterId: string; phase: 'success' | 'setback' } }
+  | { type: 'randomEventEnded'; payload: {
+      encounterId: string; cardId: string;
+      resolution: RandomEventResult['resolution']; cause: RandomEventResult['cause']
+    } }
+  | { type: 'combatUpdated'; payload: { update: CombatUpdate; combatUpdateIndex: number } }
+)
+```
+
+- O lote de `domainEvents` cobre as vezes automáticas. Retorna no nível superior dos dois POSTs, mesmo quando vazio. O GET devolve o `Party` corrente sem os dois lotes. Cada ID é opaco, único por save e estável por checkpoint e recibo. O array segue a ordem de resolução. `memberId` identifica o ajudante da vez, inclusive quando outro participante age no combate. `dimensionId` é o `PartyDimension.dimensionCardId` e `round` é a rodada daquela vez, inclusive no fechamento. Uma vez encerrada por passagem de dimensão ou congelamento fecha no contexto de origem. A primeira vez da sucessora usa o contexto novo. Exemplos de payloads de abertura e fechamento: `{ "zoneId": "city", "actionPoints": 3 }` e `{ "reason": "passed" }`.
+- Exemplo de movimento: `{ "fromZoneId": "city", "traversedZoneIds": ["road", "forest"] }`. A lista segue o percurso, exclui a origem inicial e inclui o destino. Um movimento de uma travessia tem um único item.
+- O evento aleatório começa com a antecipação e identifica a carta na revelação. Exemplo de sequência de payloads: `{ "encounterId": "e1", "zoneId": "forest" }`, `{ "encounterId": "e1", "cardId": "fixture.wounded-traveler", "cardTitle": "Viajante ferido" }`, `{ "encounterId": "e1", "phase": "setback" }` e `{ "encounterId": "e1", "cardId": "fixture.wounded-traveler", "resolution": "setback", "cause": "gaveUp" }`. Cada fase só é emitida se ocorrer. Uma revelação que se converte em combate usa as variantes de combate para a carta e suas transições. O lote segue a projeção pública da FEAT-20 e preserva em sigilo mão e cópias de cartas ocultas, ordem de compra, estado do RNG e dados internos da IA.
+- Cada transição pública de combate na vez automática gera um `combatUpdated`, inclusive início e desfecho. Em ações, `combatUpdateIndex` é o índice de base zero no `combatUpdates` completo da resposta, inclusive quando precedido por atualizações da ação humana. `payload.update` é igual ao item desse índice. Exemplo: `{ "update": { "type": "combatTurnStarted", "combatId": "c1", "actorId": "enemy-1", "turnId": "ct2", "cycle": 1 }, "combatUpdateIndex": 2 }`. No POST de sessão o mesmo índice aponta para a posição no lote de combate da operação, ainda que o array separado só seja exposto no recibo de ação, quando houver. A apresentação da sessão usa `payload.update`. Ao retomar ação pendente via sessão, o lote de acontecimentos é idêntico ao do recibo da ação, inclusive nos índices.
+
+#### Revisão do save
+
+- Acrescentar `Party.revision: number`, inteiro seguro, no nível superior de toda resposta que devolve um `Party` completo, inclusive criação e encerramento de sessão. Novos saves começam em 1 e a migração inicializa os legados em 1. A revisão avança em 1 por transação que altera o estado gravado do save. Isso inclui a intenção humana, a abertura ou o encerramento que altera estado, cada checkpoint que grava uma vez automática, a progressão de dimensão, doações e reparos de legado persistidos pelo GET. Um mesmo commit com várias mudanças avança uma vez. Leituras, projeções derivadas, reenvios, recusas e gravações só de recibo preservam a revisão. A leitura e o incremento são serializados com a gravação do save.
+- O recibo captura o estado e a revisão da transação que confirma a conclusão. Recibos completos anteriores à FEAT-21 preservam os campos históricos e recebem apenas `revision: 0` e `domainEvents: []` no reenvio. Esse zero identifica um recibo histórico sem revisão persistida, sempre anterior à primeira revisão consultável.
+- Antes de apresentar um recibo de atualidade incerta após falha de comunicação, o frontend confirma a revisão via GET. Se houver revisão superior, descarta o lote e usa o estado atual. A mesma proteção vale para respostas que cheguem fora de ordem. O frontend deduplica IDs já consumidos na sessão da interface e usa o estado confirmado ao terminar ou pular a apresentação.
+
+#### Persistência e recuperação
+
+- A chave e o corpo de ações mantêm as regras da FEAT-20. A intenção aceita, seu recibo e os acontecimentos acumulados são gravados junto ao estado e ao RNG a cada checkpoint pertinente. A conclusão grava o snapshot e o lote completos no recibo na mesma transação. A ação original pode ser retomada pela sua chave e corpo ou por abertura de sessão. Quando o POST de sessão conclui uma ação pendente, devolve a projeção de sessão do mesmo resultado.
+- `POST /parties/:partyId/session` continua sem corpo e aceita o cabeçalho opcional `Idempotency-Key` com UUID, no mesmo formato da rota de ações. Um cabeçalho presente e inválido devolve `400 ACTION_INVALID`, `details.fields` com `field: "Idempotency-Key"` e `reason: "invalidIdempotencyKey"`. O frontend gera um UUID por tentativa lógica de abertura, guarda-o antes do envio e o reutiliza se a resposta se perder. O escopo da chave é save e rota. Uma nova abertura intencional usa outro UUID.
+- Uma abertura com chave registra o recibo junto à abertura ou à associação ao avanço pendente, sob a trava do save. Aberturas que encontram o mesmo avanço pendente compartilham os checkpoints e o resultado final, inclusive se a chave original era de ação. O avanço iniciado pela sessão também persiste os lotes por vez concluída. A conclusão finaliza na mesma transação todos os recibos associados. Uma chave concluída devolve o mesmo `200 PartySessionResponse`, inclusive IDs e revisão, antes de avaliar a situação atual do save. Os recibos ficam disponíveis pela vida do save. Durante o avanço pendente, novas ações recebem `409 ACTION_ADVANCE_PENDING`, mantendo a retomada da intenção original.
+- Uma abertura nova sem avanço pendente nem novas vezes automáticas devolve `domainEvents: []`, inclusive após recuperar uma tentativa anterior. Aberturas sem cabeçalho podem retomar avanço ainda pendente. Para recuperar o lote de uma abertura já concluída cuja resposta se perdeu, é necessário reenviar a chave usada nela. Se a abertura terminar em `frozen`, seu recibo continua recuperável e uma nova abertura sem sucessora devolve `409 PARTY_FROZEN`.
+
+#### Cenários para acordo e validação integrada
+
+1. Abrir save solo legado e grupo com humano em primeiro. Conferir `domainEvents: []`, revisão inicial 1 antes da primeira gravação e 2 se a abertura mudar o estado. Repetir uma abertura sem mutação e conferir a mesma revisão. GET devolve a revisão corrente sem lotes.
+2. Abrir com IA em primeiro e verificar início, percurso, fases de evento aleatório, transições de combate e fechamento em ordem de resolução. Conferir os payloads públicos mesmo quando o snapshot final já não contém o encontro. Em avanço iniciado por ação, verificar os índices e a igualdade dos itens, inclusive quando a ação humana ocupou os primeiros índices. Na sessão, a apresentação usa a transição contida no acontecimento.
+3. Encerrar a vez humana com ajudantes consecutivos cruzando a virada de rodada. Conferir a rodada em cada vez, o avanço da revisão por checkpoint, a próxima vez humana e o mesmo estado confirmado ao concluir ou pular a apresentação.
+4. Interromper após um checkpoint e retomar pela chave e corpo da ação original ou por POST de sessão. Conferir o mesmo lote no recibo da ação e na sessão que a concluiu. Em abertura que inicia seu próprio avanço, testar tanto interrupção após checkpoint quanto perda da resposta final. Reenviar o UUID original, inclusive em paralelo, e conferir ordem, IDs estáveis, revisão final idêntica e ausência de jogadas ou sorteios duplicados.
+5. Reenviar uma ação ou abertura com recibo após jogada posterior. Conferir o recibo original, a revisão superior no GET e a ausência de regressão ou repetição na interface. Abrir normalmente com nova chave e conferir lote vazio. Conferir também o fallback do recibo de ação legado com revisão zero.
+6. Transitar para a sucessora com IA em primeiro e conferir a ordem nova, os contextos de dimensão e a apresentação até o humano. Na última dimensão sem sucessora, conferir fechamento em `frozen`, ações indisponíveis, recuperação da resposta de abertura pela chave original se ela tiver concluído o avanço e `409 PARTY_FROZEN` numa nova abertura.
+
+A T-105 começa com MSW após o acordo. A validação integrada ocorre após a implementação no backend, com os seis cenários e a medição de tamanho do lote e duração da resposta com cinco ajudantes.
+
+
 ## 4. Códigos de erro
 
 | Código | Quando acontece | FEAT |
@@ -4021,7 +4076,7 @@ Reenviar a mesma chave e o mesmo corpo validado enquanto o avanço estiver pende
 | `DIMENSION_INVALID` | Não há Carta de Dimensão publicada, a composição da dimensão falhou (README 3.5) ou o gerador passou do limite de tentativas, ao criar um grupo (409: o conteúdo publicado no servidor não permite preparar a partida); `details` com `dimensionCardId` e `problems`. Erro de conteúdo, para o designer. | FEAT-06 |
 | `CLASS_NOT_FOUND` | Classe inexistente no editor (404). | FEAT-06 |
 | `CONTENT_REFERENCED` | Excluir ou renomear uma carta de atributo que está no deck pré-pronto de uma classe (409), ou (FEAT-32) uma carta citada no `rewardDecks` de uma Carta de Dimensão. | FEAT-06 |
-| `ACTION_INVALID` | Intenção malformada (400): corpo, `type` ou campos inválidos, ou zona fora do mapa; `details.fields` diz cada campo e o motivo. | FEAT-07 |
+| `ACTION_INVALID` | Intenção malformada (400): corpo, `type` ou campos inválidos, zona fora do mapa ou `Idempotency-Key` inválido nas rotas com chave; `details.fields` diz cada campo e o motivo. | FEAT-07, FEAT-20, FEAT-21 |
 | `ACTION_NOT_ALLOWED` | Intenção bem formada recusada pela regra (409), ex.: zona sem travessia com a atual, sem pontos de ação (FEAT-08), build irregular ou pasta cheia (FEAT-09); `details.reason`. | FEAT-07 |
 | `LAB_GRANT_INVALID` | Doação do laboratório malformada ou de carta que não se doa (400); `details.fields`. | FEAT-10 |
 | `MEMBER_NOT_FOUND` | Membro inexistente no grupo (404). | FEAT-10 |
@@ -4142,3 +4197,6 @@ Reenviar a mesma chave e o mesmo corpo validado enquanto o avanço estiver pende
 | 1.08 | 2026-11-26 | FE | FEAT-20 `acordado` com os formatos e cenários da v1.07. T-100 liberada com MSW. |
 | 1.09 | 2026-11-27 | BE | FEAT-20 `implementado (BE)`. T-91 preparou os seis cenários e confirmou o acesso direto da T-104, sem prazo explícito do cliente ou proxy. Com cinco ajudantes, máximos observados de 435 ms na sessão e 488 ms no `endTurn`. |
 | 1.10 | 2026-11-27 | BE | FEAT-20 `validado` após os seis cenários da T-104 e a confirmação de `GET /health` com a versão implementada 1.09 (devlogs FE 136 e BE 110). |
+| 1.11 | 2026-11-27 | FE | FEAT-21 `proposto (FE)`: acontecimentos públicos ordenados, reprodução após HTTP e retomada. |
+| 1.12 | 2026-11-27 | BE | FEAT-21 `proposto (BE)`: payloads públicos, índices de combate, revisão monotônica, recibo de abertura e critérios para os seis cenários. |
+| 1.13 | 2026-11-27 | BE | FEAT-21 `acordado` após o frontend aceitar os seis cenários da v1.12. T-105 liberada com MSW. |
