@@ -1195,7 +1195,7 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 
 ### FEAT-20 — Ajudantes de IA
 
-- [ ] **T-100 — Cliente e fixtures MSW** (REQ-102 a REQ-106). Após o contrato ficar `acordado`, atualizar schemas e fixtures para solo legado, limite, recusa, IA em primeiro lugar e ajudantes consecutivos.
+- [x] **T-100 — Cliente e fixtures MSW** (REQ-102 a REQ-106). Após o contrato ficar `acordado`, atualizar schemas e fixtures para solo legado, limite, recusa, IA em primeiro lugar e ajudantes consecutivos.
 - [ ] **T-101 — Quantidade de ajudantes em Novo jogo** (REQ-102). Usar limites vigentes e erros de campo. E2E em `app` e `party`.
 - [ ] **T-102 — Composição e avanço automático** (REQ-103 a REQ-105). Mostrar ordem e aplicar respostas de avanço, retomada e transição. E2E em `party`, com virada de rodada e recuperação após falha.
 - [ ] **T-103 — Prioridades no laboratório** (REQ-106). Integrar à tela existente. E2E em `lab`.

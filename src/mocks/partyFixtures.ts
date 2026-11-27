@@ -292,6 +292,34 @@ export const partyInSessionFixture: Party = {
   status: 'inSession',
 }
 
+export function partyWithHelpersFixture(count: number): Party {
+  const [human] = partyCreatedFixture.members
+  const helpers = Array.from({ length: count }, (_, index) => ({
+    ...human,
+    id: `fixture.helper-${index + 1}`,
+    characterName: `Ajudante ${index + 1}`,
+    kind: 'aiHelper' as const,
+    isHost: false,
+    player: {
+      ...human.player,
+      hand: [],
+      availableActions: [],
+    },
+  }))
+  return {
+    ...partyCreatedFixture,
+    id: `fixture.party-with-${count}-helpers`,
+    status: 'idle',
+    members: [human, ...helpers],
+    turnOrder: [
+      helpers[0].id,
+      human.id,
+      ...helpers.slice(1).map(({ id }) => id),
+    ],
+    turn: { ...partyCreatedFixture.turn, memberId: helpers[0].id },
+  }
+}
+
 /** 200 de POST …/session/end (grava o save e deixa `idle`). */
 export const partyIdleFixture: Party = {
   ...partyCreatedFixture,

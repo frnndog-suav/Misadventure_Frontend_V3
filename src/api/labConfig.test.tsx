@@ -57,6 +57,60 @@ function wrapper({ children }: { children: ReactNode }) {
   )
 }
 
+it('REQ-106: reads, replaces, validates and resets the AI priority order', async () => {
+  const { result } = renderHook(
+    () => ({
+      query: useLabConfig(),
+      patch: useUpdateLabConfig(),
+      reset: useResetLabConfig(),
+    }),
+    { wrapper },
+  )
+  await waitFor(() => expect(result.current.query.isSuccess).toBe(true))
+  const initial = result.current.query.data!
+  expect(initial.values.aiPlayerPriorities).toEqual([
+    'avoidKnockout',
+    'dimensionCompletion',
+    'quests',
+    'peak',
+    'gold',
+  ])
+  expect(initial.limits).not.toHaveProperty('aiPlayerPriorities')
+  const aiPlayerPriorities = [...initial.values.aiPlayerPriorities].reverse()
+  await act(async () => {
+    try {
+      expect(
+        (await result.current.patch.mutateAsync({ aiPlayerPriorities })).values
+          .aiPlayerPriorities,
+      ).toEqual(aiPlayerPriorities)
+      await expect(
+        result.current.patch.mutateAsync({
+          aiPlayerPriorities: [
+            'gold',
+            'gold',
+            'quests',
+            'peak',
+            'avoidKnockout',
+          ],
+        }),
+      ).rejects.toMatchObject({
+        details: {
+          fields: [
+            { field: 'aiPlayerPriorities', reason: 'invalidPriorities' },
+          ],
+        },
+      })
+      expect(
+        (await result.current.query.refetch()).data?.values.aiPlayerPriorities,
+      ).toEqual(aiPlayerPriorities)
+    } finally {
+      expect(
+        (await result.current.reset.mutateAsync()).values.aiPlayerPriorities,
+      ).toEqual(initial.defaults.aiPlayerPriorities)
+    }
+  })
+})
+
 it('REQ-60: GET, PATCH and reset retain combat settings projected by the API', async () => {
   const { result } = renderHook(
     () => ({

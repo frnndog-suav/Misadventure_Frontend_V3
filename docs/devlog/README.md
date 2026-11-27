@@ -170,3 +170,5 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 133 | FEAT-20 | [Aceite do contrato e liberação da T-100](133-feat-20-contrato-acordado.md) | concluída |
 | 134 | DOC | [Progresso dos três marcos jogáveis](134-marcos-jogaveis.md) | concluída |
 | 135 | DOC | [Estimativas de desenvolvimento e detalhes das etapas](135-estimativas-de-desenvolvimento.md) | concluída |
+| 136 | T-104 | [Validação integrada da FEAT-20](136-t-104-validacao-integrada-feat-20.md) | bloqueada |
+| 137 | T-100 | [Cliente e fixtures MSW da FEAT-20](137-t-100-cliente-msw-feat-20.md) | concluída |

@@ -45,6 +45,7 @@ export async function requestJson(
   method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
   path: string,
   body?: unknown,
+  headers?: Record<string, string>,
 ): Promise<unknown> {
   const base = import.meta.env.VITE_API_URL ?? ''
   const response = await fetch(
@@ -53,7 +54,7 @@ export async function requestJson(
       ? { method }
       : {
           method,
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...headers },
           body: JSON.stringify(body),
         },
   )

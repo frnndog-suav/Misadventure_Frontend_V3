@@ -23,6 +23,8 @@ import {
   useAbandonParty,
   useCreateParty,
   useEndSession,
+  usePartyAction,
+  usePartyCreationOptions,
   useParties,
   useStartSession,
 } from './parties'
@@ -37,6 +39,7 @@ import {
   partySessionNotActiveFixture,
 } from '../mocks/partyFixtures'
 import { handlers } from '../mocks/handlers'
+import { useResetLabConfig, useUpdateLabConfig } from './labConfig'
 
 const server = setupServer(...handlers)
 
@@ -82,12 +85,101 @@ describe('REQ-14: schemas de Party e PartySummary (CONTRATO §3 FEAT-05)', () =>
     expect(
       partySchema.safeParse({
         ...partyIdleFixture,
-        members: [{ ...partyIdleFixture.members[0], kind: 'aiHelper' }],
+        members: [{ ...partyIdleFixture.members[0], kind: 'unknown' }],
       }).success,
     ).toBe(false)
     const summary: Record<string, unknown> = { ...partiesFixture[0] }
     delete summary.savedAt
     expect(partySummarySchema.safeParse(summary).success).toBe(false)
+  })
+})
+
+it('REQ-103 / REQ-105: reads legacy solo and five helpers', () => {
+  const [human] = partySchema.parse(partyIdleFixture).members
+  expect(human.kind).toBe('human')
+  const helpers = Array.from({ length: 5 }, (_, index) => ({
+    ...human,
+    id: `helper-${index}`,
+    kind: 'aiHelper',
+    isHost: false,
+  }))
+  const party = partySchema.parse({
+    ...partyIdleFixture,
+    members: [human, ...helpers],
+  })
+  expect(party.members.filter(({ kind }) => kind === 'aiHelper')).toHaveLength(
+    5,
+  )
+})
+
+it('REQ-102 / REQ-104: applies creation limits and parses automatic turns', async () => {
+  const { result } = renderHook(
+    () => ({
+      options: usePartyCreationOptions(),
+      create: useCreateParty(),
+      start: useStartSession('fixture.party-with-5-helpers'),
+      updateConfig: useUpdateLabConfig(),
+      resetConfig: useResetLabConfig(),
+      action: usePartyAction('fixture.party-with-5-helpers'),
+    }),
+    { wrapper },
+  )
+  await waitFor(() =>
+    expect(result.current.options.data).toEqual({
+      minPlayers: 1,
+      maxPlayers: 6,
+    }),
+  )
+  const request = { name: 'Grupo', characterName: 'Lia' }
+  await act(async () => {
+    for (const input of [request, { ...request, aiHelperCount: 0 }]) {
+      expect(
+        (await result.current.create.mutateAsync(input)).members,
+      ).toHaveLength(1)
+    }
+    for (const [count, reason] of [
+      [6, 'aboveMaxPlayers'],
+      [1.5, 'notInteger'],
+      [-1, 'outOfRange'],
+    ] as const) {
+      await expect(
+        result.current.create.mutateAsync({ ...request, aiHelperCount: count }),
+      ).rejects.toMatchObject({
+        details: { fields: [{ field: 'aiHelperCount', reason }] },
+      })
+    }
+    const party = await result.current.create.mutateAsync({
+      ...request,
+      aiHelperCount: 5,
+    })
+    expect(party.members).toHaveLength(6)
+    expect(
+      party.members.find(({ id }) => id === party.turn.memberId)?.kind,
+    ).toBe('aiHelper')
+    expect(party.turnOrder).toHaveLength(6)
+    const human = party.members.find(({ isHost }) => isHost)
+    const session = await result.current.start.mutateAsync()
+    expect(session.turn.memberId).toBe(human?.id)
+    expect(session.turnOrder).toEqual(party.turnOrder)
+    const response = await result.current.action.mutateAsync({
+      type: 'endTurn',
+      idempotencyKey: 'fd48d1aa-76fb-4ada-953b-97b68e6c0dac',
+    })
+    expect(response.turn).toMatchObject({ memberId: human?.id, round: 2 })
+    expect(response.combatUpdates).toEqual([])
+    try {
+      await result.current.updateConfig.mutateAsync({ minPlayers: 2 })
+      await expect(
+        result.current.create.mutateAsync(request),
+      ).rejects.toMatchObject({
+        details: {
+          fields: [{ field: 'aiHelperCount', reason: 'belowMinPlayers' }],
+        },
+      })
+      expect((await result.current.options.refetch()).data?.minPlayers).toBe(2)
+    } finally {
+      await result.current.resetConfig.mutateAsync()
+    }
   })
 })
 

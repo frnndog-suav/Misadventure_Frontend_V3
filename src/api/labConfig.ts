@@ -250,7 +250,23 @@ export const mountConfigLimits = {
 export type KnockoutConfigKey = keyof typeof knockoutConfigDefaults
 
 const positiveInt = gameConfigInt.min(1)
+export const defaultAiPlayerPriorities = [
+  'avoidKnockout',
+  'dimensionCompletion',
+  'quests',
+  'peak',
+  'gold',
+] as const
+
+export const aiPlayerPrioritiesSchema = z
+  .array(z.enum(defaultAiPlayerPriorities))
+  .length(defaultAiPlayerPriorities.length)
+  .refine((priorities) => new Set(priorities).size === priorities.length)
+
 export const gameConfigValuesSchema = numericGameConfigValuesSchema.extend({
+  aiPlayerPriorities: aiPlayerPrioritiesSchema.default(() => [
+    ...defaultAiPlayerPriorities,
+  ]),
   questBoardSize: gameConfigInt.default(questConfigDefaults.questBoardSize),
   maxOpenQuests: gameConfigInt.default(questConfigDefaults.maxOpenQuests),
   trialMinPeak: gameConfigInt.default(questConfigDefaults.trialMinPeak),
@@ -779,6 +795,7 @@ export const labConfigInvalidDetailsSchema = z.object({
     z.object({
       field: z.string().nullable(),
       reason: z.enum([
+        'invalidPriorities',
         'invalidBody',
         'unknownKey',
         'notInteger',

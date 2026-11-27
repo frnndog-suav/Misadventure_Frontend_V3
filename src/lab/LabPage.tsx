@@ -22,7 +22,7 @@ import './LabPage.css'
 /** Rótulos dos campos (REQ-06, glossário §2.6), na ordem da tela. */
 type NumericKey = Exclude<
   keyof LabConfig['values'],
-  'reserveDeck' | 'enemyAbilityPriorities'
+  'reserveDeck' | 'enemyAbilityPriorities' | 'aiPlayerPriorities'
 >
 
 const fieldLabels: Record<NumericKey, string> = {
@@ -321,6 +321,7 @@ function fieldErrorText(
       return 'As cinco chances do booster precisam somar 1000 milésimos.'
     case 'unknownKey':
     case 'invalidBody':
+    case 'invalidPriorities':
       return null
     default: {
       const _exhaustive: never = reason

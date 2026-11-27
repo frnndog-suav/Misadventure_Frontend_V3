@@ -27,6 +27,7 @@ export const notFoundFixture: ErrorEnvelope = {
 }
 
 import {
+  defaultAiPlayerPriorities,
   knockoutConfigDefaults,
   knockoutConfigLimits,
   marketConfigDefaults,
@@ -41,6 +42,7 @@ import {
 
 /** GET /lab/config sem ajuste salvo (tabela Padrão / Mínimo–máximo). */
 const defaultValues: LabConfig['values'] = {
+  aiPlayerPriorities: [...defaultAiPlayerPriorities],
   minPlayers: 1,
   maxPlayers: 6,
   actionPointsPerTurn: 3,

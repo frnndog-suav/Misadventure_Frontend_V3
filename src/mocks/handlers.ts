@@ -19,7 +19,11 @@ import {
   startCompletionSession,
 } from './dimensionCompletionFixtures'
 import { mountAction, mountGrant, mountParty } from './mountFixtures'
-import { knockoutConfigLimits, questConfigLimits } from '../api/labConfig'
+import {
+  aiPlayerPrioritiesSchema,
+  knockoutConfigLimits,
+  questConfigLimits,
+} from '../api/labConfig'
 import type { GameConfigValues } from '../api/labConfig'
 import { http, HttpResponse, type RequestHandler } from 'msw'
 import {
@@ -177,6 +181,7 @@ import {
   partyNoPointsFixture,
   partyNotFoundFixture,
   partyUnknownClassFixture,
+  partyWithHelpersFixture,
 } from './partyFixtures'
 
 /**
@@ -208,9 +213,8 @@ function catalogCardsScenario(
 }
 
 /**
- * POST /parties: tabela de cenários do contrato (D-32) — os corpos dos dois
- * cenários de erro devolvem a fixture de erro; qualquer outro, o grupo
- * criado de exemplo. Não valida nem guarda estado.
+ * POST /parties: cenários de criação legados (D-32) e de quantidade
+ * de ajudantes (FEAT-20), com respostas de exemplo.
  */
 async function createPartyScenario(request: Request): Promise<Response> {
   const body: unknown = await request.json().catch(() => undefined)
@@ -239,7 +243,42 @@ async function createPartyScenario(request: Request): Promise<Response> {
       }
     }
   }
+  const count = field(body, 'aiHelperCount')
+  const { minPlayers, maxPlayers } = partyCreationOptions()
+  const helpers = count === undefined ? 0 : count
+  let reason: string | undefined
+  if (typeof helpers !== 'number' || !Number.isInteger(helpers))
+    reason = 'notInteger'
+  else if (helpers < 0) reason = 'outOfRange'
+  else if (helpers + 1 < minPlayers) reason = 'belowMinPlayers'
+  else if (helpers + 1 > maxPlayers) reason = 'aboveMaxPlayers'
+  if (reason) {
+    return HttpResponse.json(
+      {
+        error: {
+          code: 'PARTY_INVALID',
+          message: 'Quantidade de ajudantes inválida.',
+          details: { fields: [{ field: 'aiHelperCount', reason }] },
+        },
+      },
+      { status: 400 },
+    )
+  }
+  if (typeof helpers === 'number' && helpers > 0) {
+    return HttpResponse.json(partyWithHelpersFixture(helpers), { status: 201 })
+  }
   return HttpResponse.json(partyCreatedFixture, { status: 201 })
+}
+
+function helperParty(id: unknown) {
+  if (typeof id !== 'string') return
+  const match = /^fixture\.party-with-([1-5])-helpers$/.exec(id)
+  if (match) return partyWithHelpersFixture(Number(match[1]))
+}
+
+function partyCreationOptions() {
+  const { minPlayers, maxPlayers } = progressionLabConfig().values
+  return { minPlayers, maxPlayers }
 }
 
 /**
@@ -1051,6 +1090,8 @@ function field(body: unknown, key: string): unknown {
 }
 
 const progressionConfigLimits = {
+  minPlayers: labConfigDefaultsFixture.limits.minPlayers,
+  maxPlayers: labConfigDefaultsFixture.limits.maxPlayers,
   ...knockoutConfigLimits,
   ...questConfigLimits,
   bossPeakGain: labConfigDefaultsFixture.limits.bossPeakGain,
@@ -1074,6 +1115,13 @@ function progressionLabConfig() {
 function patchProgressionLabConfig(body: unknown) {
   const patch: Partial<GameConfigValues> = {}
   const fields = []
+  const priorities = field(body, 'aiPlayerPriorities')
+  if (priorities !== undefined) {
+    const parsed = aiPlayerPrioritiesSchema.safeParse(priorities)
+    if (parsed.success) patch.aiPlayerPriorities = parsed.data
+    else
+      fields.push({ field: 'aiPlayerPriorities', reason: 'invalidPriorities' })
+  }
   for (const key of Object.keys(
     progressionConfigLimits,
   ) as (keyof typeof progressionConfigLimits)[]) {
@@ -1087,6 +1135,16 @@ function patchProgressionLabConfig(body: unknown) {
     } else {
       patch[key] = value
     }
+  }
+  const current = progressionLabConfig().values
+  if (
+    (patch.minPlayers ?? current.minPlayers) >
+    (patch.maxPlayers ?? current.maxPlayers)
+  ) {
+    fields.push(
+      { field: 'minPlayers', reason: 'minAboveMax' },
+      { field: 'maxPlayers', reason: 'minAboveMax' },
+    )
   }
   if (fields.length)
     return HttpResponse.json(
@@ -1551,6 +1609,13 @@ export const handlers: RequestHandler[] = [
     HttpResponse.json([...partiesFixture, ...completionPartySummaries]),
   ),
   http.post('*/parties', ({ request }) => createPartyScenario(request)),
+  http.get('*/parties/creation-options', () =>
+    HttpResponse.json(partyCreationOptions()),
+  ),
+  http.get('*/parties/:partyId', ({ params }) => {
+    const party = helperParty(params.partyId)
+    if (party) return HttpResponse.json(party)
+  }),
   http.get('*/parties/:partyId', ({ params }) =>
     knownParty(params.partyId, () =>
       HttpResponse.json(
@@ -1579,6 +1644,13 @@ export const handlers: RequestHandler[] = [
     ),
   ),
   http.post('*/parties/:partyId/session', ({ params }) => {
+    const party = helperParty(params.partyId)
+    if (party)
+      return HttpResponse.json({
+        ...party,
+        status: 'inSession',
+        turn: { ...party.turn, memberId: party.members[0].id },
+      })
     const completion = completionParty(params.partyId)
     if (completion) return startCompletionSession(completion)
     return knownParty(params.partyId, () =>
@@ -1616,11 +1688,42 @@ export const handlers: RequestHandler[] = [
       ),
     ),
   ),
-  http.post('*/parties/:partyId/actions', ({ params, request }) =>
-    knownParty(params.partyId, () =>
+  http.post('*/parties/:partyId/actions', async ({ params, request }) => {
+    const party = helperParty(params.partyId)
+    if (party) {
+      const key = request.headers.get('Idempotency-Key')
+      if (!key || !/^[\da-f]{8}(?:-[\da-f]{4}){3}-[\da-f]{12}$/i.test(key)) {
+        return HttpResponse.json(
+          {
+            error: {
+              code: 'ACTION_INVALID',
+              message: 'Chave de idempotência inválida.',
+              details: {
+                fields: [
+                  { field: 'Idempotency-Key', reason: 'invalidIdempotencyKey' },
+                ],
+              },
+            },
+          },
+          { status: 400 },
+        )
+      }
+      if (field(await jsonBody(request), 'type') !== 'endTurn') {
+        return HttpResponse.json(actionInvalidUnknownActionFixture, {
+          status: 400,
+        })
+      }
+      return HttpResponse.json({
+        ...party,
+        status: 'inSession',
+        turn: { ...party.turn, memberId: party.members[0].id, round: 2 },
+        combatUpdates: [],
+      })
+    }
+    return knownParty(params.partyId, () =>
       partyActionScenario(params.partyId, request),
-    ),
-  ),
+    )
+  }),
   http.post(
     '*/lab/parties/:partyId/members/:memberId/grants',
     ({ params, request }) =>

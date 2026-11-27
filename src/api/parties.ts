@@ -67,6 +67,7 @@ export interface CreatePartyRequest {
   name: string
   characterName: string
   playerClass?: PlayerClass
+  aiHelperCount?: number
 }
 
 const nonNegativeInt = z.number().int().min(0)
@@ -273,7 +274,7 @@ export type PlayerState = z.infer<typeof playerStateSchema>
 export const partyMemberSchema = z.object({
   id: z.string(),
   characterName: z.string(),
-  kind: z.literal('human'),
+  kind: z.enum(['human', 'aiHelper']),
   isHost: z.boolean(),
   player: playerStateSchema,
 })
@@ -337,9 +338,17 @@ export const partySchema = z.object({
 export type Party = z.infer<typeof partySchema>
 
 // Apenas o POST projeta o lote transitório. Respostas anteriores à FEAT-13 o omitem.
-const partyActionResponseSchema = partySchema.extend({
-  combatUpdates: z.array(combatUpdateSchema).optional(),
-})
+const partyActionResponseSchema = partySchema
+  .extend({ combatUpdates: z.array(combatUpdateSchema).optional() })
+  .refine(
+    ({ members, combatUpdates }) =>
+      combatUpdates !== undefined ||
+      members.every(({ kind }) => kind === 'human'),
+    {
+      path: ['combatUpdates'],
+      message: 'Required for parties with AI helpers',
+    },
+  )
 export type PartyActionResponse = z.infer<typeof partyActionResponseSchema>
 
 export const partySummarySchema = z.object({
@@ -356,7 +365,13 @@ export const partyInvalidDetailsSchema = z.object({
   fields: z.array(
     z.object({
       field: z
-        .enum(['name', 'characterName', 'playerClass', 'members'])
+        .enum([
+          'name',
+          'characterName',
+          'playerClass',
+          'members',
+          'aiHelperCount',
+        ])
         .nullable(),
       reason: z.enum([
         'invalidBody',
@@ -366,6 +381,9 @@ export const partyInvalidDetailsSchema = z.object({
         'tooLong',
         'unknownClass',
         'belowMinPlayers',
+        'aboveMaxPlayers',
+        'notInteger',
+        'outOfRange',
       ]),
     }),
   ),
@@ -407,6 +425,26 @@ export class DimensionInvalidError extends ApiError {
 }
 
 export const partiesKey = ['parties'] as const
+
+const partyCreationOptionsSchema = z.object({
+  minPlayers: z.number().int().positive(),
+  maxPlayers: z.number().int().positive(),
+})
+export type PartyCreationOptions = z.infer<typeof partyCreationOptionsSchema>
+
+export function usePartyCreationOptions(): UseQueryResult<
+  PartyCreationOptions,
+  Error
+> {
+  return useQuery({
+    queryKey: ['partyCreationOptions'],
+    queryFn: async () =>
+      partyCreationOptionsSchema.parse(
+        await requestJson('GET', '/parties/creation-options'),
+      ),
+    retry: false,
+  })
+}
 
 async function getParties(): Promise<PartySummary[]> {
   return z.array(partySummarySchema).parse(await requestJson('GET', '/parties'))
@@ -467,7 +505,7 @@ export function useParty(
 }
 
 /**
- * Cria o grupo de 1, já preparado; erro de campo vira `PartyInvalidError` e
+ * Cria o grupo, já preparado; erro de campo vira `PartyInvalidError` e
  * dimensão inválida vira `DimensionInvalidError`.
  */
 export function useCreateParty(): UseMutationResult<
@@ -735,7 +773,7 @@ export class ActionNotAllowedError extends ApiError {
 
 async function takePartyAction(
   partyId: string,
-  action: PartyAction,
+  { idempotencyKey, ...action }: PartyActionRequest,
 ): Promise<PartyActionResponse> {
   try {
     const quest = questActionSchema.safeParse(action)
@@ -744,6 +782,9 @@ async function takePartyAction(
         'POST',
         `${partyPath(partyId)}/actions`,
         quest.success ? quest.data : action,
+        idempotencyKey === undefined
+          ? undefined
+          : { 'Idempotency-Key': idempotencyKey },
       ),
     )
   } catch (error) {
@@ -757,6 +798,8 @@ async function takePartyAction(
   }
 }
 
+export type PartyActionRequest = PartyAction & { idempotencyKey?: string }
+
 /**
  * Envia uma intenção (`POST /parties/:partyId/actions`) e entrega o `Party`
  * já com o efeito; erros §1.4 chegam como `ApiError`, e `ACTION_NOT_ALLOWED`
@@ -764,9 +807,10 @@ async function takePartyAction(
  */
 export function usePartyAction(
   partyId: string,
-): UseMutationResult<PartyActionResponse, Error, PartyAction> {
+): UseMutationResult<PartyActionResponse, Error, PartyActionRequest> {
   return useMutation({
-    mutationFn: (action: PartyAction) => takePartyAction(partyId, action),
+    mutationFn: (action: PartyActionRequest) =>
+      takePartyAction(partyId, action),
     retry: false,
   })
 }
