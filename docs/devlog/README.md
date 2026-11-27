@@ -20,7 +20,7 @@ O tempo gasto no desenvolvimento fica em [`tempo.html`](tempo.html): um arquivo 
 
 ## Marcos jogáveis
 
-O [painel de tempo e progresso](tempo.html#titulo-marcos) mostra o avanço do frontend nos três marcos jogáveis. Ao validar uma feature, atualize a data, as contagens e os destaques com base no roadmap. O critério e a primeira fotografia do progresso estão no [registro 134](134-marcos-jogaveis.md).
+O [painel de tempo e progresso](tempo.html#titulo-marcos) mostra o avanço do frontend nos três marcos jogáveis e as [estimativas do trabalho restante](tempo.html#titulo-estimativas). Ao validar uma feature, atualize a data, as contagens e os destaques com base no roadmap. Revise as horas restantes em `ESTIMATIVAS` quando uma tarefa fechar ou o escopo mudar. O critério de progresso está no [registro 134](134-marcos-jogaveis.md) e as premissas de estimativa estão no [registro 135](135-estimativas-de-desenvolvimento.md).
 
 ## Índice
 | Nº | ID | Título | Status |
@@ -169,3 +169,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 132 | FEAT-20 | [Revisão da contraproposta do backend](132-feat-20-revisao-contrato.md) | aguardando outro lado |
 | 133 | FEAT-20 | [Aceite do contrato e liberação da T-100](133-feat-20-contrato-acordado.md) | concluída |
 | 134 | DOC | [Progresso dos três marcos jogáveis](134-marcos-jogaveis.md) | concluída |
+| 135 | DOC | [Estimativas de desenvolvimento e detalhes das etapas](135-estimativas-de-desenvolvimento.md) | concluída |
