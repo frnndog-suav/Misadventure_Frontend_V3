@@ -1218,7 +1218,7 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 ### FEAT-21 — Acompanhar as vezes dos ajudantes
 
 - [ ] **T-105 — Cliente e fixtures MSW** (REQ-107 a REQ-109). Após o acordo, validar respostas de ação e sessão, revisão e lotes vazios, mistos e recuperados.
-- [ ] **T-106 — Apresentação sequencial** (REQ-107 e REQ-108). Integrar mapa, evento aleatório e combate na tela do grupo, oferecer a opção de pular e testar o bloqueio de ações em E2E de `party`.
+- [x] **T-106 — Apresentação sequencial** (REQ-107 e REQ-108). Integrar mapa, evento aleatório e combate na tela do grupo, oferecer a opção de pular e testar o bloqueio de ações em E2E de `party`.
 - [ ] **T-107 — Recuperação e reenvio** (REQ-109). Testar retomada, deduplicação e descarte de recibo antigo com MSW.
 - [ ] **T-108 — Validação integrada** (REQ-107 a REQ-109). Executar os cenários do contrato com MSW desligado e registrar a evidência.
 

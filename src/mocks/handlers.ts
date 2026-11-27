@@ -1,3 +1,7 @@
+import {
+  helperPresentation,
+  helperPresentationId,
+} from './helperPresentationFixtures'
 import { collectionCirculationHandlers } from './collectionCirculationFixtures'
 import {
   publishQuestEditorCard,
@@ -25,7 +29,7 @@ import {
   questConfigLimits,
 } from '../api/labConfig'
 import type { GameConfigValues } from '../api/labConfig'
-import { http, HttpResponse, type RequestHandler } from 'msw'
+import { delay, http, HttpResponse, type RequestHandler } from 'msw'
 import {
   marketInvalidFixture,
   marketRefusalFixture,
@@ -1617,6 +1621,8 @@ export const handlers: RequestHandler[] = [
     HttpResponse.json(partyCreationOptions()),
   ),
   http.get('*/parties/:partyId', ({ params }) => {
+    if (params.partyId === helperPresentationId)
+      return HttpResponse.json(helperPresentation(1).party)
     const party = helperParty(params.partyId)
     if (party) return HttpResponse.json(party)
   }),
@@ -1648,6 +1654,10 @@ export const handlers: RequestHandler[] = [
     ),
   ),
   http.post('*/parties/:partyId/session', ({ params }) => {
+    if (params.partyId === helperPresentationId) {
+      const { party, domainEvents } = helperPresentation(1)
+      return HttpResponse.json({ ...party, domainEvents })
+    }
     const party = helperParty(params.partyId)
     if (party)
       return HttpResponse.json({
@@ -1695,6 +1705,16 @@ export const handlers: RequestHandler[] = [
     )
   }),
   http.post('*/parties/:partyId/actions', async ({ params, request }) => {
+    if (params.partyId === helperPresentationId) {
+      if (field(await jsonBody(request), 'type') !== 'endTurn') {
+        return HttpResponse.json(actionInvalidUnknownActionFixture, {
+          status: 400,
+        })
+      }
+      await delay(500)
+      const { party, combatUpdates, domainEvents } = helperPresentation(2)
+      return HttpResponse.json({ ...party, combatUpdates, domainEvents })
+    }
     const party = helperParty(params.partyId)
     if (party) {
       const key = request.headers.get('Idempotency-Key')

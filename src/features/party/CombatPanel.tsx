@@ -9,6 +9,7 @@ import type {
 } from '../../api/parties'
 import type { EventPayment } from '../../api/randomEvents'
 import { nameOf } from './cardNames'
+import { combatResolutionLabel, combatUpdateText } from './combatUpdateText'
 
 type Combat = NonNullable<Party['combat']>
 type Option = Combat['abilities'][number] | Combat['effects'][number]
@@ -477,31 +478,11 @@ export function CombatPanel({
   )
 }
 
-const resolution = { victory: 'Vitória', defeat: 'Derrota', escaped: 'Fuga' }
 const cause = {
   enemiesDefeated: 'inimigos derrotados',
   playerDown: 'jogador derrotado',
   escapeSucceeded: 'fuga bem-sucedida',
   cycleLimit: 'limite de ciclos',
-}
-
-function updateText(update: Update, name: (id: string) => string) {
-  switch (update.type) {
-    case 'combatStarted':
-      return `Combate iniciado · ${update.cardTitle} · ${update.participants.map(({ id }) => name(id)).join(', ')}`
-    case 'combatTurnStarted':
-      return `Turno de ${name(update.actorId)} · ciclo ${update.cycle}`
-    case 'combatAbilityUsed':
-      return `${name(update.actorId)} usou ${update.abilityId}`
-    case 'combatEffectActivated':
-      return `${name(update.actorId)} ativou ${update.effectId}`
-    case 'combatDamageResolved':
-      return `${update.actorId === null ? 'Efeito' : name(update.actorId)} → ${name(update.targetId)} · ${update.hit === false ? 'errou' : `${update.damage} de dano`} · ${update.targetHealth} PV${update.reflectedDamage ? ` · Reflexão: ${update.reflectedDamage} de dano` : ''}`
-    case 'combatEscapeAttempted':
-      return `${name(update.actorId)} · fuga ${update.succeeded ? 'bem-sucedida' : 'falhou'} · ${update.vigorSpent} Vigor${update.total === null ? '' : ` · total ${update.total}, limiar ${update.threshold}`}`
-    case 'combatEnded':
-      return `Combate encerrado · ${resolution[update.result.resolution]}`
-  }
 }
 
 export function CombatReport({
@@ -525,14 +506,14 @@ export function CombatReport({
       {updates && updates.length > 0 && (
         <ol aria-label="Transições de combate">
           {updates.map((update, index) => (
-            <li key={index}>{updateText(update, name)}</li>
+            <li key={index}>{combatUpdateText(update, name)}</li>
           ))}
         </ol>
       )}
       {result && (
         <p>
-          {resolution[result.resolution]} · {cause[result.cause]} · Pico{' '}
-          {result.peakDelta > 0 ? '+' : ''}
+          {combatResolutionLabel[result.resolution]} · {cause[result.cause]} ·
+          Pico {result.peakDelta > 0 ? '+' : ''}
           {result.peakDelta}
           {result.playerDown && ' · jogador caído'}
         </p>

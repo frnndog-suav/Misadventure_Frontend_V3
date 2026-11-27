@@ -1,4 +1,11 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
   equipmentSlotSchema,
@@ -38,6 +45,7 @@ import { categoryCatalog } from '../../ui/categories'
 import { formatSavedAt } from '../../ui/formatSavedAt'
 import { Term } from '../../ui/Term'
 import { PartyMap } from './PartyMap'
+import { HelperPresentation } from './HelperPresentation'
 import { EffectsPanel, type ActivateEffect } from './EffectsPanel'
 import { nameOf } from './cardNames'
 import { equipmentStateSuffix } from './equipmentState'
@@ -2170,12 +2178,28 @@ function PartySessionView({ partyId }: { partyId: string }) {
     action.error instanceof ApiError &&
     action.error.code === 'ACTION_ADVANCE_PENDING'
   const busy = start.isPending || end.isPending || action.isPending
+  const presentationSource = action.data ?? confirmed?.response ?? start.data
+  const [finishedPresentation, setFinishedPresentation] =
+    useState<typeof presentationSource>()
+  const events = presentationSource?.domainEvents
+  const presenting =
+    !!events?.length && presentationSource !== finishedPresentation
+  const finishPresentation = useCallback(
+    () => setFinishedPresentation(presentationSource),
+    [presentationSource],
+  )
+  const automatedCombatIndexes = new Set(
+    confirmed?.response?.domainEvents?.flatMap((event) =>
+      event.type === 'combatUpdated' ? [event.payload.combatUpdateIndex] : [],
+    ),
+  )
   const actionsBlocked =
+    presenting ||
     busy ||
     unresolvedAction ||
     advancePending ||
     waitingForHuman ||
-    party?.status === 'frozen'
+    (party !== undefined && party.status !== 'inSession')
 
   function sendPending(request: PartyActionRequest): void {
     if (inFlight.current) return
@@ -2458,6 +2482,19 @@ function PartySessionView({ partyId }: { partyId: string }) {
     isNotFound(end.error) ||
     isNotFound(restoredParty.error)
 
+  if (presenting && party && events) {
+    return (
+      <main>
+        <HelperPresentation
+          party={party}
+          events={events}
+          cards={cards.cards}
+          onFinish={finishPresentation}
+        />
+      </main>
+    )
+  }
+
   return (
     <main>
       {party && (
@@ -2503,7 +2540,9 @@ function PartySessionView({ partyId }: { partyId: string }) {
                 ? () => setViewedBossCompletion(bossReportPending.completedAt)
                 : undefined
             }
-            updates={confirmed?.response?.combatUpdates}
+            updates={confirmed?.response?.combatUpdates?.filter(
+              (_, index) => !automatedCombatIndexes.has(index),
+            )}
             names={
               party.combat
                 ? combatNames

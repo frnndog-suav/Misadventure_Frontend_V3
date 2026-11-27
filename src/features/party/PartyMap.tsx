@@ -24,12 +24,14 @@ export function PartyMap({
   titleOf,
   onMove,
   moving,
+  movement,
 }: {
   party: Party
   cards: ReadonlyMap<string, Card>
   titleOf: (cardId: string) => string
-  onMove: (zoneId: string, viaZoneId?: string) => void
+  onMove?: (zoneId: string, viaZoneId?: string) => void
   moving: boolean
+  movement?: { memberId: string; path: string[] }
 }) {
   const host = party.members.find((m) => m.isHost)
   const [chosenId, setChosenId] = useState<string | null>(null)
@@ -78,12 +80,15 @@ export function PartyMap({
         )
 
   return (
-    <section aria-labelledby="map-title">
-      <h2 id="map-title">Mapa</h2>
+    <section aria-label="Mapa">
+      <h2>Mapa</h2>
       <div style={{ display: 'grid' }}>
         {zones.map((zone) => {
           const here = party.members.filter(
-            ({ player }) => player.zoneId === zone.zoneId,
+            ({ id, player }) =>
+              (movement?.memberId === id
+                ? movement.path.at(-1)
+                : player.zoneId) === zone.zoneId,
           )
           return (
             <button
@@ -91,6 +96,7 @@ export function PartyMap({
               type="button"
               aria-pressed={chosenId === zone.zoneId}
               onClick={() => setChosenId(zone.zoneId)}
+              disabled={!onMove}
               data-col={col(zone.x)}
               data-row={row(zone.y)}
               style={{ gridColumn: col(zone.x), gridRow: row(zone.y) }}
@@ -102,6 +108,7 @@ export function PartyMap({
               >
                 {zone.arrows.map((d) => arrowSymbol[d]).join('')}
               </span>
+              {movement?.path.includes(zone.zoneId) && <span> · Percurso</span>}
               {here.map((m) => (
                 <span key={m.id}> {m.characterName} está aqui</span>
               ))}
@@ -125,7 +132,8 @@ export function PartyMap({
         <section aria-labelledby="chosen-zone-title">
           <h3 id="chosen-zone-title">Zona escolhida</h3>
           {chosen !== undefined && <FullCard card={chosen} />}
-          {host?.player.moveTargets.includes(chosenId) &&
+          {onMove &&
+            host?.player.moveTargets.includes(chosenId) &&
             (host.player.availableActions.includes('move') ? (
               <>
                 {(route === undefined || route.direct) && (

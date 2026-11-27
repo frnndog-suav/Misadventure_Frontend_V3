@@ -177,3 +177,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 140 | T-103 | [Prioridades dos ajudantes no laboratório](140-t-103-prioridades-ajudantes.md) | concluída |
 | 141 | FEAT-21 | [P-02 aprovada e contrato proposto](141-feat-21-planejamento.md) | concluída |
 | 142 | T-105 | [Contrato v1.13 e cliente com MSW](142-t-105-cliente-msw-feat-21.md) | cliente verificado com MSW |
+| 143 | T-106 | [Apresentação sequencial das vezes dos ajudantes](143-t-106-apresentacao-sequencial-feat-21.md) | concluída com MSW |
