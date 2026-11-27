@@ -15,7 +15,7 @@ export function combatUpdateText(update: Update, name: (id: string) => string) {
     case 'combatInviteAnswered':
       return `${name(update.inviteeMemberId)} ${update.accept ? 'aceitou' : 'recusou'} o convite`
     case 'combatRosterConfirmed':
-      return `Elenco confirmado · ${update.participantMemberIds.map(name).join(', ')}`
+      return `Elenco confirmado · ${update.participantMemberIds.map(name).join(', ')}${update.declinedMemberIds.length ? ' · Recusaram: ' + update.declinedMemberIds.map(name).join(', ') : ''}`
     case 'combatParticipantKnockedOut':
       return `${name(update.memberId)} foi nocauteado`
     case 'combatParticipantRevived':

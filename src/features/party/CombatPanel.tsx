@@ -351,7 +351,7 @@ export function CombatPanel({
   const name = (id: string) => names.get(id) ?? id
   const ids = { combatId: combat.id, turnId: combat.turn.id }
   const actions =
-    host?.id === combat.memberId ? host.player.availableActions : []
+    host?.id === combat.turn.actorId ? host.player.availableActions : []
   const offer = (type: CombatAction['type']) => actions.includes(type)
   const { escape } = combat
 

@@ -549,7 +549,26 @@ export function groupCombatAction(
   }
 
   const revision = party.revision! + 1
-  next = { ...next, revision }
+  next = {
+    ...next,
+    revision,
+    members: next.members.map((member) =>
+      member.id === human.id
+        ? {
+            ...member,
+            player: {
+              ...member.player,
+              availableActions:
+                next.pendingCombatDecision?.type === 'turn'
+                  ? ['combatAttack']
+                  : next.pendingCombatDecision?.type === 'reward'
+                    ? ['resolveReward']
+                    : [],
+            },
+          }
+        : member,
+    ),
+  }
   const response: PartyActionResponse = {
     ...next,
     combatUpdates: updates,

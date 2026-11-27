@@ -183,3 +183,4 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 146 | FEAT-22 | [Planejamento e contrato proposto](146-feat-22-planejamento.md) | aguardando revisão do backend |
 | 147 | DOC | [Jogabilidade e situação das funcionalidades na timeline](147-timeline-jogabilidade.md) | concluída |
 | 148 | T-109 | [Cliente e fixtures MSW da FEAT-22](148-t-109-cliente-msw-feat-22.md) | concluída com MSW |
+| 149 | T-110 | [Recrutamento e pausa da IA na FEAT-22](149-t-110-recrutamento-e-pausa-feat-22.md) | concluída com MSW |

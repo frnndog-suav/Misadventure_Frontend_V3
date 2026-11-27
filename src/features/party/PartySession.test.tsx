@@ -32,6 +32,7 @@ import {
   resetCombatScenarios,
 } from '../../mocks/combatFixtures'
 import { helperPresentation } from '../../mocks/helperPresentationFixtures'
+import { resetGroupCombatScenarios } from '../../mocks/groupCombatFixtures'
 import { handlers } from '../../mocks/handlers'
 import { nextDimensionFixture } from '../../mocks/dimensionCompletionFixtures'
 import {
@@ -4891,5 +4892,126 @@ describe('REQ-89: Efeitos e habilidades da montaria', () => {
         abilityId: 'pony-trot',
       },
     ])
+  })
+})
+
+describe('T-110 — recrutamento em grupo', () => {
+  beforeEach(resetGroupCombatScenarios)
+
+  it('REQ-110: convida os elegíveis, apresenta aceite e recusa e confirma o desempate', async () => {
+    renderParty('fixture.group-combat-roster')
+    const candidate = await screen.findByRole('checkbox', {
+      name: 'Ajudante 1',
+    })
+    expect(
+      screen.queryByRole('checkbox', { name: 'Ajudante 3' }),
+    ).not.toBeInTheDocument()
+    fireEvent.click(candidate)
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Ajudante 2' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmar elenco' }))
+    expect(
+      await screen.findByText(/Elenco confirmado.*Lia, Ajudante 1/),
+    ).toHaveTextContent('Recusaram: Ajudante 2')
+    expect(
+      screen.queryByRole('button', { name: /^Atacar / }),
+    ).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Pular apresentação' }))
+    const alternative = await screen.findByRole('button', {
+      name: 'Lia → Ajudante 1',
+    })
+    expect(
+      screen.getByRole('button', { name: 'Ajudante 1 → Lia (padrão)' }),
+    ).toBeEnabled()
+    fireEvent.click(alternative)
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Pular apresentação' }),
+    )
+    expect(
+      await screen.findByRole('button', { name: /^Atacar / }),
+    ).toBeEnabled()
+    expect(
+      screen.queryByRole('button', { name: 'Confirmar elenco' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('REQ-111 e REQ-114: aceita na vez da IA e recupera o turno humano ao recarregar', async () => {
+    const id = 'fixture.group-combat-invite'
+    const first = renderParty(id)
+    const campaignOrder = await screen.findByRole('list', {
+      name: 'Ordem dos jogadores',
+    })
+    expect(
+      within(campaignOrder).getByRole('listitem', { current: true }),
+    ).toHaveTextContent('Ajudante 1')
+    const accept = await screen.findByRole('button', {
+      name: 'Aceitar convite',
+    })
+    expect(
+      screen.queryByRole('button', { name: 'Retomar sessão' }),
+    ).not.toBeInTheDocument()
+    expect(endButton()).toBeDisabled()
+    fireEvent.click(accept)
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Pular apresentação' }),
+    )
+    expect(
+      await screen.findByRole('button', { name: /^Atacar / }),
+    ).toBeEnabled()
+    first.unmount()
+    queryClient.clear()
+    renderParty(id)
+    const restoredOrder = await screen.findByRole('list', {
+      name: 'Ordem dos jogadores',
+    })
+    expect(
+      within(restoredOrder).getByRole('listitem', { current: true }),
+    ).toHaveTextContent('Ajudante 1')
+    expect(
+      await screen.findByRole('button', { name: /^Atacar / }),
+    ).toBeEnabled()
+    expect(
+      screen.queryByRole('button', { name: 'Aceitar convite' }),
+    ).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /^Atacar / }))
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Pular apresentação' }),
+    )
+    await screen.findByText(/Vitória · inimigos derrotados/)
+    expect(screen.getByRole('button', { name: 'Deixar' })).toBeEnabled()
+  })
+
+  it('REQ-110: confirma elenco vazio e segue solo sem desempate', async () => {
+    renderParty('fixture.group-combat-roster')
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Confirmar elenco' }),
+    )
+    expect(
+      await screen.findByText(/^Elenco confirmado.*Lia$/),
+    ).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: 'Pular apresentação' }))
+    expect(
+      await screen.findByRole('button', { name: /^Atacar / }),
+    ).toBeEnabled()
+    expect(
+      screen.queryByRole('button', { name: /padrão/ }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('REQ-111 e REQ-114: recupera o convite ao recarregar e recusa', async () => {
+    const id = 'fixture.group-combat-decline'
+    const first = renderParty(id)
+    expect(
+      await screen.findByRole('button', { name: 'Recusar convite' }),
+    ).toBeEnabled()
+    first.unmount()
+    queryClient.clear()
+    renderParty(id)
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Recusar convite' }),
+    )
+    expect(await screen.findByText('Lia recusou o convite')).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /^Atacar / }),
+    ).not.toBeInTheDocument()
   })
 })

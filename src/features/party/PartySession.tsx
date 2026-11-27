@@ -70,6 +70,7 @@ import {
   PrepareAbilities,
   TriggeredEffectPanel,
 } from './CombatPanel'
+import { CombatRecruitment } from './CombatRecruitment'
 
 type Cards = ReadonlyMap<string, Card>
 
@@ -2259,10 +2260,14 @@ function PartySessionView({ partyId }: { partyId: string }) {
   const party = confirmed?.party ?? initialParty
   const hasHelpers = party?.members.some((member) => member.kind === 'aiHelper')
   const host = party?.members.find((m) => m.isHost)
+  const combatDecision = party?.pendingCombatDecision
+  const ownedDecision =
+    combatDecision?.memberId === host?.id ? combatDecision : undefined
   const waitingForHuman =
     hasHelpers &&
     party?.status === 'inSession' &&
-    party.turn.memberId !== host?.id
+    party.turn.memberId !== host?.id &&
+    !combatDecision
   const [pendingRequest, setPendingRequest] = useState(() =>
     readPendingAction(storageKey),
   )
@@ -2296,13 +2301,20 @@ function PartySessionView({ partyId }: { partyId: string }) {
       event.type === 'combatUpdated' ? [event.payload.combatUpdateIndex] : [],
     ),
   )
-  const actionsBlocked =
+  const sessionBlocked =
     presenting ||
     busy ||
     unresolvedAction ||
     advancePending ||
-    waitingForHuman ||
     (party !== undefined && party.status !== 'inSession')
+
+  const actionsBlocked = sessionBlocked || waitingForHuman || !!combatDecision
+  const combatTurn = party?.combat?.turn
+  const canPlayCombatTurn =
+    ownedDecision?.type === 'turn' &&
+    ownedDecision.combatId === party?.combat?.id &&
+    ownedDecision.turnId === combatTurn?.id &&
+    combatTurn?.actorId === host?.id
 
   function sendPending(request: PartyActionRequest, retry = true): void {
     if (inFlight.current) return
@@ -2334,8 +2346,17 @@ function PartySessionView({ partyId }: { partyId: string }) {
     })
   }
 
-  function sendAction(intent: PartyAction, handlers?: ActionCallbacks): void {
-    if (actionsBlocked || inFlight.current) return
+  function sendAction(
+    intent: PartyAction,
+    handlers?: ActionCallbacks,
+    combatDecisionAllowed = false,
+  ): void {
+    if (
+      sessionBlocked ||
+      (!combatDecisionAllowed && actionsBlocked) ||
+      inFlight.current
+    )
+      return
     if (!hasHelpers) {
       action.mutate(intent, handlers)
       return
@@ -2382,7 +2403,12 @@ function PartySessionView({ partyId }: { partyId: string }) {
   }
   const classes = useClasses()
   const cards = useCatalogCards(party === undefined ? [] : cardIdsOf(party))
-  const reward = party?.pendingRewards[0]
+  const reward =
+    ownedDecision?.type === 'reward'
+      ? party?.pendingRewards.find(({ id }) => id === ownedDecision.rewardId)
+      : party?.pendingRewards[0]
+  const canResolveCombatReward =
+    ownedDecision?.type === 'reward' && ownedDecision.rewardId === reward?.id
   const deadline =
     hasHelpers &&
     party?.members.filter(({ kind }) => kind === 'human').length === 1
@@ -2631,6 +2657,17 @@ function PartySessionView({ partyId }: { partyId: string }) {
           >
             Encerrar sessão
           </button>
+          {ownedDecision &&
+            ownedDecision.type !== 'turn' &&
+            ownedDecision.type !== 'reward' && (
+              <CombatRecruitment
+                key={JSON.stringify([ownedDecision.combatId, ownedDecision.id])}
+                decision={ownedDecision}
+                names={combatNames}
+                pending={sessionBlocked}
+                onAction={(intent) => sendAction(intent, undefined, true)}
+              />
+            )}
           {party.combat && (
             <CombatPanel
               combat={party.combat}
@@ -2638,8 +2675,10 @@ function PartySessionView({ partyId }: { partyId: string }) {
               cards={cards.cards}
               names={combatNames}
               catalogPending={cards.isPending}
-              pending={actionsBlocked}
-              onAction={(intent) => sendAction(intent)}
+              pending={canPlayCombatTurn ? sessionBlocked : actionsBlocked}
+              onAction={(intent) =>
+                sendAction(intent, undefined, canPlayCombatTurn)
+              }
             />
           )}
           <CombatReport
@@ -2808,12 +2847,12 @@ function PartySessionView({ partyId }: { partyId: string }) {
               disabled={
                 reward.memberId !== host?.id ||
                 !host.player.availableActions.includes('resolveReward') ||
-                actionsBlocked ||
+                (canResolveCombatReward ? sessionBlocked : actionsBlocked) ||
                 awaitingReward
               }
               onResolve={(choice) => {
                 setResolvingScavenge(reward.source.type === 'scavenge')
-                sendAction(choice)
+                sendAction(choice, undefined, canResolveCombatReward)
               }}
             />
           )}

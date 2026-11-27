@@ -1245,7 +1245,7 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 ### FEAT-22 — Recrutar ajudantes e combate em grupo
 
 - [x] **T-109 — Cliente e fixtures MSW** (REQ-110 a REQ-114). Após o acordo, cobrir decisões pendentes, projeção de combatentes, desfechos individuais, recibos e solo legado.
-- [ ] **T-110 — Recrutamento e pausa da IA** (REQ-110, REQ-111, REQ-114). Cobrir convite nos dois sentidos, confirmação, desempate, recusa e recarga fora da vez humana.
+- [x] **T-110 — Recrutamento e pausa da IA** (REQ-110, REQ-111, REQ-114). Cobrir convite nos dois sentidos, confirmação, desempate, recusa e recarga fora da vez humana.
 - [ ] **T-111 — Combate e recompensas em grupo** (REQ-112 a REQ-114). Apresentar combate por participante, rodízio e progresso de missão ou dimensão. Cobrir reenvio e recibo antigo.
 - [ ] **T-112 — Validação integrada** (REQ-110 a REQ-114). Executar os cenários do contrato com MSW desligado e registrar evidência HTTP e da interface.
 
