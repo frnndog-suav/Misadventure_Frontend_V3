@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 1.13 · **Data:** 2026-11-27
+> **Versão do contrato:** 1.15 · **Data:** 2026-11-27
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -3999,7 +3999,7 @@ Reenviar a mesma chave e o mesmo corpo validado enquanto o avanço estiver pende
 5. Preparar dois saves perto da conclusão: um com sucessora e semente que coloque IA primeiro no novo D20, outro na última dimensão. Conferir ordem, cidade inicial, progressão individual e próxima vez humana no primeiro; status congelado e fim do avanço no segundo.
 6. Entregar configuração inicial e uma permutação alternativa. Exercitar GET/PATCH/reset e uma lista inválida, comparar duas campanhas criadas antes/depois do PATCH e confirmar que a primeira conserva a configuração fotografada.
 
-### FEAT-21 — Acompanhar as vezes dos ajudantes — `acordado`
+### FEAT-21 — Acompanhar as vezes dos ajudantes — `validado`
 
 Base: README §11.4, P-02 aprovada no ROADMAP v0.99, SPEC-FRONTEND D-67 e REQ-107 a REQ-109, e avanço da FEAT-20 (SPEC-BACKEND REQ-183 a REQ-185 e D-157). No momento 2, o frontend apresenta as vezes em sequência após a resposta HTTP. A entrega contínua por Socket.IO fica para a FEAT-26.
 
@@ -4200,3 +4200,5 @@ A T-105 começa com MSW após o acordo. A validação integrada ocorre após a i
 | 1.11 | 2026-11-27 | FE | FEAT-21 `proposto (FE)`: acontecimentos públicos ordenados, reprodução após HTTP e retomada. |
 | 1.12 | 2026-11-27 | BE | FEAT-21 `proposto (BE)`: payloads públicos, índices de combate, revisão monotônica, recibo de abertura e critérios para os seis cenários. |
 | 1.13 | 2026-11-27 | BE | FEAT-21 `acordado` após o frontend aceitar os seis cenários da v1.12. T-105 liberada com MSW. |
+| 1.14 | 2026-11-27 | FEAT-21 `implementado (BE)`. E2E da FEAT e seis cenários HTTP conferidos no backend. T-108 aguarda validação do frontend. |
+| 1.15 | 2026-11-27 | BE | FEAT-21 `validado` após os seis cenários da T-108 contra a API real, com MSW desligado. `GET /health` confirmou a interface 1.13 (devlog FE 145, commit `88975b5`). |

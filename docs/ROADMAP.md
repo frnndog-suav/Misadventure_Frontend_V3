@@ -1,6 +1,6 @@
 # Misadventures — Roadmap de desenvolvimento
 
-> **Versão:** 0.99 · **Data:** 2026-11-27
+> **Versão:** 1.01 · **Data:** 2026-11-27
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend; o autor copia o arquivo inteiro quando ele muda. Base: README Parte III (III.2 e III.4). As regras estão em [`README.md`](README.md); o que trafega entre os lados, em [`CONTRATO.md`](CONTRATO.md).
 
@@ -79,7 +79,7 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | FEAT | Título | README | FE | BE |
 |---|---|---|---|---|
 | FEAT-20 | Ajudantes de IA na criação do grupo, jogando suas vezes na ordem (BE: IA de jogador heurística com sorteio de classes) | II.7, 28.1, 11.2 | validado | validado |
-| FEAT-21 | Acompanhar as vezes dos ajudantes de IA (P-02 aprovada) | 11.4 | aguardando outro lado | a fazer |
+| FEAT-21 | Acompanhar as vezes dos ajudantes de IA (P-02 aprovada) | 11.4 | validado | validado |
 | FEAT-22 | Recrutar ajudantes e combate em grupo | 19.5 | a fazer | a fazer |
 | FEAT-23 | Negociação | 23 | a fazer | a fazer |
 | FEAT-24 | Métricas da IA no laboratório (taxa de nocaute, rodadas até concluir) | II.6, II.7 | a fazer | a fazer |
@@ -213,3 +213,5 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | 0.97 | 2026-11-27 | FEAT-20 com BE `pronto` e CONTRATO v1.09 `implementado (BE)`. T-91 concluída (devlog 110), com a validação integrada da T-104 pendente. |
 | 0.98 | 2026-11-27 | FEAT-20 `validado` nos dois lados após a T-104 (CONTRATO v1.10, devlogs FE 136 e BE 110). |
 | 0.99 | 2026-11-27 | P-02 aprovada e FEAT-21 planejada no FE, aguardando acordo do CONTRATO v1.11. |
+| 1.00 | 2026-11-27 | FEAT-21 com BE `pronto` e CONTRATO v1.14 `implementado (BE)`. Dados e medições no devlog 113 para a T-108. |
+| 1.01 | 2026-11-27 | FEAT-21 `validado` nos dois lados após os seis cenários da T-108 (CONTRATO v1.15, devlog FE 145). |
