@@ -1,7 +1,7 @@
 # 136 — T-104, validação integrada da FEAT-20
 
 - **Data** — 2026-11-27
-- **Situação** — bloqueada na leitura de saves com ajudantes
+- **Situação** — T-104 concluída e FEAT-20 validada
 - **Horas da sessão** — `null`
 - **Referências** — CONTRATO v1.09, SPEC-BACKEND v1.14 (entrega da T-91), devlog BE 110, REQ-102 a REQ-106
 
@@ -19,3 +19,29 @@ O módulo HTTP do frontend foi carregado via Vite com `VITE_API_URL=http://127.0
 Somente GETs foram executados, preservando saves, checkpoints, chaves e configuração do laboratório. O `/health` confirmou `contractVersion: 1.04`, divergência já registrada pelo backend. A cópia do contrato no frontend está em v1.08. A referência v1.09 foi consultada no repositório do backend.
 
 Retomada pela T-100 no frontend. Após T-100 a T-103, repetir a T-104 com o roteiro e os dados do BE 110. Caso de borda para a retomada: o save com cinco ajudantes deve passar pelo mesmo parser que aceitou o solo legado.
+
+## Revalidação integrada após T-100 a T-103 — 2026-11-27
+
+- **Situação** — seis cenários funcionais verificados. Divergência de versão no `/health` permanece aberta.
+- **Horas da sessão** — `null`
+- **Ambiente** — cliente HTTP e schemas reais do frontend carregados via Vite, `VITE_API_URL=http://127.0.0.1:3391` e `VITE_USE_MOCKS=false`. Referência FEAT-20 no CONTRATO v1.09 do backend. Consultas de evidência ao PostgreSQL dedicado em conexão somente de leitura. A sessão não incluiu navegação pela interface.
+- **Evidências** — `C:/Users/meu-o/AppData/Local/Temp/misadventures-t104-n4jIVD`. Os arquivos numerados guardam requisições e respostas, e os arquivos de checkpoint guardam a linha do save e seus recibos. `conferencia-complementar.json` registra a comparação final. Em `resumo.json`, a contagem de 31 como tamanho total da lista e a comparação textual de um lote foram verificações inadequadas, corrigidas pela análise abaixo. Os status de sucesso nos arquivos numerados correspondem aos códigos presumidos por rota após sucesso de `requestJson`. Os status de erro foram capturados de `ApiError`.
+
+| Cenário | Resultado e evidência |
+| --- | --- |
+| 1. Criação e legado | Opções 1–6. Omissão e zero criaram um humano; máximo criou um host humano e cinco ajudantes com mãos ocultas, aceitos pelo parser. Fracionário, nulo, negativo e acima do máximo devolveram `PARTY_INVALID` com os motivos esperados. Mudança do mínimo para 2 devolveu `belowMinPlayers`; a configuração foi restaurada. O solo legado abriu com o mesmo humano e 37 de ouro. A listagem inicial trouxe 41 saves T-91, incluindo controles adicionais; o roteiro pede a disponibilidade dos saves preparados e não fixa o total. A consulta com laboratório desligado usa a evidência do BE 110. |
+| 2. Iniciativa | Semente 1. A evidência determinística do BE 110 registra D20 2/9/12/12 e rerrolagem de 18/17 só para os empatados. No frontend, o save em `idle` tinha Ajudante 2 → Ajudante 3 → Ajudante 1 → Lia. O POST de sessão preservou a ordem e o GET confirmou Lia na rodada 1 com 3 PA. |
+| 3. Virada | Semente 3. Lia começou na rodada 1 com 3 PA, na ordem Ajudante 3 → Lia → Ajudante 1 → Ajudante 2. O `endTurn` devolveu 54 atualizações. O GET confirmou todo o estado público, com Lia na rodada 2 e 3 PA. Os controles em `3-controles-virada.json` confirmam a sequência após cada commit: Ajudante 1/R1, Ajudante 2/R1 e Ajudante 3/R2. |
+| 4. Cortes e reenvios | Os três saves começaram sem recibos e usaram as chaves do BE 110. Os cortes devolveram 500 e gravaram checkpoints em Ajudante 1 e Ajudante 2, com 0 e 18 atualizações acumuladas. Chave nova e corpo diferente devolveram os 409 acordados, preservando os checkpoints. Retomadas pela chave original e pelo POST de sessão chegaram ao mesmo estado e RNG do controle. Os três lotes de 54 atualizações tiveram a mesma ordem e conteúdo após normalizar IDs gerados e horários. A ação seguinte levou Lia à rodada 3. Dois reenvios simultâneos por save devolveram os corpos completos originais e preservaram o GET atual, a linha gravada, o RNG e os recibos. A perda de resposta usa `4-controle-perda.json`; o reenvio pela API na sessão atual devolveu o mesmo recibo com 54 atualizações. |
+| 5. Sucessora e congelamento | Na Costa da Aurora, a nova ordem foi Ajudante 3 → Lia → Ajudante 2 → Ajudante 1. A resposta já estava na vez de Lia, rodada 1, com 3 PA. IDs e classes foram preservados, todos foram para `t91-next.harbor` com respawn nessa cidade e receberam +25 Pico e +10 ouro. A última dimensão congelou o save, retornou lote vazio e rejeitou a reabertura com `409 PARTY_FROZEN`. |
+| 6. Prioridades | GET confirmou o padrão e a ausência em `limits`. PATCH aceitou a permutação com ouro primeiro e recusou duplicata com `400 LAB_CONFIG_INVALID/invalidPriorities`. O reset restaurou a configuração inicial integralmente. Os snapshots no PostgreSQL confirmaram a ordem padrão na campanha antiga e a alternativa na nova. |
+
+O preflight do navegador respondeu 204 e autorizou `content-type,idempotency-key` na origem local do Vite. O schema do frontend aceitou 702 entradas de combate coletadas, incluindo reenvios. PostgreSQL e API de preparação permaneceram ligados.
+
+Divergência operacional no `GET /health`: o esperado para a entrega é `contractVersion: "1.09"`; a API respondeu 200 com `{ "status": "ok", "contractVersion": "1.04" }`. O BE 110 já registrava o valor antigo. A verificação funcional usou a seção v1.09, e a cópia compartilhada local permanece em v1.08.
+
+## Confirmação da correção no `/health` — 2026-11-27
+
+- **Horas da sessão** — `null`
+- **Verificação** — `GET http://127.0.0.1:3391/health` consultado diretamente na API, sem interceptação do MSW. A resposta foi HTTP 200 com `{"status":"ok","contractVersion":"1.09"}`, conforme esperado.
+- **Resultado** — divergência encerrada. Os seis cenários funcionais já aprovados na revalidação acima completam a validação da FEAT-20. O PostgreSQL e a API de preparação permaneceram ligados durante a confirmação.

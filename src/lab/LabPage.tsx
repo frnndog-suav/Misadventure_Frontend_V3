@@ -160,6 +160,16 @@ const fieldLabels: Record<NumericKey, string> = {
 }
 
 const fieldKeys = Object.keys(fieldLabels) as NumericKey[]
+type AiPriorities = LabConfig['values']['aiPlayerPriorities']
+
+const aiPriorityLabels: Record<AiPriorities[number], string> = {
+  avoidKnockout: 'Evitar nocaute',
+  dimensionCompletion: 'Avançar a conclusão da dimensão',
+  quests: 'Fazer missões',
+  peak: 'Ganhar Pico',
+  gold: 'Ganhar ouro',
+}
+
 type ReserveEntry = LabConfig['values']['reserveDeck'][number]
 type ReserveDraft = {
   type: ReserveEntry['type']
@@ -340,6 +350,11 @@ function ConfigForm({ config }: { config: LabConfig }) {
   /** Só o que o jogador digitou e ainda não foi salvo. */
   const [edits, setEdits] = useState<Partial<Record<NumericKey, string>>>({})
   const [reserveEdits, setReserveEdits] = useState<ReserveDraft[] | null>(null)
+  const [aiPriorityEdits, setAiPriorityEdits] = useState<AiPriorities | null>(
+    null,
+  )
+  const savedAiPriorities = config.values.aiPlayerPriorities
+  const aiPriorities = aiPriorityEdits ?? savedAiPriorities
   const [priorityEdits, setPriorityEdits] = useState<
     Partial<Record<keyof typeof behaviorLabels, string>>
   >({})
@@ -384,6 +399,12 @@ function ConfigForm({ config }: { config: LabConfig }) {
     if (JSON.stringify(next) !== JSON.stringify(priorities))
       patch.enemyAbilityPriorities = next
   }
+  if (
+    aiPriorities.some(
+      (priority, index) => priority !== savedAiPriorities[index],
+    )
+  )
+    patch.aiPlayerPriorities = aiPriorities
   const canSave = !hasEmpty && Object.keys(patch).length > 0
 
   const backendErrors =
@@ -398,10 +419,22 @@ function ConfigForm({ config }: { config: LabConfig }) {
     if (text) fieldErrors[field] = text
   }
   const pending = update.isPending || reset.isPending
+  const invalidAiPriorities = backendErrors.some(
+    ({ field, reason }) =>
+      field === 'aiPlayerPriorities' && reason === 'invalidPriorities',
+  )
+
+  function moveAiPriority(index: number, target: number) {
+    const next = [...aiPriorities]
+    ;[next[index], next[target]] = [next[target], next[index]]
+    setAiPriorityEdits(next)
+  }
+
   function clearEdits() {
     setEdits({})
     setReserveEdits(null)
     setPriorityEdits({})
+    setAiPriorityEdits(null)
   }
 
   let status = ''
@@ -516,6 +549,50 @@ function ConfigForm({ config }: { config: LabConfig }) {
             })}
           </fieldset>
         )}
+        <fieldset
+          disabled={pending}
+          aria-describedby={
+            invalidAiPriorities
+              ? 'lab-ai-priorities-hint lab-ai-priorities-error'
+              : 'lab-ai-priorities-hint'
+          }
+        >
+          <legend>Prioridades dos ajudantes</legend>
+          <p id="lab-ai-priorities-hint" className="lab-hint">
+            A primeira prioridade tem precedência. A ordem salva vale para
+            campanhas novas.
+          </p>
+          <ol>
+            {aiPriorities.map((priority, index) => (
+              <li key={priority}>
+                <span>{aiPriorityLabels[priority]}</span>
+                <div>
+                  <button
+                    type="button"
+                    aria-label={`Subir: ${aiPriorityLabels[priority]}`}
+                    disabled={index === 0}
+                    onClick={() => moveAiPriority(index, index - 1)}
+                  >
+                    Subir
+                  </button>{' '}
+                  <button
+                    type="button"
+                    aria-label={`Descer: ${aiPriorityLabels[priority]}`}
+                    disabled={index === aiPriorities.length - 1}
+                    onClick={() => moveAiPriority(index, index + 1)}
+                  >
+                    Descer
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ol>
+          {invalidAiPriorities && (
+            <p id="lab-ai-priorities-error" className="lab-error">
+              A ordem deve incluir cada uma das cinco prioridades uma vez.
+            </p>
+          )}
+        </fieldset>
         <div className="lab-actions">
           <button type="submit" disabled={!canSave || pending}>
             Salvar

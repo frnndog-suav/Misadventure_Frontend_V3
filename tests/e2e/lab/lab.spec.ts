@@ -36,6 +36,62 @@ test('REQ-06: carrega, salva e restaura a configuração (MSW)', async ({
   await expect(actionPoints).toHaveValue('3')
 })
 
+test('REQ-106: consulta, reordena, salva e restaura prioridades (MSW)', async ({
+  page,
+}) => {
+  await page.goto('/lab')
+  const group = page.getByRole('group', { name: 'Prioridades dos ajudantes' })
+  const items = group.getByRole('listitem')
+  const labels = items.getByText(/^(Evitar|Avançar|Fazer|Ganhar)/)
+  const defaults = [
+    'Evitar nocaute',
+    'Avançar a conclusão da dimensão',
+    'Fazer missões',
+    'Ganhar Pico',
+    'Ganhar ouro',
+  ]
+  const status = page
+    .getByRole('region', { name: 'Configuração' })
+    .getByRole('status')
+  const save = page.getByRole('button', { name: 'Salvar', exact: true })
+
+  await expect(labels).toHaveText(defaults)
+  await expect(
+    group.getByRole('button', { name: 'Subir: Evitar nocaute' }),
+  ).toBeDisabled()
+  await expect(
+    group.getByRole('button', { name: 'Descer: Ganhar ouro' }),
+  ).toBeDisabled()
+  await group.getByRole('button', { name: 'Subir: Ganhar ouro' }).click()
+  const reordered = [...defaults.slice(0, 3), defaults[4], defaults[3]]
+  await expect(labels).toHaveText(reordered)
+
+  const patchRequest = page.waitForRequest(
+    (request) =>
+      request.method() === 'PATCH' &&
+      new URL(request.url()).pathname.endsWith('/lab/config'),
+  )
+  await save.click()
+  expect((await patchRequest).postDataJSON()).toEqual({
+    aiPlayerPriorities: [
+      'avoidKnockout',
+      'dimensionCompletion',
+      'quests',
+      'gold',
+      'peak',
+    ],
+  })
+  await expect(status).toHaveText('Configuração salva.')
+  await expect(labels).toHaveText(reordered)
+  await expect(save).toBeDisabled()
+
+  await group.getByRole('button', { name: 'Descer: Evitar nocaute' }).click()
+  await page.getByRole('button', { name: 'Restaurar padrões' }).click()
+  await expect(status).toHaveText('Padrões restaurados.')
+  await expect(labels).toHaveText(defaults)
+  await expect(save).toBeDisabled()
+})
+
 test('REQ-06: campo vazio desabilita "Salvar"', async ({ page }) => {
   await page.goto('/lab')
   const gold = page.getByRole('spinbutton', { name: 'Ouro inicial' })

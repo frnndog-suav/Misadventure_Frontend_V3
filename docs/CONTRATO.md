@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 1.08 · **Data:** 2026-11-26
+> **Versão do contrato:** 1.10 · **Data:** 2026-11-27
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -3945,7 +3945,7 @@ Para a T-99, o backend entrega campanhas preparadas para mercado, abertura nos d
 - Dado um save legado na dimensão atual, quando consulta o mercado, então a vigência é a coleção própria. Ao avançar para uma dimensão configurada, aplica-se a vigência do destino.
 - Dado um save com extensão ativa, quando avança para uma dimensão que encerra essa extensão e traz outra coleção por reprint, então a extensão encerrada sai da oferta de boosters e dos candidatos ao novo pool, o reprint volta e o conteúdo gerado pertence à coleção própria do destino. Reabrir o save após editar as listas da dimensão atual preserva sua vigência comercial, inclusive ao renovar o pool de singles.
 
-### FEAT-20 — Ajudantes de IA — `acordado`
+### FEAT-20 — Ajudantes de IA — `validado`
 
 Base: README §§1.3, 10.1, 11.2, 11.3, 28.1 e II.7, ROADMAP v0.93 e SPEC-FRONTEND v1.10 (REQ-102 a REQ-106). A entrega cobre criação, estado e avanço automático. A exibição das jogadas ao vivo, o recrutamento e combate em grupo, a negociação e as métricas ficam nas FEATs 21 a 24.
 
@@ -4140,3 +4140,5 @@ Reenviar a mesma chave e o mesmo corpo validado enquanto o avanço estiver pende
 | 1.06 | 2026-11-26 | BE | FEAT-20 proposto (BE): opções de criação, estado público, avanço e retomada idempotentes, prioridades e preparação dos cenários. |
 | 1.07 | 2026-11-26 | BE | FEAT-20 proposto (BE): preserva `PartyActionResponse` e o corpo completo no reenvio, inclusive após conclusão pelo POST de sessão. Cenário 4 cobre reenvio após jogada posterior e GET do estado atual. |
 | 1.08 | 2026-11-26 | FE | FEAT-20 `acordado` com os formatos e cenários da v1.07. T-100 liberada com MSW. |
+| 1.09 | 2026-11-27 | BE | FEAT-20 `implementado (BE)`. T-91 preparou os seis cenários e confirmou o acesso direto da T-104, sem prazo explícito do cliente ou proxy. Com cinco ajudantes, máximos observados de 435 ms na sessão e 488 ms no `endTurn`. |
+| 1.10 | 2026-11-27 | BE | FEAT-20 `validado` após os seis cenários da T-104 e a confirmação de `GET /health` com a versão implementada 1.09 (devlogs FE 136 e BE 110). |
