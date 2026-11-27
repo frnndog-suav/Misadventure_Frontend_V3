@@ -31,6 +31,7 @@ import {
   combatScenario,
   resetCombatScenarios,
 } from '../../mocks/combatFixtures'
+import { helperPresentation } from '../../mocks/helperPresentationFixtures'
 import { handlers } from '../../mocks/handlers'
 import { nextDimensionFixture } from '../../mocks/dimensionCompletionFixtures'
 import {
@@ -75,6 +76,7 @@ beforeAll(() => {
   server.listen({ onUnhandledFrame: 'error' })
 })
 afterEach(() => {
+  sessionStorage.clear()
   resetCombatScenarios()
   server.resetHandlers()
   server.events.removeAllListeners()
@@ -236,6 +238,105 @@ it('REQ-104: retoma um avanço pendente pela sessão e aplica o congelamento rec
   expect(screen.getByText('Rodada 2', { exact: true })).toBeVisible()
   expect(endTurn).toBeDisabled()
 })
+
+it.each([
+  'session',
+  'stale session',
+  'action',
+  'stale action',
+  'legacy action',
+])(
+  'REQ-109: recupera %s com a chave original e a revisão atual',
+  async (scenario) => {
+    const initial = helperPresentation(1)
+    const recovered = helperPresentation(2)
+    const openingLost = scenario.endsWith('session')
+    const stale = scenario.startsWith('stale') || scenario === 'legacy action'
+    const current = stale ? helperPresentation(3).party : recovered.party
+    const openings: (string | null)[] = []
+    const actions: { key: string | null; body: string }[] = []
+    let reads = 0
+    server.use(
+      http.post('*/parties/:id/session', ({ request }) => {
+        openings.push(request.headers.get('Idempotency-Key'))
+        if (openings.length === 1) {
+          return openingLost
+            ? HttpResponse.error()
+            : HttpResponse.json({ ...initial.party, domainEvents: [] })
+        }
+        return HttpResponse.json({
+          ...recovered.party,
+          domainEvents: recovered.domainEvents,
+        })
+      }),
+      http.get('*/parties/:id', () => {
+        reads++
+        return HttpResponse.json(
+          scenario === 'action' ? recovered.party : current,
+        )
+      }),
+      http.post('*/parties/:id/actions', async ({ request }) => {
+        actions.push({
+          key: request.headers.get('Idempotency-Key'),
+          body: await request.text(),
+        })
+        return actions.length === 1
+          ? HttpResponse.error()
+          : HttpResponse.json({
+              ...recovered.party,
+              revision:
+                scenario === 'legacy action' ? 0 : recovered.party.revision,
+              domainEvents:
+                scenario === 'legacy action' ? [] : recovered.domainEvents,
+              combatUpdates: recovered.combatUpdates,
+            })
+      }),
+    )
+    const view = renderParty(initial.party.id)
+    const pass = () => screen.getByRole('button', { name: 'Encerrar a vez' })
+    if (openingLost) {
+      await screen.findByRole('button', { name: 'Retomar sessão' })
+      view.unmount()
+      renderParty(initial.party.id)
+    } else {
+      fireEvent.click(
+        await screen.findByRole('button', { name: 'Encerrar a vez' }),
+      )
+      await screen.findByRole('button', { name: 'Reenviar ação' })
+      if (!stale)
+        fireEvent.click(screen.getByRole('button', { name: 'Retomar sessão' }))
+    }
+
+    if (!stale)
+      fireEvent.click(
+        await screen.findByRole('button', { name: 'Pular apresentação' }),
+      )
+    if (openingLost)
+      await screen.findByRole('button', { name: 'Encerrar a vez' })
+    expect(openings[0]).toMatch(/^[\da-f-]{36}$/i)
+    if (openingLost) {
+      expect(openings).toEqual([openings[0], openings[0]])
+      expect(reads).toBe(1)
+    } else {
+      if (!stale) expect(openings[1]).not.toBe(openings[0])
+      fireEvent.click(
+        await screen.findByRole('button', { name: 'Reenviar ação' }),
+      )
+      await waitFor(() => expect(pass()).toBeEnabled())
+      expect(actions).toEqual([actions[0], actions[0]])
+      expect(reads).toBe(stale ? 1 : 2)
+    }
+    expect(
+      screen.getByText(`Rodada ${current.turn.round}`, { exact: true }),
+    ).toBeVisible()
+    expect(
+      screen.queryByRole('region', { name: 'Vezes dos ajudantes' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('list', { name: 'Transições de combate' }),
+    ).not.toBeInTheDocument()
+  },
+)
 
 it('REQ-63: salva a Urbana atual, mantém o estado em uma recusa e recupera o ponto ao reabrir', async () => {
   const id = 'fixture.knockout-spawn'

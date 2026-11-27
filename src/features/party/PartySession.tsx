@@ -2,6 +2,7 @@ import {
   useCallback,
   useEffect,
   useId,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
@@ -22,6 +23,7 @@ import type { BlacksmithOperation } from '../../api/blacksmith'
 import { ApiError } from '../../api/http'
 import {
   ActionNotAllowedError,
+  getParty,
   useEndSession,
   useParty,
   usePartyAction,
@@ -2124,9 +2126,50 @@ export function PartySession() {
 
 function PartySessionView({ partyId }: { partyId: string }) {
   const navigate = useNavigate()
-  const start = useStartSession(partyId)
+  const storageScope = `${import.meta.env.VITE_API_URL ?? ''}:${partyId}`
+  const storageKey = `party-action:${storageScope}`
+  const openingKey = `party-session:${storageScope}`
+  const opening = useRef<string | null>(null)
+  const checkOpening = useRef(false)
+  const checkAction = useRef(false)
+  const latestParty = useRef<Party | undefined>(undefined)
+  const discardedAction = useRef<PartyActionResponse | undefined>(undefined)
+
+  async function newerParty(receipt: Party, verify: boolean) {
+    if (receipt.revision === undefined) return undefined
+    let current = latestParty.current
+    if (verify || receipt.revision === 0) {
+      let fetched: Party
+      try {
+        fetched = await getParty(partyId)
+      } catch (cause) {
+        throw new Error('Não foi possível confirmar o estado atual do grupo.', {
+          cause,
+        })
+      }
+      current = latestParty.current
+      if ((fetched.revision ?? -1) >= (current?.revision ?? -1))
+        current = fetched
+    }
+    if (current && (current.revision ?? -1) > receipt.revision) {
+      latestParty.current = current
+      return current
+    }
+    latestParty.current = receipt
+  }
+
+  const start = useStartSession(partyId, async (receipt) => {
+    const current = await newerParty(receipt, checkOpening.current)
+    return current ? { ...current, domainEvents: [] } : receipt
+  })
   const end = useEndSession(partyId)
-  const action = usePartyAction(partyId)
+  const action = usePartyAction(partyId, async (receipt) => {
+    const current = await newerParty(receipt, checkAction.current)
+    if (!current) return receipt
+    const snapshot = { ...current, domainEvents: [], combatUpdates: [] }
+    discardedAction.current = snapshot
+    return snapshot
+  })
   const { mutate: startSession } = start
   const reloadChoice =
     !start.data?.members.some((member) => member.kind === 'aiHelper') &&
@@ -2137,8 +2180,49 @@ function PartySessionView({ partyId }: { partyId: string }) {
       (start.data?.pendingRewards.length ?? 0) > 0)
   const restoredParty = useParty(start.isSuccess ? partyId : null, reloadChoice)
 
-  // Continuar ao abrir; repetir não muda nada (CONTRATO §3 FEAT-05, D-37).
-  useEffect(() => startSession(), [startSession])
+  const openSession = useCallback(
+    (recoveringAction: boolean, onSuccess?: (party: Party) => void) => {
+      let saved = opening.current
+      try {
+        saved ??= sessionStorage.getItem(openingKey)
+      } catch {
+        // A chave em memória permite retomar enquanto a tela estiver aberta.
+      }
+      checkOpening.current = saved !== null || recoveringAction
+      const key = saved ?? crypto.randomUUID()
+      opening.current = key
+      try {
+        sessionStorage.setItem(openingKey, key)
+      } catch {
+        // O armazenamento local não deve impedir a abertura.
+      }
+      function clearOpening() {
+        opening.current = null
+        try {
+          if (sessionStorage.getItem(openingKey) === key)
+            sessionStorage.removeItem(openingKey)
+        } catch {
+          // A abertura já foi resolvida.
+        }
+      }
+      startSession(key, {
+        onSuccess: (party) => {
+          clearOpening()
+          onSuccess?.(party)
+        },
+        onError: (error) => {
+          if (actionWasRefused(error)) clearOpening()
+        },
+      })
+    },
+    [openingKey, startSession],
+  )
+  const openedOnMount = useRef(false)
+  useEffect(() => {
+    if (openedOnMount.current) return
+    openedOnMount.current = true
+    openSession(readPendingAction(storageKey) !== null)
+  }, [openSession, storageKey])
 
   function endSession(): void {
     end.mutate(undefined, {
@@ -2167,7 +2251,6 @@ function PartySessionView({ partyId }: { partyId: string }) {
     hasHelpers &&
     party?.status === 'inSession' &&
     party.turn.memberId !== host?.id
-  const storageKey = `party-action:${import.meta.env.VITE_API_URL ?? ''}:${partyId}`
   const [pendingRequest, setPendingRequest] = useState(() =>
     readPendingAction(storageKey),
   )
@@ -2179,14 +2262,22 @@ function PartySessionView({ partyId }: { partyId: string }) {
     action.error.code === 'ACTION_ADVANCE_PENDING'
   const busy = start.isPending || end.isPending || action.isPending
   const presentationSource = action.data ?? confirmed?.response ?? start.data
-  const [finishedPresentation, setFinishedPresentation] =
-    useState<typeof presentationSource>()
-  const events = presentationSource?.domainEvents
-  const presenting =
-    !!events?.length && presentationSource !== finishedPresentation
+  const [consumedEvents, setConsumedEvents] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  )
+  const batch = presentationSource?.domainEvents
+  const events = useMemo(
+    () => batch?.filter(({ id }) => !consumedEvents.has(id)),
+    [batch, consumedEvents],
+  )
+  const presenting = !!events?.length
   const finishPresentation = useCallback(
-    () => setFinishedPresentation(presentationSource),
-    [presentationSource],
+    () =>
+      setConsumedEvents(
+        (previous) =>
+          new Set([...previous, ...(events?.map(({ id }) => id) ?? [])]),
+      ),
+    [events],
   )
   const automatedCombatIndexes = new Set(
     confirmed?.response?.domainEvents?.flatMap((event) =>
@@ -2201,15 +2292,22 @@ function PartySessionView({ partyId }: { partyId: string }) {
     waitingForHuman ||
     (party !== undefined && party.status !== 'inSession')
 
-  function sendPending(request: PartyActionRequest): void {
+  function sendPending(request: PartyActionRequest, retry = true): void {
     if (inFlight.current) return
     inFlight.current = true
+    checkAction.current = retry
     action.mutate(request, {
       onSuccess: (response) => {
         inFlight.current = false
         setPendingRequest(null)
         storePendingAction(storageKey, null)
-        callbacks.current?.onSuccess?.(response)
+        if (response === discardedAction.current) {
+          discardedAction.current = undefined
+          action.reset()
+          setConfirmed({ party: response })
+        } else {
+          callbacks.current?.onSuccess?.(response)
+        }
         callbacks.current = undefined
       },
       onError: (error) => {
@@ -2237,16 +2335,17 @@ function PartySessionView({ partyId }: { partyId: string }) {
     callbacks.current = handlers
     setPendingRequest(request)
     storePendingAction(storageKey, request)
-    sendPending(request)
+    sendPending(request, false)
   }
 
   function resumeAdvance(): void {
-    startSession(undefined, {
-      onSuccess: (party) => {
+    openSession(
+      unresolvedAction || advancePending || waitingForHuman === true,
+      (party) => {
         action.reset()
         setConfirmed({ party })
       },
-    })
+    )
   }
 
   const completion = party?.lastDimensionCompletion
@@ -2300,7 +2399,7 @@ function PartySessionView({ partyId }: { partyId: string }) {
             setConfirmed((current) => ({ ...current, party: data }))
         })
       },
-      Math.max(0, Date.parse(deadline) - Date.now()),
+      Math.max(0, Date.parse(deadline) - window.Date.now()),
     )
     return () => window.clearTimeout(timer)
   }, [
@@ -2736,6 +2835,7 @@ function PartySessionView({ partyId }: { partyId: string }) {
       )}
       {(waitingForHuman ||
         advancePending ||
+        unresolvedAction ||
         (start.isError && !canReturnHome)) && (
         <button type="button" disabled={busy} onClick={resumeAdvance}>
           Retomar sessão

@@ -595,6 +595,10 @@ export function useParties(): UseQueryResult<PartySummary[], Error> {
   return useQuery({ queryKey: partiesKey, queryFn: getParties, retry: false })
 }
 
+export async function getParty(partyId: string): Promise<Party> {
+  return partySchema.parse(await requestJson('GET', partyPath(partyId)))
+}
+
 /** Um grupo (`GET /parties/:partyId`); `null` deixa a consulta parada. */
 export function useParty(
   partyId: string | null,
@@ -602,8 +606,7 @@ export function useParty(
 ): UseQueryResult<Party, Error> {
   return useQuery({
     queryKey: [...partiesKey, partyId],
-    queryFn: async () =>
-      partySchema.parse(await requestJson('GET', partyPath(partyId ?? ''))),
+    queryFn: () => getParty(partyId ?? ''),
     enabled: partyId !== null && enabled,
     retry: false,
   })
@@ -624,10 +627,11 @@ export function useCreateParty(): UseMutationResult<
 /** Continuar: abre (ou mantém) a sessão do grupo. */
 export function useStartSession(
   partyId: string,
+  reconcile?: (response: PartySessionResponse) => Promise<PartySessionResponse>,
 ): UseMutationResult<PartySessionResponse, Error, string | void> {
   return useMutation({
-    mutationFn: async (idempotencyKey) =>
-      partySessionResponseSchema.parse(
+    mutationFn: async (idempotencyKey) => {
+      const response = partySessionResponseSchema.parse(
         await requestJson(
           'POST',
           `${partyPath(partyId)}/session`,
@@ -636,7 +640,9 @@ export function useStartSession(
             ? undefined
             : { 'Idempotency-Key': idempotencyKey },
         ),
-      ),
+      )
+      return reconcile ? reconcile(response) : response
+    },
     retry: false,
   })
 }
@@ -919,10 +925,13 @@ export type PartyActionRequest = PartyAction & { idempotencyKey?: string }
  */
 export function usePartyAction(
   partyId: string,
+  reconcile?: (response: PartyActionResponse) => Promise<PartyActionResponse>,
 ): UseMutationResult<PartyActionResponse, Error, PartyActionRequest> {
   return useMutation({
-    mutationFn: (action: PartyActionRequest) =>
-      takePartyAction(partyId, action),
+    mutationFn: async (action: PartyActionRequest) => {
+      const response = await takePartyAction(partyId, action)
+      return reconcile ? reconcile(response) : response
+    },
     retry: false,
   })
 }
