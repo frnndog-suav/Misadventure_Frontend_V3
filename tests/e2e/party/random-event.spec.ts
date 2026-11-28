@@ -1,14 +1,23 @@
 ﻿import { expect, test } from '@playwright/test'
 
-test('REQ-59: reabre a escolha e troca a recompensa após um lote aceito', async ({
+test('REQ-59, REQ-117 e REQ-118: consulta a recompensa sem arte e retoma após recusa', async ({
   page,
 }) => {
   await page.goto('/grupo/party-evento-premio-urbano')
   await page.reload()
   const reward = page.getByRole('region', { name: 'Recompensa pendente' })
   await expect(reward).toContainText('Minério de Ferro')
+  const details = reward.getByText('Ver carta · Item', { exact: true })
+  await details.focus()
+  await details.press('Enter')
+  const card = reward.getByRole('article', { name: 'Minério de Ferro' })
+  await expect(
+    card.getByRole('heading', { name: 'Minério de Ferro' }),
+  ).toBeVisible()
+  await expect(card.locator('.card-category-frame')).toBeVisible()
+  await expect(card.getByRole('img')).toHaveCount(0)
   await reward.getByRole('button', { name: 'Manter' }).click()
-  await expect(page.getByRole('status')).toHaveText(
+  await expect(reward.getByRole('status')).toHaveText(
     'O lote não libera espaço para a recompensa.',
   )
   await reward

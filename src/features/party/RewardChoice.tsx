@@ -1,8 +1,10 @@
-import { useId, useState } from 'react'
+import { useId, useState, type ReactNode } from 'react'
 import type { Card } from '../../api/catalog'
 import type { Party } from '../../api/parties'
 import type { ResolveRewardAction } from '../../api/randomEvents'
 import type { ReceiveSpace } from '../../api/vocabulary'
+import { FullCard } from '../../ui/cards/FullCard'
+import { cardTypeLabels } from '../../ui/labels'
 import { nameOf } from './cardNames'
 import { receiveSpaceText } from './receiveSpace'
 
@@ -22,6 +24,7 @@ export function RewardChoice({
   rotationPosition,
   cards,
   disabled,
+  status,
   onResolve,
 }: {
   reward: Party['pendingRewards'][number]
@@ -29,6 +32,7 @@ export function RewardChoice({
   rotationPosition?: number
   cards: ReadonlyMap<string, Card>
   disabled: boolean
+  status?: ReactNode
   onResolve: (action: ResolveRewardAction) => void
 }) {
   const title = useId()
@@ -41,9 +45,13 @@ export function RewardChoice({
     decisionDeadlineAt,
   } = reward
   const action = { type: 'resolveReward', rewardId } as const
+  const card = cards.get(cardId)
 
   return (
-    <section aria-labelledby={title}>
+    <section
+      className="campaign-panel campaign-encounter"
+      aria-labelledby={title}
+    >
       <h2 id={title}>Recompensa pendente</h2>
       {recipient && (
         <p>
@@ -53,6 +61,12 @@ export function RewardChoice({
         </p>
       )}
       <p>{`1× ${nameOf(cards, cardId)} para ${receiveSpaceText[destination]}.`}</p>
+      {card && (
+        <details>
+          <summary>Ver carta · {cardTypeLabels[card.type]}</summary>
+          <FullCard card={card} />
+        </details>
+      )}
       {reward.source.type === 'booster' && (
         <p>Origem: Booster {nameOf(cards, reward.source.boosterCardId)}</p>
       )}
@@ -117,6 +131,7 @@ export function RewardChoice({
           Deixar
         </button>
       </fieldset>
+      {status}
     </section>
   )
 }

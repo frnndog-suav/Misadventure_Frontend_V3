@@ -26,7 +26,10 @@ export function BoosterResult({
 }) {
   const title = `Cartas do booster ${nameOf(cards, opening.boosterCardId)}`
   return (
-    <>
+    <section
+      className="campaign-panel campaign-outcome"
+      aria-labelledby="booster-result-title"
+    >
       <h2 id="booster-result-title">{title}</h2>
       <ul aria-labelledby="booster-result-title">
         {opening.cards.map(({ cardId, destination }, i) => (
@@ -35,6 +38,6 @@ export function BoosterResult({
           </li>
         ))}
       </ul>
-    </>
+    </section>
   )
 }

@@ -1,6 +1,6 @@
 # Misadventures — Roadmap de desenvolvimento
 
-> **Versão:** 1.10 · **Data:** 2026-11-27
+> **Versão:** 1.11 · **Data:** 2026-11-28
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend; o autor copia o arquivo inteiro quando ele muda. Base: README Parte III (III.2 e III.4). As regras estão em [`README.md`](README.md); o que trafega entre os lados, em [`CONTRATO.md`](CONTRATO.md).
 
@@ -73,7 +73,7 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | FEAT-18 | Montarias e Estábulo | 26 | validado | validado |
 | FEAT-19 | Conclusão da dimensão, chefe final, passagem para a próxima, save congelado | 3.2, 28.1 | validado | validado |
 | FEAT-33 | Coleções estendidas e reprint: várias coleções vigentes para compra no mercado (README 27) | 27, 24 | validado | validado |
-| FEAT-30 | Acabamento visual da campanha solo com um personagem | II.1, II.4, II.5 | a fazer | — |
+| FEAT-30 | Acabamento visual da campanha solo com um personagem | II.1, II.4, II.5 | validado | — |
 
 O Momento 1 fecha com uma campanha solo jogável no navegador. Após o acabamento visual, entregar ao autor uma revisão identificada e um roteiro com a API real, da criação do save à conclusão da dimensão.
 
@@ -232,3 +232,4 @@ O Momento 1 fecha com uma campanha solo jogável no navegador. Após o acabament
 | 1.08 | 2026-11-27 | FEAT-30 antecipada para fechar o Momento 1 com teste da campanha solo no navegador. Revisão visual com IA e FEAT-29 no Momento 2. |
 | 1.09 | 2026-11-27 | FEAT-22 pronta no backend após as verificações da T-117 e registrada como `implementado (BE)` no CONTRATO v1.20. A conclusão aguarda a validação integrada da T-112. |
 | 1.10 | 2026-11-27 | FEAT-22 encerrada nos dois lados após a validação integrada dos sete cenários da T-112. CONTRATO v1.21. |
+| 1.11 | 2026-11-28 | FEAT-30 validada no frontend após os dois desfechos da campanha solo no Chrome com API real e MSW desligado (T-116, devlog FE 152). |

@@ -347,11 +347,13 @@ export function CombatPanel({
   onAction,
   names,
   catalogPending,
+  status,
 }: Omit<Controls, 'host'> & {
   combat: Combat
   host?: PartyMember
   names: ReadonlyMap<string, string>
   catalogPending: boolean
+  status?: ReactNode
 }) {
   const title = useId()
   const name = (id: string) => names.get(id) ?? id
@@ -362,25 +364,35 @@ export function CombatPanel({
   const { escape } = combat
 
   return (
-    <section aria-labelledby={title}>
-      <h2 id={title}>
-        {combat.finalBoss && 'Chefe final · '}
-        {combat.card.title}
-      </h2>
-      <p>
-        Ciclo {combat.cycle}/{combat.maxCycles}
-      </p>
-      <p>
-        Turno de {name(combat.turn.actorId)} ·{' '}
-        {combat.turn.phase === 'prepare' ? 'Preparar' : 'Atacar'} · Ataques
-        restantes: {combat.turn.attacksRemaining}
-      </p>
-      <ol aria-label="Ordem de combate">
+    <section
+      className="campaign-panel campaign-encounter"
+      aria-labelledby={title}
+    >
+      <header className="campaign-encounter-header">
+        <h2 id={title}>
+          {combat.finalBoss && 'Chefe final · '}
+          {combat.card.title}
+        </h2>
+        <p>
+          Ciclo {combat.cycle}/{combat.maxCycles}
+        </p>
+        <p>
+          Turno de {name(combat.turn.actorId)} ·{' '}
+          {combat.turn.phase === 'prepare' ? 'Preparar' : 'Atacar'} · Ataques
+          restantes: {combat.turn.attacksRemaining}
+        </p>
+      </header>
+      <ol className="campaign-combat-order" aria-label="Ordem de combate">
         {combat.order.map((id) => (
-          <li key={id}>{name(id)}</li>
+          <li
+            key={id}
+            aria-current={id === combat.turn.actorId ? 'step' : undefined}
+          >
+            {name(id)}
+          </li>
         ))}
       </ol>
-      <ul aria-label="Participantes">
+      <ul className="campaign-participants" aria-label="Participantes">
         {combat.participants ? (
           combat.participants.map(
             ({ memberId, health, maxHealth, condition }) => (
@@ -404,92 +416,99 @@ export function CombatPanel({
           </li>
         ))}
       </ul>
-      {host &&
-        offer('activateCombatEffect') &&
-        combat.effects.map((option) => (
-          <ProjectedAction
-            key={JSON.stringify([ids, option])}
-            option={option}
-            label={option.text}
-            button="Ativar efeito"
-            host={host}
-            cards={cards}
-            pending={pending}
-            name={name}
-            onSubmit={(selection) =>
-              onAction({
-                type: 'activateCombatEffect',
-                ...ids,
-                effectId: option.effectId,
-                ...selection,
-              })
-            }
-          />
-        ))}
-      {host &&
-        offer('useAbility') &&
-        combat.abilities.map((option) => {
-          const ability = equippedAbility(option, host, cards)
-          const cardId = abilityCardId(option, host)
-          const loadingAbility =
-            catalogPending && !!cardId && !cards.has(cardId)
-          const allOpponents =
-            ability && 'target' in ability && ability.target === 'allOpponents'
-          return (
+      <div className="campaign-controls">
+        {host &&
+          offer('activateCombatEffect') &&
+          combat.effects.map((option) => (
             <ProjectedAction
               key={JSON.stringify([ids, option])}
-              option={allOpponents ? { ...option, targetIds: [] } : option}
-              label={ability?.name ?? option.abilityId}
-              button="Usar habilidade"
+              option={option}
+              label={option.text}
+              button="Ativar efeito"
               host={host}
               cards={cards}
-              pending={pending || loadingAbility}
+              pending={pending}
               name={name}
               onSubmit={(selection) =>
                 onAction({
-                  type: 'useAbility',
+                  type: 'activateCombatEffect',
                   ...ids,
-                  abilityId: option.abilityId,
-                  ...abilitySource(option),
+                  effectId: option.effectId,
                   ...selection,
                 })
               }
             />
-          )
-        })}
-      {escape.unavailableReason && (
-        <p>Fuga indisponível: {escape.unavailableReason}</p>
-      )}
-      {offer('escapeCombat') && (
-        <button
-          type="button"
-          disabled={pending}
-          onClick={() => onAction({ type: 'escapeCombat', ...ids })}
-        >
-          Fugir · {escape.vigorCost} Vigor ·{' '}
-          {escape.automatic ? 'automática' : `limiar ${escape.threshold}`}
-        </button>
-      )}
-      {offer('combatAttack') &&
-        combat.attackTargetIds.map((targetId) => (
+          ))}
+        {host &&
+          offer('useAbility') &&
+          combat.abilities.map((option) => {
+            const ability = equippedAbility(option, host, cards)
+            const cardId = abilityCardId(option, host)
+            const loadingAbility =
+              catalogPending && !!cardId && !cards.has(cardId)
+            const allOpponents =
+              ability &&
+              'target' in ability &&
+              ability.target === 'allOpponents'
+            return (
+              <ProjectedAction
+                key={JSON.stringify([ids, option])}
+                option={allOpponents ? { ...option, targetIds: [] } : option}
+                label={ability?.name ?? option.abilityId}
+                button="Usar habilidade"
+                host={host}
+                cards={cards}
+                pending={pending || loadingAbility}
+                name={name}
+                onSubmit={(selection) =>
+                  onAction({
+                    type: 'useAbility',
+                    ...ids,
+                    abilityId: option.abilityId,
+                    ...abilitySource(option),
+                    ...selection,
+                  })
+                }
+              />
+            )
+          })}
+        {escape.unavailableReason && (
+          <p>Fuga indisponível: {escape.unavailableReason}</p>
+        )}
+        {offer('escapeCombat') && (
           <button
-            key={targetId}
             type="button"
             disabled={pending}
-            onClick={() => onAction({ type: 'combatAttack', ...ids, targetId })}
+            onClick={() => onAction({ type: 'escapeCombat', ...ids })}
           >
-            Atacar {name(targetId)}
+            Fugir · {escape.vigorCost} Vigor ·{' '}
+            {escape.automatic ? 'automática' : `limiar ${escape.threshold}`}
           </button>
-        ))}
-      {offer('endCombatTurn') && (
-        <button
-          type="button"
-          disabled={pending}
-          onClick={() => onAction({ type: 'endCombatTurn', ...ids })}
-        >
-          Encerrar turno de combate
-        </button>
-      )}
+        )}
+        {offer('combatAttack') &&
+          combat.attackTargetIds.map((targetId) => (
+            <button
+              key={targetId}
+              type="button"
+              disabled={pending}
+              onClick={() =>
+                onAction({ type: 'combatAttack', ...ids, targetId })
+              }
+            >
+              Atacar {name(targetId)}
+            </button>
+          ))}
+        {offer('endCombatTurn') && (
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => onAction({ type: 'endCombatTurn', ...ids })}
+          >
+            Encerrar turno de combate
+          </button>
+        )}
+      </div>
+      {status}
     </section>
   )
 }
@@ -519,52 +538,59 @@ export function CombatReport({
   const name = (id: string) => names.get(id) ?? displayNames.get(id) ?? id
   return (
     <div aria-live="polite">
-      {updates && updates.length > 0 && (
-        <ol aria-label="Transições de combate">
-          {updates.map((update, index) => (
-            <li key={index}>{combatUpdateText(update, name)}</li>
-          ))}
-        </ol>
-      )}
-      {result && (
-        <p>
-          {combatResolutionLabel[result.resolution]} · {cause[result.cause]}
-          {!result.participants &&
-            ` · Pico ${result.peakDelta > 0 ? '+' : ''}${result.peakDelta}${result.playerDown ? ' · jogador caído' : ''}`}
-        </p>
-      )}
-      {result?.participants && (
-        <ul aria-label="Desfecho por participante">
-          {result.participants.map((participant) => {
-            const {
-              memberId,
-              condition,
-              peakDelta,
-              vigorDelta,
-              goldGranted,
-              rewardIds,
-            } = participant
-            return (
-              <li key={memberId}>
-                {`${name(memberId)} · ${conditionLabel[condition]} · Pico ${peakDelta > 0 ? '+' : ''}${peakDelta} · Vigor ${vigorDelta > 0 ? '+' : ''}${vigorDelta} · Ouro ${goldGranted} · Cartas recebidas: ${rewardIds.length}`}
-                {participant.knockedOut &&
-                  condition !== 'knockedOut' &&
-                  ' · Sofreu nocaute'}
-                {participant.revived && ' · Foi revivido'}
-                {participant.respawned && ' · Renasceu'}
-                {participant.skipsNextTurn && ' · Perde a próxima vez'}
-              </li>
-            )
-          })}
-        </ul>
-      )}
-      {result?.finalBoss && result.resolution !== 'victory' && (
-        <p>A dimensão não foi concluída. Você pode tentar de novo.</p>
-      )}
-      {onViewCompletion && (
-        <button type="button" onClick={onViewCompletion}>
-          Ver conclusão da dimensão
-        </button>
+      {(result || onViewCompletion || (updates && updates.length > 0)) && (
+        <section
+          className="campaign-panel campaign-outcome"
+          aria-label="Relatório de combate"
+        >
+          {updates && updates.length > 0 && (
+            <ol aria-label="Transições de combate">
+              {updates.map((update, index) => (
+                <li key={index}>{combatUpdateText(update, name)}</li>
+              ))}
+            </ol>
+          )}
+          {result && (
+            <p>
+              {combatResolutionLabel[result.resolution]} · {cause[result.cause]}
+              {!result.participants &&
+                ` · Pico ${result.peakDelta > 0 ? '+' : ''}${result.peakDelta}${result.playerDown ? ' · jogador caído' : ''}`}
+            </p>
+          )}
+          {result?.participants && (
+            <ul aria-label="Desfecho por participante">
+              {result.participants.map((participant) => {
+                const {
+                  memberId,
+                  condition,
+                  peakDelta,
+                  vigorDelta,
+                  goldGranted,
+                  rewardIds,
+                } = participant
+                return (
+                  <li key={memberId}>
+                    {`${name(memberId)} · ${conditionLabel[condition]} · Pico ${peakDelta > 0 ? '+' : ''}${peakDelta} · Vigor ${vigorDelta > 0 ? '+' : ''}${vigorDelta} · Ouro ${goldGranted} · Cartas recebidas: ${rewardIds.length}`}
+                    {participant.knockedOut &&
+                      condition !== 'knockedOut' &&
+                      ' · Sofreu nocaute'}
+                    {participant.revived && ' · Foi revivido'}
+                    {participant.respawned && ' · Renasceu'}
+                    {participant.skipsNextTurn && ' · Perde a próxima vez'}
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+          {result?.finalBoss && result.resolution !== 'victory' && (
+            <p>A dimensão não foi concluída. Você pode tentar de novo.</p>
+          )}
+          {onViewCompletion && (
+            <button type="button" onClick={onViewCompletion}>
+              Ver conclusão da dimensão
+            </button>
+          )}
+        </section>
       )}
     </div>
   )

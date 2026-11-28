@@ -43,3 +43,37 @@ O menu e os saves receberam painéis com estado e ações por jogo em `App.tsx` 
 O teste `tests/e2e/party/solo-layout.spec.ts` passou no Chromium com MSW em 1280×720 e 2560×1440. O percurso usa teclado para criar, encerrar e retomar a sessão, acessar mão e inventário, selecionar um destino, mover, encerrar a vez e fazer uma operação no Mercado. Confere o foco, as travessias, a nova posição, a rodada seguinte e a ausência de rolagem horizontal. O cenário existente com zero PA confere o aviso e a ausência do botão de movimentação. Passaram os 69 testes de navegador de `tests/e2e/app` e `tests/e2e/party`, os 1.234 testes do Vitest, o typecheck, o lint e as verificações de formatação dos arquivos da etapa.
 
 O MSW padrão entrega uma fixture inicial a cada abertura de sessão. A persistência do progresso após movimentação e avanço de rodada fica para a verificação com a API real na T-116. A próxima etapa de implementação é a T-115.
+
+## T-115 — Acabamento dos estados e desfechos
+
+- **Data:** 2026-11-28
+- **Horas da sessão:** null
+
+`PartySession.tsx`, `CombatPanel.tsx` e `RandomEventPanel.tsx` aplicam a composição de encontro e combate, com ciclo, fase, ator, fichas textuais de participantes e controles próximos ao status da ação. Ao enviar uma ação, os dados confirmados continuam visíveis. A recusa apresenta o motivo no painel e libera a retomada conforme a regra existente. `RewardChoice.tsx` aproxima o status da escolha e abre a carta por teclado com `FullCard`, que reaproveita `CardCategory` e `Term`. A moldura neutra e o rótulo cobrem as categorias sem recursos publicados.
+
+`BoosterResult.tsx`, `BlacksmithPanel.tsx`, `CombatPanel.tsx` e `PartySession.tsx` apresentam os resultados confirmados em painéis, com prêmio e destino no diálogo de conclusão. `index.css` aplica transições curtas de painel e revelação quando a preferência do sistema permite movimento. As artes e os ícones pendentes continuam com a apresentação provisória aprovada na T-113.
+
+Os roteiros em `tests/e2e/party/party-session.spec.ts` e `tests/e2e/party/random-event.spec.ts` cobrem o envio e a recusa de ataque com PV preservados, a retomada da escolha de recompensa, o acesso por teclado à carta sem arte, o resultado do booster e a quebra de equipamento na forja com movimento reduzido. O cenário de borda de conclusão ao fim do conteúdo reabre o resumo persistido e volta ao menu com o save congelado. `PartySession.test.tsx` confere o resumo visível da recompensa agora que a carta também pode ser consultada.
+
+Passaram 71 testes de navegador no Chromium com MSW em `tests/e2e/app` e `tests/e2e/party` e 1.216 testes do Vitest em `src/`. Também passaram o typecheck, o lint de `src/` e `tests/`, o Prettier nos arquivos alterados e `git diff --check`.
+
+A T-116 requer a API real e os dados publicados previstos no roteiro da SPEC-FRONTEND v1.13. A passagem à sucessora e o congelamento foram exercitados com MSW. A confirmação da persistência com a API real fica para a T-116.
+
+## T-116 — Validação da campanha solo no Chrome
+
+- **Data:** 2026-11-28
+- **Horas da sessão:** null
+- **Frontend:** checkout `e4329ed` com as alterações locais da T-115 e da T-116.
+- **Backend:** checkout `37737c9`, CONTRATO v1.21, seção FEAT-19. Os dois endpoints `/health` responderam HTTP 200 com `contractVersion: "1.13"`.
+- **Navegador:** Google Chrome 158.0.8127.38, 1280×720, frontend em `http://localhost:5173` com `VITE_USE_MOCKS=false`. As APIs de teste permitem essa origem.
+
+Para reproduzir, configurar `VITE_API_URL` com a API do cenário e abrir o frontend no Chrome. Criar um save com Guerreiro, zero ajudantes e a Dimensão de Teste (`fixture.test-dimension`). No Porto Cinzento, iniciar e revelar Viajante Ferido, escolher Desistir e confirmar. Conferir o Fragmento em Itens de conclusão. Ir à Mina Velha pela Curva de Pedra, encerrar a vez e recarregar. A posição na Mina Velha e a rodada 2 devem permanecer. Concluir a dimensão, conferir o diálogo e recarregar antes de continuar. O recibo deve reaparecer com +25 Pico, +100 de ouro e uma Lâmina do Crepúsculo no inventário. O GET deve conservar o recibo e o saldo de 110 de ouro, que começou em 10. A dimensão de teste não tem chefe final.
+
+| Cenário | Save criado no Chrome | Resultado após recarga |
+| --- | --- | --- |
+| Congelamento, API `localhost:3333` | `fad89b9b-1c19-4fc2-b50c-e9a91681f077` | A sessão retornou `409 PARTY_FROZEN`. O GET retornou 200 com `frozen`, Mina Velha e o mesmo recibo. Continuar no diálogo voltou ao menu. O save apareceu como Congelado, sem ação de continuar na lista. |
+| Sucessora, API `localhost:3335` | `17fa8698-35b4-40df-babe-4cb501575680` | A sessão e o GET retornaram 200. O GET manteve `inSession`, `fixture-next.next-dimension` e `fixture-next.city`. Continuar no diálogo revelou a Segunda Dimensão. A lista mostrou Em sessão. |
+
+Nos dois saves, a criação retornou 201 e `completeDimension` retornou 200. As respostas e capturas de retomada, recibo recarregado e destino estão em `test-results/t116-chrome/`. Na primeira execução, a API preservou o recibo congelado, mas o frontend parou na recusa de reabrir a sessão. `PartySession.tsx` passou a consultar o grupo após `PARTY_FROZEN` e a usar o recibo retornado no diálogo. A regressão em `tests/e2e/party/party-session.spec.ts` reproduziu a ausência do diálogo antes da correção e passou depois. O caso de borda usa a recusa de abertura seguida de GET válido sem reativar o save.
+
+Depois da correção, passaram os dois percursos reais, 71 testes de navegador com MSW, 259 testes do Vitest nas suítes de sessão, recompensa e conclusão, lint e build de release. A SPEC-FRONTEND registra a T-116 concluída. O ROADMAP v1.11 registra a FEAT-30 validada no frontend e deve ser sincronizado integralmente com o backend.

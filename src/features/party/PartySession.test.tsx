@@ -498,7 +498,9 @@ it('REQ-59: abre a recompensa de Vasculhar com 0 PA e mostra a devolução ao de
   const reward = await screen.findByRole('region', {
     name: 'Recompensa pendente',
   })
-  expect(within(reward).getByText(/Peixe Prateado/)).toBeInTheDocument()
+  expect(
+    within(reward).getByText('1× Peixe Prateado para o inventário.'),
+  ).toBeVisible()
   expect(status()).toHaveTextContent('aguarda uma escolha')
   fireEvent.click(within(reward).getByRole('button', { name: 'Deixar' }))
   expect(

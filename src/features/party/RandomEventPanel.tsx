@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import type { Card, EquipmentSlot } from '../../api/catalog'
 import {
   ActionNotAllowedError,
@@ -257,6 +257,7 @@ function EncounterControls({
   pending,
   onAction,
   error,
+  status,
 }: {
   encounter: Encounter
   player: Player
@@ -265,6 +266,7 @@ function EncounterControls({
   pending: boolean
   onAction: (action: RandomEventAction) => void
   error: Error | null
+  status?: ReactNode
 }) {
   const [confirmation, setConfirmation] = useState<
     'giveUpEvent' | 'escapeEvent' | null
@@ -278,7 +280,10 @@ function EncounterControls({
   ) => onAction({ type, encounterId: id })
 
   return (
-    <section aria-label="Evento aleatório">
+    <section
+      className="campaign-panel campaign-encounter"
+      aria-label="Evento aleatório"
+    >
       <h2>
         {encounter.phase === 'anticipation'
           ? 'Antecipação'
@@ -296,7 +301,9 @@ function EncounterControls({
       )}
       {encounter.phase !== 'anticipation' && card && (
         <>
-          <RandomEventCard card={card} />
+          <div className="campaign-reveal">
+            <RandomEventCard card={card} />
+          </div>
           <ul aria-label="Progresso dos requisitos">
             {encounter.requirements.map((progress) => {
               const { requirementId, remaining, status, amountDue } = progress
@@ -439,6 +446,7 @@ function EncounterControls({
             )}
         </>
       )}
+      {status}
     </section>
   )
 }
@@ -450,6 +458,7 @@ export function RandomEventPanel({
   pending,
   onAction,
   error,
+  status,
 }: {
   party: Party
   host: PartyMember | undefined
@@ -457,6 +466,7 @@ export function RandomEventPanel({
   pending: boolean
   onAction: (action: RandomEventAction) => void
   error: Error | null
+  status?: ReactNode
 }) {
   const encounter = party.randomEventEncounter
   const owner = party.members.find(({ id }) => id === encounter?.memberId)
@@ -485,10 +495,14 @@ export function RandomEventPanel({
           pending={pending}
           onAction={onAction}
           error={error}
+          status={status}
         />
       )}
       {result && (
-        <section aria-label="Resultado do último evento">
+        <section
+          className="campaign-panel campaign-outcome"
+          aria-label="Resultado do último evento"
+        >
           <h2>{resultText[result.cause]}</h2>
           <p>{nameOf(cards, result.cardId, result.cardId)}</p>
           {resultCard?.type === 'randomEvent' &&

@@ -139,7 +139,73 @@ test('REQ-93: concluir com chefe abre o combate com o título e as ações receb
   await expect(page.getByRole('dialog')).toHaveCount(0)
 })
 
-test('REQ-94: lê a vitória antes do resumo da dimensão', async ({ page }) => {
+test('REQ-117: recusa preserva o combate confirmado e libera nova tentativa', async ({
+  page,
+}) => {
+  const refusal = Promise.withResolvers<void>()
+  await page.exposeFunction('waitForAttackRefusal', () => refusal.promise)
+  await page.addInitScript(() => {
+    const fetch = window.fetch
+    window.fetch = async (input, init) => {
+      if (
+        String(input).endsWith('/parties/party-chefe-final/actions') &&
+        JSON.parse(String(init?.body)).type === 'combatAttack'
+      ) {
+        await (
+          window as Window & { waitForAttackRefusal: () => Promise<void> }
+        ).waitForAttackRefusal()
+        return Response.json(
+          {
+            error: {
+              code: 'ACTION_NOT_ALLOWED',
+              message: 'Ataque recusado.',
+              details: { reason: 'noActionPoints' },
+            },
+          },
+          { status: 409 },
+        )
+      }
+      return fetch(input, init)
+    }
+  })
+  await page.goto('/grupo/party-chefe-final')
+  await page.getByRole('button', { name: 'Concluir dimensão (1 PA)' }).click()
+  const combat = page.getByRole('region', { name: /^Chefe final ·/ })
+  const participants = combat.getByRole('list', { name: 'Participantes' })
+  await expect(participants).toBeVisible()
+  const confirmed = await participants.getByRole('listitem').allTextContents()
+  const attack = combat.getByRole('button', { name: /^Atacar / })
+  await attack.click()
+  await expect(combat.getByRole('status')).toHaveText(
+    'Confirmando ação de combate…',
+  )
+  await expect(attack).toBeDisabled()
+  await expect(participants.getByRole('listitem')).toHaveText(confirmed)
+  refusal.resolve()
+  await expect(combat.getByRole('status')).toHaveText('Ataque recusado.')
+  await expect(participants.getByRole('listitem')).toHaveText(confirmed)
+  await expect(attack).toBeEnabled()
+})
+
+test('REQ-118: booster revela o resultado sem arte e respeita movimento reduzido', async ({
+  page,
+}) => {
+  await page.goto('/grupo/party-com-booster')
+  await page.getByRole('button', { name: 'Abrir Booster de Teste' }).click()
+  const result = page.getByRole('region', {
+    name: 'Cartas do booster Booster de Teste',
+  })
+  await expect(result).toHaveCSS('animation-name', 'campaign-reveal')
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await expect(result).toHaveCSS('animation-name', 'none')
+  await expect(result.getByRole('listitem').first()).toHaveText(
+    'Força → pasta de TCG',
+  )
+})
+
+test('REQ-94 e REQ-119: lê a vitória antes do resumo da dimensão', async ({
+  page,
+}) => {
   await page.goto('/grupo/party-chefe-final')
   await page.getByRole('button', { name: 'Concluir dimensão (1 PA)' }).click()
   await page.getByRole('button', { name: /^Atacar / }).click()
@@ -251,7 +317,7 @@ test('REQ-93: recusa, resposta inválida e falha de rede preservam a partida', a
   }
 })
 
-test('REQ-95: reabre o resumo persistido e volta ao início quando congela', async ({
+test('REQ-95 e REQ-119: reabre o resumo persistido e volta ao início quando congela', async ({
   page,
 }) => {
   await page.goto('/grupo/party-dimensao-concluida')
@@ -273,14 +339,22 @@ test('REQ-95: reabre o resumo persistido e volta ao início quando congela', asy
   ).toHaveText('Save congelado.')
 })
 
-test('REQ-96: acesso direto a save congelado mostra a recusa e o link de volta', async ({
+test('REQ-96 e REQ-119: reabre pelo GET o recibo do save que recusou a sessão', async ({
   page,
 }) => {
-  await page.goto('/grupo/party-congelado')
-  await expect(page.getByRole('status')).toHaveText(
-    'Este save está congelado até o lançamento da próxima dimensão.',
+  const rejected = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/parties/party-congelado/session') &&
+      response.request().method() === 'POST',
   )
-  await page.getByRole('link', { name: 'Voltar ao início' }).click()
+  await page.goto('/grupo/party-congelado')
+  const refusal = await rejected
+  expect(refusal.status()).toBe(409)
+  expect((await refusal.json()).error.code).toBe('PARTY_FROZEN')
+  const dialog = page.getByRole('dialog', { name: /^Dimensão concluída:/ })
+  await expect(dialog).toContainText('+100 de ouro')
+  await expect(dialog).toContainText('O save ficou congelado')
+  await dialog.getByRole('button', { name: 'Continuar' }).click()
   await expect(page).toHaveURL(/\/$/)
 })
 
@@ -867,15 +941,16 @@ test.describe('REQ-79: estado do equipamento e venda por cópia (MSW)', () => {
 })
 
 test.describe('REQ-80, REQ-81: Ir ao Ferreiro e Oficina (MSW)', () => {
-  test('REQ-80/REQ-81: monta o lote no ferreiro, confirma e mostra o resultado com falha e quebra', async ({
+  test('REQ-80, REQ-81 e REQ-118: mostra falha e quebra na forja com movimento reduzido', async ({
     page,
   }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' })
     await page.goto('/grupo/party-ferreiro')
     await page
       .getByRole('region', { name: 'A vez' })
       .getByRole('button', { name: 'Ir ao Ferreiro' })
       .click()
-    const smithy = page.getByRole('region', { name: 'Ferreiro' })
+    const smithy = page.getByRole('region', { name: 'Ferreiro', exact: true })
     await expect(smithy).toContainText(
       'Gasta todos os pontos de ação restantes (3).',
     )
@@ -899,9 +974,9 @@ test.describe('REQ-80, REQ-81: Ir ao Ferreiro e Oficina (MSW)', () => {
     await expect(page.getByRole('status').first()).toContainText(
       'Ferreiro: 3 operações, 3 pontos de ação gastos.',
     )
-    await expect(
-      page.getByRole('list', { name: 'Resultado do ferreiro' }),
-    ).toContainText(
+    const result = page.getByRole('region', { name: 'Resultado do ferreiro' })
+    await expect(result).toHaveCSS('animation-name', 'none')
+    await expect(result.getByRole('list')).toContainText(
       'Falhou ao refinar Espada Curta para +4: 40 de ouro perdidos, D20 14 contra 21. Espada Curta quebrou.',
     )
   })

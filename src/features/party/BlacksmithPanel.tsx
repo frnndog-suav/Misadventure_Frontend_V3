@@ -533,13 +533,16 @@ export function BlacksmithResult({
   cards: Cards
 }) {
   return (
-    <>
+    <section
+      className="campaign-panel campaign-outcome"
+      aria-labelledby="blacksmith-result-title"
+    >
       <h2 id="blacksmith-result-title">Resultado do ferreiro</h2>
       <ul aria-labelledby="blacksmith-result-title">
         {visit.results.map((result, i) => (
           <li key={i}>{resultText(result, view, cards)}</li>
         ))}
       </ul>
-    </>
+    </section>
   )
 }

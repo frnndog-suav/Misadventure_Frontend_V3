@@ -1799,7 +1799,10 @@ function DimensionCompletion({ card }: { card: Card | undefined }) {
   if (!completion) return null
 
   return (
-    <section aria-labelledby="dimension-completion-title">
+    <section
+      className="campaign-panel"
+      aria-labelledby="dimension-completion-title"
+    >
       <h2 id="dimension-completion-title">Conclusão da dimensão</h2>
       <p>Zona de conclusão: {completion.zoneTitle}</p>
       <h3 id="dimension-requirement-title">Requisito</h3>
@@ -1846,6 +1849,7 @@ function DimensionCompletionDialog({
   return (
     <dialog
       ref={dialog}
+      className="campaign-panel campaign-outcome campaign-completion"
       aria-labelledby={title}
       onCancel={(event) => event.preventDefault()}
     >
@@ -1908,6 +1912,7 @@ function PreparedMatch({
   onActivate,
   onEvent,
   eventError,
+  eventStatus,
   adjustError,
   adjusting,
   setAdjusting,
@@ -1951,6 +1956,7 @@ function PreparedMatch({
   onActivate: ActivateEffect
   onEvent: (action: RandomEventAction) => void
   eventError: Error | null
+  eventStatus?: ReactNode
   adjustError: string
   adjusting: boolean
   setAdjusting: (open: boolean) => void
@@ -2014,6 +2020,7 @@ function PreparedMatch({
               pending={moving}
               onAction={onEvent}
               error={eventError}
+              status={eventStatus}
             />
             {!party.triggeredEffectChoice &&
               adjusting &&
@@ -2233,6 +2240,8 @@ function PartySessionView({ partyId }: { partyId: string }) {
     return snapshot
   })
   const { mutate: startSession } = start
+  const frozenSession =
+    start.error instanceof ApiError && start.error.code === 'PARTY_FROZEN'
   const reloadChoice =
     !start.data?.members.some((member) => member.kind === 'aiHelper') &&
     (start.data?.combat != null ||
@@ -2240,7 +2249,10 @@ function PartySessionView({ partyId }: { partyId: string }) {
       start.data?.lastCombatResult != null ||
       start.data?.randomEventEncounter != null ||
       (start.data?.pendingRewards.length ?? 0) > 0)
-  const restoredParty = useParty(start.isSuccess ? partyId : null, reloadChoice)
+  const restoredParty = useParty(
+    start.isSuccess || frozenSession ? partyId : null,
+    reloadChoice || frozenSession,
+  )
 
   const openSession = useCallback(
     (recoveringAction: boolean, onSuccess?: (party: Party) => void) => {
@@ -2307,6 +2319,11 @@ function PartySessionView({ partyId }: { partyId: string }) {
       : undefined
     : start.data
   const party = confirmed?.party ?? initialParty
+  const completionParty =
+    party ??
+    (frozenSession && restoredParty.data?.status === 'frozen'
+      ? restoredParty.data
+      : undefined)
   const hasHelpers = party?.members.some((member) => member.kind === 'aiHelper')
   const host = party?.members.find((m) => m.isHost)
   const combatDecision = party?.pendingCombatDecision
@@ -2430,7 +2447,7 @@ function PartySessionView({ partyId }: { partyId: string }) {
     )
   }
 
-  const completion = party?.lastDimensionCompletion
+  const completion = completionParty?.lastDimensionCompletion
   const [dismissedCompletion, setDismissedCompletion] = useState<string>()
   const [viewedBossCompletion, setViewedBossCompletion] = useState<string>()
   const combatResult = party?.lastCombatResult
@@ -2451,7 +2468,9 @@ function PartySessionView({ partyId }: { partyId: string }) {
     setConfirmed({ party: action.data, response: action.data, combatNames })
   }
   const classes = useClasses()
-  const cards = useCatalogCards(party === undefined ? [] : cardIdsOf(party))
+  const cards = useCatalogCards(
+    completionParty === undefined ? [] : cardIdsOf(completionParty),
+  )
   const reward =
     ownedDecision?.type === 'reward'
       ? party?.pendingRewards.find(({ id }) => id === ownedDecision.rewardId)
@@ -2526,12 +2545,19 @@ function PartySessionView({ partyId }: { partyId: string }) {
   const combatAction = combatActionTypes.some(
     (type) => type === action.variables?.type,
   )
+  const rewardAction = action.variables?.type === 'resolveReward'
 
   let status = ''
   if (hasHelpers && start.isPending)
     status = 'Retomando o avanço dos ajudantes…'
   else if (hasHelpers && action.isPending)
     status = 'Processando a ação e o avanço dos ajudantes…'
+  else if (action.isPending && combatAction)
+    status = 'Confirmando ação de combate…'
+  else if (action.isPending && rewardAction)
+    status = 'Confirmando escolha de recompensa…'
+  else if (action.isPending && eventAction)
+    status = 'Confirmando ação do encontro…'
   else if (hasHelpers && start.isError) status = errorText(start.error)
   else if (unresolvedAction && action.isError) status = errorText(action.error)
   else if (unresolvedAction) status = 'Aguardando a confirmação da ação.'
@@ -2662,8 +2688,32 @@ function PartySessionView({ partyId }: { partyId: string }) {
     status = 'Carregando a partida…'
   }
 
+  const combatStatus = combatAction && !rewardAction && !!party?.combat
+  const rewardStatus = rewardAction && !!reward
+  const eventStatus =
+    eventAction && !!party?.randomEventEncounter && !party.combat
+  const feedback = (
+    <p
+      role="status"
+      className="campaign-feedback"
+      data-state={
+        action.isError
+          ? actionWasRefused(action.error)
+            ? 'refused'
+            : 'error'
+          : action.isPending
+            ? 'pending'
+            : action.isSuccess
+              ? 'confirmed'
+              : undefined
+      }
+    >
+      {status}
+    </p>
+  )
+
   const canReturnHome =
-    (start.error instanceof ApiError && start.error.code === 'PARTY_FROZEN') ||
+    frozenSession ||
     isNotFound(start.error) ||
     isNotFound(end.error) ||
     isNotFound(restoredParty.error)
@@ -2726,6 +2776,7 @@ function PartySessionView({ partyId }: { partyId: string }) {
               cards={cards.cards}
               names={combatNames}
               catalogPending={cards.isPending}
+              status={combatStatus ? feedback : undefined}
               pending={canPlayCombatTurn ? sessionBlocked : actionsBlocked}
               onAction={(intent) =>
                 sendAction(intent, undefined, canPlayCombatTurn)
@@ -2863,6 +2914,7 @@ function PartySessionView({ partyId }: { partyId: string }) {
             }
             onEvent={(event) => sendAction(event)}
             eventError={eventAction ? action.error : null}
+            eventStatus={eventStatus ? feedback : undefined}
             adjustError={
               adjustFailed
                 ? refusalText(
@@ -2887,7 +2939,7 @@ function PartySessionView({ partyId }: { partyId: string }) {
             moving={actionsBlocked}
           />
           {delivery && (
-            <p aria-live="polite">
+            <p className="campaign-panel campaign-outcome" aria-live="polite">
               {nameOf(cards.cards, delivery.cardId)}{' '}
               {delivery.disposition === 'kept' && delivery.space !== null
                 ? `foi para ${receiveSpaceText[delivery.space]}.`
@@ -2914,6 +2966,7 @@ function PartySessionView({ partyId }: { partyId: string }) {
                   : undefined
               }
               cards={cards.cards}
+              status={rewardStatus ? feedback : undefined}
               disabled={
                 reward.memberId !== host?.id ||
                 !host.player.availableActions.includes('resolveReward') ||
@@ -2944,7 +2997,7 @@ function PartySessionView({ partyId }: { partyId: string }) {
           )}
         </>
       )}
-      <p role="status">{status}</p>
+      {!combatStatus && !rewardStatus && !eventStatus && feedback}
       {unresolvedAction && (
         <button
           type="button"
@@ -2994,10 +3047,10 @@ function PartySessionView({ partyId }: { partyId: string }) {
           />
         )}
       {canReturnHome && <Link to="/">Voltar ao início</Link>}
-      {party && completionPending && !bossReportPending && (
+      {completionParty && completionPending && !bossReportPending && (
         <DimensionCompletionDialog
           summary={completionPending}
-          members={party.members}
+          members={completionParty.members}
           cards={cards.cards}
           onContinue={() => {
             if (completionPending.next.type === 'frozen') {
