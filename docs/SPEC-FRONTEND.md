@@ -1276,7 +1276,7 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 ### FEAT-30 — Acabamento visual da campanha solo
 
 - [x] **T-113 — Definir a direção visual e os recursos** (REQ-115 a REQ-119). Revisar as telas solo, aprovar a composição das telas inicial, de exploração e de combate e inventariar artes e ícones do autor por tela, registrando os recursos faltantes e sua apresentação prevista.
-- [ ] **T-114 — Aplicar o layout de PC à entrada e à exploração** (REQ-115 e REQ-116). Dar acabamento à criação, aos saves, ao mapa e aos painéis de personagem e zona. Reaproveitar os componentes atuais e verificar as duas resoluções e a navegação por teclado.
+- [x] **T-114 — Aplicar o layout de PC à entrada e à exploração** (REQ-115 e REQ-116). Dar acabamento à criação, aos saves, ao mapa e aos painéis de personagem e zona. Reaproveitar os componentes atuais e verificar as duas resoluções e a navegação por teclado.
 - [ ] **T-115 — Dar acabamento aos estados e desfechos** (REQ-117 a REQ-119). Aplicar a direção visual a encontros, combate, recompensas e conclusão. Integrar artes, ícones e transições, incluindo booster e forja. Verificar recusa de ação, arte ausente e movimento reduzido.
 - [ ] **T-116 — Validar e entregar a revisão solo** (REQ-115 a REQ-119). Executar as verificações de frontend com MSW e o roteiro abaixo com API real. Entregar a revisão identificada e o roteiro reproduzível ao autor.
 

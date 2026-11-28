@@ -26,12 +26,18 @@ function HealthStatus() {
 
 function Home() {
   return (
-    <main>
-      <h1>Misadventures</h1>
-      <HealthStatus />
-      <nav aria-label="Campanha">
-        <Link to="/novo">Novo jogo</Link>
-      </nav>
+    <main className="campaign campaign--entry">
+      <header className="campaign-menu campaign-panel">
+        <div>
+          <h1>Misadventures</h1>
+          <nav aria-label="Campanha">
+            <Link className="campaign-primary" to="/novo">
+              Novo jogo
+            </Link>
+          </nav>
+        </div>
+        <HealthStatus />
+      </header>
       <SavedGames />
     </main>
   )

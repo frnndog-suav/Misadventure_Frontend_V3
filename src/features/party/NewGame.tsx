@@ -202,116 +202,132 @@ export function NewGame() {
   const chosen = classes.data?.find((c) => c.playerClass === playerClass)
 
   return (
-    <main>
+    <main className="campaign campaign--entry">
       <h1>Novo jogo</h1>
-      <form onSubmit={submit} noValidate>
-        <label htmlFor="party-name">Nome do grupo</label>
-        <input
-          id="party-name"
-          type="text"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          aria-describedby={feedback.name ? 'party-name-error' : undefined}
-        />
-        {feedback.name && <p id="party-name-error">{feedback.name}</p>}
+      <form className="campaign-creation" onSubmit={submit} noValidate>
+        <div className="campaign-panel campaign-fields">
+          <label htmlFor="party-name">Nome do grupo</label>
+          <input
+            id="party-name"
+            type="text"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            aria-describedby={feedback.name ? 'party-name-error' : undefined}
+          />
+          {feedback.name && <p id="party-name-error">{feedback.name}</p>}
 
-        <label htmlFor="character-name">Nome do personagem</label>
-        <input
-          id="character-name"
-          type="text"
-          value={characterName}
-          onChange={(event) => setCharacterName(event.target.value)}
-          aria-describedby={
-            feedback.characterName ? 'character-name-error' : undefined
-          }
-        />
-        {feedback.characterName && (
-          <p id="character-name-error">{feedback.characterName}</p>
-        )}
-
-        <div
-          role="radiogroup"
-          aria-labelledby="player-class-label"
-          aria-describedby={
-            feedback.playerClass ? 'player-class-error' : undefined
-          }
-        >
-          <p id="player-class-label">Classe</p>
-          {classes.data?.length === 0 && <p>Nenhuma classe publicada.</p>}
-          {classes.data?.map((c) => (
-            <label key={c.playerClass}>
-              <input
-                type="radio"
-                name="player-class"
-                value={c.playerClass}
-                checked={playerClass === c.playerClass}
-                onChange={() => setPlayerClass(c.playerClass)}
-              />
-              {c.name} (
-              {c.essentialAttributes.map((a, i) => (
-                <span key={a}>
-                  {i > 0 && ', '}
-                  <Term id={a} />
-                </span>
-              ))}
-              )
-            </label>
-          ))}
-        </div>
-        {feedback.playerClass && (
-          <p id="player-class-error">{feedback.playerClass}</p>
-        )}
-        {chosen !== undefined && <ClassDetails definition={chosen} />}
-
-        <label htmlFor="ai-helper-count">Ajudantes de IA</label>
-        <select
-          id="ai-helper-count"
-          value={options.data ? aiHelperCount : ''}
-          disabled={!options.data || options.isFetching || create.isPending}
-          aria-invalid={countError ? true : undefined}
-          aria-describedby={countError ? 'ai-helper-count-error' : undefined}
-          onChange={(event) => setSelectedHelpers(Number(event.target.value))}
-        >
-          {!options.data && <option value="">—</option>}
-          {!countInRange && (
-            <option value={aiHelperCount} disabled>
-              {aiHelperCount}
-            </option>
+          <label htmlFor="character-name">Nome do personagem</label>
+          <input
+            id="character-name"
+            type="text"
+            value={characterName}
+            onChange={(event) => setCharacterName(event.target.value)}
+            aria-describedby={
+              feedback.characterName ? 'character-name-error' : undefined
+            }
+          />
+          {feedback.characterName && (
+            <p id="character-name-error">{feedback.characterName}</p>
           )}
-          {helperChoices.map((count) => (
-            <option key={count} value={count}>
-              {count}
-            </option>
-          ))}
-        </select>
-        {countError && (
-          <p id="ai-helper-count-error" role="alert">
-            {countError}
-          </p>
-        )}
-        {options.isPending && <p>Carregando limites de criação…</p>}
-        {options.isError && (
-          <>
-            <p role="alert">{messageOf(options.error)}</p>
-            <button type="button" onClick={() => void options.refetch()}>
-              Recarregar limites
-            </button>
-          </>
-        )}
 
-        <button type="submit" disabled={!canSubmit}>
-          Criar grupo
-        </button>
+          <div
+            role="radiogroup"
+            className="campaign-class-options"
+            aria-labelledby="player-class-label"
+            aria-describedby={
+              feedback.playerClass ? 'player-class-error' : undefined
+            }
+          >
+            <p id="player-class-label">Classe</p>
+            {classes.data?.length === 0 && <p>Nenhuma classe publicada.</p>}
+            {classes.data?.map((c) => (
+              <label key={c.playerClass}>
+                <input
+                  type="radio"
+                  name="player-class"
+                  value={c.playerClass}
+                  checked={playerClass === c.playerClass}
+                  onChange={() => setPlayerClass(c.playerClass)}
+                />
+                {c.name} (
+                {c.essentialAttributes.map((a, i) => (
+                  <span key={a}>
+                    {i > 0 && ', '}
+                    <Term id={a} />
+                  </span>
+                ))}
+                )
+              </label>
+            ))}
+          </div>
+          {feedback.playerClass && (
+            <p id="player-class-error">{feedback.playerClass}</p>
+          )}
+
+          <label htmlFor="ai-helper-count">Ajudantes de IA</label>
+          <select
+            id="ai-helper-count"
+            value={options.data ? aiHelperCount : ''}
+            disabled={!options.data || options.isFetching || create.isPending}
+            aria-invalid={countError ? true : undefined}
+            aria-describedby={countError ? 'ai-helper-count-error' : undefined}
+            onChange={(event) => setSelectedHelpers(Number(event.target.value))}
+          >
+            {!options.data && <option value="">—</option>}
+            {!countInRange && (
+              <option value={aiHelperCount} disabled>
+                {aiHelperCount}
+              </option>
+            )}
+            {helperChoices.map((count) => (
+              <option key={count} value={count}>
+                {count}
+              </option>
+            ))}
+          </select>
+          {countError && (
+            <p id="ai-helper-count-error" role="alert">
+              {countError}
+            </p>
+          )}
+          {options.isPending && <p>Carregando limites de criação…</p>}
+          {options.isError && (
+            <>
+              <p role="alert">{messageOf(options.error)}</p>
+              <button type="button" onClick={() => void options.refetch()}>
+                Recarregar limites
+              </button>
+            </>
+          )}
+        </div>
+        <section
+          className="campaign-panel campaign-class"
+          aria-label="Resumo da classe"
+        >
+          <h2>{chosen?.name ?? 'Classe do personagem'}</h2>
+          {chosen ? (
+            <ClassDetails definition={chosen} />
+          ) : (
+            <p>Escolha uma classe para consultar os atributos e o deck.</p>
+          )}
+          <button
+            className="campaign-primary"
+            type="submit"
+            disabled={!canSubmit}
+          >
+            Criar grupo
+          </button>
+          <p role="status">{feedback.status}</p>
+          {feedback.problems !== undefined && (
+            <ul aria-label="Problemas">
+              {feedback.problems.map((problem, i) => (
+                <li key={i}>{problem}</li>
+              ))}
+            </ul>
+          )}
+          <Link to="/">Voltar</Link>
+        </section>
       </form>
-      <p role="status">{feedback.status}</p>
-      {feedback.problems !== undefined && (
-        <ul aria-label="Problemas">
-          {feedback.problems.map((problem, i) => (
-            <li key={i}>{problem}</li>
-          ))}
-        </ul>
-      )}
-      <Link to="/">Voltar</Link>
     </main>
   )
 }

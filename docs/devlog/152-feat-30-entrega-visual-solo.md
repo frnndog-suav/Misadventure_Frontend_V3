@@ -32,3 +32,14 @@ O catálogo em `src/ui/categories.ts` tem 16 pares de imagem e ícone pendentes,
 Em combate, a ação pendente mantém o último estado confirmado visível. Sucesso apresenta o resultado e recusa apresenta o motivo junto ao ponto de interação, com retomada conforme o fluxo existente. Booster e forja apresentam o resultado assim que confirmado. Transições curtas de painel e revelação respeitam movimento reduzido. Termos usam o componente existente com destaque e explicação por ponteiro e foco.
 
 A conferência desta etapa foi documental e estática. Em 2026-11-27, o autor aprovou integralmente a composição, o inventário e a apresentação provisória. A T-113 está concluída na SPEC-FRONTEND e a retomada é pela T-114, com REQ-115 e REQ-116. Arquivos alterados: esta entrada, o índice do devlog e a caixa de conclusão da T-113 na spec. Os testes de layout, teclado, arte ausente e movimento reduzido e o percurso com API real ficam para as etapas de implementação e validação.
+
+## T-114 — Layout de PC para entrada e exploração
+
+- **Data:** 2026-11-27
+- **Horas da sessão:** null
+
+O menu e os saves receberam painéis com estado e ações por jogo em `App.tsx` e `SavedGames.tsx`. Em `NewGame.tsx`, a seleção de classe por rádio atualiza o painel de detalhes. `PartySession.tsx`, `PartyMap.tsx` e `index.css` organizam a barra da vez, o personagem, o mapa e os detalhes da zona. A zona atual, a seleção e os destinos disponíveis têm indicações distintas. Mão e inventário têm atalhos que levam o foco aos respectivos títulos.
+
+O teste `tests/e2e/party/solo-layout.spec.ts` passou no Chromium com MSW em 1280×720 e 2560×1440. O percurso usa teclado para criar, encerrar e retomar a sessão, acessar mão e inventário, selecionar um destino, mover, encerrar a vez e fazer uma operação no Mercado. Confere o foco, as travessias, a nova posição, a rodada seguinte e a ausência de rolagem horizontal. O cenário existente com zero PA confere o aviso e a ausência do botão de movimentação. Passaram os 69 testes de navegador de `tests/e2e/app` e `tests/e2e/party`, os 1.234 testes do Vitest, o typecheck, o lint e as verificações de formatação dos arquivos da etapa.
+
+O MSW padrão entrega uma fixture inicial a cada abertura de sessão. A persistência do progresso após movimentação e avanço de rodada fica para a verificação com a API real na T-116. A próxima etapa de implementação é a T-115.

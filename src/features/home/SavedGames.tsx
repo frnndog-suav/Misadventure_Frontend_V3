@@ -100,43 +100,50 @@ export function SavedGames() {
   }
 
   return (
-    <section aria-labelledby="saved-games-title">
+    <section className="campaign-panel" aria-labelledby="saved-games-title">
       <h2 id="saved-games-title">Seus jogos</h2>
       <p role="status">{status}</p>
       {parties.isSuccess &&
         (parties.data.length === 0 ? (
           <p>Nenhum jogo salvo.</p>
         ) : (
-          <ul>
+          <ul className="campaign-saves">
             {parties.data.map((party) => (
               <li key={party.id}>
-                <strong>{party.name}</strong>
-                <span>{party.characterNames.join(', ')}</span>
-                <span>{statusLabel[party.status]}</span>
-                <span>Salvo em {formatSavedAt(party.savedAt)}</span>
-                {party.status !== 'frozen' && (
+                <div>
+                  <strong>{party.name}</strong>
+                  <span>{party.characterNames.join(', ')}</span>
+                </div>
+                <div>
+                  <span>{statusLabel[party.status]}</span>
+                  <span>Salvo em {formatSavedAt(party.savedAt)}</span>
+                </div>
+                <div className="campaign-controls">
+                  {party.status !== 'frozen' && (
+                    <button
+                      className="campaign-primary"
+                      type="button"
+                      onClick={() =>
+                        navigate(`/grupo/${encodeURIComponent(party.id)}`)
+                      }
+                    >
+                      Continuar
+                    </button>
+                  )}
                   <button
                     type="button"
-                    onClick={() =>
-                      navigate(`/grupo/${encodeURIComponent(party.id)}`)
-                    }
+                    ref={(el) => {
+                      if (el) abandonButtons.current.set(party.id, el)
+                      else abandonButtons.current.delete(party.id)
+                    }}
+                    onClick={() => {
+                      setMessage('')
+                      setConfirming(party)
+                    }}
                   >
-                    Continuar
+                    Abandonar
                   </button>
-                )}
-                <button
-                  type="button"
-                  ref={(el) => {
-                    if (el) abandonButtons.current.set(party.id, el)
-                    else abandonButtons.current.delete(party.id)
-                  }}
-                  onClick={() => {
-                    setMessage('')
-                    setConfirming(party)
-                  }}
-                >
-                  Abandonar
-                </button>
+                </div>
               </li>
             ))}
           </ul>

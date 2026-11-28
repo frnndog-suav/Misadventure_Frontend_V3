@@ -317,6 +317,15 @@ function MemberState({
   return (
     <section aria-labelledby={titleId}>
       <h2 id={titleId}>{member.characterName}</h2>
+      {member.isHost && (
+        <nav
+          className="campaign-character-links"
+          aria-label="Painéis do personagem"
+        >
+          <a href={`#${handId}`}>Mão</a>
+          <a href={`#${inventoryId}`}>Inventário</a>
+        </nav>
+      )}
       {quests}
       <h3 id={completionItemsId}>Itens de conclusão</h3>
       {player.completionItems.length === 0 ? (
@@ -432,7 +441,7 @@ function MemberState({
           )
         })}
       </ul>
-      <h3 id={inventoryId}>
+      <h3 id={inventoryId} tabIndex={-1}>
         Inventário ({player.inventory.length} de {player.inventoryCapacity}{' '}
         slots)
       </h3>
@@ -641,7 +650,9 @@ function MemberState({
         </ul>
       )}
       <section aria-labelledby={handId}>
-        <h3 id={handId}>Mão ({player.hand.length})</h3>
+        <h3 id={handId} tabIndex={-1}>
+          Mão ({player.hand.length})
+        </h3>
         {player.hand.map((cardId, i) => {
           const card = cards.get(cardId)
           return card === undefined ? null : <FullCard key={i} card={card} />
@@ -1651,105 +1662,131 @@ function TurnState({
   const current = party.members.find((m) => m.id === memberId)
   const host = party.members.find((m) => m.isHost)
   return (
-    <section aria-labelledby="turn-title">
-      <h2 id="turn-title">A vez</h2>
-      <p>Rodada {round}</p>
-      <p>Vez de {current?.characterName ?? '…'}</p>
-      <p>
-        {actionPoints}{' '}
-        <Term
-          id="actionPoints"
-          label={actionPoints === 1 ? 'ponto de ação' : 'pontos de ação'}
-        />
-      </p>
-      {host?.player.availableActions.includes('recover') && (
-        <div role="group" aria-label="Recuperar">
-          {recoverOptions.map(({ option, label }) => (
-            <button
-              key={option}
-              type="button"
-              onClick={() => onRecover(option)}
-              disabled={pending}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
-      {host?.player.availableActions.includes('adjustDeck') && (
-        <button
-          type="button"
-          onClick={onAdjust}
-          disabled={pending || adjusting}
-        >
-          Ajustar deck
-        </button>
-      )}
-      {host?.player.availableActions.includes('scavenge') && (
-        <div role="group" aria-label="Vasculhar">
-          {host.player.scavengeTargets.map((cardId) => (
-            <button
-              key={cardId}
-              type="button"
-              onClick={() => onScavenge(cardId)}
-              disabled={pending}
-            >
-              Vasculhar {nameOf(cards, cardId)}
-            </button>
-          ))}
-        </div>
-      )}
-      {host?.player.availableActions.includes('useVault') && (
-        <button type="button" onClick={onVault} disabled={pending || vaulting}>
-          Usar cofre
-        </button>
-      )}
-      {/* REQ-80: logo antes de "Ir ao Mercado", na ordem de availableActions. */}
-      {host?.player.availableActions.flatMap((type) =>
-        type === 'visitBlacksmith' || type === 'artificerWorkshop'
-          ? [
+    <section
+      className="campaign-panel campaign-turn"
+      aria-labelledby="turn-title"
+    >
+      <div className="campaign-turn-bar">
+        <h2 id="turn-title">A vez</h2>
+        <p>Dimensão: {nameOf(cards, party.dimension.dimensionCardId)}</p>
+
+        <p>Rodada {round}</p>
+        <p>Vez de {current?.characterName ?? '…'}</p>
+        <p>
+          {actionPoints}{' '}
+          <Term
+            id="actionPoints"
+            label={actionPoints === 1 ? 'ponto de ação' : 'pontos de ação'}
+          />
+        </p>
+      </div>
+      <div className="campaign-controls campaign-turn-actions">
+        {host?.player.availableActions.includes('recover') && (
+          <div role="group" aria-label="Recuperar">
+            {recoverOptions.map(({ option, label }) => (
               <button
-                key={type}
+                key={option}
                 type="button"
-                onClick={() =>
-                  onBlacksmith(
-                    type === 'visitBlacksmith' ? 'blacksmith' : 'workshop',
-                  )
-                }
-                disabled={pending || smithing !== null}
+                onClick={() => onRecover(option)}
+                disabled={pending}
               >
-                {type === 'visitBlacksmith'
-                  ? 'Ir ao Ferreiro'
-                  : 'Oficina do Artífice'}
-              </button>,
-            ]
-          : [],
-      )}
-      {host?.player.availableActions.includes('visitMarket') && (
-        <button
-          type="button"
-          onClick={onMarket}
-          disabled={pending || marketing}
-        >
-          Ir ao Mercado
-        </button>
-      )}
-      {host?.id === memberId &&
-        host.player.availableActions.includes('saveRespawnPoint') && (
-          <button type="button" onClick={onSaveRespawnPoint} disabled={pending}>
-            Salvar ponto de respawn
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+        {host?.player.availableActions.includes('adjustDeck') && (
+          <button
+            type="button"
+            onClick={onAdjust}
+            disabled={pending || adjusting}
+          >
+            Ajustar deck
           </button>
         )}
-      {host?.player.availableActions.includes('completeDimension') && (
-        <button type="button" onClick={onCompleteDimension} disabled={pending}>
-          Concluir dimensão (1 PA)
-        </button>
-      )}
-      {host?.player.availableActions.includes('endTurn') && (
-        <button type="button" onClick={onEndTurn} disabled={pending}>
-          Encerrar a vez
-        </button>
-      )}
+        {host?.player.availableActions.includes('scavenge') && (
+          <div role="group" aria-label="Vasculhar">
+            {host.player.scavengeTargets.map((cardId) => (
+              <button
+                key={cardId}
+                type="button"
+                onClick={() => onScavenge(cardId)}
+                disabled={pending}
+              >
+                Vasculhar {nameOf(cards, cardId)}
+              </button>
+            ))}
+          </div>
+        )}
+        {host?.player.availableActions.includes('useVault') && (
+          <button
+            type="button"
+            onClick={onVault}
+            disabled={pending || vaulting}
+          >
+            Usar cofre
+          </button>
+        )}
+        {/* REQ-80: logo antes de "Ir ao Mercado", na ordem de availableActions. */}
+        {host?.player.availableActions.flatMap((type) =>
+          type === 'visitBlacksmith' || type === 'artificerWorkshop'
+            ? [
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() =>
+                    onBlacksmith(
+                      type === 'visitBlacksmith' ? 'blacksmith' : 'workshop',
+                    )
+                  }
+                  disabled={pending || smithing !== null}
+                >
+                  {type === 'visitBlacksmith'
+                    ? 'Ir ao Ferreiro'
+                    : 'Oficina do Artífice'}
+                </button>,
+              ]
+            : [],
+        )}
+        {host?.player.availableActions.includes('visitMarket') && (
+          <button
+            type="button"
+            onClick={onMarket}
+            disabled={pending || marketing}
+          >
+            Ir ao Mercado
+          </button>
+        )}
+        {host?.id === memberId &&
+          host.player.availableActions.includes('saveRespawnPoint') && (
+            <button
+              type="button"
+              onClick={onSaveRespawnPoint}
+              disabled={pending}
+            >
+              Salvar ponto de respawn
+            </button>
+          )}
+        {host?.player.availableActions.includes('completeDimension') && (
+          <button
+            type="button"
+            onClick={onCompleteDimension}
+            disabled={pending}
+          >
+            Concluir dimensão (1 PA)
+          </button>
+        )}
+        {host?.player.availableActions.includes('endTurn') && (
+          <button
+            className="campaign-primary"
+            type="button"
+            onClick={onEndTurn}
+            disabled={pending}
+          >
+            Encerrar a vez
+          </button>
+        )}
+      </div>
     </section>
   )
 }
@@ -1930,9 +1967,17 @@ function PreparedMatch({
   const hasHelpers = party.members.some((member) => member.kind === 'aiHelper')
   return (
     <>
-      <p>Dimensão: {nameOf(cards, party.dimension.dimensionCardId)}</p>
-      <p>Cidade inicial: {nameOf(cards, party.dimension.startingCityZoneId)}</p>
-      <DimensionCompletion card={cards.get(party.dimension.dimensionCardId)} />
+      {party.combat && (
+        <p>Dimensão: {nameOf(cards, party.dimension.dimensionCardId)}</p>
+      )}
+      <div className="campaign-dimension">
+        <p>
+          Cidade inicial: {nameOf(cards, party.dimension.startingCityZoneId)}
+        </p>
+        <DimensionCompletion
+          card={cards.get(party.dimension.dimensionCardId)}
+        />
+      </div>
       {!party.combat && (
         <TurnState
           party={party}
@@ -1953,125 +1998,129 @@ function PreparedMatch({
           pending={moving}
         />
       )}
-      {!party.combat && (
-        <RandomEventPanel
-          party={party}
-          host={host}
-          cards={cards}
-          pending={moving}
-          onAction={onEvent}
-          error={eventError}
-        />
-      )}
-      {!party.combat &&
-        !party.triggeredEffectChoice &&
-        adjusting &&
-        host !== undefined && (
-          <AdjustDeck
-            player={host.player}
+      <div className={party.combat ? undefined : 'campaign-exploration'}>
+        {!party.combat && (
+          <PartyMap
+            party={party}
             cards={cards}
-            onSave={onSaveBuild}
-            onCancel={() => setAdjusting(false)}
-            pending={moving}
-            error={adjustError}
-          />
-        )}
-      {!party.combat &&
-        !party.triggeredEffectChoice &&
-        vaulting &&
-        host !== undefined && (
-          <UseVault
-            player={host.player}
-            cards={cards}
-            onConfirm={onUseVault}
-            onCancel={() => setVaulting(false)}
-            pending={moving}
-          />
-        )}
-      {!party.combat &&
-        !party.triggeredEffectChoice &&
-        marketing &&
-        host !== undefined && (
-          <MarketPanel
-            player={host.player}
-            cards={cards}
-            onConfirm={onVisitMarket}
-            onCancel={() => setMarketing(false)}
-            pending={moving}
-            failureText={(error, refused) =>
-              marketFailureText(error, refused, cards)
-            }
-          />
-        )}
-      {!party.combat &&
-        !party.triggeredEffectChoice &&
-        smithing !== null &&
-        host !== undefined && (
-          <BlacksmithPanel
-            key={smithing}
-            source={smithing}
-            player={host.player}
-            actionPoints={party.turn.actionPoints}
-            cards={cards}
-            onConfirm={(operations, onError) =>
-              onBlacksmith(smithing, operations, onError)
-            }
-            onCancel={() => setSmithing(null)}
-            pending={moving}
-            failureText={(error, refusedCardId) =>
-              blacksmithFailureText(error, refusedCardId, cards)
-            }
-          />
-        )}
-      {!party.combat && (
-        <PartyMap
-          party={party}
-          cards={cards}
-          titleOf={(cardId) => nameOf(cards, cardId)}
-          onMove={onMove}
-          moving={moving}
-        />
-      )}
-      <h2 id="turn-order-title">Ordem dos jogadores</h2>
-      <ul aria-labelledby="turn-order-title">
-        {party.turnOrder.map((id) => (
-          <li key={id} aria-current={id === party.turn.memberId || undefined}>
-            {hasHelpers && id === party.turn.memberId ? (
-              <strong>{names.get(id)}</strong>
-            ) : (
-              names.get(id)
+            titleOf={(cardId) => nameOf(cards, cardId)}
+            onMove={onMove}
+            moving={moving}
+          >
+            <RandomEventPanel
+              party={party}
+              host={host}
+              cards={cards}
+              pending={moving}
+              onAction={onEvent}
+              error={eventError}
+            />
+            {!party.triggeredEffectChoice &&
+              adjusting &&
+              host !== undefined && (
+                <AdjustDeck
+                  player={host.player}
+                  cards={cards}
+                  onSave={onSaveBuild}
+                  onCancel={() => setAdjusting(false)}
+                  pending={moving}
+                  error={adjustError}
+                />
+              )}
+            {!party.triggeredEffectChoice && vaulting && host !== undefined && (
+              <UseVault
+                player={host.player}
+                cards={cards}
+                onConfirm={onUseVault}
+                onCancel={() => setVaulting(false)}
+                pending={moving}
+              />
             )}
-          </li>
-        ))}
-      </ul>
-      {party.members.map((member) => (
-        <MemberState
-          key={member.id}
-          member={member}
-          classes={classes}
-          cards={cards}
-          quests={member.isHost ? quests : null}
-          rewardPending={party.pendingRewards.some(
-            ({ memberId }) => memberId === member.id,
-          )}
-          prepare={
-            !party.combat &&
-            member.isHost &&
-            member.player.availableActions.includes('prepare')
-              ? {
-                  ...(party.randomEventEncounter === null && {
-                    onEquip,
-                    onUnequip,
-                    onOpenBooster,
-                  }),
-                  onTransfer,
-                  onActivate,
-                  pending: moving,
-                }
-              : null
+            {!party.triggeredEffectChoice &&
+              marketing &&
+              host !== undefined && (
+                <MarketPanel
+                  player={host.player}
+                  cards={cards}
+                  onConfirm={onVisitMarket}
+                  onCancel={() => setMarketing(false)}
+                  pending={moving}
+                  failureText={(error, refused) =>
+                    marketFailureText(error, refused, cards)
+                  }
+                />
+              )}
+            {!party.triggeredEffectChoice &&
+              smithing !== null &&
+              host !== undefined && (
+                <BlacksmithPanel
+                  key={smithing}
+                  source={smithing}
+                  player={host.player}
+                  actionPoints={party.turn.actionPoints}
+                  cards={cards}
+                  onConfirm={(operations, onError) =>
+                    onBlacksmith(smithing, operations, onError)
+                  }
+                  onCancel={() => setSmithing(null)}
+                  pending={moving}
+                  failureText={(error, refusedCardId) =>
+                    blacksmithFailureText(error, refusedCardId, cards)
+                  }
+                />
+              )}
+          </PartyMap>
+        )}
+        <div
+          className={
+            party.combat ? undefined : 'campaign-panel campaign-character'
           }
-        />
-      ))}
+        >
+          <h2 id="turn-order-title">Ordem dos jogadores</h2>
+          <ul aria-labelledby="turn-order-title">
+            {party.turnOrder.map((id) => (
+              <li
+                key={id}
+                aria-current={id === party.turn.memberId || undefined}
+              >
+                {hasHelpers && id === party.turn.memberId ? (
+                  <strong>{names.get(id)}</strong>
+                ) : (
+                  names.get(id)
+                )}
+              </li>
+            ))}
+          </ul>
+          {party.members.map((member) => (
+            <MemberState
+              key={member.id}
+              member={member}
+              classes={classes}
+              cards={cards}
+              quests={member.isHost ? quests : null}
+              rewardPending={party.pendingRewards.some(
+                ({ memberId }) => memberId === member.id,
+              )}
+              prepare={
+                !party.combat &&
+                member.isHost &&
+                member.player.availableActions.includes('prepare')
+                  ? {
+                      ...(party.randomEventEncounter === null && {
+                        onEquip,
+                        onUnequip,
+                        onOpenBooster,
+                      }),
+                      onTransfer,
+                      onActivate,
+                      pending: moving,
+                    }
+                  : null
+              }
+            />
+          ))}
+        </div>
+      </div>
     </>
   )
 }
@@ -2633,30 +2682,32 @@ function PartySessionView({ partyId }: { partyId: string }) {
   }
 
   return (
-    <main>
+    <main className="campaign campaign--session">
       {party && (
         <>
-          <h1>{party.name}</h1>
-          <h2 id="members-title">Membros</h2>
-          <ul aria-labelledby="members-title">
-            {party.members.map((member) => (
-              <li key={member.id}>
-                {member.characterName}
-                {member.isHost
-                  ? ' (host)'
-                  : member.kind === 'aiHelper' && ' (IA)'}
-              </li>
-            ))}
-          </ul>
-          <p>{statusLabel[party.status]}</p>
-          <p>Salvo em {formatSavedAt(party.savedAt)}</p>
-          <button
-            type="button"
-            onClick={endSession}
-            disabled={actionsBlocked || !!party.combat}
-          >
-            Encerrar sessão
-          </button>
+          <header className="campaign-panel campaign-session-header">
+            <h1>{party.name}</h1>
+            <h2 id="members-title">Membros</h2>
+            <ul aria-labelledby="members-title">
+              {party.members.map((member) => (
+                <li key={member.id}>
+                  {member.characterName}
+                  {member.isHost
+                    ? ' (host)'
+                    : member.kind === 'aiHelper' && ' (IA)'}
+                </li>
+              ))}
+            </ul>
+            <p>{statusLabel[party.status]}</p>
+            <p>Salvo em {formatSavedAt(party.savedAt)}</p>
+            <button
+              type="button"
+              onClick={endSession}
+              disabled={actionsBlocked || !!party.combat}
+            >
+              Encerrar sessão
+            </button>
+          </header>
           {ownedDecision &&
             ownedDecision.type !== 'turn' &&
             ownedDecision.type !== 'reward' && (
