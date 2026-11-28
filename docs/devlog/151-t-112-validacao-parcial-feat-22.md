@@ -102,3 +102,22 @@ No Chrome, a sessão dos dois saves com sucessora respondeu 200 na porta 3335 e 
 | 7-injecao-browser | `43d2854a-c99a-4c3b-a9f2-381603896cce` | GET inicial r1. Em 3334, POST de sessão recebeu 500 `INTERNAL_ERROR`. Retomar sessão reenviou sem corpo e com a chave original `b186e75b-4744-41c4-930e-fb3819abb672`, recebendo 200 r3 com convite. Recusar convite recebeu 500 `INTERNAL_ERROR`. Reenviar ação preservou o JSON com `accept: false`, os IDs correntes e a chave original `7d89ba7a-a563-48a5-b6cc-9cbae849ad3c`, recebendo 200 r5 com vitória solo de A1. |
 
 Os dois HTTP 500 devolveram somente o envelope de erro, sem revisão no corpo. O GET final retornou 200 r5 com A1 em 22 PV, 11 Pico, 10 Vigor e 10 ouro, inventário vazio. Lia manteve 21 PV, 10 Pico, 10 Vigor, 10 ouro e uma poção. O convite estava encerrado. O recibo de recuperação foi capturado no clique de reenvio. A primeira checagem de texto exato na tela expirou porque o relatório inclui o sufixo «Pico +1». A conferência da apresentação foi feita na reabertura do mesmo save e exibiu «Vitória · inimigos derrotados · Pico +1». Nenhuma divergência funcional nos cinco percursos.
+
+
+## Resultado final da T-112
+
+- Data — 2026-11-27. Horas — null. T-112 concluída. FEAT-22 permanece `implementado (BE)` até a confirmação final.
+- Base — CONTRATO v1.20, seção FEAT-22, e ROADMAP v1.09. Conferência cruzada com o devlog 124 do backend e o commit `027b7aa`.
+- Alterações — conclusão da T-112 na SPEC-FRONTEND e no índice do devlog. A validação não exigiu mudanças no código.
+
+| Cenário | Evidência de fechamento |
+| --- | --- |
+| 1 | Elenco misto no limiar de PV, custo do iniciador, solo legado, lista vazia, recusa total e recusas HTTP de recrutamento. |
+| 2 | Aceite e recusa, recuperação da decisão por GET e sessão, ativação no mesmo turno e recusas sem mutação. A última rodada confirmou responsável incorreto com 409 e snapshot intacto. |
+| 3 | Ordens padrão e alternativa, recálculo entre ciclos, combate só de IAs, ressurreição e respawn. |
+| 4 | Fuga falha, individual, coletiva e seguida de derrota, além de limite em Sem fuga com e sem nocaute. |
+| 5 | Saque com iniciador de pé, caído ou fugido, rodízio com inventário cheio, missões e Reflexão fatal. O devlog 124 fornece a evidência do baralho no PostgreSQL durante as pausas e na Reflexão em grupo. |
+| 6 | Bônus por chefe, conclusão e congelamento, sucessora, prêmio pendente, Reflexão, desfecho sem vitória e saque resolvido antes do respawn. |
+| 7 | Concorrência, igualdade integral dos recibos JSON, comparação de estado e RNG com controle e recuperação em Chrome com MSW desligado após os dois HTTP 500. Os registros do serviço complementam o navegador com recuperação por sessão e 409 durante o avanço. |
+
+Nesta retomada, a API real em 3333 respondeu 200 em saúde (versão anunciada 1.13) e nos sete GETs de conferência. Os cinco checkpoints ficaram nas revisões esperadas: r3 com convite, r6, r6, r5 congelado e r5 com convite encerrado. Rodízio e Reflexão em grupo permaneceram nas revisões r10 e r5. Os POSTs dos percursos já estavam registrados e os checkpoints de execução que avançam estado já haviam sido usados. Nenhum percurso ficou pendente após a conferência das evidências de HTTP, interface e persistência.

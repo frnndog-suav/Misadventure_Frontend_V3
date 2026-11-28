@@ -187,5 +187,5 @@ O que um projeto novo precisa para ter o mesmo sistema:
 | 148 | T-109 | [Cliente e fixtures MSW da FEAT-22](148-t-109-cliente-msw-feat-22.md) | concluída com MSW |
 | 149 | T-110 | [Recrutamento e pausa da IA na FEAT-22](149-t-110-recrutamento-e-pausa-feat-22.md) | concluída com MSW |
 | 150 | T-111 | [Combate e recompensas em grupo na FEAT-22](150-t-111-combate-e-recompensas-feat-22.md) | concluída com MSW |
-| 151 | T-112 | [Validação integrada parcial da FEAT-22](151-t-112-validacao-parcial-feat-22.md) | em andamento |
+| 151 | T-112 | [Validação integrada parcial da FEAT-22](151-t-112-validacao-parcial-feat-22.md) | concluída |
 | 152 | FEAT-30 | [Entrega visual da campanha solo](152-feat-30-entrega-visual-solo.md) | planejamento atualizado |
