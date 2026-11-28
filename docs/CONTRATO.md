@@ -1,6 +1,6 @@
 # Misadventures — Contrato frontend ↔ backend
 
-> **Versão do contrato:** 1.19 · **Data:** 2026-11-27
+> **Versão do contrato:** 1.20 · **Data:** 2026-11-27
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend. Quem altera incrementa a versão, registra no histórico (§5) e o autor copia o arquivo inteiro para o outro lado. O protocolo completo está em [`ROADMAP.md`](ROADMAP.md) §2.
 >
@@ -4054,7 +4054,7 @@ type DomainEvent = { id: string; memberId: string; dimensionId: string; round: n
 A T-105 começa com MSW após o acordo. A validação integrada ocorre após a implementação no backend, com os seis cenários e a medição de tamanho do lote e duração da resposta com cinco ajudantes.
 
 
-### FEAT-22 — Recrutar ajudantes e combate em grupo — `acordado`
+### FEAT-22 — Recrutar ajudantes e combate em grupo — `implementado (BE)`
 
 Base: README §§3.2, 11.3, 19.1, 19.5, 20.2, 21.1 e II.7, ROADMAP v1.02, SPEC-FRONTEND v1.12 (D-68, REQ-110 a REQ-114). Momento 2, um humano por save, incluindo combate de evento, missão e chefe final. A composição da campanha continua definida na criação. Reutilizar os parâmetros aplicáveis do laboratório, inclusive o limite de ciclos. Os relógios ficam desligados.
 
@@ -4267,3 +4267,4 @@ Preparar URL, IDs de saves, catálogo, sementes, estado inicial e resultados por
 | 1.17 | 2026-11-27 | BE | FEAT-22 `proposto (BE)`: autorização e retomada idempotente, política de IA e desempate, ordem do desfecho e revisão dos cenários 1, 2, 3, 5, 6 e 7. |
 | 1.18 | 2026-11-27 | BE | FEAT-22 `proposto (BE)`: registra o aceite da vitória por Reflexão em grupo sem sobreviventes e explicita elenco solo, precedência HTTP e reenvio do recibo. |
 | 1.19 | 2026-11-27 | BE | FEAT-22 `acordado` após confirmação do FE sobre elenco solo, Reflexão, precedência HTTP e reenvio. |
+| 1.20 | 2026-11-27 | BE | FEAT-22 `implementado (BE)` após a verificação dos sete cenários e a entrega dos saves da T-112. Os campos, ações e resultados esperados seguem os da v1.19. |

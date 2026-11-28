@@ -1,6 +1,6 @@
 # Misadventures — Roadmap de desenvolvimento
 
-> **Versão:** 1.07 · **Data:** 2026-11-27
+> **Versão:** 1.09 · **Data:** 2026-11-27
 >
 > **Arquivo compartilhado:** a mesma cópia vive no repositório do frontend e no do backend; o autor copia o arquivo inteiro quando ele muda. Base: README Parte III (III.2 e III.4). As regras estão em [`README.md`](README.md); o que trafega entre os lados, em [`CONTRATO.md`](CONTRATO.md).
 
@@ -73,6 +73,9 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | FEAT-18 | Montarias e Estábulo | 26 | validado | validado |
 | FEAT-19 | Conclusão da dimensão, chefe final, passagem para a próxima, save congelado | 3.2, 28.1 | validado | validado |
 | FEAT-33 | Coleções estendidas e reprint: várias coleções vigentes para compra no mercado (README 27) | 27, 24 | validado | validado |
+| FEAT-30 | Acabamento visual da campanha solo com um personagem | II.1, II.4, II.5 | a fazer | — |
+
+O Momento 1 fecha com uma campanha solo jogável no navegador. Após o acabamento visual, entregar ao autor uma revisão identificada e um roteiro com a API real, da criação do save à conclusão da dimensão.
 
 ### Momento 2 — Ajudantes de IA
 
@@ -80,15 +83,14 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 |---|---|---|---|---|
 | FEAT-20 | Ajudantes de IA na criação do grupo, jogando suas vezes na ordem (BE: IA de jogador heurística com sorteio de classes) | II.7, 28.1, 11.2 | validado | validado |
 | FEAT-21 | Acompanhar as vezes dos ajudantes de IA (P-02 aprovada) | 11.4 | validado | validado |
-| FEAT-22 | Recrutar ajudantes e combate em grupo | 19.5 | aguardando outro lado | a fazer |
+| FEAT-22 | Recrutar ajudantes e combate em grupo | 19.5 | aguardando outro lado | pronto |
 | FEAT-23 | Negociação | 23 | a fazer | a fazer |
 | FEAT-24 | Métricas da IA no laboratório (taxa de nocaute, rodadas até concluir) | II.6, II.7 | a fazer | a fazer |
-| FEAT-30 | Acabamento visual da interface para um humano com IA | II.1, II.4, II.5 | a fazer | — |
 | FEAT-29 | Executável Tauri para um humano com IA (cliente do servidor remoto) | II.2 | a fazer | — |
 
 #### Pausa obrigatória para teste do autor
 
-1. Finalizar e validar todas as funcionalidades previstas para um humano com ajudantes de IA, incluindo o acabamento visual e, depois, o executável. A FEAT-29 mantém o servidor remoto para o jogo individual.
+1. Finalizar e validar todas as funcionalidades previstas para um humano com ajudantes de IA, incluindo a revisão visual dos fluxos com IA e, depois, o executável. A FEAT-29 mantém o servidor remoto para o jogo individual.
 2. Assim que só restar o escopo de multiplayer entre humanos, entregar ao autor a versão jogável e o roteiro para testar uma campanha com IA, da criação do save à conclusão da dimensão. Registrar a revisão e interromper o desenvolvimento nos dois repositórios.
 3. Depois do teste do autor e da resolução de eventuais ajustes da versão com IA, pedir autorização explícita para iniciar o Momento 3. Até recebê-la, manter bloqueadas as tarefas de multiplayer online, inclusive código preparatório, protótipos, dependências e infraestrutura dedicados. A confirmação do teste e a conclusão das FEATs anteriores não liberam essa etapa.
 
@@ -101,7 +103,7 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | FEAT-27 | Relógios da vez e jogador ausente | 11.3 | bloqueado | bloqueado |
 | FEAT-28 | Desconexão e IA que assume o personagem | 28.1 | bloqueado | bloqueado |
 
-**FEAT-30 e FEAT-29:** o acabamento visual inclui layout de PC, componentes e estados, tratamento PSX e artes e ícones do autor. A FEAT-30 vem depois das funcionalidades para um humano com IA e antes do executável. As adaptações visuais e do executável específicas para vários humanos entram no Momento 3.
+**FEAT-30 e FEAT-29:** o acabamento solo inclui layout de PC, componentes e estados, tratamento PSX, artes e ícones do autor, animações simples e transições de interface. A revisão visual dos fluxos com IA ocorre no Momento 2 antes da FEAT-29. As adaptações específicas para vários humanos entram no Momento 3.
 
 **FEAT-31 (decisão do autor, 2026-11-15):** vem logo depois da FEAT-05, para o autor criar conteúdo de teste desde a FEAT-06. Como o laboratório, o editor cresce junto: cada FEAT que trouxer conteúdo novo (FEAT-06 classes com deck pré-pronto, Carta de Dimensão e forma das setas das zonas; FEAT-11 efeitos estruturados, FEAT-15 missões, FEAT-16 boosters e estoque, FEAT-17 encantamentos, FEAT-18 montarias, FEAT-19 campos de conclusão da Carta de Dimensão) acrescenta os campos dela ao editor.
 
@@ -227,3 +229,5 @@ Situação por lado: `a fazer` · `em andamento` · `aguardando outro lado` · `
 | 1.05 | 2026-11-27 | FEAT-22 acordada no CONTRATO v1.19. T-109 liberada com MSW. Validação integrada na T-112 com a API real e MSW desligado. |
 | 1.06 | 2026-11-27 | FEAT-22 pronta no frontend com MSW após a T-111. O acordo do CONTRATO v1.19 consta na revisão `3fc6833` do backend. A T-112 aguarda a revisão da API que implemente os cenários 1 a 7 e o pacote de validação. |
 | 1.07 | 2026-11-27 | Pausa obrigatória para teste do autor antes do Momento 3. FEAT-30 e FEAT-29 no Momento 2 para o jogo com IA. FEAT-25 a FEAT-28 bloqueadas até autorização explícita. |
+| 1.08 | 2026-11-27 | FEAT-30 antecipada para fechar o Momento 1 com teste da campanha solo no navegador. Revisão visual com IA e FEAT-29 no Momento 2. |
+| 1.09 | 2026-11-27 | FEAT-22 pronta no backend após as verificações da T-117 e registrada como `implementado (BE)` no CONTRATO v1.20. A conclusão aguarda a validação integrada da T-112. |
