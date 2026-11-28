@@ -1,6 +1,6 @@
 # Misadventures (frontend) — Especificação
 
-> **Versão da spec:** 1.12 · **Data:** 2026-11-27
+> **Versão da spec:** 1.13 · **Data:** 2026-11-27
 >
 > Spec-anchored: toda mudança de comportamento do frontend começa aqui, é aprovada pelo autor e só depois vira teste e código. As **regras do jogo** não ficam aqui: estão em [`README.md`](README.md) e são citadas por seção (D-03).
 
@@ -952,6 +952,30 @@ Base: README §§3.2, 11.3, 19.1, 19.5, 20.2, 21.1 e II.7, D-68 e CONTRATO FEAT-
 #### REQ-114 — Reenvio, recarga e compatibilidade
 - **Dado** um combate pausado, uma resposta perdida ou um recibo antigo, **quando** a interface recuperar a sessão ou a ação, **então** apresenta a decisão atual com os dados persistidos, consome cada transição uma vez e preserva o estado de revisão superior. Saves solo legados continuam com o fluxo já validado.
 
+### Acabamento visual da campanha solo (FEAT-30)
+
+Base: ROADMAP v1.10 §3, README §§II.4–II.5, FEAT-02 e CONTRATO v1.21 (FEAT-05 e FEAT-19). Escopo: campanha de um personagem no navegador de PC, com tratamento PSX 2D, artes e ícones do autor e animações simples. Aplicam-se as regras e o contrato existentes. A revisão dos fluxos com ajudantes de IA e o executável Tauri pertencem ao Momento 2.
+
+#### REQ-115 — Criar e retomar
+
+**Dado** o menu em 1280×720 ou 2560×1440, **quando** o jogador cria um save com um personagem, encerra a sessão e continua pelo menu, **então** seleção de classe, confirmação e lista de saves são legíveis e operáveis sem rolagem horizontal, e a sessão retomada mostra o progresso persistido.
+
+#### REQ-116 — Explorar e agir
+
+**Dado** um save solo em exploração, **quando** o jogador consulta o mapa, seleciona uma zona, move-se, encerra a vez ou abre um painel de ação, **então** zona atual, zona selecionada, travessias e destinos disponíveis são distinguíveis. Pontos de ação, rodada e ações disponíveis ficam identificáveis. Mão, inventário e painéis de zona mantêm controles e resultados acessíveis por teclado, com foco visível.
+
+#### REQ-117 — Encontro, combate e recompensa
+
+**Dado** um encontro, combate ou escolha de recompensa, **quando** o jogador abre o painel, envia uma ação e recebe o resultado, **então** o painel identifica fase, alvos, escolhas e desfecho, com apresentação distinta para carregamento, sucesso e recusa. Uma recusa mantém visível o último estado confirmado e permite retomar a interação conforme o fluxo existente.
+
+#### REQ-118 — Identidade visual e movimento
+
+**Dado** o tratamento visual de cartas, termos e ações solo, **quando** o jogador consulta uma carta ou termo, muda de painel, abre um booster ou recebe o resultado de forja, **então** as cartas mostram categoria por ícone, imagem e rótulo com os recursos aprovados, e o conteúdo permanece legível na ausência de arte. Os termos têm destaque e explicação por ponteiro e foco. As animações respeitam a preferência de movimento reduzido e preservam o acesso a controles e resultados.
+
+#### REQ-119 — Concluir a dimensão
+
+**Dado** um save solo novo, criado no navegador com API real e MSW desligado, **quando** o jogador cumpre os requisitos publicados, chega à zona de conclusão e vence o chefe final, se houver, **então** a interface mostra o resultado e o prêmio reportados pela API. Com sucessora publicada, a sessão passa à próxima dimensão. Ao fim do conteúdo publicado, a sessão termina e o save aparece como congelado. Após recarga, tela, lista de saves e consulta à API refletem o mesmo desfecho.
+
 ## Decisões
 
 - **D-68 — Recrutamento e combate em grupo (FEAT-22, aprovada em 2026-11-27):** inclui evento, missão e chefe final no momento 2. Seleção e confirmação antes do primeiro ciclo, com convite e resposta de IA decididos no backend. Ordem da campanha como desempate padrão, com acordo prévio permitido. Decisões do humano persistem mesmo na vez de uma IA. O servidor resolve a distribuição por Celeridade efetiva no desfecho e entrega uma carta por vez, preservando a ordem gravada. Os detalhes da interface HTTP e da conclusão do chefe final seguem para acordo no contrato.
@@ -1249,6 +1273,15 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 - [x] **T-111 — Combate e recompensas em grupo** (REQ-112 a REQ-114). Apresentar combate por participante, rodízio e progresso de missão ou dimensão. Cobrir reenvio e recibo antigo.
 - [x] **T-112 — Validação integrada** (REQ-110 a REQ-114). Executar os cenários do contrato com MSW desligado e registrar evidência HTTP e da interface.
 
+### FEAT-30 — Acabamento visual da campanha solo
+
+- [ ] **T-113 — Definir a direção visual e os recursos** (REQ-115 a REQ-119). Revisar as telas solo, aprovar a composição das telas inicial, de exploração e de combate e inventariar artes e ícones do autor por tela, registrando os recursos faltantes e sua apresentação prevista.
+- [ ] **T-114 — Aplicar o layout de PC à entrada e à exploração** (REQ-115 e REQ-116). Dar acabamento à criação, aos saves, ao mapa e aos painéis de personagem e zona. Reaproveitar os componentes atuais e verificar as duas resoluções e a navegação por teclado.
+- [ ] **T-115 — Dar acabamento aos estados e desfechos** (REQ-117 a REQ-119). Aplicar a direção visual a encontros, combate, recompensas e conclusão. Integrar artes, ícones e transições, incluindo booster e forja. Verificar recusa de ação, arte ausente e movimento reduzido.
+- [ ] **T-116 — Validar e entregar a revisão solo** (REQ-115 a REQ-119). Executar as verificações de frontend com MSW e o roteiro abaixo com API real. Entregar a revisão identificada e o roteiro reproduzível ao autor.
+
+**Validação real da T-116.** Usar Chrome com `VITE_USE_MOCKS=false` e a API disponibilizada pelo autor, com classe inicial e dimensão publicada concluível por um personagem. Criar um save novo pela interface, abrir a sessão, movimentar, executar uma ação de zona, encerrar a vez e recarregar para conferir a retomada. Cumprir os requisitos publicados, chegar à zona de conclusão e resolver o chefe final, se houver. Conferir resumo, prêmio, estado persistido e passagem à sucessora ou congelamento. Conferir o outro desfecho em cenário complementar, que pode usar dados preparados. A validação exige o percurso completo e os dois desfechos. Registrar revisões do frontend e do backend, navegador, dimensão, ID do save, evidências HTTP e de tela e resultado por cenário.
+
 ## 8. Histórico
 
 | Versão | Data | Mudança |
@@ -1365,3 +1398,4 @@ A T-53 fecha o lado FE da FEAT-32 com MSW; depois, `/retorno-backend` contra o b
 | 1.10 | 2026-11-26 | FEAT-20 aprovada no FE (REQ-102 a REQ-106 e T-100 a T-104). T-100 aguarda o acordo do CONTRATO v1.05. |
 | 1.11 | 2026-11-27 | FEAT-21 aprovada no FE. D-67, REQ-107 a REQ-109 e T-105 a T-108. T-105 aguarda o acordo do CONTRATO v1.11. |
 | 1.12 | 2026-11-27 | FEAT-22 aprovada no FE. D-68, REQ-110 a REQ-114 e T-109 a T-112. T-109 aguarda o acordo do CONTRATO v1.16. |
+| 1.13 | 2026-11-27 | Planejamento da FEAT-30 aprovado no FE. REQ-115 a REQ-119 e T-113 a T-116, com roteiro de validação solo pela API real. |
